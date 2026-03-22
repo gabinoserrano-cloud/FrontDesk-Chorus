@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chorus — Front Desk Ops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --black:#0f0e0d;--warm-white:#faf8f5;--surface:#f4f1ec;--surface2:#ede9e2;
+  --border:rgba(15,14,13,0.1);--border-strong:rgba(15,14,13,0.22);
+  --gold:#b8902a;--gold-light:#f5edda;--gold-mid:#d4a83a;
+  --text-primary:#1a1815;--text-secondary:#6b6560;--text-muted:#a09890;
+  --red:#c0392b;--red-light:#fdf0ee;--green:#2d6a4f;--green-light:#edf6f0;
+  --amber:#92400e;--amber-light:#fef3c7;--blue:#1e4d8c;--blue-light:#eff4fc;
+  --purple:#5b21b6;--purple-light:#f0ebff;
+  --radius:10px;--radius-lg:16px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--warm-white);color:var(--text-primary);min-height:100vh;font-size:14px;line-height:1.5;}
+.app{display:flex;min-height:100vh;}
+
+#loading-screen{position:fixed;inset:0;background:var(--black);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;transition:opacity 0.4s;}
+#loading-screen.hide{opacity:0;pointer-events:none;}
+.loading-logo{font-family:'DM Serif Display',serif;font-size:36px;color:#fff;margin-bottom:8px;}
+.loading-sub{font-size:12px;color:rgba(255,255,255,0.4);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:32px;}
+.loading-bar-wrap{width:160px;height:2px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;}
+.loading-bar{height:100%;background:var(--gold);border-radius:2px;animation:loadpulse 1.4s ease-in-out infinite;}
+@keyframes loadpulse{0%{width:5%}50%{width:80%}100%{width:100%}}
+.loading-status{font-size:11px;color:rgba(255,255,255,0.3);margin-top:12px;}
+
+.sync-pill{display:flex;align-items:center;gap:6px;font-size:11px;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.1);transition:all 0.3s;}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.25);transition:background 0.3s;flex-shrink:0;}
+.sync-pill.syncing .sync-dot{background:var(--gold-mid);animation:blink 0.8s infinite;}
+.sync-pill.synced .sync-dot{background:#4ade80;}
+.sync-pill.error .sync-dot{background:var(--red);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+.sidebar{width:225px;min-width:225px;background:var(--black);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.sidebar-brand{padding:24px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.08);}
+.sidebar-brand .eyebrow{font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:4px;}
+.sidebar-brand .name{font-family:'DM Serif Display',serif;font-size:22px;color:#fff;}
+.sidebar-brand .sub{font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;}
+.sidebar-date{padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.07);}
+.sidebar-date .date-label{font-size:10px;color:rgba(255,255,255,0.35);}
+.sidebar-date .date-val{font-size:12px;color:rgba(255,255,255,0.75);font-weight:500;}
+.sidebar-nav{padding:8px 0;flex:1;}
+.nav-section-label{font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.25);padding:12px 20px 5px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 20px;cursor:pointer;color:rgba(255,255,255,0.55);font-size:12px;transition:all 0.15s;border-left:2px solid transparent;user-select:none;}
+.nav-item:hover{color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.04);}
+.nav-item.active{color:#fff;background:rgba(255,255,255,0.07);border-left-color:var(--gold-mid);font-weight:500;}
+.nav-item .nav-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--gold);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px;min-width:18px;text-align:center;flex-shrink:0;}
+.nav-badge.red{background:var(--red);}
+.nav-badge.blue{background:var(--blue);}
+.nav-badge.purple{background:var(--purple);}
+.sidebar-footer{padding:12px 20px;border-top:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;gap:6px;}
+.sidebar-footer-time{font-size:10px;color:rgba(255,255,255,0.2);}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{background:var(--warm-white);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.page-title{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text-primary);}
+.topbar-actions{display:flex;gap:8px;}
+.btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:7px 14px;border-radius:var(--radius);border:1px solid var(--border-strong);background:transparent;color:var(--text-secondary);cursor:pointer;transition:all 0.15s;}
+.btn:hover{background:var(--surface);color:var(--text-primary);}
+.btn.primary{background:var(--black);color:#fff;border-color:var(--black);}
+.btn.primary:hover{background:#2a2520;}
+.btn.gold{background:var(--gold);color:#fff;border-color:var(--gold);}
+.btn.gold:hover{background:var(--gold-mid);}
+.btn.danger{background:var(--red);color:#fff;border-color:var(--red);}
+.btn.sm{padding:5px 10px;font-size:11px;}
+.content{padding:24px 28px;flex:1;}
+.section{display:none;}.section.active{display:block;}
+
+.stat-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--surface);border-radius:var(--radius);padding:14px 16px;border:1px solid var(--border);}
+.stat-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:5px;}
+.stat-num{font-family:'DM Serif Display',serif;font-size:26px;color:var(--text-primary);line-height:1;}
+.stat-sub{font-size:11px;color:var(--text-muted);margin-top:3px;}
+.stat-card.gold-accent{border-left:3px solid var(--gold);}
+.stat-card.red-accent{border-left:3px solid var(--red);}
+.stat-card.green-accent{border-left:3px solid var(--green);}
+.stat-card.blue-accent{border-left:3px solid var(--blue);}
+.stat-card.purple-accent{border-left:3px solid var(--purple);}
+
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:18px;overflow:hidden;}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border);background:var(--warm-white);}
+.card-head-left{display:flex;align-items:center;gap:10px;}
+.card-title{font-weight:600;font-size:13px;color:var(--text-primary);}
+.card-count{font-size:11px;color:var(--text-muted);background:var(--surface);padding:2px 8px;border-radius:20px;}
+
+table{width:100%;border-collapse:collapse;}
+thead tr{background:var(--surface);}
+th{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);font-weight:600;padding:9px 14px;text-align:left;border-bottom:1px solid var(--border);}
+td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-primary);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr{transition:background 0.1s;}
+tbody tr:hover{background:var(--surface);}
+
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+.badge.in{background:var(--green-light);color:var(--green);}
+.badge.out{background:var(--red-light);color:var(--red);}
+.badge.vacant{background:var(--blue-light);color:var(--blue);}
+.badge.occupied{background:var(--surface2);color:var(--text-secondary);}
+.badge.high{background:var(--red-light);color:var(--red);}
+.badge.medium{background:var(--amber-light);color:var(--amber);}
+.badge.low{background:var(--surface2);color:var(--text-secondary);}
+.badge.open{background:var(--red-light);color:var(--red);}
+.badge.in-progress{background:var(--amber-light);color:var(--amber);}
+.badge.resolved{background:var(--green-light);color:var(--green);}
+.badge.sgt{background:var(--purple-light);color:var(--purple);}
+.badge.guided{background:var(--blue-light);color:var(--blue);}
+.badge.pending{background:var(--amber-light);color:var(--amber);}
+.badge.checked-in{background:var(--green-light);color:var(--green);}
+.badge.checked-out{background:var(--surface2);color:var(--text-secondary);}
+.badge.claimed{background:var(--green-light);color:var(--green);}
+.badge.unclaimed{background:var(--amber-light);color:var(--amber);}
+.badge.resident{background:var(--gold-light);color:var(--gold);}
+.badge.joiner{background:var(--blue-light);color:var(--blue);}
+.badge.one-time{background:var(--purple-light);color:var(--purple);}
+.badge.mobile{background:var(--green-light);color:var(--green);}
+.badge.issued{background:var(--green-light);color:var(--green);}
+.badge.returned{background:var(--surface2);color:var(--text-secondary);}
+.badge.active{background:var(--blue-light);color:var(--blue);}
+
+.check-item{display:flex;align-items:flex-start;gap:12px;padding:10px 18px;border-bottom:1px solid var(--border);transition:background 0.1s;}
+.check-item:last-child{border-bottom:none;}
+.check-item:hover{background:var(--surface);}
+.check-item input[type="checkbox"]{width:15px;height:15px;margin-top:1px;accent-color:var(--green);cursor:pointer;flex-shrink:0;}
+.check-label{flex:1;font-size:13px;cursor:pointer;}
+.check-label.done{text-decoration:line-through;color:var(--text-muted);}
+.check-tag{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);background:var(--surface2);padding:2px 7px;border-radius:4px;flex-shrink:0;align-self:flex-start;margin-top:1px;}
+.check-tag.move-in{background:var(--green-light);color:var(--green);}
+.check-tag.move-out{background:var(--red-light);color:var(--red);}
+.check-tag.keys{background:var(--gold-light);color:var(--gold);}
+.check-tag.elevator{background:var(--purple-light);color:var(--purple);}
+.check-tag.general{background:var(--surface2);color:var(--text-secondary);}
+.check-tag.lobby{background:var(--blue-light);color:var(--blue);}
+.check-tag.amenity{background:var(--green-light);color:var(--green);}
+.check-tag.exterior{background:var(--amber-light);color:var(--amber);}
+
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(15,14,13,0.5);z-index:200;align-items:center;justify-content:center;padding:20px;}
+.modal-bg.open{display:flex;}
+.modal{background:#fff;border-radius:var(--radius-lg);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+.modal-head{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-family:'DM Serif Display',serif;font-size:18px;}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);}
+.modal-body{padding:18px 22px;}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+.form-group{margin-bottom:14px;}
+.form-label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-secondary);margin-bottom:5px;}
+.form-input,.form-select,.form-textarea{width:100%;font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--border-strong);border-radius:var(--radius);background:var(--warm-white);color:var(--text-primary);outline:none;transition:border-color 0.15s;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--gold);}
+.form-textarea{resize:vertical;min-height:75px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+
+.passdown-editor{background:var(--warm-white);border:1px solid var(--border);border-radius:var(--radius);padding:14px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-primary);width:100%;min-height:190px;resize:vertical;outline:none;line-height:1.7;}
+.passdown-editor:focus{border-color:var(--gold);}
+.passdown-entry{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;margin-bottom:10px;}
+.passdown-meta{font-size:11px;color:var(--text-muted);margin-bottom:6px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.passdown-text{font-size:13px;line-height:1.65;white-space:pre-wrap;}
+.passdown-shift-badge{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;padding:2px 8px;border-radius:4px;background:var(--gold-light);color:var(--gold);}
+
+.unit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;padding:14px 18px;}
+.unit-tile{border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;cursor:pointer;transition:all 0.15s;position:relative;}
+.unit-tile:hover{border-color:var(--gold-mid);box-shadow:0 2px 8px rgba(184,144,42,0.1);}
+.unit-tile.vacant{background:var(--blue-light);border-color:#c7daf5;}
+.unit-tile.occupied{background:var(--surface);}
+.unit-tile.sgt-ready{background:var(--purple-light);border-color:#d5c8f5;}
+.unit-num{font-family:'DM Serif Display',serif;font-size:17px;margin-bottom:3px;}
+.unit-floor{font-size:10px;color:var(--text-muted);}
+.unit-status-dot{width:8px;height:8px;border-radius:50%;position:absolute;top:9px;right:9px;}
+.unit-status-dot.vacant{background:var(--blue);}
+.unit-status-dot.occupied{background:var(--text-muted);}
+.unit-status-dot.sgt{background:var(--purple);}
+
+.empty-state{text-align:center;padding:44px 20px;color:var(--text-muted);}
+.empty-state .empty-icon{font-size:28px;margin-bottom:10px;opacity:0.5;}
+.empty-state p{font-size:13px;}
+
+.sub-tabs{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap;}
+.sub-tab{font-size:12px;font-weight:500;padding:5px 13px;border-radius:20px;border:1px solid var(--border);cursor:pointer;color:var(--text-secondary);background:transparent;transition:all 0.15s;}
+.sub-tab:hover{background:var(--surface);}
+.sub-tab.active{background:var(--black);color:#fff;border-color:var(--black);}
+
+.toast{position:fixed;bottom:24px;right:24px;background:var(--black);color:#fff;padding:11px 16px;border-radius:var(--radius);font-size:13px;z-index:999;transform:translateY(80px);opacity:0;transition:all 0.3s ease;pointer-events:none;display:flex;align-items:center;gap:8px;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+.action-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap;}
+.search-input{font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 11px;border:1px solid var(--border-strong);border-radius:var(--radius);background:var(--warm-white);color:var(--text-primary);outline:none;width:210px;transition:border-color 0.15s;}
+.search-input:focus{border-color:var(--gold);}
+.action-btn{background:none;border:none;cursor:pointer;font-size:12px;color:var(--text-muted);padding:3px 6px;border-radius:4px;transition:all 0.1s;}
+.action-btn:hover{background:var(--surface2);color:var(--text-primary);}
+.action-btn.del:hover{background:var(--red-light);color:var(--red);}
+.priority-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;}
+.priority-dot.high{background:var(--red);}
+.priority-dot.medium{background:#d97706;}
+.priority-dot.low{background:var(--text-muted);}
+
+/* WALKTHROUGH ZONE HEADER */
+.zone-header{padding:10px 18px;background:var(--surface);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-secondary);}
+
+/* KEY TRACKER SPECIFIC */
+.key-type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px 18px;}
+.key-type-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;cursor:pointer;transition:all 0.15s;}
+.key-type-card:hover{border-color:var(--gold-mid);}
+.key-type-card.active-filter{border-color:var(--gold);background:var(--gold-light);}
+.key-type-label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:4px;}
+.key-type-num{font-family:'DM Serif Display',serif;font-size:22px;}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:10px;}
+</style>
+</head>
+<body>
+
+<div id="loading-screen">
+  <div class="loading-logo">Chorus</div>
+  <div class="loading-sub">Front Desk Operations</div>
+  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+  <div class="loading-status" id="loading-status">Loading your data...</div>
+</div>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="eyebrow">Front Desk</div>
+      <div class="name">Chorus</div>
+      <div class="sub">San Francisco</div>
+    </div>
+    <div class="sidebar-date">
+      <div class="date-label">Today</div>
+      <div class="date-val" id="sidebar-date">—</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Operations</div>
+      <div class="nav-item active" onclick="switchSection('moves',this)"><span class="nav-icon">🚚</span><span>Move Ins / Outs</span><span class="nav-badge" id="badge-moves">0</span></div>
+      <div class="nav-item" onclick="switchSection('vacants',this)"><span class="nav-icon">🏠</span><span>Vacant Units</span><span class="nav-badge" id="badge-vacants">0</span></div>
+      <div class="nav-item" onclick="switchSection('maintenance',this)"><span class="nav-icon">🔧</span><span>Maintenance</span><span class="nav-badge red" id="badge-maint">0</span></div>
+      <div class="nav-section-label">Resident Services</div>
+      <div class="nav-item" onclick="switchSection('packages',this)"><span class="nav-icon">📦</span><span>Packages</span><span class="nav-badge blue" id="badge-packages">0</span></div>
+      <div class="nav-item" onclick="switchSection('guests',this)"><span class="nav-icon">👥</span><span>Guests & Visitors</span><span class="nav-badge" id="badge-guests">0</span></div>
+      <div class="nav-item" onclick="switchSection('keys',this)"><span class="nav-icon">🗝️</span><span>Key Tracker</span><span class="nav-badge gold" id="badge-keys" style="background:var(--gold)">0</span></div>
+      <div class="nav-section-label">Shift</div>
+      <div class="nav-item" onclick="switchSection('tours',this)"><span class="nav-icon">🏡</span><span>Tour Log</span><span class="nav-badge purple" id="badge-tours">0</span></div>
+      <div class="nav-item" onclick="switchSection('walkthrough',this)"><span class="nav-icon">🚶</span><span>Walkthrough</span></div>
+      <div class="nav-item" onclick="switchSection('passdown',this)"><span class="nav-icon">📋</span><span>Daily Passdown</span></div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sync-pill" id="sync-pill"><div class="sync-dot"></div><span id="sync-label">Saved locally</span></div>
+      <div class="sidebar-footer-time" id="sync-time"></div>
+      <button onclick="openModal('modal-import')" style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.55);cursor:pointer;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,0.12)';this.style.color='rgba(255,255,255,0.85)'" onmouseout="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.55)'">&#8593; Import Master List</button>
+      <button onclick="exportAllData()" style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.55);cursor:pointer;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,0.12)';this.style.color='rgba(255,255,255,0.85)'" onmouseout="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.55)'">&#8595; Export My Data</button>
+      <button onclick="document.getElementById('import-data-input').click()" style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.55);cursor:pointer;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,0.12)';this.style.color='rgba(255,255,255,0.85)'" onmouseout="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.55)'">&#8593; Import My Data</button>
+      <input type="file" id="import-data-input" accept=".json" style="display:none" onchange="importAllData(this.files[0])">
+    </div>
+  </aside>
+
+
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title" id="page-title">Move Ins / Outs</div>
+      <div class="topbar-actions">
+        <button class="btn" id="export-btn" onclick="exportPassdown()" style="display:none;">↓ Export Passdown</button>
+        <button class="btn" id="reset-walk-btn" onclick="resetWalkthrough()" style="display:none;">↺ Reset Checklist</button>
+        <button class="btn primary" id="main-add-btn" onclick="openMainAdd()">+ Add Move</button>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- ══ MOVES ══ -->
+      <div class="section active" id="section-moves">
+        <div class="stat-strip">
+          <div class="stat-card gold-accent"><div class="stat-label">Move Ins Today</div><div class="stat-num" id="stat-ins-today">0</div><div class="stat-sub">This week: <span id="stat-ins-week">0</span></div></div>
+          <div class="stat-card red-accent"><div class="stat-label">Move Outs Today</div><div class="stat-num" id="stat-outs-today">0</div><div class="stat-sub">This week: <span id="stat-outs-week">0</span></div></div>
+          <div class="stat-card"><div class="stat-label">Pending Tasks</div><div class="stat-num" id="stat-tasks-pending">0</div><div class="stat-sub">Across all moves</div></div>
+          <div class="stat-card green-accent"><div class="stat-label">Completed Tasks</div><div class="stat-num" id="stat-tasks-done">0</div><div class="stat-sub">All time</div></div>
+        </div>
+        <div class="sub-tabs">
+          <button class="sub-tab active" onclick="filterMoves('all',this)">All</button>
+          <button class="sub-tab" onclick="filterMoves('in',this)">Move Ins</button>
+          <button class="sub-tab" onclick="filterMoves('out',this)">Move Outs</button>
+          <button class="sub-tab" onclick="filterMoves('today',this)">Today</button>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-head-left"><span class="card-title">Scheduled Moves</span><span class="card-count" id="moves-count">0 entries</span></div>
+            <input class="search-input" placeholder="Search resident or unit…" oninput="renderMoves(this.value)">
+          </div>
+          <table><thead><tr><th style="width:65px">Unit</th><th>Resident</th><th style="width:105px">Date</th><th style="width:90px">Type</th><th style="width:100px">Move-In Total</th><th>Notes</th><th style="width:40px"></th></tr></thead>
+          <tbody id="moves-tbody"></tbody></table>
+        </div>
+        <div class="card" id="tasks-card">
+          <div class="card-head">
+            <div class="card-head-left"><span class="card-title">Move Task Checklist</span><span class="card-count" id="tasks-count">Select a move above</span></div>
+            <div style="display:flex;gap:8px;"><button class="btn sm" onclick="clearDoneTasks()">Clear done</button><button class="btn sm primary" onclick="openAddTask()">+ Task</button></div>
+          </div>
+          <div id="tasks-list"><div class="empty-state"><div class="empty-icon">☑️</div><p>Click a move row to see its tasks.</p></div></div>
+        </div>
+      </div>
+
+      <!-- ══ VACANTS ══ -->
+      <div class="section" id="section-vacants">
+        <div class="stat-strip">
+          <div class="stat-card blue-accent"><div class="stat-label">Vacant Units</div><div class="stat-num" id="stat-vacant">0</div><div class="stat-sub">Available now</div></div>
+          <div class="stat-card purple-accent"><div class="stat-label">SGT Ready</div><div class="stat-num" id="stat-sgt">0</div><div class="stat-sub">Self-guided tour eligible</div></div>
+          <div class="stat-card"><div class="stat-label">Total Units</div><div class="stat-num" id="stat-total-units">0</div><div class="stat-sub">In registry</div></div>
+          <div class="stat-card green-accent"><div class="stat-label">Occupancy</div><div class="stat-num" id="stat-occupancy">—</div><div class="stat-sub">Current rate</div></div>
+        </div>
+        <div class="action-row">
+          <div class="sub-tabs">
+            <button class="sub-tab active" onclick="filterUnits('all',this)">All Units</button>
+            <button class="sub-tab" onclick="filterUnits('vacant',this)">Vacant</button>
+            <button class="sub-tab" onclick="filterUnits('sgt',this)">SGT Ready</button>
+          </div>
+          <input class="search-input" placeholder="Search unit…" oninput="renderUnits(this.value)">
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-head-left"><span class="card-title">Unit Registry</span><span class="card-count" id="units-count">0 units</span></div></div>
+          <div class="unit-grid" id="units-grid"></div>
+        </div>
+        <div class="card" id="unit-detail-card" style="display:none;">
+          <div class="card-head">
+            <div class="card-head-left"><span class="card-title" id="unit-detail-title">Unit Detail</span></div>
+            <div style="display:flex;gap:8px;"><button class="btn sm" id="unit-toggle-sgt" onclick="toggleUnitSGT()">Mark SGT Ready</button><button class="btn sm danger" onclick="deleteUnit()">Remove</button><button class="btn sm" onclick="closeUnitDetail()">✕</button></div>
+          </div>
+          <div style="padding:14px 18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;" id="unit-detail-body"></div>
+        </div>
+      </div>
+
+      <!-- ══ MAINTENANCE ══ -->
+      <div class="section" id="section-maintenance">
+        <div class="stat-strip">
+          <div class="stat-card red-accent"><div class="stat-label">Open Issues</div><div class="stat-num" id="stat-open">0</div><div class="stat-sub">Needs attention</div></div>
+          <div class="stat-card gold-accent"><div class="stat-label">In Progress</div><div class="stat-num" id="stat-inprog">0</div><div class="stat-sub">Being handled</div></div>
+          <div class="stat-card green-accent"><div class="stat-label">Resolved</div><div class="stat-num" id="stat-resolved">0</div><div class="stat-sub">All time</div></div>
+          <div class="stat-card"><div class="stat-label">High Priority</div><div class="stat-num" id="stat-highpri">0</div><div class="stat-sub">Urgent open items</div></div>
+        </div>
+        <div class="action-row">
+          <div class="sub-tabs">
+            <button class="sub-tab active" onclick="filterMaint('all',this)">All</button>
+            <button class="sub-tab" onclick="filterMaint('open',this)">Open</button>
+            <button class="sub-tab" onclick="filterMaint('in-progress',this)">In Progress</button>
+            <button class="sub-tab" onclick="filterMaint('resolved',this)">Resolved</button>
+          </div>
+          <input class="search-input" placeholder="Search unit or issue…" oninput="renderMaint(this.value)">
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-head-left"><span class="card-title">Maintenance Log</span><span class="card-count" id="maint-count">0 issues</span></div></div>
+          <table><thead><tr><th style="width:75px">Unit</th><th style="width:120px">Issue</th><th>Description</th><th style="width:88px">Priority</th><th style="width:125px">Status</th><th style="width:95px">Reported</th><th style="width:40px"></th></tr></thead>
+          <tbody id="maint-tbody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- ══ PACKAGES ══ -->
+      <div class="section" id="section-packages">
+        <div class="stat-strip">
+          <div class="stat-card blue-accent"><div class="stat-label">Unclaimed</div><div class="stat-num" id="stat-pkg-unclaimed">0</div><div class="stat-sub">Awaiting pickup</div></div>
+          <div class="stat-card green-accent"><div class="stat-label">Claimed Today</div><div class="stat-num" id="stat-pkg-claimed-today">0</div><div class="stat-sub">Picked up</div></div>
+          <div class="stat-card gold-accent"><div class="stat-label">Received Today</div><div class="stat-num" id="stat-pkg-today">0</div><div class="stat-sub">Logged in</div></div>
+          <div class="stat-card"><div class="stat-label">Total Logged</div><div class="stat-num" id="stat-pkg-total">0</div><div class="stat-sub">All time</div></div>
+        </div>
+        <div class="action-row">
+          <div class="sub-tabs">
+            <button class="sub-tab active" onclick="filterPkg('all',this)">All</button>
+            <button class="sub-tab" onclick="filterPkg('unclaimed',this)">Unclaimed</button>
+            <button class="sub-tab" onclick="filterPkg('claimed',this)">Claimed</button>
+            <button class="sub-tab" onclick="filterPkg('today',this)">Today</button>
+          </div>
+          <input class="search-input" placeholder="Search unit or resident…" oninput="renderPackages(this.value)">
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-head-left"><span class="card-title">Package Log</span><span class="card-count" id="pkg-count">0 packages</span></div></div>
+          <table><thead><tr><th style="width:70px">Unit</th><th>Resident</th><th style="width:90px">Carrier</th><th style="width:100px">Received</th><th style="width:100px">Location</th><th style="width:100px">Status</th><th style="width:95px">Claimed</th><th style="width:40px"></th></tr></thead>
+          <tbody id="pkg-tbody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- ══ GUESTS ══ -->
+      <div class="section" id="section-guests">
+        <div class="stat-strip">
+          <div class="stat-card green-accent"><div class="stat-label">Currently In</div><div class="stat-num" id="stat-guests-in">0</div><div class="stat-sub">Active visitors</div></div>
+          <div class="stat-card blue-accent"><div class="stat-label">Today's Visits</div><div class="stat-num" id="stat-guests-today">0</div><div class="stat-sub">Checked in today</div></div>
+          <div class="stat-card gold-accent"><div class="stat-label">Pending</div><div class="stat-num" id="stat-guests-pending">0</div><div class="stat-sub">Expected arrivals</div></div>
+          <div class="stat-card"><div class="stat-label">Total Logged</div><div class="stat-num" id="stat-guests-total">0</div><div class="stat-sub">All time</div></div>
+        </div>
+        <div class="action-row">
+          <div class="sub-tabs">
+            <button class="sub-tab active" onclick="filterGuests('all',this)">All</button>
+            <button class="sub-tab" onclick="filterGuests('checked-in',this)">In Building</button>
+            <button class="sub-tab" onclick="filterGuests('pending',this)">Pending</button>
+            <button class="sub-tab" onclick="filterGuests('checked-out',this)">Checked Out</button>
+          </div>
+          <input class="search-input" placeholder="Search guest or unit…" oninput="renderGuests(this.value)">
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-head-left"><span class="card-title">Guest & Visitor Log</span><span class="card-count" id="guests-count">0 entries</span></div></div>
+          <table><thead><tr><th>Guest Name</th><th style="width:70px">Unit</th><th>Host Resident</th><th style="width:90px">Check-in</th><th style="width:90px">Check-out</th><th style="width:100px">Type</th><th style="width:100px">Status</th><th style="width:40px"></th></tr></thead>
+          <tbody id="guests-tbody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- ══ KEY TRACKER ══ -->
+      <div class="section" id="section-keys">
+        <div class="stat-strip">
+          <div class="stat-card gold-accent"><div class="stat-label">Resident Keys</div><div class="stat-num" id="stat-keys-resident">0</div><div class="stat-sub">Active fobs issued</div></div>
+          <div class="stat-card blue-accent"><div class="stat-label">Joiner Keys</div><div class="stat-num" id="stat-keys-joiner">0</div><div class="stat-sub">Currently out</div></div>
+          <div class="stat-card purple-accent"><div class="stat-label">One-Time Keys</div><div class="stat-num" id="stat-keys-onetime">0</div><div class="stat-sub">Currently out</div></div>
+          <div class="stat-card green-accent"><div class="stat-label">Mobile Keys</div><div class="stat-num" id="stat-keys-mobile">0</div><div class="stat-sub">Active</div></div>
+        </div>
+        <div class="action-row">
+          <div class="sub-tabs">
+            <button class="sub-tab active" onclick="filterKeys('all',this)">All</button>
+            <button class="sub-tab" onclick="filterKeys('resident',this)">Resident</button>
+            <button class="sub-tab" onclick="filterKeys('joiner',this)">Joiner</button>
+            <button class="sub-tab" onclick="filterKeys('one-time',this)">One-Time</button>
+            <button class="sub-tab" onclick="filterKeys('mobile',this)">Mobile</button>
+            <button class="sub-tab" onclick="filterKeys('issued',this)">Issued</button>
+            <button class="sub-tab" onclick="filterKeys('returned',this)">Returned</button>
+          </div>
+          <input class="search-input" placeholder="Search unit or name…" oninput="renderKeys(this.value)">
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-head-left"><span class="card-title">Key Log</span><span class="card-count" id="keys-count">0 entries</span></div></div>
+          <table><thead><tr><th style="width:70px">Unit</th><th>Name</th><th style="width:90px">Key Type</th><th style="width:80px">Fob / ID</th><th style="width:100px">Issued</th><th style="width:100px">Returned</th><th style="width:95px">Status</th><th style="width:40px"></th></tr></thead>
+          <tbody id="keys-tbody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- ══ TOURS ══ -->
+      <div class="section" id="section-tours">
+        <div class="stat-strip">
+          <div class="stat-card blue-accent"><div class="stat-label">Tours Today</div><div class="stat-num" id="stat-tours-today">0</div><div class="stat-sub">Guided + SGT</div></div>
+          <div class="stat-card purple-accent"><div class="stat-label">SGT Tours</div><div class="stat-num" id="stat-tours-sgt">0</div><div class="stat-sub">Self-guided</div></div>
+          <div class="stat-card gold-accent"><div class="stat-label">Guided Tours</div><div class="stat-num" id="stat-tours-guided">0</div><div class="stat-sub">Agent-assisted</div></div>
+          <div class="stat-card green-accent"><div class="stat-label">This Week</div><div class="stat-num" id="stat-tours-week">0</div><div class="stat-sub">Total tours</div></div>
+        </div>
+        <div class="action-row">
+          <div class="sub-tabs">
+            <button class="sub-tab active" onclick="filterTours('all',this)">All</button>
+            <button class="sub-tab" onclick="filterTours('sgt',this)">SGT</button>
+            <button class="sub-tab" onclick="filterTours('guided',this)">Guided</button>
+            <button class="sub-tab" onclick="filterTours('today',this)">Today</button>
+          </div>
+          <input class="search-input" placeholder="Search prospect or unit…" oninput="renderTours(this.value)">
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-head-left"><span class="card-title">Tour Log</span><span class="card-count" id="tours-count">0 tours</span></div></div>
+          <table><thead><tr><th>Prospect</th><th style="width:70px">Unit</th><th style="width:90px">Date</th><th style="width:80px">Time</th><th style="width:90px">Type</th><th>Notes / Outcome</th><th style="width:40px"></th></tr></thead>
+          <tbody id="tours-tbody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- ══ WALKTHROUGH ══ -->
+      <div class="section" id="section-walkthrough">
+        <div class="stat-strip">
+          <div class="stat-card green-accent"><div class="stat-label">Completed</div><div class="stat-num" id="stat-walk-done">0</div><div class="stat-sub">Items checked off</div></div>
+          <div class="stat-card red-accent"><div class="stat-label">Remaining</div><div class="stat-num" id="stat-walk-left">0</div><div class="stat-sub">Still to check</div></div>
+          <div class="stat-card gold-accent"><div class="stat-label">Issues Flagged</div><div class="stat-num" id="stat-walk-issues">0</div><div class="stat-sub">Needs attention</div></div>
+          <div class="stat-card"><div class="stat-label">Last Reset</div><div class="stat-num" style="font-size:15px;padding-top:4px;" id="stat-walk-reset">—</div><div class="stat-sub">Start of shift</div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-head-left"><span class="card-title">Building Walkthrough Checklist</span><span class="card-count" id="walk-count">0 / 0</span></div>
+          <div style="display:flex;gap:8px;"><button class="btn sm primary" onclick="openFlagIssue()">⚑ Flag Issue</button></div></div>
+          <div id="walkthrough-list"></div>
+        </div>
+        <div class="card" id="walk-issues-card">
+          <div class="card-head"><div class="card-head-left"><span class="card-title">Flagged Items</span><span class="card-count" id="walk-issues-count">0</span></div></div>
+          <div id="walk-issues-list"><div class="empty-state"><div class="empty-icon">✅</div><p>No issues flagged.</p></div></div>
+        </div>
+      </div>
+
+      <!-- ══ PASSDOWN ══ -->
+      <div class="section" id="section-passdown">
+        <div class="card" style="margin-bottom:18px;">
+          <div class="card-head"><span class="card-title">New Passdown Entry</span></div>
+          <div style="padding:16px 20px;">
+            <div class="form-row" style="margin-bottom:12px;">
+              <div class="form-group" style="margin:0;"><label class="form-label">Date</label><input class="form-input" type="date" id="pd-date"></div>
+              <div class="form-group" style="margin:0;"><label class="form-label">Shift</label>
+                <select class="form-select" id="pd-shift"><option>Morning (7am–3pm)</option><option>Mid (11am–7pm)</option><option>Evening (3pm–11pm)</option><option>Overnight</option></select>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:12px;"><label class="form-label">Shift Notes & Passdown</label>
+              <textarea class="passdown-editor" id="pd-notes" placeholder="• Move ins/outs completed&#10;• Packages received / claimed&#10;• Guests checked in/out&#10;• Maintenance updates&#10;• Walkthrough notes&#10;• Anything to flag for next shift…"></textarea>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;">
+              <button class="btn" onclick="generatePassdown()">✨ Auto-generate from today's data</button>
+              <button class="btn gold" onclick="savePassdown()">Save Passdown</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">Passdown History</span></div>
+          <div style="padding:12px 16px;" id="passdown-list"><div class="empty-state"><div class="empty-icon">📋</div><p>No passdowns saved yet.</p></div></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- MODAL: Move -->
+<div class="modal-bg" id="modal-move">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">Add Move In / Out</span><button class="modal-close" onclick="closeModal('modal-move')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Unit #</label><input class="form-input" id="m-unit" placeholder="e.g. 412"></div>
+        <div class="form-group"><label class="form-label">Type</label><select class="form-select" id="m-type"><option value="in">Move In</option><option value="out">Move Out</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Resident Name</label><input class="form-input" id="m-resident" placeholder="Full name"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="m-date"></div>
+        <div class="form-group"><label class="form-label">Time Window</label><input class="form-input" id="m-time" placeholder="e.g. 9am–12pm"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Move-In Total ($)</label><input class="form-input" id="m-movein-total" placeholder="e.g. 6250 (prorated + deposit)"></div>
+      <div class="form-group"><label class="form-label">Elevator Reserved?</label>
+        <select class="form-select" id="m-elevator"><option value="yes">Yes – service elevator reserved</option><option value="no">No</option><option value="needed">Needs reservation</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="m-notes" placeholder="Any additional details…"></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-move')">Cancel</button><button class="btn primary" onclick="saveMove()">Save Move</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Unit -->
+<div class="modal-bg" id="modal-unit">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">Add Unit</span><button class="modal-close" onclick="closeModal('modal-unit')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Unit #</label><input class="form-input" id="u-num" placeholder="e.g. 507"></div>
+        <div class="form-group"><label class="form-label">Floor</label><input class="form-input" id="u-floor" placeholder="e.g. 5"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Bed/Bath</label><input class="form-input" id="u-type" placeholder="e.g. 1BD/1BA"></div>
+        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="u-status"><option value="vacant">Vacant</option><option value="occupied">Occupied</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">SGT Ready?</label><select class="form-select" id="u-sgt"><option value="yes">Yes – available for self-guided tour</option><option value="no">No</option></select></div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="u-notes" placeholder="Availability date, showing notes, access info…"></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-unit')">Cancel</button><button class="btn primary" onclick="saveUnit()">Save Unit</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Maintenance -->
+<div class="modal-bg" id="modal-maint">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">Log Maintenance Issue</span><button class="modal-close" onclick="closeModal('modal-maint')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Unit / Location</label><input class="form-input" id="mn-unit" placeholder="e.g. 312 or Lobby"></div>
+        <div class="form-group"><label class="form-label">Issue Type</label><input class="form-input" id="mn-issue" placeholder="e.g. Elevator, HVAC"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="mn-desc" placeholder="Describe the issue…"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="mn-priority"><option value="high">High – Urgent</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></div>
+        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="mn-status"><option value="open">Open</option><option value="in-progress">In Progress</option><option value="resolved">Resolved</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Reported By</label><input class="form-input" id="mn-reporter" placeholder="Your name or resident name"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-maint')">Cancel</button><button class="btn primary" onclick="saveMaint()">Save Issue</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Task -->
+<div class="modal-bg" id="modal-task">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-head"><span class="modal-title">Add Task</span><button class="modal-close" onclick="closeModal('modal-task')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Task</label><input class="form-input" id="t-text" placeholder="e.g. Issue RiseIO access…"></div>
+      <div class="form-group"><label class="form-label">Category</label>
+        <select class="form-select" id="t-cat"><option value="move-in">Move In</option><option value="move-out">Move Out</option><option value="keys">Keys & Access</option><option value="elevator">Elevator</option><option value="general">General</option></select>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-task')">Cancel</button><button class="btn primary" onclick="saveTask()">Add Task</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Package -->
+<div class="modal-bg" id="modal-pkg">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">Log Package</span><button class="modal-close" onclick="closeModal('modal-pkg')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Unit #</label><input class="form-input" id="pk-unit" placeholder="e.g. 412"></div>
+        <div class="form-group"><label class="form-label">Resident Name</label><input class="form-input" id="pk-resident" placeholder="Full name"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Carrier</label>
+          <select class="form-select" id="pk-carrier"><option>USPS</option><option>UPS</option><option>FedEx</option><option>Amazon</option><option>DHL</option><option>Other</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Package Size</label>
+          <select class="form-select" id="pk-size"><option>Small</option><option>Medium</option><option>Large</option><option>Oversized</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Storage Location</label><input class="form-input" id="pk-location" placeholder="e.g. Package Room Shelf B3, Lobby, etc."></div>
+      <div class="form-group"><label class="form-label">Notes</label><input class="form-input" id="pk-notes" placeholder="Fragile, refrigerated, etc."></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-pkg')">Cancel</button><button class="btn primary" onclick="savePkg()">Log Package</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Guest -->
+<div class="modal-bg" id="modal-guest">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">Log Guest / Visitor</span><button class="modal-close" onclick="closeModal('modal-guest')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Guest Name</label><input class="form-input" id="g-name" placeholder="Full name"></div>
+        <div class="form-group"><label class="form-label">Visiting Unit #</label><input class="form-input" id="g-unit" placeholder="e.g. 412"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Host Resident</label><input class="form-input" id="g-host" placeholder="Resident's name"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Visit Type</label>
+          <select class="form-select" id="g-type"><option value="visitor">Visitor</option><option value="vendor">Vendor / Contractor</option><option value="delivery">Delivery Person</option><option value="joiner">Joiner Guest</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="form-select" id="g-status"><option value="pending">Pending (Expected)</option><option value="checked-in">Checked In</option><option value="checked-out">Checked Out</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Notes</label><input class="form-input" id="g-notes" placeholder="ID checked, access granted, etc."></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-guest')">Cancel</button><button class="btn primary" onclick="saveGuest()">Log Guest</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Key -->
+<div class="modal-bg" id="modal-key">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">Log Key / Access</span><button class="modal-close" onclick="closeModal('modal-key')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Unit #</label><input class="form-input" id="k-unit" placeholder="e.g. 412"></div>
+        <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="k-name" placeholder="Resident or guest name"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Key Type</label>
+          <select class="form-select" id="k-type"><option value="resident">Resident Key Fob</option><option value="joiner">Joiner Key</option><option value="one-time">One-Time Key</option><option value="mobile">Mobile Key</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Fob # / ID</label><input class="form-input" id="k-fob" placeholder="e.g. FOB-0042"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="form-select" id="k-status"><option value="issued">Issued</option><option value="returned">Returned</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Expiry (one-time keys)</label><input class="form-input" type="date" id="k-expiry"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Notes</label><input class="form-input" id="k-notes" placeholder="Any access notes…"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-key')">Cancel</button><button class="btn primary" onclick="saveKey()">Save</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Tour -->
+<div class="modal-bg" id="modal-tour">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">Log Tour</span><button class="modal-close" onclick="closeModal('modal-tour')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Prospect Name</label><input class="form-input" id="tr-name" placeholder="Full name"></div>
+        <div class="form-group"><label class="form-label">Unit(s) Shown</label><input class="form-input" id="tr-unit" placeholder="e.g. 507, 312"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Tour Type</label>
+          <select class="form-select" id="tr-type"><option value="sgt">SGT (Self-Guided)</option><option value="guided">Guided</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="tr-date"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Time</label><input class="form-input" id="tr-time" placeholder="e.g. 2:00 PM"></div>
+        <div class="form-group"><label class="form-label">Contact Info</label><input class="form-input" id="tr-contact" placeholder="Phone or email"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Outcome / Notes</label><textarea class="form-textarea" id="tr-notes" placeholder="Interested, applied, needs follow-up, no show, etc."></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-tour')">Cancel</button><button class="btn primary" onclick="saveTour()">Log Tour</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Flag Walkthrough Issue -->
+<div class="modal-bg" id="modal-flag">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-head"><span class="modal-title">Flag an Issue</span><button class="modal-close" onclick="closeModal('modal-flag')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Location</label><input class="form-input" id="fl-location" placeholder="e.g. Lobby, Gym, Floor 5 Hallway"></div>
+      <div class="form-group"><label class="form-label">Issue Description</label><textarea class="form-textarea" id="fl-desc" placeholder="What did you observe?"></textarea></div>
+      <div class="form-group"><label class="form-label">Priority</label>
+        <select class="form-select" id="fl-priority"><option value="high">High – Fix immediately</option><option value="medium" selected>Medium</option><option value="low">Low – Note only</option></select>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-flag')">Cancel</button><button class="btn primary" onclick="saveFlaggedIssue()">Flag Issue</button></div>
+  </div>
+</div>
+
+
+const STORAGE_KEY='chorus_ops_v2';
+
+function cloudSave(data){
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+    setSyncState('synced');
+  }catch(e){
+    setSyncState('error');
+  }
+}
+function cloudLoad(){
+  try{
+    const d=localStorage.getItem(STORAGE_KEY);
+    return d?JSON.parse(d):null;
+  }catch(e){return null;}
+}
+function setSyncState(s){
+  const pill=document.getElementById('sync-pill'),label=document.getElementById('sync-label');
+  pill.className='sync-pill '+s;
+  if(s==='syncing')label.textContent='Saving...';
+  else if(s==='synced'){label.textContent='Synced ✓';document.getElementById('sync-time').textContent='Last saved '+new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});setTimeout(()=>{label.textContent='Cloud sync on';pill.className='sync-pill synced';},2500);}
+  else if(s==='error')label.textContent='Sync error';
+}
+
+let state={moves:[],units:[],maintenance:[],packages:[],guests:[],keys:[],tours:[],walkthroughState:{},walkthroughIssues:[],walkthroughReset:null,passdowns:[],selectedMoveId:null};
+let moveFilter='all',unitFilterMode='all',maintFilterMode='all',pkgFilter='all',guestFilter='all',keyFilter='all',tourFilter='all';
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2);}
+function today(){return new Date().toISOString().split('T')[0];}
+function now(){return new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});}
+function fmtDate(d){if(!d)return '-';return new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function fmtDateTime(ts){if(!ts)return '-';const d=new Date(ts);return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});}
+function isToday(d){return d===today();}
+function isThisWeek(d){if(!d)return false;const diff=(new Date(d+'T12:00:00')-new Date())/86400000;return diff>=-1&&diff<=7;}
+
+function showToast(msg,icon='✓'){const t=document.getElementById('toast');t.innerHTML=`<span>${icon}</span><span>${msg}</span>`;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+let saveTimer=null;
+function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>cloudSave(state),700);}
+
+const sectionTitles={moves:'Move Ins / Outs',vacants:'Vacant Units & Tours',maintenance:'Maintenance Log',packages:'Package Tracking',guests:'Guests & Visitors',keys:'Key Tracker',tours:'Tour Log',walkthrough:'Building Walkthrough',passdown:'Daily Passdown'};
+const addLabels={moves:'+ Add Move',vacants:'+ Add Unit',maintenance:'+ Log Issue',packages:'+ Log Package',guests:'+ Log Guest',keys:'+ Log Key',tours:'+ Log Tour',walkthrough:null,passdown:null};
+let currentSection='moves';
+
+function switchSection(id,el){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('section-'+id).classList.add('active');el.classList.add('active');
+  currentSection=id;document.getElementById('page-title').textContent=sectionTitles[id];
+  const btn=document.getElementById('main-add-btn');
+  const expBtn=document.getElementById('export-btn');
+  const walkBtn=document.getElementById('reset-walk-btn');
+  expBtn.style.display=id==='passdown'?'':'none';
+  walkBtn.style.display=id==='walkthrough'?'':'none';
+  if(!addLabels[id])btn.style.display='none';
+  else{btn.style.display='';btn.textContent=addLabels[id];}
+  if(id==='passdown'&&!document.getElementById('pd-date').value)document.getElementById('pd-date').value=today();
+  if(id==='walkthrough')renderWalkthrough();
+}
+function openMainAdd(){
+  const m={moves:'modal-move',vacants:'modal-unit',maintenance:'modal-maint',packages:'modal-pkg',guests:'modal-guest',keys:'modal-key',tours:'modal-tour'};
+  if(m[currentSection])openModal(m[currentSection]);
+}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+// -- MOVE DEFAULTS --
+const DEFAULT_IN=[
+  // PRE MOVE-IN
+  {text:'[PRE] Send welcome email & text via EliseAI',cat:'move-in'},
+  {text:'[PRE] Complete welcome call - confirm email sent, communication channels explained, response times reviewed, next callback scheduled, resident questions answered',cat:'move-in'},
+  {text:'[PRE] Reserve service elevator - first come first serve, confirm no conflicts with other move-ins or move-outs on same date/time',cat:'elevator'},
+  {text:'[WEEK BEFORE] Follow-up call - resident confirmed, no additional questions',cat:'move-in'},
+  {text:'[WEEK BEFORE] Confirm elevator reservation is still secured',cat:'elevator'},
+  // RESIDENT APP ITEMS (verify resident completed these)
+  {text:'[APP] Verify resident acknowledged welcome & checklist in app',cat:'move-in'},
+  {text:'[APP] Verify resident downloaded & set up Resident App',cat:'move-in'},
+  {text:'[APP] Verify resident scheduled move-in appointment (review required)',cat:'move-in'},
+  {text:'[APP] Verify resident reserved elevator in app',cat:'elevator'},
+  {text:'[APP] Verify resident paid move-in charges & acknowledged payment policy',cat:'move-in'},
+  {text:'[APP] Verify resident set up renters insurance & acknowledged policy',cat:'move-in'},
+  {text:'[APP] Verify resident entered utility account number & uploaded electricity activation email',cat:'move-in'},
+  // MOVE-IN DAY
+  {text:'Set up service elevator for move-in',cat:'elevator'},
+  {text:'Confirm move-in orientation/appointment is set',cat:'move-in'},
+  {text:'Create parking credentials (if applicable)',cat:'keys'},
+  {text:'Create & prepare unit key / fob',cat:'keys'},
+  {text:'Create & prepare mail key',cat:'keys'},
+  {text:'Pre-move-in unit inspection - appliances working, looks/smells/feels/sounds good, scent applied',cat:'move-in'},
+  // POST MOVE-IN
+  {text:'[POST] Schedule resident orientation if not already done - trash & cardboard disposal, key usage (LATCH system), how to communicate with the team',cat:'move-in'},
+  {text:'[POST] Inspection report completed & signed by resident',cat:'move-in'},
+  {text:'[POST] 3-day follow-up call - feedback on move-in, appliance use, auto-pay setup, packages & deliveries, amenity reservations, guest access',cat:'move-in'},
+];
+const DEFAULT_OUT=[
+  // PRE MOVE-OUT
+  {text:'[PRE] Confirm pre-move-out inspection is scheduled',cat:'move-out'},
+  {text:'[PRE] Pre-move-out inspection occurs',cat:'move-out'},
+  {text:'[PRE] Confirm move-out time slot is reserved by resident',cat:'move-out'},
+  {text:'[PRE] Verify move-out time slot has been reserved (check app)',cat:'move-out'},
+  {text:'[PRE] If movers are being used, request & collect Mover's COI',cat:'move-out'},
+  // MOVE-OUT DAY: ELEVATOR
+  {text:'Set up service elevator for move-out',cat:'elevator'},
+  {text:'Show resident how to use the elevator controls',cat:'elevator'},
+  // MOVE-OUT DAY: KEY COLLECTION
+  {text:'Collect front door key / fob from resident',cat:'keys'},
+  {text:'Collect mailbox key from resident',cat:'keys'},
+  {text:'Collect parking credentials (transponder & garage opener, if applicable)',cat:'keys'},
+  // SYSTEM REMOVAL
+  {text:'[RiseIO] Search resident > click unit > select "Move Out Resident" > confirm "Move out" > confirm "Delete"',cat:'move-out'},
+  {text:'[Lenel] On secondary computer, open Lenel > Activity Log (house icon) > tap keycard on scanner > click resident name > "Delete Person" > confirm OK',cat:'keys'},
+  {text:'[TEZ] Valet tab in RiseIO > login > Locations > Chorus (292-375-002) > Property Manager > Tenants List > search unit > find resident > scroll right > Remove > Yes > OK (if applicable)',cat:'move-out'},
+  // MASTER LIST UPDATE
+  {text:'[MASTER LIST] Teams > search "Master List" > Move-Out List tab > enter resident name, unit #, move-out date',cat:'move-out'},
+  {text:'[MASTER LIST] Enter Yes/No for key return, Yes/No for Blueground, your name as receiving associate',cat:'move-out'},
+  {text:'[MASTER LIST] Enter Yes for RiseIO removal, Yes/No/N/A for TEZ vehicle removal',cat:'move-out'},
+  // PHYSICAL KEYS
+  {text:'Clean unit key/fob and mail key',cat:'keys'},
+  {text:'Place mail key back in correct drawer of mail key sorter (front desk cabinet)',cat:'keys'},
+  {text:'Clean keycard and place in "One Time Cards / Returned Cards" holder for reuse',cat:'keys'},
+  // WRAP UP
+  {text:'Notify manager of key turn-in',cat:'general'},
+  {text:'Mark unit as vacant in system',cat:'move-out'},
+  {text:'File USPS mail forwarding note',cat:'move-out'},
+  {text:'Include move-out in the daily passdown',cat:'general'},
+];
+
+function saveMove(){
+  const unit=document.getElementById('m-unit').value.trim(),resident=document.getElementById('m-resident').value.trim(),date=document.getElementById('m-date').value;
+  if(!unit||!resident||!date){showToast('Fill in unit, resident & date','⚠️');return;}
+  const type=document.getElementById('m-type').value;
+  const move={id:uid(),unit,resident,date,type,time:document.getElementById('m-time').value.trim(),elevator:document.getElementById('m-elevator').value,moveInTotal:document.getElementById('m-movein-total').value.trim(),notes:document.getElementById('m-notes').value.trim(),tasks:(type==='in'?DEFAULT_IN:DEFAULT_OUT).map(t=>({id:uid(),text:t.text,cat:t.cat,done:false}))};
+  state.moves.push(move);save();renderMoves();updateBadges();closeModal('modal-move');
+  ['m-unit','m-resident','m-date','m-time','m-notes','m-movein-total'].forEach(id=>document.getElementById(id).value='');
+  showToast('Move added');state.selectedMoveId=move.id;renderTasks();
+}
+function renderMoves(search=''){
+  let list=[...state.moves];
+  if(moveFilter==='in')list=list.filter(m=>m.type==='in');
+  else if(moveFilter==='out')list=list.filter(m=>m.type==='out');
+  else if(moveFilter==='today')list=list.filter(m=>isToday(m.date));
+  if(search)list=list.filter(m=>(m.resident+m.unit+m.notes).toLowerCase().includes(search.toLowerCase()));
+  list.sort((a,b)=>a.date.localeCompare(b.date));
+  const tbody=document.getElementById('moves-tbody');
+  if(!list.length){tbody.innerHTML='<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">🚚</div><p>No moves yet.</p></div></td></tr>';}
+  else tbody.innerHTML=list.map(m=>{
+    const hi=isToday(m.date)?'style="background:#fffbf0;"':'';
+    const done=m.tasks.filter(t=>t.done).length,total=m.tasks.length;
+    return `<tr ${hi} onclick="selectMove('${m.id}')" style="cursor:pointer;"><td><strong>${m.unit}</strong></td><td>${m.resident}</td><td>${fmtDate(m.date)}${m.time?`<br><span style="font-size:11px;color:var(--text-muted)">${m.time}</span>`:''}</td><td><span class="badge ${m.type}">${m.type==='in'?'Move In':'Move Out'}</span></td><td style="font-size:12px;font-weight:500;">${m.moveInTotal?`<span style="color:#2d6a4f">$${m.moveInTotal}</span>`:`<span style="color:#a09890;font-weight:400;">-</span>`}</td><td style="font-size:12px;color:var(--text-secondary);">${m.notes||''}<span style="display:block;font-size:11px;color:var(--text-muted)">Tasks: ${done}/${total}</span>${m.elevator==='needed'?'<span class="badge pending" style="margin-top:3px;font-size:10px;">⚠️ Elevator needed</span>':''}</td><td><button class="action-btn del" onclick="event.stopPropagation();deleteMove('${m.id}')">✕</button></td></tr>`;
+  }).join('');
+  document.getElementById('moves-count').textContent=list.length+' entr'+(list.length===1?'y':'ies');
+  updateStats();
+}
+function selectMove(id){state.selectedMoveId=id;renderTasks();document.getElementById('tasks-card').scrollIntoView({behavior:'smooth',block:'nearest'});}
+function deleteMove(id){if(!confirm('Delete this move?'))return;state.moves=state.moves.filter(m=>m.id!==id);if(state.selectedMoveId===id)state.selectedMoveId=null;save();renderMoves();renderTasks();updateBadges();showToast('Deleted','🗑');}
+function filterMoves(f,el){moveFilter=f;document.querySelectorAll('#section-moves .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderMoves();}
+function renderTasks(){
+  const move=state.moves.find(m=>m.id===state.selectedMoveId);
+  const el=document.getElementById('tasks-list'),count=document.getElementById('tasks-count');
+  if(!move){el.innerHTML='<div class="empty-state"><div class="empty-icon">☑️</div><p>Click a move row to see its tasks.</p></div>';count.textContent='Select a move above';return;}
+  count.textContent=`${move.resident} - Unit ${move.unit} - ${move.tasks.filter(t=>t.done).length}/${move.tasks.length} done`;
+  if(!move.tasks.length){el.innerHTML='<div class="empty-state"><p>No tasks. Add one above.</p></div>';return;}
+  el.innerHTML=move.tasks.map(t=>`<div class="check-item"><input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${move.id}','${t.id}',this.checked)"><div class="check-label ${t.done?'done':''}" onclick="toggleTaskClick('${move.id}','${t.id}')" style="cursor:pointer;">${t.text}</div><span class="check-tag ${t.cat}">${t.cat.replace('-',' ')}</span><button class="action-btn del" onclick="deleteTask('${move.id}','${t.id}')">✕</button></div>`).join('');
+  updateStats();
+}
+function toggleTask(mId,tId,done){const t=state.moves.find(m=>m.id===mId)?.tasks.find(t=>t.id===tId);if(t){t.done=done;save();renderTasks();updateStats();}}
+function toggleTaskClick(mId,tId){const t=state.moves.find(m=>m.id===mId)?.tasks.find(t=>t.id===tId);if(t){t.done=!t.done;save();renderTasks();updateStats();}}
+function deleteTask(mId,tId){const m=state.moves.find(m=>m.id===mId);if(m){m.tasks=m.tasks.filter(t=>t.id!==tId);save();renderTasks();}}
+function clearDoneTasks(){const m=state.moves.find(m=>m.id===state.selectedMoveId);if(!m)return;m.tasks=m.tasks.filter(t=>!t.done);save();renderTasks();showToast('Done tasks cleared');}
+function openAddTask(){if(!state.selectedMoveId){showToast('Select a move first','⚠️');return;}openModal('modal-task');}
+function saveTask(){const text=document.getElementById('t-text').value.trim();if(!text)return;const m=state.moves.find(m=>m.id===state.selectedMoveId);if(!m)return;m.tasks.push({id:uid(),text,cat:document.getElementById('t-cat').value,done:false});save();renderTasks();closeModal('modal-task');document.getElementById('t-text').value='';showToast('Task added');}
+
+// -- UNITS --
+function saveUnit(){
+  const num=document.getElementById('u-num').value.trim();if(!num){showToast('Enter a unit number','⚠️');return;}
+  state.units.push({id:uid(),num,floor:document.getElementById('u-floor').value.trim(),type:document.getElementById('u-type').value.trim(),status:document.getElementById('u-status').value,sgt:document.getElementById('u-sgt').value==='yes',notes:document.getElementById('u-notes').value.trim(),addedDate:today()});
+  save();renderUnits();updateBadges();updateStats();closeModal('modal-unit');['u-num','u-floor','u-type','u-notes'].forEach(id=>document.getElementById(id).value='');showToast('Unit added');
+}
+function filterUnits(f,el){unitFilterMode=f;document.querySelectorAll('#section-vacants .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderUnits();}
+function renderUnits(search=''){
+  let list=[...state.units];
+  if(unitFilterMode==='vacant')list=list.filter(u=>u.status==='vacant');
+  else if(unitFilterMode==='sgt')list=list.filter(u=>u.sgt&&u.status==='vacant');
+  if(search)list=list.filter(u=>(u.num+u.type+u.notes).toLowerCase().includes(search.toLowerCase()));
+  list.sort((a,b)=>a.num.localeCompare(b.num,undefined,{numeric:true}));
+  const grid=document.getElementById('units-grid');
+  if(!list.length){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">🏠</div><p>No units yet.</p></div>';}
+  else grid.innerHTML=list.map(u=>{const cls=u.sgt&&u.status==='vacant'?'sgt-ready':u.status;const dc=u.sgt&&u.status==='vacant'?'sgt':u.status;return `<div class="unit-tile ${cls}" onclick="openUnitDetail('${u.id}')"><div class="unit-status-dot ${dc}"></div><div class="unit-num">${u.num}</div><div class="unit-floor">${u.type||''}${u.floor?' - Fl.'+u.floor:''}</div>${u.sgt&&u.status==='vacant'?'<div style="margin-top:5px;"><span class="badge sgt" style="font-size:10px;padding:2px 6px;">SGT</span></div>':''}</div>`;}).join('');
+  document.getElementById('units-count').textContent=list.length+' units';updateStats();
+}
+let selectedUnitId=null;
+function openUnitDetail(id){selectedUnitId=id;const u=state.units.find(x=>x.id===id);if(!u)return;document.getElementById('unit-detail-title').textContent='Unit '+u.num;document.getElementById('unit-toggle-sgt').textContent=u.sgt?'✓ SGT Ready (remove)':'Mark SGT Ready';document.getElementById('unit-detail-body').innerHTML=`<div><div class="stat-label">Status</div><div style="margin-top:5px;"><span class="badge ${u.status}">${u.status}</span></div></div><div><div class="stat-label">Type</div><div style="margin-top:5px;">${u.type||'-'}</div></div><div><div class="stat-label">Floor</div><div style="margin-top:5px;">${u.floor||'-'}</div></div><div style="grid-column:1/-1"><div class="stat-label">Notes</div><div style="margin-top:5px;font-size:13px;color:var(--text-secondary);">${u.notes||'No notes'}</div></div><div><div class="stat-label">SGT Available</div><div style="margin-top:5px;"><span class="badge ${u.sgt?'in':'occupied'}">${u.sgt?'Yes':'No'}</span></div></div><div><div class="stat-label">Added</div><div style="margin-top:5px;font-size:13px;">${fmtDate(u.addedDate)}</div></div>`;document.getElementById('unit-detail-card').style.display='';document.getElementById('unit-detail-card').scrollIntoView({behavior:'smooth',block:'nearest'});}
+function toggleUnitSGT(){const u=state.units.find(x=>x.id===selectedUnitId);if(!u)return;u.sgt=!u.sgt;save();renderUnits();openUnitDetail(selectedUnitId);showToast(u.sgt?'Marked SGT ready':'SGT removed');}
+function deleteUnit(){if(!confirm('Remove this unit?'))return;state.units=state.units.filter(u=>u.id!==selectedUnitId);selectedUnitId=null;document.getElementById('unit-detail-card').style.display='none';save();renderUnits();updateBadges();updateStats();showToast('Removed','🗑');}
+function closeUnitDetail(){document.getElementById('unit-detail-card').style.display='none';selectedUnitId=null;}
+
+// -- MAINTENANCE --
+function saveMaint(){
+  const unit=document.getElementById('mn-unit').value.trim(),issue=document.getElementById('mn-issue').value.trim();
+  if(!unit||!issue){showToast('Fill in unit and issue','⚠️');return;}
+  state.maintenance.push({id:uid(),unit,issue,desc:document.getElementById('mn-desc').value.trim(),priority:document.getElementById('mn-priority').value,status:document.getElementById('mn-status').value,reporter:document.getElementById('mn-reporter').value.trim(),date:today()});
+  save();renderMaint();updateBadges();updateStats();closeModal('modal-maint');['mn-unit','mn-issue','mn-desc','mn-reporter'].forEach(id=>document.getElementById(id).value='');showToast('Issue logged');
+}
+function filterMaint(f,el){maintFilterMode=f;document.querySelectorAll('#section-maintenance .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderMaint();}
+function renderMaint(search=''){
+  let list=[...state.maintenance];
+  if(maintFilterMode==='open')list=list.filter(m=>m.status==='open');
+  else if(maintFilterMode==='in-progress')list=list.filter(m=>m.status==='in-progress');
+  else if(maintFilterMode==='resolved')list=list.filter(m=>m.status==='resolved');
+  if(search)list=list.filter(m=>(m.unit+m.issue+m.desc).toLowerCase().includes(search.toLowerCase()));
+  const order={high:0,medium:1,low:2};list.sort((a,b)=>order[a.priority]-order[b.priority]);
+  const tbody=document.getElementById('maint-tbody');
+  if(!list.length){tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">🔧</div><p>No issues logged.</p></div></td></tr>';}
+  else tbody.innerHTML=list.map(m=>`<tr><td><strong>${m.unit}</strong></td><td><strong>${m.issue}</strong></td><td style="font-size:12px;color:var(--text-secondary);">${m.desc||'-'}</td><td><span class="badge ${m.priority}"><span class="priority-dot ${m.priority}"></span>${m.priority}</span></td><td><select class="form-select" style="font-size:11px;padding:3px 6px;" onchange="updateMaintStatus('${m.id}',this.value)"><option value="open" ${m.status==='open'?'selected':''}>Open</option><option value="in-progress" ${m.status==='in-progress'?'selected':''}>In Progress</option><option value="resolved" ${m.status==='resolved'?'selected':''}>Resolved</option></select></td><td style="font-size:12px;">${fmtDate(m.date)}</td><td><button class="action-btn del" onclick="deleteMaint('${m.id}')">✕</button></td></tr>`).join('');
+  document.getElementById('maint-count').textContent=list.length+' issue'+(list.length===1?'':'s');updateStats();
+}
+function updateMaintStatus(id,status){const m=state.maintenance.find(x=>x.id===id);if(m){m.status=status;save();updateBadges();updateStats();}showToast('Status updated');}
+function deleteMaint(id){if(!confirm('Delete?'))return;state.maintenance=state.maintenance.filter(m=>m.id!==id);save();renderMaint();updateBadges();updateStats();showToast('Deleted','🗑');}
+
+// -- PACKAGES --
+function savePkg(){
+  const unit=document.getElementById('pk-unit').value.trim(),resident=document.getElementById('pk-resident').value.trim();
+  if(!unit||!resident){showToast('Fill in unit and resident','⚠️');return;}
+  state.packages.push({id:uid(),unit,resident,carrier:document.getElementById('pk-carrier').value,size:document.getElementById('pk-size').value,location:document.getElementById('pk-location').value.trim(),notes:document.getElementById('pk-notes').value.trim(),status:'unclaimed',receivedAt:Date.now(),claimedAt:null});
+  save();renderPackages();updateBadges();updateStats();closeModal('modal-pkg');['pk-unit','pk-resident','pk-location','pk-notes'].forEach(id=>document.getElementById(id).value='');showToast('Package logged');
+}
+function filterPkg(f,el){pkgFilter=f;document.querySelectorAll('#section-packages .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderPackages();}
+function renderPackages(search=''){
+  let list=[...state.packages];
+  if(pkgFilter==='unclaimed')list=list.filter(p=>p.status==='unclaimed');
+  else if(pkgFilter==='claimed')list=list.filter(p=>p.status==='claimed');
+  else if(pkgFilter==='today')list=list.filter(p=>new Date(p.receivedAt).toISOString().split('T')[0]===today());
+  if(search)list=list.filter(p=>(p.unit+p.resident+p.carrier).toLowerCase().includes(search.toLowerCase()));
+  list.sort((a,b)=>b.receivedAt-a.receivedAt);
+  const tbody=document.getElementById('pkg-tbody');
+  if(!list.length){tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📦</div><p>No packages logged.</p></div></td></tr>';}
+  else tbody.innerHTML=list.map(p=>`<tr><td><strong>${p.unit}</strong></td><td>${p.resident}</td><td>${p.carrier}</td><td style="font-size:12px;">${fmtDateTime(p.receivedAt)}</td><td style="font-size:12px;">${p.location||'-'}</td><td><span class="badge ${p.status}">${p.status}</span></td><td style="font-size:12px;">${p.claimedAt?fmtDateTime(p.claimedAt):'-'}</td><td style="white-space:nowrap;">${p.status==='unclaimed'?`<button class="btn sm" style="font-size:10px;padding:3px 8px;" onclick="claimPkg('${p.id}')">Claimed</button>`:''}<button class="action-btn del" onclick="deletePkg('${p.id}')">✕</button></td></tr>`).join('');
+  document.getElementById('pkg-count').textContent=list.length+' package'+(list.length===1?'':'s');updateStats();
+}
+function claimPkg(id){const p=state.packages.find(x=>x.id===id);if(!p)return;p.status='claimed';p.claimedAt=Date.now();save();renderPackages();updateBadges();updateStats();showToast('Package marked as claimed ✓');}
+function deletePkg(id){if(!confirm('Remove package?'))return;state.packages=state.packages.filter(p=>p.id!==id);save();renderPackages();updateBadges();updateStats();showToast('Removed','🗑');}
+
+// -- GUESTS --
+function saveGuest(){
+  const name=document.getElementById('g-name').value.trim(),unit=document.getElementById('g-unit').value.trim();
+  if(!name||!unit){showToast('Fill in guest name and unit','⚠️');return;}
+  state.guests.push({id:uid(),name,unit,host:document.getElementById('g-host').value.trim(),type:document.getElementById('g-type').value,status:document.getElementById('g-status').value,notes:document.getElementById('g-notes').value.trim(),checkinAt:document.getElementById('g-status').value==='checked-in'?Date.now():null,checkoutAt:null,date:today()});
+  save();renderGuests();updateBadges();updateStats();closeModal('modal-guest');['g-name','g-unit','g-host','g-notes'].forEach(id=>document.getElementById(id).value='');showToast('Guest logged');
+}
+function filterGuests(f,el){guestFilter=f;document.querySelectorAll('#section-guests .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderGuests();}
+function renderGuests(search=''){
+  let list=[...state.guests];
+  if(guestFilter==='checked-in')list=list.filter(g=>g.status==='checked-in');
+  else if(guestFilter==='pending')list=list.filter(g=>g.status==='pending');
+  else if(guestFilter==='checked-out')list=list.filter(g=>g.status==='checked-out');
+  if(search)list=list.filter(g=>(g.name+g.unit+g.host).toLowerCase().includes(search.toLowerCase()));
+  list.sort((a,b)=>(b.checkinAt||0)-(a.checkinAt||0));
+  const tbody=document.getElementById('guests-tbody');
+  if(!list.length){tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">👥</div><p>No guests logged.</p></div></td></tr>';}
+  else tbody.innerHTML=list.map(g=>`<tr><td><strong>${g.name}</strong>${g.notes?`<br><span style="font-size:11px;color:var(--text-muted)">${g.notes}</span>`:''}</td><td>${g.unit}</td><td>${g.host||'-'}</td><td style="font-size:12px;">${g.checkinAt?fmtDateTime(g.checkinAt):'-'}</td><td style="font-size:12px;">${g.checkoutAt?fmtDateTime(g.checkoutAt):'-'}</td><td><span class="badge ${g.type==='vendor'?'medium':g.type==='joiner'?'joiner':'resident'}" style="font-size:10px;">${g.type}</span></td><td><span class="badge ${g.status}">${g.status.replace('-',' ')}</span></td><td style="white-space:nowrap;">${g.status==='pending'?`<button class="btn sm" style="font-size:10px;padding:3px 8px;" onclick="checkInGuest('${g.id}')">Check In</button>`:''}${g.status==='checked-in'?`<button class="btn sm" style="font-size:10px;padding:3px 8px;" onclick="checkOutGuest('${g.id}')">Check Out</button>`:''}<button class="action-btn del" onclick="deleteGuest('${g.id}')">✕</button></td></tr>`).join('');
+  document.getElementById('guests-count').textContent=list.length+' entr'+(list.length===1?'y':'ies');updateStats();
+}
+function checkInGuest(id){const g=state.guests.find(x=>x.id===id);if(!g)return;g.status='checked-in';g.checkinAt=Date.now();save();renderGuests();updateBadges();updateStats();showToast('Guest checked in ✓');}
+function checkOutGuest(id){const g=state.guests.find(x=>x.id===id);if(!g)return;g.status='checked-out';g.checkoutAt=Date.now();save();renderGuests();updateBadges();updateStats();showToast('Guest checked out ✓');}
+function deleteGuest(id){if(!confirm('Remove?'))return;state.guests=state.guests.filter(g=>g.id!==id);save();renderGuests();updateBadges();updateStats();showToast('Removed','🗑');}
+
+// -- KEYS --
+function saveKey(){
+  const unit=document.getElementById('k-unit').value.trim(),name=document.getElementById('k-name').value.trim();
+  if(!unit||!name){showToast('Fill in unit and name','⚠️');return;}
+  state.keys.push({id:uid(),unit,name,type:document.getElementById('k-type').value,fob:document.getElementById('k-fob').value.trim(),status:document.getElementById('k-status').value,expiry:document.getElementById('k-expiry').value,notes:document.getElementById('k-notes').value.trim(),issuedAt:Date.now(),returnedAt:null});
+  save();renderKeys();updateBadges();updateStats();closeModal('modal-key');['k-unit','k-name','k-fob','k-expiry','k-notes'].forEach(id=>document.getElementById(id).value='');showToast('Key logged');
+}
+function filterKeys(f,el){keyFilter=f;document.querySelectorAll('#section-keys .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderKeys();}
+function renderKeys(search=''){
+  let list=[...state.keys];
+  if(keyFilter==='issued')list=list.filter(k=>k.status==='issued');
+  else if(keyFilter==='returned')list=list.filter(k=>k.status==='returned');
+  else if(['resident','joiner','one-time','mobile'].includes(keyFilter))list=list.filter(k=>k.type===keyFilter);
+  if(search)list=list.filter(k=>(k.unit+k.name+k.fob).toLowerCase().includes(search.toLowerCase()));
+  list.sort((a,b)=>b.issuedAt-a.issuedAt);
+  const tbody=document.getElementById('keys-tbody');
+  if(!list.length){tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">🗝️</div><p>No keys logged.</p></div></td></tr>';}
+  else tbody.innerHTML=list.map(k=>`<tr><td><strong>${k.unit}</strong></td><td>${k.name}</td><td><span class="badge ${k.type}">${k.type}</span></td><td style="font-size:12px;">${k.fob||'-'}</td><td style="font-size:12px;">${fmtDateTime(k.issuedAt)}</td><td style="font-size:12px;">${k.returnedAt?fmtDateTime(k.returnedAt):'-'}</td><td>${k.status==='issued'?`<button class="btn sm" style="font-size:10px;padding:3px 8px;" onclick="returnKey('${k.id}')">Mark Returned</button>`:`<span class="badge returned">returned</span>`}</td><td><button class="action-btn del" onclick="deleteKey('${k.id}')">✕</button></td></tr>`).join('');
+  document.getElementById('keys-count').textContent=list.length+' entr'+(list.length===1?'y':'ies');updateStats();
+}
+function returnKey(id){const k=state.keys.find(x=>x.id===id);if(!k)return;k.status='returned';k.returnedAt=Date.now();save();renderKeys();updateBadges();updateStats();showToast('Key marked as returned ✓');}
+function deleteKey(id){if(!confirm('Remove?'))return;state.keys=state.keys.filter(k=>k.id!==id);save();renderKeys();updateBadges();updateStats();showToast('Removed','🗑');}
+
+// -- TOURS --
+function saveTour(){
+  const name=document.getElementById('tr-name').value.trim(),unit=document.getElementById('tr-unit').value.trim();
+  if(!name){showToast('Enter prospect name','⚠️');return;}
+  state.tours.push({id:uid(),name,unit,type:document.getElementById('tr-type').value,date:document.getElementById('tr-date').value||today(),time:document.getElementById('tr-time').value.trim(),contact:document.getElementById('tr-contact').value.trim(),notes:document.getElementById('tr-notes').value.trim()});
+  save();renderTours();updateBadges();updateStats();closeModal('modal-tour');['tr-name','tr-unit','tr-date','tr-time','tr-contact','tr-notes'].forEach(id=>document.getElementById(id).value='');showToast('Tour logged');
+}
+function filterTours(f,el){tourFilter=f;document.querySelectorAll('#section-tours .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderTours();}
+function renderTours(search=''){
+  let list=[...state.tours];
+  if(tourFilter==='sgt')list=list.filter(t=>t.type==='sgt');
+  else if(tourFilter==='guided')list=list.filter(t=>t.type==='guided');
+  else if(tourFilter==='today')list=list.filter(t=>isToday(t.date));
+  if(search)list=list.filter(t=>(t.name+t.unit+t.notes).toLowerCase().includes(search.toLowerCase()));
+  list.sort((a,b)=>b.date.localeCompare(a.date));
+  const tbody=document.getElementById('tours-tbody');
+  if(!list.length){tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">🏡</div><p>No tours logged.</p></div></td></tr>';}
+  else tbody.innerHTML=list.map(t=>`<tr><td><strong>${t.name}</strong>${t.contact?`<br><span style="font-size:11px;color:var(--text-muted)">${t.contact}</span>`:''}</td><td>${t.unit||'-'}</td><td>${fmtDate(t.date)}</td><td style="font-size:12px;">${t.time||'-'}</td><td><span class="badge ${t.type}">${t.type==='sgt'?'SGT':'Guided'}</span></td><td style="font-size:12px;color:var(--text-secondary);">${t.notes||'-'}</td><td><button class="action-btn del" onclick="deleteTour('${t.id}')">✕</button></td></tr>`).join('');
+  document.getElementById('tours-count').textContent=list.length+' tour'+(list.length===1?'':'s');updateStats();
+}
+function deleteTour(id){if(!confirm('Remove?'))return;state.tours=state.tours.filter(t=>t.id!==id);save();renderTours();updateBadges();updateStats();showToast('Removed','🗑');}
+
+// -- WALKTHROUGH --
+const WALKTHROUGH_ITEMS=[
+  {id:'w1',zone:'Lobby & Entry',text:'Front door & vestibule clean and clear',cat:'lobby'},
+  {id:'w2',zone:'Lobby & Entry',text:'Front desk area organized and stocked',cat:'lobby'},
+  {id:'w3',zone:'Lobby & Entry',text:'Lobby furniture reset and clean',cat:'lobby'},
+  {id:'w4',zone:'Lobby & Entry',text:'Lighting levels correct',cat:'lobby'},
+  {id:'w5',zone:'Lobby & Entry',text:'Music at appropriate volume',cat:'lobby'},
+  {id:'w6',zone:'Lobby & Entry',text:'Plants looking healthy, watered',cat:'lobby'},
+  {id:'w7',zone:'Lobby & Entry',text:'Mail area tidy, no overflow',cat:'lobby'},
+  {id:'w8',zone:'Elevators & Hallways',text:'All elevators operational',cat:'lobby'},
+  {id:'w9',zone:'Elevators & Hallways',text:'Elevator interiors clean',cat:'lobby'},
+  {id:'w10',zone:'Elevators & Hallways',text:'Hallways on all floors clear',cat:'lobby'},
+  {id:'w11',zone:'Elevators & Hallways',text:'No trash or items left in corridors',cat:'lobby'},
+  {id:'w12',zone:'Amenity Areas',text:'Gym equipment operational and clean',cat:'amenity'},
+  {id:'w13',zone:'Amenity Areas',text:'Gym towels/supplies stocked',cat:'amenity'},
+  {id:'w14',zone:'Amenity Areas',text:'Rooftop / common area clean and set',cat:'amenity'},
+  {id:'w15',zone:'Amenity Areas',text:'Lounge furniture reset',cat:'amenity'},
+  {id:'w16',zone:'Amenity Areas',text:'Package room organized',cat:'amenity'},
+  {id:'w17',zone:'Exterior & Access',text:'Building exterior clear of debris',cat:'exterior'},
+  {id:'w18',zone:'Exterior & Access',text:'Bike storage area organized',cat:'exterior'},
+  {id:'w19',zone:'Exterior & Access',text:'Garage access functioning',cat:'exterior'},
+  {id:'w20',zone:'Exterior & Access',text:'All access points secure',cat:'exterior'},
+];
+
+function renderWalkthrough(){
+  const zones=[...new Set(WALKTHROUGH_ITEMS.map(i=>i.zone))];
+  const el=document.getElementById('walkthrough-list');
+  el.innerHTML=zones.map(zone=>{
+    const items=WALKTHROUGH_ITEMS.filter(i=>i.zone===zone);
+    return `<div class="zone-header">${zone}</div>`+items.map(item=>{
+      const done=!!state.walkthroughState[item.id];
+      return `<div class="check-item"><input type="checkbox" ${done?'checked':''} onchange="toggleWalk('${item.id}',this.checked)"><div class="check-label ${done?'done':''}" onclick="toggleWalkClick('${item.id}')" style="cursor:pointer;">${item.text}</div><span class="check-tag ${item.cat}">${item.cat}</span></div>`;
+    }).join('');
+  }).join('');
+  const total=WALKTHROUGH_ITEMS.length,done=Object.values(state.walkthroughState).filter(Boolean).length;
+  document.getElementById('walk-count').textContent=`${done} / ${total}`;
+  document.getElementById('stat-walk-done').textContent=done;
+  document.getElementById('stat-walk-left').textContent=total-done;
+  document.getElementById('stat-walk-issues').textContent=(state.walkthroughIssues||[]).length;
+  document.getElementById('stat-walk-reset').textContent=state.walkthroughReset?new Date(state.walkthroughReset).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}):'Not yet';
+  renderWalkIssues();
+}
+function toggleWalk(id,done){state.walkthroughState[id]=done;save();renderWalkthrough();}
+function toggleWalkClick(id){state.walkthroughState[id]=!state.walkthroughState[id];save();renderWalkthrough();}
+function resetWalkthrough(){if(!confirm('Reset the walkthrough checklist? This clears all checks.'))return;state.walkthroughState={};state.walkthroughReset=Date.now();save();renderWalkthrough();showToast('Walkthrough reset ✓');}
+function openFlagIssue(){openModal('modal-flag');}
+function saveFlaggedIssue(){
+  const loc=document.getElementById('fl-location').value.trim(),desc=document.getElementById('fl-desc').value.trim();
+  if(!loc||!desc){showToast('Fill in location and description','⚠️');return;}
+  if(!state.walkthroughIssues)state.walkthroughIssues=[];
+  state.walkthroughIssues.push({id:uid(),location:loc,desc,priority:document.getElementById('fl-priority').value,time:Date.now()});
+  save();renderWalkthrough();closeModal('modal-flag');['fl-location','fl-desc'].forEach(id=>document.getElementById(id).value='');showToast('Issue flagged ⚑');
+}
+function renderWalkIssues(){
+  const issues=state.walkthroughIssues||[];
+  const el=document.getElementById('walk-issues-list');
+  document.getElementById('walk-issues-count').textContent=issues.length+' flagged';
+  if(!issues.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">✅</div><p>No issues flagged.</p></div>';return;}
+  el.innerHTML=issues.map(i=>`<div style="display:flex;align-items:flex-start;gap:12px;padding:11px 18px;border-bottom:1px solid var(--border);"><div style="flex:1;"><div style="font-weight:500;font-size:13px;">${i.location}</div><div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${i.desc}</div><div style="font-size:11px;color:var(--text-muted);margin-top:3px;">${fmtDateTime(i.time)}</div></div><span class="badge ${i.priority}">${i.priority}</span><button class="action-btn del" onclick="deleteWalkIssue('${i.id}')">✕</button></div>`).join('');
+}
+function deleteWalkIssue(id){state.walkthroughIssues=(state.walkthroughIssues||[]).filter(i=>i.id!==id);save();renderWalkthrough();showToast('Removed','🗑');}
+
+// -- PASSDOWN --
+function savePassdown(){
+  const notes=document.getElementById('pd-notes').value.trim();if(!notes){showToast('Write some notes first','⚠️');return;}
+  state.passdowns.unshift({id:uid(),date:document.getElementById('pd-date').value||today(),shift:document.getElementById('pd-shift').value,notes,savedAt:new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})});
+  if(state.passdowns.length>30)state.passdowns=state.passdowns.slice(0,30);
+  save();renderPassdowns();document.getElementById('pd-notes').value='';showToast('Passdown saved');
+}
+function renderPassdowns(){
+  const el=document.getElementById('passdown-list');
+  if(!state.passdowns.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><p>No passdowns saved yet.</p></div>';return;}
+  el.innerHTML=state.passdowns.map(p=>`<div class="passdown-entry"><div class="passdown-meta"><span class="passdown-shift-badge">${p.shift}</span><span>${fmtDate(p.date)}</span><span>Saved ${p.savedAt}</span><button class="action-btn del" onclick="deletePassdown('${p.id}')" style="margin-left:auto;">✕</button></div><div class="passdown-text">${escHtml(p.notes)}</div></div>`).join('');
+}
+function deletePassdown(id){state.passdowns=state.passdowns.filter(p=>p.id!==id);save();renderPassdowns();}
+function generatePassdown(){
+  const tm=state.moves.filter(m=>isToday(m.date));
+  const oi=state.maintenance.filter(m=>m.status!=='resolved');
+  const vu=state.units.filter(u=>u.status==='vacant');
+  const sg=state.units.filter(u=>u.sgt&&u.status==='vacant');
+  const up=state.packages.filter(p=>p.status==='unclaimed');
+  const gi=state.guests.filter(g=>g.status==='checked-in');
+  const tt=state.tours.filter(t=>isToday(t.date));
+  const wi=state.walkthroughIssues||[];
+  let text=`SHIFT PASSDOWN - ${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}\n\n`;
+  if(tm.length){text+=`MOVES TODAY (${tm.length}):\n`;tm.forEach(m=>{const d=m.tasks.filter(t=>t.done).length;text+=`• Unit ${m.unit} - ${m.resident} [${m.type==='in'?'MOVE IN':'MOVE OUT'}]${m.time?' at '+m.time:''} - Tasks: ${d}/${m.tasks.length} complete\n`;});text+='\n';}
+  else text+='MOVES TODAY: None\n\n';
+  if(up.length){text+=`PACKAGES UNCLAIMED (${up.length}):\n`;up.forEach(p=>text+=`• Unit ${p.unit} - ${p.resident}: ${p.carrier} pkg @ ${p.location||'storage'}\n`);text+='\n';}
+  if(gi.length){text+=`GUESTS IN BUILDING (${gi.length}):\n`;gi.forEach(g=>text+=`• ${g.name} visiting Unit ${g.unit} (${g.host||'host unknown'})\n`);text+='\n';}
+  if(tt.length){text+=`TOURS TODAY (${tt.length}):\n`;tt.forEach(t=>text+=`• ${t.name} - Unit ${t.unit||'TBD'} [${t.type.toUpperCase()}]${t.time?' at '+t.time:''}\n`);text+='\n';}
+  if(oi.length){text+=`MAINTENANCE (${oi.length} active):\n`;oi.forEach(m=>text+=`• [${m.priority.toUpperCase()}] Unit ${m.unit}: ${m.issue}${m.desc?' - '+m.desc:''} [${m.status}]\n`);text+='\n';}
+  if(wi.length){text+=`WALKTHROUGH FLAGS (${wi.length}):\n`;wi.forEach(i=>text+=`• [${i.priority.toUpperCase()}] ${i.location}: ${i.desc}\n`);text+='\n';}
+  if(vu.length){text+=`VACANT UNITS (${vu.length}): ${vu.map(u=>'Unit '+u.num).join(', ')}\n`;if(sg.length)text+=`SGT Ready: ${sg.map(u=>'Unit '+u.num).join(', ')}\n`;text+='\n';}
+  text+='NOTES FOR NEXT SHIFT:\n• ';
+  document.getElementById('pd-notes').value=text;showToast('Draft generated ✨');
+}
+function exportPassdown(){
+  if(!state.passdowns.length){showToast('No passdowns to export','⚠️');return;}
+  const p=state.passdowns[0];
+  const blob=new Blob([`CHORUS - DAILY PASSDOWN\n${p.shift} - ${fmtDate(p.date)}\n\n${p.notes}`],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`chorus_passdown_${p.date}.txt`;a.click();showToast('Exported ✓');
+}
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+
+// -- STATS --
+function updateStats(){
+  const t=today();
+  document.getElementById('stat-ins-today').textContent=state.moves.filter(m=>m.type==='in'&&m.date===t).length;
+  document.getElementById('stat-outs-today').textContent=state.moves.filter(m=>m.type==='out'&&m.date===t).length;
+  document.getElementById('stat-ins-week').textContent=state.moves.filter(m=>m.type==='in'&&isThisWeek(m.date)).length;
+  document.getElementById('stat-outs-week').textContent=state.moves.filter(m=>m.type==='out'&&isThisWeek(m.date)).length;
+  const allT=state.moves.flatMap(m=>m.tasks);
+  document.getElementById('stat-tasks-pending').textContent=allT.filter(t=>!t.done).length;
+  document.getElementById('stat-tasks-done').textContent=allT.filter(t=>t.done).length;
+  const vac=state.units.filter(u=>u.status==='vacant').length,tot=state.units.length;
+  document.getElementById('stat-vacant').textContent=vac;
+  document.getElementById('stat-sgt').textContent=state.units.filter(u=>u.sgt&&u.status==='vacant').length;
+  document.getElementById('stat-total-units').textContent=tot;
+  document.getElementById('stat-occupancy').textContent=tot?Math.round(((tot-vac)/tot)*100)+'%':'-';
+  document.getElementById('stat-open').textContent=state.maintenance.filter(m=>m.status==='open').length;
+  document.getElementById('stat-inprog').textContent=state.maintenance.filter(m=>m.status==='in-progress').length;
+  document.getElementById('stat-resolved').textContent=state.maintenance.filter(m=>m.status==='resolved').length;
+  document.getElementById('stat-highpri').textContent=state.maintenance.filter(m=>m.priority==='high'&&m.status!=='resolved').length;
+  const pkgs=state.packages||[];
+  document.getElementById('stat-pkg-unclaimed').textContent=pkgs.filter(p=>p.status==='unclaimed').length;
+  document.getElementById('stat-pkg-claimed-today').textContent=pkgs.filter(p=>p.status==='claimed'&&p.claimedAt&&new Date(p.claimedAt).toISOString().split('T')[0]===t).length;
+  document.getElementById('stat-pkg-today').textContent=pkgs.filter(p=>new Date(p.receivedAt).toISOString().split('T')[0]===t).length;
+  document.getElementById('stat-pkg-total').textContent=pkgs.length;
+  const gs=state.guests||[];
+  document.getElementById('stat-guests-in').textContent=gs.filter(g=>g.status==='checked-in').length;
+  document.getElementById('stat-guests-today').textContent=gs.filter(g=>g.date===t).length;
+  document.getElementById('stat-guests-pending').textContent=gs.filter(g=>g.status==='pending').length;
+  document.getElementById('stat-guests-total').textContent=gs.length;
+  const ks=state.keys||[];
+  document.getElementById('stat-keys-resident').textContent=ks.filter(k=>k.type==='resident'&&k.status==='issued').length;
+  document.getElementById('stat-keys-joiner').textContent=ks.filter(k=>k.type==='joiner'&&k.status==='issued').length;
+  document.getElementById('stat-keys-onetime').textContent=ks.filter(k=>k.type==='one-time'&&k.status==='issued').length;
+  document.getElementById('stat-keys-mobile').textContent=ks.filter(k=>k.type==='mobile'&&k.status==='issued').length;
+  const ts=state.tours||[];
+  document.getElementById('stat-tours-today').textContent=ts.filter(tr=>tr.date===t).length;
+  document.getElementById('stat-tours-sgt').textContent=ts.filter(tr=>tr.type==='sgt').length;
+  document.getElementById('stat-tours-guided').textContent=ts.filter(tr=>tr.type==='guided').length;
+  document.getElementById('stat-tours-week').textContent=ts.filter(tr=>isThisWeek(tr.date)).length;
+}
+function updateBadges(){
+  document.getElementById('badge-moves').textContent=state.moves.filter(m=>isThisWeek(m.date)).length;
+  document.getElementById('badge-vacants').textContent=(state.units||[]).filter(u=>u.status==='vacant').length;
+  document.getElementById('badge-maint').textContent=(state.maintenance||[]).filter(m=>m.status!=='resolved').length;
+  document.getElementById('badge-packages').textContent=(state.packages||[]).filter(p=>p.status==='unclaimed').length;
+  document.getElementById('badge-guests').textContent=(state.guests||[]).filter(g=>g.status==='checked-in').length;
+  document.getElementById('badge-keys').textContent=(state.keys||[]).filter(k=>k.status==='issued').length;
+  document.getElementById('badge-tours').textContent=(state.tours||[]).filter(t=>isToday(t.date)).length;
+}
+
+
+// -- PRELOADED MOVES FROM MASTER LIST (March 2026) --
+const PRELOADED_MOVES = [{"id": "48acd5e7b6f7b", "unit": "825", "resident": "Tianqi Wang", "date": "2026-03-22", "type": "in", "time": "", "elevator": "needed", "notes": "", "moveInTotal": "", "welcomeSent": false, "tasks": []}, {"id": "4c343d2af4600", "unit": "444", "resident": "Stephen Pontikes", "date": "2026-03-24", "type": "in", "time": "", "elevator": "needed", "notes": "1x1", "moveInTotal": "4,666.16", "welcomeSent": true, "tasks": []}, {"id": "af6893f0d3266", "unit": "1205", "resident": "Siddharth Singh", "date": "2026-03-27", "type": "in", "time": "", "elevator": "needed", "notes": "0x1", "moveInTotal": "3,831.10", "welcomeSent": true, "tasks": []}, {"id": "c69966bb9c79d", "unit": "1803", "resident": "Ankita Gupta", "date": "2026-03-27", "type": "in", "time": "", "elevator": "needed", "notes": "2x2", "moveInTotal": "7,345.16", "welcomeSent": true, "tasks": []}, {"id": "e90d965bba070", "unit": "1205", "resident": "Anthony Lewis", "date": "2026-04-01", "type": "in", "time": "", "elevator": "needed", "notes": "0x1", "moveInTotal": "3,655.75", "welcomeSent": true, "tasks": []}, {"id": "11f1331c7a035", "unit": "708", "resident": "Ronny Chacin", "date": "2026-03-30", "type": "in", "time": "", "elevator": "needed", "notes": "1+Den", "moveInTotal": "", "welcomeSent": true, "tasks": []}, {"id": "70b2cd51004a8", "unit": "1202", "resident": "Su Aung", "date": "2026-04-03", "type": "in", "time": "", "elevator": "needed", "notes": "2x2", "moveInTotal": "5,576.67", "welcomeSent": true, "tasks": []}, {"id": "08571ac2edf4e", "unit": "720", "resident": "Dylan Cordeiro", "date": "2026-04-05", "type": "in", "time": "", "elevator": "needed", "notes": "2x2", "moveInTotal": "", "welcomeSent": true, "tasks": []}, {"id": "9af5faa0c9351", "unit": "701", "resident": "Aidan Tai", "date": "2026-04-05", "type": "in", "time": "", "elevator": "needed", "notes": "1x1", "moveInTotal": "", "welcomeSent": true, "tasks": []}, {"id": "5e31a4fe7aa5b", "unit": "412", "resident": "Annabella Stoll-Dansereau", "date": "2026-04-06", "type": "in", "time": "", "elevator": "needed", "notes": "0x1", "moveInTotal": "3,154.50", "welcomeSent": true, "tasks": []}, {"id": "b8d0f05e41872", "unit": "1504", "resident": "Brian Huang", "date": "2026-04-07", "type": "in", "time": "", "elevator": "needed", "notes": "1x1", "moveInTotal": "", "welcomeSent": false, "tasks": []}, {"id": "64d0e7637c03d", "unit": "237", "resident": "Kailey Minks", "date": "2026-04-07", "type": "in", "time": "", "elevator": "needed", "notes": "2x2", "moveInTotal": "", "welcomeSent": false, "tasks": []}, {"id": "796c89861551b", "unit": "240", "resident": "Yuhao He", "date": "2026-04-13", "type": "in", "time": "", "elevator": "needed", "notes": "1+Den", "moveInTotal": "", "welcomeSent": false, "tasks": []}, {"id": "b581074146ee5", "unit": "344", "resident": "Jerome Fulton Jr", "date": "2026-04-13", "type": "in", "time": "", "elevator": "needed", "notes": "1x1", "moveInTotal": "", "welcomeSent": false, "tasks": []}, {"id": "16fa2565749d2", "unit": "645", "resident": "Kamran Shayan", "date": "2026-04-20", "type": "in", "time": "", "elevator": "needed", "notes": "2x2", "moveInTotal": "7,363.60", "welcomeSent": true, "tasks": []}, {"id": "2970c50b4bc8e", "unit": "808", "resident": "Valentin Garkov", "date": "2026-04-22", "type": "in", "time": "", "elevator": "needed", "notes": "1+Den", "moveInTotal": "5,931.90", "welcomeSent": true, "tasks": []}, {"id": "63cced1f03d72", "unit": "1801", "resident": "Tianle Li", "date": "2026-04-22", "type": "in", "time": "", "elevator": "needed", "notes": "1x1", "moveInTotal": "", "welcomeSent": false, "tasks": []}, {"id": "3811d5d786cec", "unit": "631", "resident": "Joshua Choi", "date": "2026-06-13", "type": "in", "time": "", "elevator": "needed", "notes": "0x1", "moveInTotal": "", "welcomeSent": true, "tasks": []}];
+
+function init(){
+  document.getElementById('sidebar-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  document.getElementById('loading-status').textContent='Loading...';
+  const data=cloudLoad();
+  if(data){
+    state={moves:[],units:[],maintenance:[],packages:[],guests:[],keys:[],tours:[],walkthroughState:{},walkthroughIssues:[],walkthroughReset:null,passdowns:[],selectedMoveId:null,...data};
+    // Merge any preloaded moves not yet in cloud
+    const existingIds=new Set(state.moves.map(m=>m.id));
+    const toAdd=PRELOADED_MOVES.filter(m=>!existingIds.has(m.id)).map(m=>{
+      if(!m.tasks||m.tasks.length===0){
+        const tasks=(m.type==='in'?DEFAULT_IN:DEFAULT_OUT).map(t=>({id:uid(),text:t.text,cat:t.cat,done:false}));
+        if(m.welcomeSent){const wt=tasks.find(t=>t.text.includes('welcome email'));if(wt)wt.done=true;}
+        return {...m,tasks};
+      }
+      return m;
+    });
+    if(toAdd.length>0){state.moves=[...state.moves,...toAdd];}
+    let patched=false;
+    const preloadedById=Object.fromEntries(PRELOADED_MOVES.map(m=>[m.id,m]));
+    state.moves.forEach(m=>{const pre=preloadedById[m.id];if(pre&&pre.moveInTotal&&!m.moveInTotal){m.moveInTotal=pre.moveInTotal;patched=true;}});
+    const WELCOME_SENT=new Set(['stephen pontikes','siddharth singh','ankita gupta','anthony lewis','ronny chacin','su aung','dylan cordeiro','aidan tai','annabella stoll-dansereau','kamran shayan','valentin garkov','joshua choi']);
+    const WTASK='[PRE] Send welcome email & text via EliseAI';
+    state.moves.forEach(m=>{if(WELCOME_SENT.has(m.resident.toLowerCase().trim())){m.tasks.forEach(t=>{if(t.text===WTASK&&!t.done){t.done=true;patched=true;}});}});
+    if(toAdd.length>0||patched){cloudSave(state);}
+  } else {
+    state={moves:PRELOADED_MOVES,units:[],maintenance:[],packages:[],guests:[],keys:[],tours:[],walkthroughState:{},walkthroughIssues:[],walkthroughReset:null,passdowns:[],selectedMoveId:null};
+  }
+  document.getElementById('loading-status').textContent='Ready!';
+  setTimeout(()=>{document.getElementById('loading-screen').classList.add('hide');setTimeout(()=>{const ls=document.getElementById('loading-screen');if(ls)ls.remove();},400);},500);
+  setSyncState('synced');
+  document.getElementById('export-btn').style.display='none';
+  document.getElementById('reset-walk-btn').style.display='none';
+  renderMoves();renderUnits();renderMaint();renderPackages();renderGuests();renderKeys();renderTours();renderPassdowns();
+  updateStats();updateBadges();
+  document.getElementById('pd-date').value=today();
+  document.getElementById('tr-date').value=today();
+
+}
+init();
+</script>
+<!-- MODAL: Import Master List -->
+<div class="modal-bg" id="modal-import">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-head">
+      <span class="modal-title">Import Master List</span>
+      <button class="modal-close" onclick="closeModal('modal-import')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6;">Upload your <strong>2025 - Chorus - Master List.xlsx</strong> file. Only <strong>new</strong> residents will be added - anyone already in your dashboard stays exactly as-is, with all tasks and progress untouched.</p>
+      <div id="import-drop-zone" style="border:2px dashed var(--border-strong);border-radius:var(--radius);padding:32px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--surface);" onclick="document.getElementById('import-file-input').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)';this.style.background='var(--gold-light)'" ondragleave="this.style.borderColor='var(--border-strong)';this.style.background='var(--surface)'" ondrop="handleImportDrop(event)">
+        <div style="font-size:28px;margin-bottom:8px;">📂</div>
+        <div style="font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:4px;">Click to choose file or drag & drop</div>
+        <div style="font-size:11px;color:var(--text-muted);">Accepts .xlsx files only</div>
+        <input type="file" id="import-file-input" accept=".xlsx" style="display:none" onchange="handleImportFile(this.files[0])">
+      </div>
+      <div id="import-status" style="display:none;margin-top:14px;padding:12px 14px;border-radius:var(--radius);font-size:13px;"></div>
+      <div id="import-preview" style="display:none;margin-top:12px;"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('modal-import');resetImportUI()">Close</button>
+      <button class="btn primary" id="import-confirm-btn" style="display:none;" onclick="confirmImport()">Add New Residents</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// -- IMPORT LOGIC --
+let pendingImportMoves = [];
+
+function handleImportDrop(e) {
+  e.preventDefault();
+  document.getElementById('import-drop-zone').style.borderColor = 'var(--border-strong)';
+  document.getElementById('import-drop-zone').style.background = 'var(--surface)';
+  const file = e.dataTransfer.files[0];
+  if (file) handleImportFile(file);
+}
+
+function handleImportFile(file) {
+  if (!file || !file.name.endsWith('.xlsx')) {
+    showImportStatus('Please upload a .xlsx file.', 'error'); return;
+  }
+  showImportStatus('Reading file...', 'loading');
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+      const ws = wb.Sheets['Move-In Checklist'];
+      if (!ws) { showImportStatus('Could not find "Move-In Checklist" sheet in this file.', 'error'); return; }
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
+      parseImportRows(rows);
+    } catch(err) {
+      showImportStatus('Error reading file: ' + err.message, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseImportRows(rows) {
+  if (!rows.length) { showImportStatus('File appears empty.', 'error'); return; }
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const newMoves = [];
+  const existingKeys = new Set(state.moves.map(m => m.unit + '|' + m.resident.toLowerCase().trim()));
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    const unit = String(row[1] || '').trim();
+    const name = String(row[3] || '').trim();
+    const leaseDateRaw = String(row[10] || '').trim();
+    const welcomeLetter = String(row[9] || '').trim().toLowerCase();
+
+    if (!unit || !name || unit === 'undefined' || name === 'undefined') continue;
+
+    // Parse date
+    let moveDate = null;
+    if (leaseDateRaw) {
+      const d = new Date(leaseDateRaw);
+      if (!isNaN(d.getTime())) {
+        d.setHours(0,0,0,0);
+        if (d >= today) moveDate = d.toISOString().split('T')[0];
+      }
+    }
+    if (!moveDate) continue; // skip past or undated
+
+    const key = unit + '|' + name.toLowerCase().trim();
+    if (existingKeys.has(key)) continue; // already in dashboard
+
+    // Build tasks with welcome email pre-checked if already sent
+    const welcomeSent = welcomeLetter === 'sent' || welcomeLetter === 'yes' || welcomeLetter === 'sent ';
+    const tasks = buildDefaultInTasks(welcomeSent);
+
+    newMoves.push({ id: makeImportId(unit, name), unit, resident: name, date: moveDate, type: 'in', time: '', elevator: 'needed', moveInTotal: '', notes: '', tasks });
+  }
+
+  pendingImportMoves = newMoves;
+
+  if (!newMoves.length) {
+    showImportStatus('✓ No new residents found - everyone is already in your dashboard!', 'success');
+    document.getElementById('import-confirm-btn').style.display = 'none';
+    return;
+  }
+
+  showImportStatus(`Found <strong>${newMoves.length} new resident${newMoves.length > 1 ? 's' : ''}</strong> to add:`, 'success');
+
+  const preview = document.getElementById('import-preview');
+  preview.style.display = '';
+  preview.innerHTML = '<div style="max-height:200px;overflow-y:auto;border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;">' +
+    newMoves.map(m => `<div style="display:flex;gap:12px;padding:8px 12px;border-bottom:0.5px solid var(--border);align-items:center;"><span style="font-weight:600;min-width:50px;">Unit ${m.unit}</span><span style="flex:1;color:var(--text-secondary);">${m.resident}</span><span style="color:var(--text-muted);">${fmtDate(m.date)}</span></div>`).join('') +
+    '</div>';
+
+  document.getElementById('import-confirm-btn').style.display = '';
+}
+
+function buildDefaultInTasks(welcomeSent) {
+  const DEFAULT_TASKS = [
+    {text:'[PRE] Complete welcome call (mandatory) - confirm email sent, communication channels explained, response times reviewed, next callback scheduled, resident questions answered',cat:'move-in'},
+    {text:'[PRE] Send welcome email & text via EliseAI',cat:'move-in'},
+    {text:'[WEEK BEFORE] Follow-up call - resident confirmed, no additional questions',cat:'move-in'},
+    {text:'[APP] Verify resident acknowledged welcome & checklist in app',cat:'move-in'},
+    {text:'[APP] Verify resident downloaded & set up Resident App',cat:'move-in'},
+    {text:'[APP] Verify resident scheduled move-in appointment (review required)',cat:'move-in'},
+    {text:'[APP] Verify resident reserved elevator in app',cat:'elevator'},
+    {text:'[APP] Verify resident paid move-in charges & acknowledged payment policy',cat:'move-in'},
+    {text:'[APP] Verify resident set up renters insurance & acknowledged policy',cat:'move-in'},
+    {text:'[APP] Verify resident entered utility account number & uploaded electricity activation email',cat:'move-in'},
+    {text:'Confirm service elevator reservation',cat:'elevator'},
+    {text:'Issue parking permit & garage opener (if applicable)',cat:'keys'},
+    {text:'Issue front door key / fob',cat:'keys'},
+    {text:'Issue mailbox key',cat:'keys'},
+    {text:'Add resident to Lenel access system',cat:'keys'},
+    {text:'Complete EliseAI move-in tasks',cat:'move-in'},
+    {text:'Pre-move-in unit inspection - appliances working, looks/smells/feels/sounds good, scent applied',cat:'move-in'},
+    {text:'Inspection report printed & ready for resident to sign',cat:'move-in'},
+    {text:'[POST] Schedule resident orientation - trash & cardboard disposal, key usage (LATCH system), how to communicate with the team',cat:'move-in'},
+    {text:'[POST] Signed inspection report received & updated in AI',cat:'move-in'},
+    {text:'[POST] 3-day follow-up call - feedback on move-in, appliance use, auto-pay setup, packages & deliveries, amenity reservations, guest access',cat:'move-in'},
+  ];
+  return DEFAULT_TASKS.map((t, i) => ({
+    id: Math.random().toString(36).slice(2),
+    text: t.text,
+    cat: t.cat,
+    done: welcomeSent && t.text.includes('Send welcome email') ? true : false
+  }));
+}
+
+function makeImportId(unit, name) {
+  const str = 'import-' + unit + '-' + name.toLowerCase().replace(/\s+/g, '-');
+  let hash = 0;
+  for (let c of str) hash = ((hash << 5) - hash) + c.charCodeAt(0);
+  return Math.abs(hash).toString(36) + Date.now().toString(36).slice(-4);
+}
+
+function confirmImport() {
+  if (!pendingImportMoves.length) return;
+  state.moves = [...state.moves, ...pendingImportMoves];
+  save(); renderMoves(); updateBadges(); updateStats();
+  const count = pendingImportMoves.length;
+  pendingImportMoves = [];
+  closeModal('modal-import');
+  resetImportUI();
+  showToast(`${count} new resident${count > 1 ? 's' : ''} added ✓`);
+}
+
+function resetImportUI() {
+  pendingImportMoves = [];
+  document.getElementById('import-status').style.display = 'none';
+  document.getElementById('import-preview').style.display = 'none';
+  document.getElementById('import-confirm-btn').style.display = 'none';
+  document.getElementById('import-file-input').value = '';
+}
+
+function showImportStatus(msg, type) {
+  const el = document.getElementById('import-status');
+  el.style.display = '';
+  const colors = {
+    success: { bg: 'var(--green-light)', color: 'var(--green)' },
+    error:   { bg: 'var(--red-light)',   color: 'var(--red)' },
+    loading: { bg: 'var(--surface)',      color: 'var(--text-secondary)' },
+  };
+  const c = colors[type] || colors.loading;
+  el.style.background = c.bg;
+  el.style.color = c.color;
+  el.innerHTML = msg;
+}
+
+// ── EXPORT / IMPORT ALL DATA ──
+function exportAllData(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const d=new Date().toISOString().split('T')[0];
+  a.download='chorus_frontdesk_'+d+'.json';
+  a.click();
+  showToast('Data exported - save this file!');
+}
+
+function importAllData(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const imported=JSON.parse(e.target.result);
+      if(!imported.moves&&!imported.units&&!imported.maintenance){
+        showToast('Invalid file - not a Chorus data file','!');return;
+      }
+      if(!confirm('This will replace ALL your current data with the imported file. Are you sure?'))return;
+      state={moves:[],units:[],maintenance:[],packages:[],guests:[],keys:[],tours:[],walkthroughState:{},walkthroughIssues:[],walkthroughReset:null,passdowns:[],selectedMoveId:null,...imported};
+      cloudSave(state);
+      renderMoves();renderUnits();renderMaint();renderPackages();renderGuests();renderKeys();renderTours();renderPassdowns();updateStats();updateBadges();
+      showToast('Data imported successfully!');
+    }catch(err){
+      showToast('Could not read file','!');
+    }
+  };
+  reader.readAsText(file);
+  document.getElementById('import-data-input').value='';
+}
+</script>
+
+</body>
+</html>
