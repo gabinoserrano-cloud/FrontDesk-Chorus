@@ -21,14 +21,14 @@
 body{font-family:'DM Sans',sans-serif;background:var(--warm-white);color:var(--text-primary);min-height:100vh;font-size:14px;line-height:1.5;}
 .app{display:flex;min-height:100vh;}
 
-#loading-screen{position:fixed;inset:0;background:var(--black);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;transition:opacity 0.4s;}
-#loading-screen.hide{opacity:0;pointer-events:none;}
+
+
 .loading-logo{font-family:'DM Serif Display',serif;font-size:36px;color:#fff;margin-bottom:8px;}
 .loading-sub{font-size:12px;color:rgba(255,255,255,0.4);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:32px;}
-.loading-bar-wrap{width:160px;height:2px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;}
-.loading-bar{height:100%;background:var(--gold);border-radius:2px;animation:loadpulse 1.4s ease-in-out infinite;}
+
+
 @keyframes loadpulse{0%{width:5%}50%{width:80%}100%{width:100%}}
-.loading-status{font-size:11px;color:rgba(255,255,255,0.3);margin-top:12px;}
+
 
 .sync-pill{display:flex;align-items:center;gap:6px;font-size:11px;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.1);transition:all 0.3s;}
 .sync-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.25);transition:background 0.3s;flex-shrink:0;}
@@ -217,10 +217,7 @@ tbody tr:hover{background:var(--surface);}
 </head>
 <body>
 
-<div id="loading-screen">
-  <div class="loading-logo">Chorus</div>
-  <div class="loading-sub">Front Desk Operations</div>
-  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+
   <div class="loading-status" id="loading-status">Loading your data...</div>
 </div>
 
@@ -1170,7 +1167,7 @@ const PRELOADED_MOVES = [{"id": "48acd5e7b6f7b", "unit": "825", "resident": "Tia
 
 function init(){
   document.getElementById('sidebar-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
-  document.getElementById('loading-status').textContent='Loading...';
+  
   const data=cloudLoad();
   if(data){
     state={moves:[],units:[],maintenance:[],packages:[],guests:[],keys:[],tours:[],walkthroughState:{},walkthroughIssues:[],walkthroughReset:null,passdowns:[],selectedMoveId:null,...data};
@@ -1195,10 +1192,9 @@ function init(){
   } else {
     state={moves:PRELOADED_MOVES,units:[],maintenance:[],packages:[],guests:[],keys:[],tours:[],walkthroughState:{},walkthroughIssues:[],walkthroughReset:null,passdowns:[],selectedMoveId:null};
   }
-  document.getElementById('loading-status').textContent='Ready!';
+  
   // Hide loading screen immediately - no delay
-  const ls=document.getElementById('loading-screen');
-  if(ls){ls.style.display='none';}
+
   setSyncState('synced');
   document.getElementById('export-btn').style.display='none';
   document.getElementById('reset-walk-btn').style.display='none';
