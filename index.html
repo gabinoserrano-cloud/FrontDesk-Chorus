@@ -844,12 +844,32 @@ function renderMoves(search=''){
   else tbody.innerHTML=list.map(m=>{
     const hi=isToday(m.date)?'style="background:#fffbf0;"':'';
     const done=m.tasks.filter(t=>t.done).length,total=m.tasks.length;
-    return `<tr ${hi} onclick="selectMove('${m.id}')" style="cursor:pointer;"><td><strong>${m.unit}</strong></td><td>${m.resident}</td><td>${fmtDate(m.date)}${m.time?`<br><span style="font-size:11px;color:var(--text-muted)">${m.time}</span>`:''}</td><td><span class="badge ${m.type}">${m.type==='in'?'Move In':'Move Out'}</span></td><td style="font-size:12px;font-weight:500;">${m.moveInTotal?`<span style="color:#2d6a4f">$${m.moveInTotal}</span>`:`<span style="color:#a09890;font-weight:400;">-</span>`}</td><td style="font-size:12px;color:var(--text-secondary);">${m.notes||''}<span style="display:block;font-size:11px;color:var(--text-muted)">Tasks: ${done}/${total}</span>${m.elevator==='needed'?'<span class="badge pending" style="margin-top:3px;font-size:10px;">⚠️ Elevator needed</span>':''}</td><td><button class="action-btn del" onclick="event.stopPropagation();deleteMove('${m.id}')">✕</button></td></tr>`;
+    const inpStyle = 'border:none;background:transparent;font-family:inherit;outline:none;cursor:text;padding:2px 0;width:100%;';
+  return `<tr ${hi} onclick="selectMove('${m.id}')" style="cursor:pointer;">
+    <td><input type="text" value="${m.unit}" onclick="event.stopPropagation()" onchange="updateMoveField('${m.id}','unit',this.value)" style="${inpStyle}font-weight:600;font-size:13px;width:60px;"></td>
+    <td><input type="text" value="${m.resident}" onclick="event.stopPropagation()" onchange="updateMoveField('${m.id}','resident',this.value)" style="${inpStyle}font-size:13px;"></td>
+    <td><input type="date" value="${m.date}" onclick="event.stopPropagation()" onchange="updateMoveField('${m.id}','date',this.value)" style="${inpStyle}font-size:12px;color:var(--text-secondary);">
+    ${m.time?`<br><input type="time" value="${m.time}" onclick="event.stopPropagation()" onchange="updateMoveField('${m.id}','time',this.value)" style="${inpStyle}font-size:11px;color:var(--text-muted);">`:''}</td>
+    <td><select onclick="event.stopPropagation()" onchange="updateMoveField('${m.id}','type',this.value)" style="${inpStyle}font-size:12px;"><option value="in" ${m.type==='in'?'selected':''}>Move In</option><option value="out" ${m.type==='out'?'selected':''}>Move Out</option></select></td>
+    <td><input type="text" value="${m.moveInTotal||''}" placeholder="e.g. 4,500.00" onclick="event.stopPropagation()" onchange="updateMoveField('${m.id}','moveInTotal',this.value)" style="${inpStyle}font-size:12px;font-weight:500;color:#2d6a4f;width:90px;"></td>
+    <td><input type="text" value="${m.notes||''}" placeholder="Add note..." onclick="event.stopPropagation()" onchange="updateMoveField('${m.id}','notes',this.value)" style="${inpStyle}font-size:12px;color:var(--text-secondary);">
+    <span style="display:block;font-size:11px;color:var(--text-muted)">Tasks: ${done}/${total}</span>
+    ${m.elevator==='needed'?'<span class="badge pending" style="margin-top:3px;font-size:10px;">⚠️ Elevator needed</span>':''}</td>
+    <td><button class="action-btn del" onclick="event.stopPropagation();deleteMove('${m.id}')">✕</button></td>
+  </tr>`;
   }).join('');
   document.getElementById('moves-count').textContent=list.length+' entr'+(list.length===1?'y':'ies');
   updateStats();
 }
 function selectMove(id){state.selectedMoveId=id;renderTasks();document.getElementById('tasks-card').scrollIntoView({behavior:'smooth',block:'nearest'});}
+function updateField(arr, id, field, val){
+  const item=arr.find(x=>x.id===id);
+  if(item){item[field]=val;save();updateStats();updateBadges();}
+}
+function updateMoveField(id, field, val){
+  const m = state.moves.find(x=>x.id===id);
+  if(m){m[field]=val;save();if(field==='type'||field==='date')renderMoves();updateStats();updateBadges();}
+}
 function deleteMove(id){if(!confirm('Delete this move?'))return;state.moves=state.moves.filter(m=>m.id!==id);if(state.selectedMoveId===id)state.selectedMoveId=null;save();renderMoves();renderTasks();updateBadges();showToast('Deleted','🗑');}
 function filterMoves(f,el){moveFilter=f;document.querySelectorAll('#section-moves .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderMoves();}
 function renderTasks(){
@@ -909,7 +929,15 @@ function renderMaint(search=''){
   const order={high:0,medium:1,low:2};list.sort((a,b)=>order[a.priority]-order[b.priority]);
   const tbody=document.getElementById('maint-tbody');
   if(!list.length){tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">🔧</div><p>No issues logged.</p></div></td></tr>';}
-  else tbody.innerHTML=list.map(m=>`<tr><td><strong>${m.unit}</strong></td><td><strong>${m.issue}</strong></td><td style="font-size:12px;color:var(--text-secondary);">${m.desc||'-'}</td><td><span class="badge ${m.priority}"><span class="priority-dot ${m.priority}"></span>${m.priority}</span></td><td><select class="form-select" style="font-size:11px;padding:3px 6px;" onchange="updateMaintStatus('${m.id}',this.value)"><option value="open" ${m.status==='open'?'selected':''}>Open</option><option value="in-progress" ${m.status==='in-progress'?'selected':''}>In Progress</option><option value="resolved" ${m.status==='resolved'?'selected':''}>Resolved</option></select></td><td style="font-size:12px;">${fmtDate(m.date)}</td><td><button class="action-btn del" onclick="deleteMaint('${m.id}')">✕</button></td></tr>`).join('');
+  else tbody.innerHTML=list.map(m=>`<tr>
+    <td><input type="text" value="${m.unit}" onchange="updateField(state.maintenance,'${m.id}','unit',this.value)" style="${inp}font-weight:600;width:60px;"></td>
+    <td><input type="text" value="${m.issue}" onchange="updateField(state.maintenance,'${m.id}','issue',this.value)" style="${inp}font-weight:500;"></td>
+    <td><input type="text" value="${m.desc||''}" placeholder="Description..." onchange="updateField(state.maintenance,'${m.id}','desc',this.value)" style="${inp}font-size:12px;color:var(--text-secondary);"></td>
+    <td><select class="form-select" style="font-size:11px;padding:3px 6px;" onchange="updateField(state.maintenance,'${m.id}','priority',this.value);renderMaint()"><option value="high" ${m.priority==='high'?'selected':''}>High</option><option value="medium" ${m.priority==='medium'?'selected':''}>Medium</option><option value="low" ${m.priority==='low'?'selected':''}>Low</option></select></td>
+    <td><select class="form-select" style="font-size:11px;padding:3px 6px;" onchange="updateField(state.maintenance,'${m.id}','status',this.value);updateBadges();updateStats()"><option value="open" ${m.status==='open'?'selected':''}>Open</option><option value="in-progress" ${m.status==='in-progress'?'selected':''}>In Progress</option><option value="resolved" ${m.status==='resolved'?'selected':''}>Resolved</option></select></td>
+    <td><input type="date" value="${m.date}" onchange="updateField(state.maintenance,'${m.id}','date',this.value)" style="${inp}font-size:12px;"></td>
+    <td><button class="action-btn del" onclick="deleteMaint('${m.id}')">✕</button></td>
+  </tr>`).join('');
   document.getElementById('maint-count').textContent=list.length+' issue'+(list.length===1?'':'s');updateStats();
 }
 function updateMaintStatus(id,status){const m=state.maintenance.find(x=>x.id===id);if(m){m.status=status;save();updateBadges();updateStats();}showToast('Status updated');}
@@ -932,7 +960,16 @@ function renderPackages(search=''){
   list.sort((a,b)=>b.receivedAt-a.receivedAt);
   const tbody=document.getElementById('pkg-tbody');
   if(!list.length){tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📦</div><p>No packages logged.</p></div></td></tr>';}
-  else tbody.innerHTML=list.map(p=>`<tr><td><strong>${p.unit}</strong></td><td>${p.resident}</td><td>${p.carrier}</td><td style="font-size:12px;">${fmtDateTime(p.receivedAt)}</td><td style="font-size:12px;">${p.location||'-'}</td><td><span class="badge ${p.status}">${p.status}</span></td><td style="font-size:12px;">${p.claimedAt?fmtDateTime(p.claimedAt):'-'}</td><td style="white-space:nowrap;">${p.status==='unclaimed'?`<button class="btn sm" style="font-size:10px;padding:3px 8px;" onclick="claimPkg('${p.id}')">Claimed</button>`:''}<button class="action-btn del" onclick="deletePkg('${p.id}')">✕</button></td></tr>`).join('');
+  else tbody.innerHTML=list.map(p=>`<tr>
+    <td><input type="text" value="${p.unit}" onchange="updateField(state.packages,'${p.id}','unit',this.value)" style="${inp}font-weight:600;width:60px;"></td>
+    <td><input type="text" value="${p.resident}" onchange="updateField(state.packages,'${p.id}','resident',this.value)" style="${inp}font-size:13px;"></td>
+    <td><input type="text" value="${p.carrier}" onchange="updateField(state.packages,'${p.id}','carrier',this.value)" style="${inp}font-size:12px;"></td>
+    <td style="font-size:12px;">${fmtDateTime(p.receivedAt)}</td>
+    <td><input type="text" value="${p.location||''}" placeholder="Location..." onchange="updateField(state.packages,'${p.id}','location',this.value)" style="${inp}font-size:12px;"></td>
+    <td><span class="badge ${p.status}">${p.status}</span></td>
+    <td style="font-size:12px;">${p.claimedAt?fmtDateTime(p.claimedAt):'-'}</td>
+    <td style="white-space:nowrap;">${p.status==='unclaimed'?`<button class="btn sm" style="font-size:10px;padding:3px 8px;" onclick="claimPkg('${p.id}')">Claimed</button>`:''}<button class="action-btn del" onclick="deletePkg('${p.id}')">✕</button></td>
+  </tr>`).join('');
   document.getElementById('pkg-count').textContent=list.length+' package'+(list.length===1?'':'s');updateStats();
 }
 function claimPkg(id){const p=state.packages.find(x=>x.id===id);if(!p)return;p.status='claimed';p.claimedAt=Date.now();save();renderPackages();updateBadges();updateStats();showToast('Package marked as claimed ✓');}
@@ -955,7 +992,17 @@ function renderGuests(search=''){
   list.sort((a,b)=>(b.checkinAt||0)-(a.checkinAt||0));
   const tbody=document.getElementById('guests-tbody');
   if(!list.length){tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">👥</div><p>No guests logged.</p></div></td></tr>';}
-  else tbody.innerHTML=list.map(g=>`<tr><td><strong>${g.name}</strong>${g.notes?`<br><span style="font-size:11px;color:var(--text-muted)">${g.notes}</span>`:''}</td><td>${g.unit}</td><td>${g.host||'-'}</td><td style="font-size:12px;">${g.checkinAt?fmtDateTime(g.checkinAt):'-'}</td><td style="font-size:12px;">${g.checkoutAt?fmtDateTime(g.checkoutAt):'-'}</td><td><span class="badge ${g.type==='vendor'?'medium':g.type==='joiner'?'joiner':'resident'}" style="font-size:10px;">${g.type}</span></td><td><span class="badge ${g.status}">${g.status.replace('-',' ')}</span></td><td style="white-space:nowrap;">${g.status==='pending'?`<button class="btn sm" style="font-size:10px;padding:3px 8px;" onclick="checkInGuest('${g.id}')">Check In</button>`:''}${g.status==='checked-in'?`<button class="btn sm" style="font-size:10px;padding:3px 8px;" onclick="checkOutGuest('${g.id}')">Check Out</button>`:''}<button class="action-btn del" onclick="deleteGuest('${g.id}')">✕</button></td></tr>`).join('');
+  else tbody.innerHTML=list.map(g=>`<tr>
+    <td><input type="text" value="${g.name}" onchange="updateField(state.guests,'${g.id}','name',this.value)" style="${inp}font-weight:600;">
+    <input type="text" value="${g.notes||''}" placeholder="Notes..." onchange="updateField(state.guests,'${g.id}','notes',this.value)" style="${inp}font-size:11px;color:var(--text-muted);display:block;margin-top:2px;"></td>
+    <td><input type="text" value="${g.unit}" onchange="updateField(state.guests,'${g.id}','unit',this.value)" style="${inp}width:60px;"></td>
+    <td><input type="text" value="${g.host||''}" placeholder="Host..." onchange="updateField(state.guests,'${g.id}','host',this.value)" style="${inp}font-size:12px;"></td>
+    <td style="font-size:12px;">${g.checkinAt?fmtDateTime(g.checkinAt):'-'}</td>
+    <td style="font-size:12px;">${g.checkoutAt?fmtDateTime(g.checkoutAt):'-'}</td>
+    <td><select class="form-select" style="font-size:10px;padding:2px 4px;" onchange="updateField(state.guests,'${g.id}','type',this.value);renderGuests()"><option value="resident" ${g.type==='resident'?'selected':''}>Resident</option><option value="vendor" ${g.type==='vendor'?'selected':''}>Vendor</option><option value="joiner" ${g.type==='joiner'?'selected':''}>Joiner</option><option value="guest" ${g.type==='guest'?'selected':''}>Guest</option></select></td>
+    <td><span class="badge ${g.status}">${g.status.replace('-',' ')}</span></td>
+    <td style="white-space:nowrap;">${g.status==='pending'?`<button class="btn sm" style="font-size:10px;padding:3px 8px;" onclick="checkInGuest('${g.id}')">Check In</button>`:''}${g.status==='checked-in'?`<button class="btn sm" style="font-size:10px;padding:3px 8px;" onclick="checkOutGuest('${g.id}')">Check Out</button>`:''}<button class="action-btn del" onclick="deleteGuest('${g.id}')">✕</button></td>
+  </tr>`).join('');
   document.getElementById('guests-count').textContent=list.length+' entr'+(list.length===1?'y':'ies');updateStats();
 }
 function checkInGuest(id){const g=state.guests.find(x=>x.id===id);if(!g)return;g.status='checked-in';g.checkinAt=Date.now();save();renderGuests();updateBadges();updateStats();showToast('Guest checked in ✓');}
@@ -979,7 +1026,16 @@ function renderKeys(search=''){
   list.sort((a,b)=>b.issuedAt-a.issuedAt);
   const tbody=document.getElementById('keys-tbody');
   if(!list.length){tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">🗝️</div><p>No keys logged.</p></div></td></tr>';}
-  else tbody.innerHTML=list.map(k=>`<tr><td><strong>${k.unit}</strong></td><td>${k.name}</td><td><span class="badge ${k.type}">${k.type}</span></td><td style="font-size:12px;">${k.fob||'-'}</td><td style="font-size:12px;">${fmtDateTime(k.issuedAt)}</td><td style="font-size:12px;">${k.returnedAt?fmtDateTime(k.returnedAt):'-'}</td><td>${k.status==='issued'?`<button class="btn sm" style="font-size:10px;padding:3px 8px;" onclick="returnKey('${k.id}')">Mark Returned</button>`:`<span class="badge returned">returned</span>`}</td><td><button class="action-btn del" onclick="deleteKey('${k.id}')">✕</button></td></tr>`).join('');
+  else tbody.innerHTML=list.map(k=>`<tr>
+    <td><input type="text" value="${k.unit}" onchange="updateField(state.keys,'${k.id}','unit',this.value)" style="${inp}font-weight:600;width:60px;"></td>
+    <td><input type="text" value="${k.name}" onchange="updateField(state.keys,'${k.id}','name',this.value)" style="${inp}font-size:13px;"></td>
+    <td><select class="form-select" style="font-size:10px;padding:2px 4px;" onchange="updateField(state.keys,'${k.id}','type',this.value);renderKeys()"><option value="resident" ${k.type==='resident'?'selected':''}>Resident</option><option value="joiner" ${k.type==='joiner'?'selected':''}>Joiner</option><option value="one-time" ${k.type==='one-time'?'selected':''}>One-time</option><option value="mobile" ${k.type==='mobile'?'selected':''}>Mobile</option></select></td>
+    <td><input type="text" value="${k.fob||''}" placeholder="Fob #..." onchange="updateField(state.keys,'${k.id}','fob',this.value)" style="${inp}font-size:12px;"></td>
+    <td style="font-size:12px;">${fmtDateTime(k.issuedAt)}</td>
+    <td style="font-size:12px;">${k.returnedAt?fmtDateTime(k.returnedAt):'-'}</td>
+    <td>${k.status==='issued'?`<button class="btn sm" style="font-size:10px;padding:3px 8px;" onclick="returnKey('${k.id}')">Mark Returned</button>`:`<span class="badge returned">returned</span>`}</td>
+    <td><button class="action-btn del" onclick="deleteKey('${k.id}')">✕</button></td>
+  </tr>`).join('');
   document.getElementById('keys-count').textContent=list.length+' entr'+(list.length===1?'y':'ies');updateStats();
 }
 function returnKey(id){const k=state.keys.find(x=>x.id===id);if(!k)return;k.status='returned';k.returnedAt=Date.now();save();renderKeys();updateBadges();updateStats();showToast('Key marked as returned ✓');}
@@ -1002,7 +1058,16 @@ function renderTours(search=''){
   list.sort((a,b)=>b.date.localeCompare(a.date));
   const tbody=document.getElementById('tours-tbody');
   if(!list.length){tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">🏡</div><p>No tours logged.</p></div></td></tr>';}
-  else tbody.innerHTML=list.map(t=>`<tr><td><strong>${t.name}</strong>${t.contact?`<br><span style="font-size:11px;color:var(--text-muted)">${t.contact}</span>`:''}</td><td>${t.unit||'-'}</td><td>${fmtDate(t.date)}</td><td style="font-size:12px;">${t.time||'-'}</td><td><span class="badge ${t.type}">${t.type==='sgt'?'SGT':'Guided'}</span></td><td style="font-size:12px;color:var(--text-secondary);">${t.notes||'-'}</td><td><button class="action-btn del" onclick="deleteTour('${t.id}')">✕</button></td></tr>`).join('');
+  else tbody.innerHTML=list.map(t=>`<tr>
+    <td><input type="text" value="${t.name}" onchange="updateField(state.tours,'${t.id}','name',this.value)" style="${inp}font-weight:600;">
+    <input type="text" value="${t.contact||''}" placeholder="Contact..." onchange="updateField(state.tours,'${t.id}','contact',this.value)" style="${inp}font-size:11px;color:var(--text-muted);display:block;margin-top:2px;"></td>
+    <td><input type="text" value="${t.unit||''}" placeholder="Unit..." onchange="updateField(state.tours,'${t.id}','unit',this.value)" style="${inp}width:60px;"></td>
+    <td><input type="date" value="${t.date}" onchange="updateField(state.tours,'${t.id}','date',this.value)" style="${inp}font-size:12px;"></td>
+    <td><input type="time" value="${t.time||''}" onchange="updateField(state.tours,'${t.id}','time',this.value)" style="${inp}font-size:12px;"></td>
+    <td><select class="form-select" style="font-size:10px;padding:2px 4px;" onchange="updateField(state.tours,'${t.id}','type',this.value);renderTours()"><option value="sgt" ${t.type==='sgt'?'selected':''}>SGT</option><option value="guided" ${t.type==='guided'?'selected':''}>Guided</option></select></td>
+    <td><input type="text" value="${t.notes||''}" placeholder="Notes..." onchange="updateField(state.tours,'${t.id}','notes',this.value)" style="${inp}font-size:12px;color:var(--text-secondary);"></td>
+    <td><button class="action-btn del" onclick="deleteTour('${t.id}')">✕</button></td>
+  </tr>`).join('');
   document.getElementById('tours-count').textContent=list.length+' tour'+(list.length===1?'':'s');updateStats();
 }
 function deleteTour(id){if(!confirm('Remove?'))return;state.tours=state.tours.filter(t=>t.id!==id);save();renderTours();updateBadges();updateStats();showToast('Removed','🗑');}
