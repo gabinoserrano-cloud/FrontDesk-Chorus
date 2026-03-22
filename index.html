@@ -218,8 +218,6 @@ tbody tr:hover{background:var(--surface);}
 <body>
 
 
-  <div class="loading-status" id="loading-status">Loading your data...</div>
-</div>
 
 <div class="app">
   <aside class="sidebar">
@@ -1193,7 +1191,6 @@ function init(){
     state={moves:PRELOADED_MOVES,units:[],maintenance:[],packages:[],guests:[],keys:[],tours:[],walkthroughState:{},walkthroughIssues:[],walkthroughReset:null,passdowns:[],selectedMoveId:null};
   }
   
-  // Hide loading screen immediately - no delay
 
   setSyncState('synced');
   document.getElementById('export-btn').style.display='none';
