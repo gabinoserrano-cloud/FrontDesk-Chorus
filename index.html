@@ -251,6 +251,7 @@ tbody tr:hover{background:var(--surface);}
       <div class="nav-item" onclick="switchSection('tours',this)"><span class="nav-icon">🏡</span><span>Tour Log</span><span class="nav-badge purple" id="badge-tours">0</span></div>
       <div class="nav-item" onclick="switchSection('walkthrough',this)"><span class="nav-icon">🚶</span><span>Walkthrough</span></div>
       <div class="nav-item" onclick="switchSection('passdown',this)"><span class="nav-icon">📋</span><span>Daily Passdown</span></div>
+      <div class="nav-item" onclick="switchSection('calendar',this)"><span class="nav-icon">📅</span><span>Calendar</span></div>
     </nav>
     <div class="sidebar-footer">
       <div class="sync-pill" id="sync-pill"><div class="sync-dot"></div><span id="sync-label">Saved locally</span></div>
@@ -510,6 +511,27 @@ tbody tr:hover{background:var(--surface);}
         </div>
       </div>
 
+      <!-- CALENDAR -->
+      <div class="section" id="section-calendar">
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title" id="cal-title">Week of ...</span>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <button class="btn sm" onclick="calPrev()">&#8249; Prev</button>
+              <button class="btn sm" onclick="calToday()">Today</button>
+              <button class="btn sm" onclick="calNext()">Next &#8250;</button>
+              <button class="btn sm" id="cal-toggle-btn" onclick="toggleCalView()" style="margin-left:8px;min-width:80px;">Monthly</button>
+            </div>
+          </div>
+          <div id="cal-body" style="overflow-x:auto;"></div>
+          <div style="display:flex;gap:14px;padding:10px 16px;border-top:0.5px solid var(--border);background:var(--surface);flex-wrap:wrap;">
+            <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary);"><span style="width:10px;height:10px;border-radius:2px;background:#EAF3DE;border:1px solid #639922;display:inline-block;"></span>Move in</span>
+            <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary);"><span style="width:10px;height:10px;border-radius:2px;background:#FCEBEB;border:1px solid #E24B4A;display:inline-block;"></span>Move out</span>
+            <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary);"><span style="width:10px;height:10px;border-radius:2px;background:#FAEEDA;border:1px dashed #BA7517;display:inline-block;"></span>Tight turnover (&lt;3 days)</span>
+          </div>
+        </div>
+      </div>
+
     </div>
   </main>
 </div>
@@ -757,8 +779,8 @@ function showToast(msg,icon='✓'){const t=document.getElementById('toast');t.in
 let saveTimer=null;
 function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>cloudSave(state),700);}
 
-const sectionTitles={moves:'Move Ins / Outs',vacants:'Vacant Units & Tours',maintenance:'Maintenance Log',packages:'Package Tracking',guests:'Guests & Visitors',keys:'Key Tracker',tours:'Tour Log',walkthrough:'Building Walkthrough',passdown:'Daily Passdown'};
-const addLabels={moves:'+ Add Move',vacants:'+ Add Unit',maintenance:'+ Log Issue',packages:'+ Log Package',guests:'+ Log Guest',keys:'+ Log Key',tours:'+ Log Tour',walkthrough:null,passdown:null};
+const sectionTitles={moves:'Move Ins / Outs',vacants:'Vacant Units & Tours',maintenance:'Maintenance Log',packages:'Package Tracking',guests:'Guests & Visitors',keys:'Key Tracker',tours:'Tour Log',walkthrough:'Building Walkthrough',passdown:'Daily Passdown',calendar:'Calendar'};
+const addLabels={moves:'+ Add Move',vacants:'+ Add Unit',maintenance:'+ Log Issue',packages:'+ Log Package',guests:'+ Log Guest',keys:'+ Log Key',tours:'+ Log Tour',walkthrough:null,passdown:null,calendar:null};
 let currentSection='moves';
 
 function switchSection(id,el){
@@ -831,9 +853,9 @@ function saveMove(){
   const unit=document.getElementById('m-unit').value.trim(),resident=document.getElementById('m-resident').value.trim(),date=document.getElementById('m-date').value;
   if(!unit||!resident||!date){showToast('Fill in unit, resident & date','⚠️');return;}
   const type=document.getElementById('m-type').value;
-  const move={id:uid(),unit,resident,date,type,time:document.getElementById('m-time').value.trim(),elevator:document.getElementById('m-elevator').value,moveInTotal:document.getElementById('m-movein-total').value.trim(),notes:document.getElementById('m-notes').value.trim(),tasks:(type==='in'?DEFAULT_IN:DEFAULT_OUT).map(t=>({id:uid(),text:t.text,cat:t.cat,done:false}))};
+  const move={id:uid(),unit,resident,date,type,time:document.getElementById('m-time').value.trim(),elevator:document.getElementById('m-elevator').value,leaseStart:document.getElementById('m-lease-start').value,moveInTotal:document.getElementById('m-movein-total').value.trim(),notes:document.getElementById('m-notes').value.trim(),tasks:(type==='in'?DEFAULT_IN:DEFAULT_OUT).map(t=>({id:uid(),text:t.text,cat:t.cat,done:false}))};
   state.moves.push(move);save();renderMoves();updateBadges();closeModal('modal-move');
-  ['m-unit','m-resident','m-date','m-time','m-notes','m-movein-total'].forEach(id=>document.getElementById(id).value='');
+  ['m-unit','m-resident','m-date','m-time','m-notes','m-movein-total','m-lease-start'].forEach(id=>document.getElementById(id).value='');
   showToast('Move added');state.selectedMoveId=move.id;renderTasks();
 }
 function renderMoves(search=''){
@@ -1554,6 +1576,144 @@ function importAllData(file){
   };
   reader.readAsText(file);
   document.getElementById('import-data-input').value='';
+}
+
+// ── CALENDAR ──
+let calViewMode = 'week';
+let calOffset = 0;
+
+function toggleCalView(){
+  calViewMode = calViewMode === 'week' ? 'month' : 'week';
+  document.getElementById('cal-toggle-btn').textContent = calViewMode === 'week' ? 'Monthly' : 'Weekly';
+  renderCalendar();
+}
+function calPrev(){ calOffset--; renderCalendar(); }
+function calNext(){ calOffset++; renderCalendar(); }
+function calToday(){ calOffset=0; renderCalendar(); }
+
+function getWeekStart(offset){
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() - d.getDay() + offset * 7);
+  return d;
+}
+
+function renderCalendar(){
+  if(calViewMode === 'week') renderWeekCal();
+  else renderMonthCal();
+}
+
+function renderWeekCal(){
+  const ws = getWeekStart(calOffset);
+  const days = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(ws);
+    d.setDate(d.getDate()+i);
+    days.push(d);
+  }
+  const todayStr = today();
+  const fmt = d => d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  document.getElementById('cal-title').textContent = 'Week of '+fmt(days[0])+' - '+fmt(days[6]);
+
+  // Get all units that have moves
+  const unitSet = new Set(state.moves.map(m=>m.unit));
+  const units = [...unitSet].sort((a,b)=>parseInt(a)-parseInt(b));
+
+  // Check tight turnovers per unit
+  const tightUnits = new Set();
+  units.forEach(u=>{
+    const uMoves = state.moves.filter(m=>m.unit===u).sort((a,b)=>a.date.localeCompare(b.date));
+    for(let i=0;i<uMoves.length-1;i++){
+      const d1=new Date(uMoves[i].date+'T12:00:00');
+      const d2=new Date(uMoves[i+1].date+'T12:00:00');
+      const diff=(d2-d1)/86400000;
+      if(diff<=3&&diff>=0) tightUnits.add(u+'|'+uMoves[i].date+'|'+uMoves[i+1].date);
+    }
+  });
+
+  let html = '<table style="width:100%;border-collapse:collapse;min-width:600px;">';
+  // Header
+  html += '<thead><tr><th style="width:60px;padding:8px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:var(--surface);">Unit</th>';
+  days.forEach(d=>{
+    const dStr = d.toISOString().split('T')[0];
+    const isT = dStr===todayStr;
+    html+=`<th style="padding:8px 4px;font-size:10px;font-weight:500;text-align:center;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:var(--surface);color:${isT?'#185FA5':'var(--text-muted)'};">${d.toLocaleDateString('en-US',{weekday:'short'})}<br><span style="font-size:11px;font-weight:${isT?'600':'400'};">${d.getDate()}</span></th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  if(units.length===0){
+    html += '<tr><td colspan="8" style="padding:40px;text-align:center;color:var(--text-muted);font-size:13px;">No moves scheduled yet.</td></tr>';
+  } else {
+    units.forEach(unit=>{
+      html += `<tr><td style="padding:6px 8px;font-size:11px;font-weight:600;border-right:1px solid var(--border);border-bottom:1px solid var(--border);color:var(--text-secondary);white-space:nowrap;">${unit}</td>`;
+      days.forEach(d=>{
+        const dStr = d.toISOString().split('T')[0];
+        const isT = dStr===todayStr;
+        const dayMoves = state.moves.filter(m=>m.unit===unit&&m.date===dStr);
+        let cellContent = '';
+        dayMoves.forEach(m=>{
+          const isIn = m.type==='in';
+          const bg = isIn?'#EAF3DE':'#FCEBEB';
+          const col = isIn?'#27500A':'#791F1F';
+          const label = isIn?'IN':'OUT';
+          const name = m.resident.split(' ')[0];
+          cellContent+=`<div style="background:${bg};color:${col};border-radius:3px;padding:2px 5px;font-size:10px;font-weight:500;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${label} ${name}</div>`;
+        });
+        // Check tight turnover
+        const isTight=[...tightUnits].some(k=>{const [u,d1,d2]=k.split('|');return u===unit&&(dStr===d1||dStr===d2);});
+        if(isTight&&dayMoves.length>0) cellContent+=`<div style="background:#FAEEDA;border:1px dashed #BA7517;border-radius:3px;padding:1px 4px;font-size:9px;color:#854F0B;margin-top:1px;">tight turn</div>`;
+        html+=`<td style="padding:3px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-width:80px;min-height:44px;vertical-align:top;${isT?'background:rgba(55,138,221,0.04);':''}">${cellContent}</td>`;
+      });
+      html += '</tr>';
+    });
+  }
+  html += '</tbody></table>';
+  document.getElementById('cal-body').innerHTML = html;
+}
+
+function renderMonthCal(){
+  const now = new Date();
+  now.setDate(1);
+  now.setMonth(now.getMonth()+calOffset);
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const todayStr = today();
+
+  document.getElementById('cal-title').textContent = now.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+
+  const firstDay = new Date(year,month,1).getDay();
+  const daysInMonth = new Date(year,month+1,0).getDate();
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  let html='<table style="width:100%;border-collapse:collapse;">';
+  html+='<thead><tr>'+days.map(d=>`<th style="padding:6px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:center;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:var(--surface);">${d}</th>`).join('')+'</tr></thead><tbody>';
+
+  let day=1;
+  for(let r=0;r<6;r++){
+    html+='<tr>';
+    for(let c=0;c<7;c++){
+      const cellIdx=r*7+c;
+      if(cellIdx<firstDay||day>daysInMonth){
+        html+=`<td style="border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:80px;background:var(--surface);opacity:0.4;padding:4px;vertical-align:top;"><span style="font-size:11px;color:var(--text-muted);">${cellIdx<firstDay?new Date(year,month,1-firstDay+cellIdx).getDate():day<=daysInMonth?'':day-daysInMonth}</span></td>`;
+        if(cellIdx>=firstDay)day++;
+      } else {
+        const dStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const isT=dStr===todayStr;
+        const dayMoves=state.moves.filter(m=>m.date===dStr);
+        let chips='';
+        dayMoves.forEach(m=>{
+          const isIn=m.type==='in';
+          chips+=`<div style="background:${isIn?'#EAF3DE':'#FCEBEB'};color:${isIn?'#27500A':'#791F1F'};border-radius:3px;padding:2px 5px;font-size:10px;font-weight:500;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${isIn?'IN':'OUT'} ${m.unit} ${m.resident.split(' ')[0]}</div>`;
+        });
+        html+=`<td style="padding:4px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:80px;vertical-align:top;${isT?'background:rgba(55,138,221,0.04);':''}"><div style="font-size:11px;font-weight:${isT?'600':'400'};color:${isT?'#185FA5':'var(--text-secondary)'};margin-bottom:3px;">${day}</div>${chips}</td>`;
+        day++;
+      }
+    }
+    html+='</tr>';
+    if(day>daysInMonth&&r>=3)break;
+  }
+  html+='</tbody></table>';
+  document.getElementById('cal-body').innerHTML=html;
 }
 </script>
 
