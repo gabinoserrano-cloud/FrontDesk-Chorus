@@ -302,6 +302,7 @@ tbody tr:hover{background:var(--surface);}
             <div class="card-head-left"><span class="card-title">Move Task Checklist</span><span class="card-count" id="tasks-count">Select a move above</span></div>
             <div style="display:flex;gap:8px;"><button class="btn sm" onclick="clearDoneTasks()">Clear done</button><button class="btn sm primary" onclick="openAddTask()">+ Task</button></div>
           </div>
+          <div id="checklist-move-info" style="display:none;padding:8px 18px;font-size:12px;color:var(--text-secondary);background:var(--surface);border-bottom:1px solid var(--border);"></div>
           <div id="tasks-list"><div class="empty-state"><div class="empty-icon">☑️</div><p>Click a move row to see its tasks.</p></div></div>
         </div>
       </div>
@@ -852,21 +853,41 @@ function renderMoves(search=''){
   const isTmrw=m.date===new Date(Date.now()+86400000).toISOString().split('T')[0];
   const isPast=m.date<today()&&!isT;
   const isWeek=isThisWeek(m.date)&&!isT&&!isTmrw;
-  const rowBg=isT?'background:rgba(220,50,50,0.08);border-left:3px solid #dc3232;':isTmrw?'background:rgba(255,180,0,0.1);border-left:3px solid var(--gold);':isWeek?'background:rgba(255,180,0,0.04);border-left:3px solid rgba(255,180,0,0.3);':isPast?'opacity:0.55;':'';
+  const isComplete=done===total&&total>0;
+  const rowBg=isComplete?'background:rgba(45,106,79,0.06);border-left:3px solid #2d6a4f;':isT?'background:rgba(220,50,50,0.08);border-left:3px solid #dc3232;':isTmrw?'background:rgba(255,180,0,0.1);border-left:3px solid var(--gold);':isWeek?'background:rgba(255,180,0,0.04);border-left:3px solid rgba(255,180,0,0.3);':isPast?'opacity:0.55;':'';
+  const pct=total>0?Math.round(done/total*100):0;
+  const barColor=isComplete?'#2d6a4f':pct>50?'#BA7517':'#dc3232';
   return `<tr ${hi} onclick="selectMove('${m.id}')" style="cursor:pointer;${rowBg}">
     <td><input type="text" value="${m.unit}" onclick="event.stopPropagation()" onchange="updateMoveField('${m.id}','unit',this.value)" style="${inpStyle}font-weight:600;font-size:13px;width:60px;"></td>
     <td><input type="text" value="${m.resident}" onclick="event.stopPropagation()" onchange="updateMoveField('${m.id}','resident',this.value)" style="${inpStyle}font-size:13px;"></td>
     <td><input type="date" value="${m.date}" onclick="event.stopPropagation()" onchange="updateMoveField('${m.id}','date',this.value)" style="${inpStyle}font-size:12px;color:var(--text-secondary);">
     ${m.time?`<br><input type="time" value="${m.time}" onclick="event.stopPropagation()" onchange="updateMoveField('${m.id}','time',this.value)" style="${inpStyle}font-size:11px;color:var(--text-muted);">`:''}</td>
     <td><select onclick="event.stopPropagation()" onchange="updateMoveField('${m.id}','type',this.value)" style="${inpStyle}font-size:12px;"><option value="in" ${m.type==='in'?'selected':''}>Move In</option><option value="out" ${m.type==='out'?'selected':''}>Move Out</option></select></td>
-    <td><input type="text" value="${m.moveInTotal||''}" placeholder="e.g. 4,500.00" onclick="event.stopPropagation()" onchange="updateMoveField('${m.id}','moveInTotal',this.value)" style="${inpStyle}font-size:12px;font-weight:500;color:#2d6a4f;width:90px;"></td>
-    <td><input type="text" value="${m.notes||''}" placeholder="Add note..." onclick="event.stopPropagation()" onchange="updateMoveField('${m.id}','notes',this.value)" style="${inpStyle}font-size:12px;color:var(--text-secondary);">
-    <span style="display:block;font-size:11px;color:var(--text-muted)">Tasks: ${done}/${total}</span>
-    ${m.elevator==='needed'?'<span class="badge pending" style="margin-top:3px;font-size:10px;">⚠️ Elevator needed</span>':''}</td>
+    <td><input type="text" value="${m.moveInTotal||''}" placeholder="—" onclick="event.stopPropagation()" onchange="updateMoveField('${m.id}','moveInTotal',this.value)" style="${inpStyle}font-size:12px;font-weight:500;color:#2d6a4f;width:90px;"></td>
+    <td style="min-width:220px;">
+      <textarea onclick="event.stopPropagation()" onchange="updateMoveField('${m.id}','notes',this.value)" placeholder="Add note..." style="${inpStyle}font-size:12px;color:var(--text-secondary);resize:none;min-height:36px;overflow:hidden;display:block;line-height:1.4;" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'">${m.notes||''}</textarea>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+        <span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">${done}/${total}</span>
+        <div style="flex:1;background:var(--border);border-radius:3px;height:4px;min-width:60px;"><div style="width:${pct}%;background:${barColor};height:4px;border-radius:3px;transition:width 0.3s;"></div></div>
+      </div>
+      ${isComplete?'<span class="badge" style="background:rgba(45,106,79,0.12);color:#2d6a4f;font-size:10px;margin-top:3px;display:inline-block;">✓ Ready</span>':m.elevator==='needed'?'<span class="badge pending" style="margin-top:3px;font-size:10px;">⚠️ Elevator needed</span>':''}
+    </td>
     <td><button class="action-btn del" onclick="event.stopPropagation();deleteMove('${m.id}')">✕</button></td>
   </tr>`;
   }).join('');
   document.getElementById('moves-count').textContent=list.length+' entr'+(list.length===1?'y':'ies');
+  // Elevator conflict warning - check for same-date moves
+  const dateGroups={};
+  state.moves.forEach(m=>{if(m.date){if(!dateGroups[m.date])dateGroups[m.date]=[];dateGroups[m.date].push(m);}});
+  let conflictBanner=document.getElementById('conflict-banner');
+  if(!conflictBanner){conflictBanner=document.createElement('div');conflictBanner.id='conflict-banner';const tbl=document.getElementById('moves-table');if(tbl)tbl.parentNode.insertBefore(conflictBanner,tbl);}
+  const conflicts=Object.entries(dateGroups).filter(([d,moves])=>moves.length>1&&moves.some(m=>m.elevator==='needed'));
+  if(conflicts.length){
+    const msgs=conflicts.map(([d,moves])=>`${fmtDate(d)}: ${moves.map(m=>m.resident+' (Unit '+m.unit+')').join(' & ')}`);
+    conflictBanner.innerHTML=`<div style="background:rgba(220,50,50,0.08);border:1px solid rgba(220,50,50,0.3);border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:13px;"><span style="font-size:15px;">⚠️</span> <strong>Elevator conflict${conflicts.length>1?'s':''} detected</strong> — ${msgs.join(' | ')}</div>`;
+    conflictBanner.style.display='';
+  } else {conflictBanner.style.display='none';}
+
   // Tomorrow alert banner
   const tmrw=new Date(Date.now()+86400000).toISOString().split('T')[0];
   const tmrwMoves=state.moves.filter(m=>m.date===tmrw);
