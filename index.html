@@ -851,13 +851,36 @@ const DEFAULT_OUT=[
 ];
 
 function saveMove(){
-  const unit=document.getElementById('m-unit').value.trim(),resident=document.getElementById('m-resident').value.trim(),date=document.getElementById('m-date').value;
-  if(!unit||!resident||!date){showToast('Fill in unit, resident & date','⚠️');return;}
-  const type=document.getElementById('m-type').value;
-  const move={id:uid(),unit,resident,date,type,time:document.getElementById('m-time').value.trim(),elevator:document.getElementById('m-elevator').value,leaseStart:document.getElementById('m-lease-start').value,moveInTotal:document.getElementById('m-movein-total').value.trim(),notes:document.getElementById('m-notes').value.trim(),tasks:(type==='in'?DEFAULT_IN:DEFAULT_OUT).map(t=>({id:uid(),text:t.text,cat:t.cat,done:false}))};
-  state.moves.push(move);save();renderMoves();updateBadges();closeModal('modal-move');
-  ['m-unit','m-resident','m-date','m-time','m-notes','m-movein-total','m-lease-start'].forEach(id=>document.getElementById(id).value='');
-  showToast('Move added');state.selectedMoveId=move.id;renderTasks();
+  try{
+    const unit=document.getElementById('m-unit').value.trim();
+    const resident=document.getElementById('m-resident').value.trim();
+    const date=document.getElementById('m-date').value;
+    if(!unit||!resident||!date){showToast('Fill in unit, resident & date','⚠️');return;}
+    const type=document.getElementById('m-type').value;
+    const getVal=id=>{const el=document.getElementById(id);return el?el.value.trim():'';};
+    const move={
+      id:uid(),unit,resident,date,type,
+      time:getVal('m-time'),
+      elevator:getVal('m-elevator'),
+      leaseStart:getVal('m-lease-start'),
+      moveInTotal:getVal('m-movein-total'),
+      notes:getVal('m-notes'),
+      tasks:(type==='in'?DEFAULT_IN:DEFAULT_OUT).map(t=>({id:uid(),text:t.text,cat:t.cat,done:false,dueDate:null}))
+    };
+    state.moves.push(move);
+    save();
+    renderMoves();
+    updateBadges();
+    updateStats();
+    closeModal('modal-move');
+    ['m-unit','m-resident','m-date','m-time','m-notes','m-movein-total','m-lease-start'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    showToast('Move added ✓');
+    state.selectedMoveId=move.id;
+    renderTasks();
+  }catch(err){
+    showToast('Error saving move — try again','⚠️');
+    console.error('saveMove error:',err);
+  }
 }
 function renderMoves(search=''){
   let list=[...state.moves];
