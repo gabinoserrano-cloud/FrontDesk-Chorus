@@ -1003,8 +1003,26 @@ function renderTasks(){
   }
   const tasksToShow = hideDone ? move.tasks.filter(t=>!t.done) : move.tasks;
   const hiddenCount = move.tasks.length - tasksToShow.length;
+
+  // Find if this unit has a move-out with keys collected (for move-in key tasks)
+  let keyTurnoverHint = '';
+  if(move.type==='in'){
+    const sameUnitOut = state.moves.find(m=>m.type==='out'&&m.unit===move.unit&&m.id!==move.id);
+    if(sameUnitOut){
+      const keysCollected = sameUnitOut.tasks.find(t=>t.text.includes('Collect front door key')&&t.done);
+      const outName = sameUnitOut.resident;
+      const daysGap = Math.round((new Date(move.date+'T12:00:00')-new Date(sameUnitOut.date+'T12:00:00'))/86400000);
+      if(keysCollected){
+        keyTurnoverHint = `<div style="background:#EAF3DE;border:1px solid #639922;border-radius:8px;padding:8px 14px;margin:8px 18px;font-size:12px;color:#27500A;display:flex;align-items:center;gap:8px;"><span style="font-size:14px;">🔑</span><span><strong>Keys received from ${outName} (Unit ${move.unit} move-out)</strong> — ready to prepare for this move-in${daysGap>0?' · '+daysGap+' day turnaround':''}</span></div>`;
+      } else {
+        keyTurnoverHint = `<div style="background:#FAEEDA;border:1px solid #BA7517;border-radius:8px;padding:8px 14px;margin:8px 18px;font-size:12px;color:#633806;display:flex;align-items:center;gap:8px;"><span style="font-size:14px;">⏳</span><span><strong>Waiting for keys from ${outName} (Unit ${move.unit} move-out ${sameUnitOut.date})</strong> — keys not yet collected${daysGap>0?' · '+daysGap+' day turnaround':''}</span></div>`;
+      }
+    }
+  }
+
   try{
   el.innerHTML=(hiddenCount>0?`<div style="padding:6px 18px;font-size:11px;color:var(--text-muted);background:var(--surface);border-bottom:1px solid var(--border);">${hiddenCount} completed task${hiddenCount>1?'s':''} hidden — click "Show done" to see them</div>`:'')
+  +keyTurnoverHint
   +tasksToShow.map((t,i)=>`<div class="check-item" style="flex-wrap:wrap;gap:6px;align-items:flex-start;">
     <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${move.id}','${t.id}',this.checked)" style="margin-top:3px;flex-shrink:0;">
     <div style="flex:1;min-width:200px;">
