@@ -983,6 +983,24 @@ function renderTasks(){
   if(!move){el.innerHTML='<div class="empty-state"><div class="empty-icon">☑️</div><p>Click a move row to see its tasks.</p></div>';count.textContent='Select a move above';return;}
   count.textContent=`${move.resident} - Unit ${move.unit} - ${move.tasks.filter(t=>t.done).length}/${move.tasks.length} done`;
   if(!move.tasks.length){el.innerHTML='<div class="empty-state"><p>No tasks. Add one above.</p></div>';return;}
+  // Find upcoming move-in for same unit (for move-outs)
+  let upcomingMoveIn=null;
+  if(move.type==='out'){
+    const candidates=state.moves.filter(m=>m.unit===move.unit&&m.type==='in'&&m.date>=move.date);
+    if(candidates.length){
+      candidates.sort((a,b)=>a.date.localeCompare(b.date));
+      upcomingMoveIn=candidates[0];
+    }
+  }
+  function getTaskHint(t){
+    if(!upcomingMoveIn)return '';
+    const isKeyTask=t.text.toLowerCase().includes('key')||t.text.toLowerCase().includes('fob')||t.text.toLowerCase().includes('mail key')||t.text.toLowerCase().includes('collect');
+    if(!isKeyTask)return '';
+    const d1=new Date(move.date+'T12:00:00');
+    const d2=new Date(upcomingMoveIn.date+'T12:00:00');
+    const days=Math.round((d2-d1)/86400000);
+    return `<div style="background:#EAF3DE;color:#27500A;border-radius:4px;padding:3px 8px;font-size:10px;margin-top:3px;display:inline-block;">⚡ ${upcomingMoveIn.resident} moves in Unit ${upcomingMoveIn.unit} in ${days} day${days===1?'':'s'} — keys can be made now</div>`;
+  }
   const tasksToShow = hideDone ? move.tasks.filter(t=>!t.done) : move.tasks;
   const hiddenCount = move.tasks.length - tasksToShow.length;
   try{
@@ -992,6 +1010,7 @@ function renderTasks(){
     <div style="flex:1;min-width:200px;">
       <textarea class="check-label ${t.done?'done':''}" onchange="updateTaskText('${move.id}','${t.id}',this.value)" style="border:none;background:transparent;font-family:inherit;font-size:13px;resize:none;width:100%;outline:none;cursor:text;padding:0;line-height:1.4;min-height:20px;${t.done?'text-decoration:line-through;color:var(--text-muted);':''}" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'">${t.text}</textarea>
       ${t.dueDate?`<div style="font-size:11px;color:#185FA5;margin-top:2px;">Due: ${new Date(t.dueDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>`:''}
+      ${getTaskHint(t)}
     </div>
     <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-top:1px;">
       <input type="date" value="${t.dueDate||''}" title="Set due date" onchange="updateTaskDue('${move.id}','${t.id}',this.value)" style="font-size:10px;border:0.5px solid var(--border);border-radius:4px;padding:2px 4px;background:var(--surface);color:var(--text-secondary);cursor:pointer;max-width:110px;">
