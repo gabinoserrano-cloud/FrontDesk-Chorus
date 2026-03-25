@@ -760,6 +760,7 @@ function setSyncState(s){
 }
 
 let state={moves:[],units:[],maintenance:[],packages:[],guests:[],keys:[],tours:[],walkthroughState:{},walkthroughIssues:[],walkthroughReset:null,passdowns:[],shiftNotes:'',selectedMoveId:null};
+let hideDone=false;
 let moveFilter='all',unitFilterMode='all',maintFilterMode='all',pkgFilter='all',guestFilter='all',keyFilter='all',tourFilter='all';
 
 function toggleSidebar(){
@@ -771,7 +772,7 @@ function toggleSidebar(){
   btn.title=isCollapsed?'Expand sidebar':'Collapse sidebar';
 }
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2);}
-function today(){return new Date().toISOString().split('T')[0];}
+function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function now(){return new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});}
 function fmtDate(d){if(!d)return '-';return new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
 function fmtDateTime(ts){if(!ts)return '-';const d=new Date(ts);return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});}
@@ -898,7 +899,8 @@ function renderMoves(search=''){
     const done=m.tasks.filter(t=>t.done).length,total=m.tasks.length;
     const inpStyle = 'border:none;background:transparent;font-family:inherit;outline:none;cursor:text;padding:2px 0;width:100%;';
   const isT=isToday(m.date);
-  const isTmrw=m.date===new Date(Date.now()+86400000).toISOString().split('T')[0];
+  const _n=new Date();_n.setDate(_n.getDate()+1);const _tmrwStr=_n.getFullYear()+'-'+String(_n.getMonth()+1).padStart(2,'0')+'-'+String(_n.getDate()).padStart(2,'0');
+  const isTmrw=m.date===_tmrwStr;
   const isPast=m.date<today()&&!isT;
   const isWeek=isThisWeek(m.date)&&!isT&&!isTmrw;
   const isComplete=done===total&&total>0;
@@ -937,7 +939,8 @@ function renderMoves(search=''){
   } else {conflictBanner.style.display='none';}
 
   // Tomorrow alert banner
-  const tmrw=new Date(Date.now()+86400000).toISOString().split('T')[0];
+  const _tmrw=new Date();_tmrw.setDate(_tmrw.getDate()+1);
+  const tmrw=_tmrw.getFullYear()+'-'+String(_tmrw.getMonth()+1).padStart(2,'0')+'-'+String(_tmrw.getDate()).padStart(2,'0');
   const tmrwMoves=state.moves.filter(m=>m.date===tmrw);
   let banner=document.getElementById('tmrw-banner');
   if(!banner){banner=document.createElement('div');banner.id='tmrw-banner';const tbl=document.getElementById('moves-table');if(tbl)tbl.parentNode.insertBefore(banner,tbl);}
@@ -964,6 +967,7 @@ function renderTasks(){
   if(!move.tasks.length){el.innerHTML='<div class="empty-state"><p>No tasks. Add one above.</p></div>';return;}
   const tasksToShow = hideDone ? move.tasks.filter(t=>!t.done) : move.tasks;
   const hiddenCount = move.tasks.length - tasksToShow.length;
+  try{
   el.innerHTML=(hiddenCount>0?`<div style="padding:6px 18px;font-size:11px;color:var(--text-muted);background:var(--surface);border-bottom:1px solid var(--border);">${hiddenCount} completed task${hiddenCount>1?'s':''} hidden — click "Show done" to see them</div>`:'')
   +tasksToShow.map((t,i)=>`<div class="check-item" style="flex-wrap:wrap;gap:6px;align-items:flex-start;">
     <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${move.id}','${t.id}',this.checked)" style="margin-top:3px;flex-shrink:0;">
@@ -973,7 +977,7 @@ function renderTasks(){
     </div>
     <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-top:1px;">
       <input type="date" value="${t.dueDate||''}" title="Set due date" onchange="updateTaskDue('${move.id}','${t.id}',this.value)" style="font-size:10px;border:0.5px solid var(--border);border-radius:4px;padding:2px 4px;background:var(--surface);color:var(--text-secondary);cursor:pointer;max-width:110px;">
-      <span class="check-tag ${t.cat}" style="flex-shrink:0;">${t.cat.replace('-',' ')}</span>
+      <span class="check-tag ${t.cat||'general'}" style="flex-shrink:0;">${(t.cat||'general').replace('-',' ')}</span>
       <button class="action-btn" onclick="moveTaskUp('${move.id}','${t.id}')" title="Move up" style="font-size:11px;padding:1px 5px;">↑</button>
       <button class="action-btn" onclick="moveTaskDown('${move.id}','${t.id}')" title="Move down" style="font-size:11px;padding:1px 5px;">↓</button>
       <button class="action-btn del" onclick="deleteTask('${move.id}','${t.id}')">✕</button>
@@ -981,6 +985,7 @@ function renderTasks(){
   </div>`).join('');
   el.querySelectorAll('textarea').forEach(ta=>{ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';});
   updateStats();
+  }catch(err){console.error('renderTasks error:',err);el.innerHTML='<div class="empty-state"><p>Error loading tasks. Try clicking the row again.</p></div>';}
 }
 function updateTaskText(mId,tId,val){
   const m=state.moves.find(m=>m.id===mId);
@@ -1332,7 +1337,8 @@ function generatePassdown(){
   // ── MOVE-INS TODAY ──
   const todayIns=state.moves.filter(m=>m.type==='in'&&isToday(m.date));
   const todayOuts=state.moves.filter(m=>m.type==='out'&&isToday(m.date));
-  const tmrw=new Date(Date.now()+86400000).toISOString().split('T')[0];
+  const _td=new Date();_td.setDate(_td.getDate()+1);
+  const tmrw=_td.getFullYear()+'-'+String(_td.getMonth()+1).padStart(2,'0')+'-'+String(_td.getDate()).padStart(2,'0');
   const tmrwMoves=state.moves.filter(m=>m.date===tmrw);
 
   if(todayIns.length){
