@@ -38,14 +38,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--warm-white);color:var(--t
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
 
 .sidebar{width:225px;min-width:225px;background:var(--black);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;transition:width 0.25s,min-width 0.25s;}
-.sidebar.collapsed{width:56px;min-width:56px;overflow:hidden;}
-.sidebar.collapsed .sidebar-brand,.sidebar.collapsed .sidebar-date,.sidebar.collapsed .nav-section-label,.sidebar.collapsed .sidebar-footer{display:none!important;}
-.sidebar.collapsed .nav-item{justify-content:center;padding:10px 0;width:56px;}
-.sidebar.collapsed .nav-item .badge{display:none!important;}
-.sidebar.collapsed .nav-item span.nav-label{display:none!important;}
-.sidebar.collapsed .nav-item span.nav-icon{font-size:18px;}
-.sidebar-toggle{position:absolute;top:12px;right:-14px;width:28px;height:28px;border-radius:50%;background:var(--black);border:2px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.8);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;z-index:100;transition:all 0.2s;line-height:1;font-weight:bold;}
-.sidebar-toggle:hover{background:var(--gold);color:var(--black);border-color:var(--gold);}
+.sidebar.collapsed{width:48px;min-width:48px;overflow:hidden;}
+.sidebar.collapsed .sidebar-brand,.sidebar.collapsed .sidebar-date,.sidebar.collapsed .nav-section-label,.sidebar.collapsed .sidebar-footer,.sidebar.collapsed .nav-badge,.sidebar.collapsed .nav-label{display:none!important;}
+.sidebar.collapsed .sidebar-nav{padding:8px 0;}
+.sidebar.collapsed .nav-item{justify-content:center;padding:8px 0;width:48px;min-width:0;}
+.sidebar.collapsed .nav-icon{font-size:16px;margin:0;}
+.sidebar-toggle{position:absolute;top:14px;right:-13px;width:26px;height:26px;border-radius:50%;background:var(--black);border:1.5px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.8);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;z-index:200;transition:all 0.2s;line-height:1;}
+.sidebar-toggle:hover{background:var(--gold);color:#000;border-color:var(--gold);}
 .sidebar-brand{padding:24px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.08);}
 .sidebar-brand .eyebrow{font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:4px;}
 .sidebar-brand .name{font-family:'DM Serif Display',serif;font-size:22px;color:#fff;}
@@ -240,15 +239,17 @@ tbody tr:hover{background:var(--surface);}
       <div class="date-val" id="sidebar-date">—</div>
     </div>
     <nav class="sidebar-nav">
+      <div class="nav-item active" onclick="switchSection('dashboard',this)"><span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span></div>
       <div class="nav-section-label">Operations</div>
-      <div class="nav-item active" onclick="switchSection('moves',this)"><span class="nav-icon">🚚</span><span class="nav-label">Move Ins / Outs</span><span class="nav-badge" id="badge-moves">0</span></div>
+      <div class="nav-item" onclick="switchSection('moves',this)"><span class="nav-icon">🚚</span><span class="nav-label">Move Ins / Outs</span><span class="nav-badge" id="badge-moves">0</span></div>
       <div class="nav-item" onclick="switchSection('vacants',this)"><span class="nav-icon">🏠</span><span class="nav-label">Vacant Units</span><span class="nav-badge" id="badge-vacants">0</span></div>
       <div class="nav-item" onclick="switchSection('maintenance',this)"><span class="nav-icon">🔧</span><span class="nav-label">Maintenance</span><span class="nav-badge red" id="badge-maint">0</span></div>
       <div class="nav-section-label">Resident Services</div>
-      <div class="nav-item" onclick="switchSection('packages',this)"><span class="nav-icon">📦</span><span class="nav-label">Packages</span><span class="nav-badge blue" id="badge-packages">0</span></div>
+
       <div class="nav-item" onclick="switchSection('guests',this)"><span class="nav-icon">👥</span><span class="nav-label">Guests & Visitors</span><span class="nav-badge" id="badge-guests">0</span></div>
       <div class="nav-item" onclick="switchSection('keys',this)"><span class="nav-icon">🗝️</span><span class="nav-label">Key Tracker</span><span class="nav-badge gold" id="badge-keys" style="background:var(--gold)">0</span></div>
       <div class="nav-section-label">Shift</div>
+      <div class="nav-item" onclick="switchSection('amenities',this)"><span class="nav-icon">🎉</span><span class="nav-label">Amenity Bookings</span><span class="nav-badge" id="badge-amenities" style="background:#534AB7;">0</span></div>
       <div class="nav-item" onclick="switchSection('tours',this)"><span class="nav-icon">🏡</span><span class="nav-label">Tour Log</span><span class="nav-badge purple" id="badge-tours">0</span></div>
       <div class="nav-item" onclick="switchSection('walkthrough',this)"><span class="nav-icon">🚶</span><span class="nav-label">Walkthrough</span></div>
       <div class="nav-item" onclick="switchSection('passdown',this)"><span class="nav-icon">📋</span><span class="nav-label">Daily Passdown</span></div>
@@ -277,19 +278,27 @@ tbody tr:hover{background:var(--surface);}
     </div>
     <div class="content">
 
+      <!-- ══ DASHBOARD ══ -->
+      <div class="section active" id="section-dashboard">
+        <div id="dashboard-body"></div>
+      </div>
+
       <!-- ══ MOVES ══ -->
-      <div class="section active" id="section-moves">
+      <div class="section" id="section-moves">
         <div class="stat-strip">
           <div class="stat-card gold-accent"><div class="stat-label">Move Ins Today</div><div class="stat-num" id="stat-ins-today">0</div><div class="stat-sub">This week: <span id="stat-ins-week">0</span></div></div>
           <div class="stat-card red-accent"><div class="stat-label">Move Outs Today</div><div class="stat-num" id="stat-outs-today">0</div><div class="stat-sub">This week: <span id="stat-outs-week">0</span></div></div>
           <div class="stat-card"><div class="stat-label">Pending Tasks</div><div class="stat-num" id="stat-tasks-pending">0</div><div class="stat-sub">Across all moves</div></div>
           <div class="stat-card green-accent"><div class="stat-label">Completed Tasks</div><div class="stat-num" id="stat-tasks-done">0</div><div class="stat-sub">All time</div></div>
         </div>
-        <div class="sub-tabs">
-          <button class="sub-tab active" onclick="filterMoves('all',this)">All</button>
-          <button class="sub-tab" onclick="filterMoves('in',this)">Move Ins</button>
-          <button class="sub-tab" onclick="filterMoves('out',this)">Move Outs</button>
-          <button class="sub-tab" onclick="filterMoves('today',this)">Today</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div class="sub-tabs">
+            <button class="sub-tab active" onclick="filterMoves('all',this)">All</button>
+            <button class="sub-tab" onclick="filterMoves('in',this)">Move Ins</button>
+            <button class="sub-tab" onclick="filterMoves('out',this)">Move Outs</button>
+            <button class="sub-tab" onclick="filterMoves('today',this)">Today</button>
+          </div>
+          <button id="archive-view-btn" onclick="toggleArchiveView()" style="font-size:12px;padding:5px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);cursor:pointer;white-space:nowrap;font-family:inherit;">📦 View Archive</button>
         </div>
         <div class="card">
           <div class="card-head">
@@ -359,30 +368,6 @@ tbody tr:hover{background:var(--surface);}
           <div class="card-head"><div class="card-head-left"><span class="card-title">Maintenance Log</span><span class="card-count" id="maint-count">0 issues</span></div></div>
           <table><thead><tr><th style="width:75px">Unit</th><th style="width:120px">Issue</th><th>Description</th><th style="width:88px">Priority</th><th style="width:125px">Status</th><th style="width:95px">Reported</th><th style="width:40px"></th></tr></thead>
           <tbody id="maint-tbody"></tbody></table>
-        </div>
-      </div>
-
-      <!-- ══ PACKAGES ══ -->
-      <div class="section" id="section-packages">
-        <div class="stat-strip">
-          <div class="stat-card blue-accent"><div class="stat-label">Unclaimed</div><div class="stat-num" id="stat-pkg-unclaimed">0</div><div class="stat-sub">Awaiting pickup</div></div>
-          <div class="stat-card green-accent"><div class="stat-label">Claimed Today</div><div class="stat-num" id="stat-pkg-claimed-today">0</div><div class="stat-sub">Picked up</div></div>
-          <div class="stat-card gold-accent"><div class="stat-label">Received Today</div><div class="stat-num" id="stat-pkg-today">0</div><div class="stat-sub">Logged in</div></div>
-          <div class="stat-card"><div class="stat-label">Total Logged</div><div class="stat-num" id="stat-pkg-total">0</div><div class="stat-sub">All time</div></div>
-        </div>
-        <div class="action-row">
-          <div class="sub-tabs">
-            <button class="sub-tab active" onclick="filterPkg('all',this)">All</button>
-            <button class="sub-tab" onclick="filterPkg('unclaimed',this)">Unclaimed</button>
-            <button class="sub-tab" onclick="filterPkg('claimed',this)">Claimed</button>
-            <button class="sub-tab" onclick="filterPkg('today',this)">Today</button>
-          </div>
-          <input class="search-input" placeholder="Search unit or resident…" oninput="renderPackages(this.value)">
-        </div>
-        <div class="card">
-          <div class="card-head"><div class="card-head-left"><span class="card-title">Package Log</span><span class="card-count" id="pkg-count">0 packages</span></div></div>
-          <table><thead><tr><th style="width:70px">Unit</th><th>Resident</th><th style="width:90px">Carrier</th><th style="width:100px">Received</th><th style="width:100px">Location</th><th style="width:100px">Status</th><th style="width:95px">Claimed</th><th style="width:40px"></th></tr></thead>
-          <tbody id="pkg-tbody"></tbody></table>
         </div>
       </div>
 
@@ -501,7 +486,8 @@ tbody tr:hover{background:var(--surface);}
               <textarea class="passdown-editor" id="pd-notes" placeholder="• Move ins/outs completed&#10;• Packages received / claimed&#10;• Guests checked in/out&#10;• Maintenance updates&#10;• Walkthrough notes&#10;• Anything to flag for next shift…"></textarea>
             </div>
             <div style="display:flex;justify-content:flex-end;gap:8px;">
-              <button class="btn" onclick="generatePassdown()">✨ Auto-generate from today's data</button>
+              <button class="btn" onclick="generatePassdown()">✨ Auto-generate</button>
+              <button class="btn" onclick="copyPassdown()">📋 Copy</button>
               <button class="btn gold" onclick="savePassdown()">Save Passdown</button>
             </div>
           </div>
@@ -509,6 +495,37 @@ tbody tr:hover{background:var(--surface);}
         <div class="card">
           <div class="card-head"><span class="card-title">Passdown History</span></div>
           <div style="padding:12px 16px;" id="passdown-list"><div class="empty-state"><div class="empty-icon">📋</div><p>No passdowns saved yet.</p></div></div>
+        </div>
+      </div>
+
+      <!-- AMENITY BOOKINGS -->
+      <div class="section" id="section-amenities">
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-head">
+            <div class="card-head-left"><span class="card-title">Amenity Bookings</span><span class="card-count" id="amenities-count">0 bookings</span></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="sub-tab active" onclick="filterAmenities('all',this)">All</button>
+              <button class="sub-tab" onclick="filterAmenities('today',this)">Today</button>
+              <button class="sub-tab" onclick="filterAmenities('upcoming',this)">Upcoming</button>
+              <button class="sub-tab" onclick="filterAmenities('event',this)">Events</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;">
+              <thead><tr>
+                <th style="padding:8px 12px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em;">Resident</th>
+                <th style="padding:8px 12px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em;">Unit</th>
+                <th style="padding:8px 12px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em;">Amenity</th>
+                <th style="padding:8px 12px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em;">Date</th>
+                <th style="padding:8px 12px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em;">Time</th>
+                <th style="padding:8px 12px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em;">Type</th>
+                <th style="padding:8px 12px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em;">Fee</th>
+                <th style="padding:8px 12px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em;">Notes</th>
+                <th style="padding:8px 4px;border-bottom:1px solid var(--border);"></th>
+              </tr></thead>
+              <tbody id="amenities-tbody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -783,8 +800,8 @@ function showToast(msg,icon='✓'){const t=document.getElementById('toast');t.in
 let saveTimer=null;
 function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>cloudSave(state),700);}
 
-const sectionTitles={moves:'Move Ins / Outs',vacants:'Vacant Units & Tours',maintenance:'Maintenance Log',packages:'Package Tracking',guests:'Guests & Visitors',keys:'Key Tracker',tours:'Tour Log',walkthrough:'Building Walkthrough',passdown:'Daily Passdown',calendar:'Calendar'};
-const addLabels={moves:'+ Add Move',vacants:'+ Add Unit',maintenance:'+ Log Issue',packages:'+ Log Package',guests:'+ Log Guest',keys:'+ Log Key',tours:'+ Log Tour',walkthrough:null,passdown:null,calendar:null};
+const sectionTitles={dashboard:'Dashboard',moves:'Move Ins / Outs',vacants:'Vacant Units & Tours',maintenance:'Maintenance Log',guests:'Guests & Visitors',keys:'Key Tracker',tours:'Tour Log',walkthrough:'Building Walkthrough',passdown:'Daily Passdown',calendar:'Calendar',amenities:'Amenity Bookings'};
+const addLabels={dashboard:null,moves:'+ Add Move',vacants:'+ Add Unit',maintenance:'+ Log Issue',guests:'+ Log Guest',keys:'+ Log Key',tours:'+ Log Tour',walkthrough:null,passdown:null,calendar:null,amenities:'+ Add Booking'};
 let currentSection='moves';
 
 function switchSection(id,el){
@@ -803,6 +820,7 @@ function switchSection(id,el){
   if(id==='walkthrough')renderWalkthrough();
 }
 function openMainAdd(){
+  if(currentSection==='amenities'){openAmenityAdd();return;}
   const m={moves:'modal-move',vacants:'modal-unit',maintenance:'modal-maint',packages:'modal-pkg',guests:'modal-guest',keys:'modal-key',tours:'modal-tour'};
   if(m[currentSection])openModal(m[currentSection]);
 }
@@ -1131,6 +1149,7 @@ function savePkg(){
 }
 function filterPkg(f,el){pkgFilter=f;document.querySelectorAll('#section-packages .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderPackages();}
 function renderPackages(search=''){
+  if(!document.getElementById('pkg-tbody'))return;
   let list=[...state.packages];
   if(pkgFilter==='unclaimed')list=list.filter(p=>p.status==='unclaimed');
   else if(pkgFilter==='claimed')list=list.filter(p=>p.status==='claimed');
@@ -1149,7 +1168,7 @@ function renderPackages(search=''){
     <td style="font-size:12px;">${p.claimedAt?fmtDateTime(p.claimedAt):'-'}</td>
     <td style="white-space:nowrap;">${p.status==='unclaimed'?`<button class="btn sm" style="font-size:10px;padding:3px 8px;" onclick="claimPkg('${p.id}')">Claimed</button>`:''}<button class="action-btn del" onclick="deletePkg('${p.id}')">✕</button></td>
   </tr>`).join('');
-  document.getElementById('pkg-count').textContent=list.length+' package'+(list.length===1?'':'s');updateStats();
+  const pkgCountEl=document.getElementById('pkg-count');if(pkgCountEl)pkgCountEl.textContent=list.length+' package'+(list.length===1?'':'s');updateStats();
 }
 function claimPkg(id){const p=state.packages.find(x=>x.id===id);if(!p)return;p.status='claimed';p.claimedAt=Date.now();save();renderPackages();updateBadges();updateStats();showToast('Package marked as claimed ✓');}
 function deletePkg(id){if(!confirm('Remove package?'))return;state.packages=state.packages.filter(p=>p.id!==id);save();renderPackages();updateBadges();updateStats();showToast('Removed','🗑');}
@@ -1253,26 +1272,25 @@ function deleteTour(id){if(!confirm('Remove?'))return;state.tours=state.tours.fi
 
 // -- WALKTHROUGH --
 const WALKTHROUGH_ITEMS=[
-  {id:'w1',zone:'Lobby & Entry',text:'Front door & vestibule clean and clear',cat:'lobby'},
-  {id:'w2',zone:'Lobby & Entry',text:'Front desk area organized and stocked',cat:'lobby'},
-  {id:'w3',zone:'Lobby & Entry',text:'Lobby furniture reset and clean',cat:'lobby'},
-  {id:'w4',zone:'Lobby & Entry',text:'Lighting levels correct',cat:'lobby'},
-  {id:'w5',zone:'Lobby & Entry',text:'Music at appropriate volume',cat:'lobby'},
-  {id:'w6',zone:'Lobby & Entry',text:'Plants looking healthy, watered',cat:'lobby'},
-  {id:'w7',zone:'Lobby & Entry',text:'Mail area tidy, no overflow',cat:'lobby'},
-  {id:'w8',zone:'Elevators & Hallways',text:'All elevators operational',cat:'lobby'},
-  {id:'w9',zone:'Elevators & Hallways',text:'Elevator interiors clean',cat:'lobby'},
-  {id:'w10',zone:'Elevators & Hallways',text:'Hallways on all floors clear',cat:'lobby'},
-  {id:'w11',zone:'Elevators & Hallways',text:'No trash or items left in corridors',cat:'lobby'},
-  {id:'w12',zone:'Amenity Areas',text:'Gym equipment operational and clean',cat:'amenity'},
-  {id:'w13',zone:'Amenity Areas',text:'Gym towels/supplies stocked',cat:'amenity'},
-  {id:'w14',zone:'Amenity Areas',text:'Rooftop / common area clean and set',cat:'amenity'},
-  {id:'w15',zone:'Amenity Areas',text:'Lounge furniture reset',cat:'amenity'},
-  {id:'w16',zone:'Amenity Areas',text:'Package room organized',cat:'amenity'},
-  {id:'w17',zone:'Exterior & Access',text:'Building exterior clear of debris',cat:'exterior'},
-  {id:'w18',zone:'Exterior & Access',text:'Bike storage area organized',cat:'exterior'},
-  {id:'w19',zone:'Exterior & Access',text:'Garage access functioning',cat:'exterior'},
-  {id:'w20',zone:'Exterior & Access',text:'All access points secure',cat:'exterior'},
+  {id:'w1',zone:'1st Floor — Lobby & Common',text:'Lobby clean, furniture reset, lighting correct',cat:'lobby'},
+  {id:'w2',zone:'1st Floor — Lobby & Common',text:'Cafe/bar area clean and stocked',cat:'lobby'},
+  {id:'w3',zone:'1st Floor — Lobby & Common',text:'Residential mailboxes area tidy, no overflow',cat:'lobby'},
+  {id:'w4',zone:'1st Floor — Lobby & Common',text:'Coworking spaces clean, furniture reset',cat:'lobby'},
+  {id:'w5',zone:'1st Floor — Lobby & Common',text:'Chorus Hall clean and set',cat:'lobby'},
+  {id:'w6',zone:'1st Floor — Lobby & Common',text:'Restrooms clean, stocked, no issues',cat:'lobby'},
+  {id:'w7',zone:'1st Floor — Lobby & Common',text:'Outside of lobby clear, no debris',cat:'exterior'},
+  {id:'w8',zone:'2nd Floor — Resident Lounges',text:'TV lounge clean, furniture reset',cat:'amenity'},
+  {id:'w9',zone:'2nd Floor — Resident Lounges',text:'Speakeasy clean and set',cat:'amenity'},
+  {id:'w9b',zone:'2nd Floor — Resident Lounges',text:'Alleyway entrances clear and clean',cat:'exterior'},
+  {id:'w10',zone:'3rd Floor — Terrace',text:'3rd floor terrace clean, furniture set',cat:'amenity'},
+  {id:'w11',zone:'9th Floor — Pet Relief',text:'Pet relief area clean, supplies stocked',cat:'amenity'},
+  {id:'w12',zone:'10th Floor — Fitness & Pool',text:'Fitness center equipment operational and clean',cat:'amenity'},
+  {id:'w13',zone:'10th Floor — Fitness & Pool',text:'Pool/hot tub clean, water levels ok',cat:'amenity'},
+  {id:'w14',zone:'10th Floor — Fitness & Pool',text:'Ninja warriors course area clear and safe',cat:'amenity'},
+  {id:'w15',zone:'10th Floor — Fitness & Pool',text:'Restrooms clean, stocked, no issues',cat:'amenity'},
+  {id:'w16',zone:'28th Floor — Belvedere & Terrace',text:'Belvedere room clean, furniture reset',cat:'amenity'},
+  {id:'w17',zone:'28th Floor — Belvedere & Terrace',text:'Terrace clean, furniture set',cat:'amenity'},
+  {id:'w18',zone:'28th Floor — Belvedere & Terrace',text:'Restrooms clean, stocked, no issues',cat:'amenity'},
 ];
 
 function renderWalkthrough(){
@@ -1331,126 +1349,62 @@ function saveShiftNotes(val){
 }
 
 function generatePassdown(){
-  const dateStr=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-  let text=`SHIFT PASSDOWN — ${dateStr}\n${'='.repeat(50)}\n\n`;
-
-  // ── MOVE-INS TODAY ──
-  const todayIns=state.moves.filter(m=>m.type==='in'&&isToday(m.date));
-  const todayOuts=state.moves.filter(m=>m.type==='out'&&isToday(m.date));
-  const _td=new Date();_td.setDate(_td.getDate()+1);
-  const tmrw=_td.getFullYear()+'-'+String(_td.getMonth()+1).padStart(2,'0')+'-'+String(_td.getDate()).padStart(2,'0');
-  const tmrwMoves=state.moves.filter(m=>m.date===tmrw);
-
-  if(todayIns.length){
-    text+=`MOVE-INS TODAY (${todayIns.length}):\n`;
-    todayIns.forEach(m=>{
-      const done=m.tasks.filter(t=>t.done).length;
-      const pct=m.tasks.length>0?Math.round(done/m.tasks.length*100):0;
-      text+=`  • Unit ${m.unit} — ${m.resident}`;
-      if(m.moveInTotal) text+=` | Move-in total: $${m.moveInTotal}`;
-      if(m.time) text+=` | Time: ${m.time}`;
-      text+=` | Tasks: ${done}/${m.tasks.length} (${pct}% complete)`;
-      if(done===m.tasks.length&&m.tasks.length>0) text+=' ✓ COMPLETE';
-      if(m.notes) text+=`\n    Notes: ${m.notes}`;
-      text+='\n';
-    });
-    text+='\n';
-  } else {
-    text+='MOVE-INS TODAY: None\n\n';
-  }
-
-  // ── MOVE-OUTS TODAY ──
-  if(todayOuts.length){
-    text+=`MOVE-OUTS TODAY (${todayOuts.length}):\n`;
-    todayOuts.forEach(m=>{
-      const done=m.tasks.filter(t=>t.done).length;
-      text+=`  • Unit ${m.unit} — ${m.resident}`;
-      if(m.time) text+=` | Time: ${m.time}`;
-      text+=` | Tasks: ${done}/${m.tasks.length}`;
-      if(done===m.tasks.length&&m.tasks.length>0) text+=' ✓ COMPLETE';
-      if(m.notes) text+=`\n    Notes: ${m.notes}`;
-      text+='\n';
-    });
-    text+='\n';
-  } else {
-    text+='MOVE-OUTS TODAY: None\n\n';
-  }
-
-  // ── UPCOMING MOVES TOMORROW ──
-  if(tmrwMoves.length){
-    text+=`TOMORROW'S MOVES (${tmrwMoves.length}):\n`;
-    tmrwMoves.forEach(m=>{
-      text+=`  • Unit ${m.unit} — ${m.resident} [${m.type==='in'?'MOVE IN':'MOVE OUT'}]`;
-      if(m.moveInTotal&&m.type==='in') text+=` | Move-in total: $${m.moveInTotal}`;
-      text+='\n';
-    });
-    text+='\n';
-  }
-
-  // ── MAINTENANCE ──
+  const now=new Date();
+  const hr=now.getHours();
+  const greeting=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
+  const dateStr=(now.getMonth()+1)+'/'+now.getDate()+'/'+now.getFullYear();
+  const t=today();
+  const _end=new Date();_end.setDate(_end.getDate()+7);
+  const endStr=(_end.getMonth()+1)+'/'+_end.getDate()+'/'+_end.getFullYear();
+  const upcomingIns=state.moves.filter(m=>m.type==='in'&&m.date>=t).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8);
+  const upcomingOuts=state.moves.filter(m=>m.type==='out'&&m.date>=t).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8);
   const openMaint=state.maintenance.filter(m=>m.status!=='resolved');
-  const newToday=state.maintenance.filter(m=>m.date===today());
-  if(openMaint.length){
-    text+=`MAINTENANCE (${openMaint.length} active):\n`;
-    if(newToday.length) text+=`  [${newToday.length} new today]\n`;
-    openMaint.forEach(m=>{
-      text+=`  • [${m.priority.toUpperCase()}] Unit ${m.unit}: ${m.issue}`;
-      if(m.desc) text+=` — ${m.desc}`;
-      text+=` [${m.status.replace('-',' ')}]\n`;
+  const checkedInGuests=state.guests.filter(g=>g.status==='checked-in');
+  const issuedKeys=state.keys.filter(k=>k.status==='issued'&&k.type!=='resident');
+  let text=greeting+' team,\n\nHere is today\'s passdown with active items only based on the '+dateStr+' tracker. Please review carefully and follow up as needed during your shift.\n\n';
+  let keysSection='';
+  issuedKeys.forEach(k=>{keysSection+='   - *'+k.unit+' \u2013 '+k.name+'* | '+(k.notes||'Key issued \u2014 please follow up.')+'\n';});
+  checkedInGuests.forEach(g=>{keysSection+='   - *Unit '+g.unit+' \u2013 '+g.name+'* | Guest checked in'+(g.host?' for '+g.host:'')+(g.notes?' \u2014 '+g.notes:'')+'.\n';});
+  if(keysSection)text+='\uD83D\uDD1D *Keys / Access*\n\n'+keysSection+'\n';
+  if(upcomingIns.length){
+    text+='\uD83D\uDCE6 *Upcoming Move-Ins (through '+endStr+')*\n\n';
+    upcomingIns.forEach(m=>{
+      const dd=new Date(m.date+'T12:00:00');
+      const dl=(dd.getMonth()+1)+'/'+(dd.getDate());
+      text+='   - *'+dl+' \u2014 '+m.unit+' \u2013 '+m.resident+'*';
+      if(m.notes)text+=' | '+m.notes;
+      if(m.moveInTotal)text+=' | Move-in total: $'+m.moveInTotal;
+      text+='\n';
     });
     text+='\n';
-  } else {
-    text+='MAINTENANCE: No open issues\n\n';
   }
-
-  // ── PACKAGES ──
-  const unclaimed=state.packages.filter(p=>p.status==='unclaimed');
-  const claimedToday=state.packages.filter(p=>p.status==='claimed'&&p.claimedAt&&new Date(p.claimedAt).toISOString().split('T')[0]===today());
-  if(unclaimed.length||claimedToday.length){
-    text+=`PACKAGES:\n`;
-    if(unclaimed.length){text+=`  Unclaimed (${unclaimed.length}):\n`;unclaimed.forEach(p=>text+=`  • Unit ${p.unit} — ${p.resident}: ${p.carrier}${p.location?' @ '+p.location:''}\n`);}
-    if(claimedToday.length) text+=`  Claimed today: ${claimedToday.length}\n`;
+  if(upcomingOuts.length){
+    text+='\uD83D\uDE9A *Upcoming Move-Outs (through '+endStr+')*\n\n';
+    upcomingOuts.forEach(m=>{
+      const dd=new Date(m.date+'T12:00:00');
+      const dl=(dd.getMonth()+1)+'/'+(dd.getDate());
+      text+='   - *'+dl+' \u2014 '+m.unit+' \u2013 '+m.resident+'*';
+      if(m.notes)text+=' | '+m.notes;
+      text+='\n';
+    });
     text+='\n';
   }
-
-  // ── GUESTS ──
-  const checkedIn=state.guests.filter(g=>g.status==='checked-in');
-  const checkedOutToday=state.guests.filter(g=>g.status==='checked-out'&&g.checkoutAt&&new Date(g.checkoutAt).toISOString().split('T')[0]===today());
-  if(checkedIn.length||checkedOutToday.length){
-    text+=`GUESTS:\n`;
-    if(checkedIn.length){text+=`  Currently in building (${checkedIn.length}):\n`;checkedIn.forEach(g=>text+=`  • ${g.name} — Unit ${g.unit}${g.host?' ('+g.host+')':''}\n`);}
-    if(checkedOutToday.length) text+=`  Checked out today: ${checkedOutToday.length}\n`;
+  if(openMaint.length){
+    text+='\uD83D\uDD27 *Maintenance*\n\n';
+    openMaint.forEach(m=>{text+='   - *Unit '+m.unit+'* | ['+m.priority.toUpperCase()+'] '+m.issue+(m.desc?' \u2014 '+m.desc:'')+' ['+m.status.replace('-',' ')+']\n';});
     text+='\n';
   }
-
-  // ── TOURS ──
-  const toursToday=state.tours.filter(t=>isToday(t.date));
-  if(toursToday.length){
-    text+=`TOURS TODAY (${toursToday.length}):\n`;
-    toursToday.forEach(t=>text+=`  • ${t.name} — Unit ${t.unit||'TBD'} [${t.type.toUpperCase()}]${t.time?' at '+t.time:''}\n`);
-    text+='\n';
-  }
-
-  // ── WALKTHROUGH FLAGS ──
-  const wi=state.walkthroughIssues||[];
-  if(wi.length){
-    text+=`WALKTHROUGH FLAGS (${wi.length}):\n`;
-    wi.forEach(i=>text+=`  • [${i.priority.toUpperCase()}] ${i.location}: ${i.desc}\n`);
-    text+='\n';
-  }
-
-  // ── VACANT UNITS ──
-  const vu=state.units.filter(u=>u.status==='vacant');
-  const sg=state.units.filter(u=>u.sgt&&u.status==='vacant');
-  if(vu.length){
-    text+=`VACANT UNITS (${vu.length}): ${vu.map(u=>'Unit '+u.num).join(', ')}\n`;
-    if(sg.length) text+=`SGT Ready: ${sg.map(u=>'Unit '+u.num).join(', ')}\n`;
-    text+='\n';
-  }
-
-  text+='\nNOTES FOR NEXT SHIFT:\n• ';
+  text+='\uD83D\uDCCB *Resident Matters*\n\n   - \n\n';
+  text+='------------------------------\n\nIf anyone receives updates related to the items above, please note them in the tracker and update the team accordingly. Do not hesitate to reach out if anything comes up that needs clarification.\n\nBest,\n\nGabino S.M.\n\nFront Desk Lead | Chorus - SF\n\ngserrano@alignrealestate.com';
   document.getElementById('pd-notes').value=text;
-  showToast('Passdown generated ✨');
+  showToast('Passdown generated \u2728');
+}
+function copyPassdown(){
+  const text=document.getElementById('pd-notes').value;
+  if(!text.trim()){showToast('Nothing to copy yet','⚠️');return;}
+  navigator.clipboard.writeText(text).then(()=>showToast('Copied to clipboard ✓')).catch(()=>{
+    const ta=document.getElementById('pd-notes');ta.select();document.execCommand('copy');showToast('Copied ✓');
+  });
 }
 function exportPassdown(){
   if(!state.passdowns.length){showToast('No passdowns to export','⚠️');return;}
@@ -1480,10 +1434,10 @@ function updateStats(){
   document.getElementById('stat-resolved').textContent=state.maintenance.filter(m=>m.status==='resolved').length;
   document.getElementById('stat-highpri').textContent=state.maintenance.filter(m=>m.priority==='high'&&m.status!=='resolved').length;
   const pkgs=state.packages||[];
-  document.getElementById('stat-pkg-unclaimed').textContent=pkgs.filter(p=>p.status==='unclaimed').length;
-  document.getElementById('stat-pkg-claimed-today').textContent=pkgs.filter(p=>p.status==='claimed'&&p.claimedAt&&new Date(p.claimedAt).toISOString().split('T')[0]===t).length;
-  document.getElementById('stat-pkg-today').textContent=pkgs.filter(p=>new Date(p.receivedAt).toISOString().split('T')[0]===t).length;
-  document.getElementById('stat-pkg-total').textContent=pkgs.length;
+  const spku=document.getElementById('stat-pkg-unclaimed');if(spku)spku.textContent=pkgs.filter(p=>p.status==='unclaimed').length;
+  const spkct=document.getElementById('stat-pkg-claimed-today');if(spkct)spkct.textContent=pkgs.filter(p=>p.status==='claimed'&&p.claimedAt&&new Date(p.claimedAt).toISOString().split('T')[0]===t).length;
+  const spkt=document.getElementById('stat-pkg-today');if(spkt)spkt.textContent=pkgs.filter(p=>new Date(p.receivedAt).toISOString().split('T')[0]===t).length;
+  const spktot=document.getElementById('stat-pkg-total');if(spktot)spktot.textContent=pkgs.length;
   const gs=state.guests||[];
   document.getElementById('stat-guests-in').textContent=gs.filter(g=>g.status==='checked-in').length;
   document.getElementById('stat-guests-today').textContent=gs.filter(g=>g.date===t).length;
@@ -1504,7 +1458,8 @@ function updateBadges(){
   document.getElementById('badge-moves').textContent=state.moves.filter(m=>isThisWeek(m.date)).length;
   document.getElementById('badge-vacants').textContent=(state.units||[]).filter(u=>u.status==='vacant').length;
   document.getElementById('badge-maint').textContent=(state.maintenance||[]).filter(m=>m.status!=='resolved').length;
-  document.getElementById('badge-packages').textContent=(state.packages||[]).filter(p=>p.status==='unclaimed').length;
+  const bpkg=document.getElementById('badge-packages');if(bpkg)bpkg.textContent=(state.packages||[]).filter(p=>p.status==='unclaimed').length;
+  const bam=document.getElementById('badge-amenities');if(bam){const t2=today();const _n2=new Date();_n2.setDate(_n2.getDate()+7);const wk=_n2.getFullYear()+'-'+String(_n2.getMonth()+1).padStart(2,'0')+'-'+String(_n2.getDate()).padStart(2,'0');bam.textContent=(state.amenities||[]).filter(a=>a.date>=t2&&a.date<=wk).length;}
   document.getElementById('badge-guests').textContent=(state.guests||[]).filter(g=>g.status==='checked-in').length;
   document.getElementById('badge-keys').textContent=(state.keys||[]).filter(k=>k.status==='issued').length;
   document.getElementById('badge-tours').textContent=(state.tours||[]).filter(t=>isToday(t.date)).length;
@@ -1546,7 +1501,7 @@ function init(){
   setSyncState('synced');
   document.getElementById('export-btn').style.display='none';
   document.getElementById('reset-walk-btn').style.display='none';
-  renderMoves();renderUnits();renderMaint();renderPackages();renderGuests();renderKeys();renderTours();renderPassdowns();
+  renderMoves();renderUnits();renderMaint();renderGuests();renderKeys();renderTours();renderPassdowns();
   updateStats();updateBadges();
   document.getElementById('pd-date').value=today();
   // Load persistent shift notes
@@ -1773,7 +1728,7 @@ function importAllData(file){
       if(!confirm('This will replace ALL your current data with the imported file. Are you sure?'))return;
       state={moves:[],units:[],maintenance:[],packages:[],guests:[],keys:[],tours:[],walkthroughState:{},walkthroughIssues:[],walkthroughReset:null,passdowns:[],selectedMoveId:null,...imported};
       cloudSave(state);
-      renderMoves();renderUnits();renderMaint();renderPackages();renderGuests();renderKeys();renderTours();renderPassdowns();updateStats();updateBadges();
+      renderMoves();renderUnits();renderMaint();renderGuests();renderKeys();renderTours();renderPassdowns();updateStats();updateBadges();
       showToast('Data imported successfully!');
     }catch(err){
       showToast('Could not read file','!');
@@ -1781,6 +1736,208 @@ function importAllData(file){
   };
   reader.readAsText(file);
   document.getElementById('import-data-input').value='';
+}
+
+// ── DASHBOARD ──
+function renderDashboard(){
+  const el=document.getElementById('dashboard-body');
+  if(!el){setTimeout(renderDashboard,100);return;}
+  try{
+  const t=today();
+  const _tmrw=new Date();_tmrw.setDate(_tmrw.getDate()+1);
+  const tmrw=_tmrw.getFullYear()+'-'+String(_tmrw.getMonth()+1).padStart(2,'0')+'-'+String(_tmrw.getDate()).padStart(2,'0');
+  const hr=new Date().getHours();
+  const greet=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
+  const todayIns=state.moves.filter(m=>m.type==='in'&&m.date===t&&!m.archivedAt);
+  const todayOuts=state.moves.filter(m=>m.type==='out'&&m.date===t&&!m.archivedAt);
+  const tmrwMoves=state.moves.filter(m=>m.date===tmrw);
+  const weekMoves=state.moves.filter(m=>isThisWeek(m.date)&&m.date!==t).sort((a,b)=>a.date.localeCompare(b.date));
+  const openMaint=state.maintenance.filter(m=>m.status!=='resolved');
+  const highMaint=openMaint.filter(m=>m.priority==='high');
+  const allTasks=state.moves.flatMap(m=>m.tasks||[]);
+  const pendingTasks=allTasks.filter(t=>!t.done).length;
+  const activeMoves=state.moves.filter(m=>m.tasks&&m.tasks.length>0&&m.tasks.some(t=>t.done)&&!m.tasks.every(t=>t.done)).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,4);
+  const dateLabel=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+
+  const chip=(type)=>type==='in'?'<span style="background:#EAF3DE;color:#27500A;font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;">Move In</span>':'<span style="background:#FCEBEB;color:#791F1F;font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;">Move Out</span>';
+
+  let html=`
+  <div style="margin-bottom:20px;">
+    <div style="font-size:22px;font-weight:500;">${greet}</div>
+  </div>`;
+
+  // Alert banners
+  if(tmrwMoves.length){
+    html+=`<div style="background:rgba(255,180,0,0.1);border:1px solid rgba(255,180,0,0.4);border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:13px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:16px;">⚠️</span>
+      <span><strong>${tmrwMoves.length} move${tmrwMoves.length>1?'s':''} tomorrow</strong> — ${tmrwMoves.map(m=>m.resident+' · Unit '+m.unit).join(', ')}</span>
+    </div>`;
+  }
+  if(highMaint.length){
+    html+=`<div style="background:rgba(220,50,50,0.07);border:1px solid rgba(220,50,50,0.3);border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:13px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:16px;">🔧</span>
+      <span><strong>${highMaint.length} high priority maintenance issue${highMaint.length>1?'s':''}</strong> — ${highMaint.map(m=>'Unit '+m.unit+': '+m.issue).join(', ')}</span>
+    </div>`;
+  }
+
+  // Stat cards
+  html+=`<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:20px;">
+    <div style="background:var(--surface);border-radius:8px;padding:12px 14px;border-left:3px solid #E24B4A;">
+      <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Move outs today</div>
+      <div style="font-size:24px;font-weight:500;color:${todayOuts.length?'#A32D2D':'var(--text-primary)'};">${todayOuts.length}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">${todayOuts.length?todayOuts.map(m=>m.resident).join(', '):'None today'}</div>
+    </div>
+    <div style="background:var(--surface);border-radius:8px;padding:12px 14px;border-left:3px solid #639922;">
+      <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Move ins today</div>
+      <div style="font-size:24px;font-weight:500;color:${todayIns.length?'#3B6D11':'var(--text-primary)'};">${todayIns.length}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">${todayIns.length?todayIns.map(m=>m.resident).join(', '):'None today'}</div>
+    </div>
+    <div style="background:var(--surface);border-radius:8px;padding:12px 14px;border-left:3px solid #BA7517;">
+      <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Pending tasks</div>
+      <div style="font-size:24px;font-weight:500;color:${pendingTasks>50?'#854F0B':'var(--text-primary)'};">${pendingTasks}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Across all moves</div>
+    </div>
+    <div style="background:var(--surface);border-radius:8px;padding:12px 14px;border-left:3px solid ${openMaint.length?'#E24B4A':'#639922'};">
+      <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Maintenance</div>
+      <div style="font-size:24px;font-weight:500;color:${openMaint.length?'#A32D2D':'#3B6D11'};">${openMaint.length}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">${openMaint.length?'Open issue'+(openMaint.length>1?'s':''):'All clear'}</div>
+    </div>
+  </div>`;
+
+  // Two column layout
+  html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">`;
+
+  // Left: This week's moves
+  // Dedup by id in case same move appears in multiple arrays
+  const _seen=new Set();
+  const weekAll=[...todayIns,...todayOuts,...weekMoves].filter(m=>{if(_seen.has(m.id))return false;_seen.add(m.id);return true;}).slice(0,8);
+  html+=`<div>
+    <div style="font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">This week's moves</div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;">`;
+  if(!weekAll.length){
+    html+=`<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">No moves this week</div>`;
+  } else {
+    weekAll.forEach(m=>{
+      const isT=m.date===t;
+      const isTmrw=m.date===tmrw;
+      const rowBg=isT?'background:rgba(220,50,50,0.05);border-left:3px solid #E24B4A;':isTmrw?'background:rgba(255,180,0,0.07);border-left:3px solid #EF9F27;':'border-left:3px solid transparent;';
+      const dateLabel=isT?'Today':isTmrw?'Tomorrow':fmtDate(m.date);
+      html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;cursor:pointer;${rowBg}" onclick="switchSection('moves',document.querySelector('.nav-item[onclick*=moves]'))">
+        <div>
+          <div style="font-weight:500;">${m.resident}</div>
+          <div style="color:var(--text-muted);">Unit ${m.unit} · ${dateLabel}</div>
+        </div>
+        ${chip(m.type)}
+      </div>`;
+    });
+  }
+  html+=`</div></div>`;
+
+  // Right: Active move progress + maintenance
+  html+=`<div style="display:flex;flex-direction:column;gap:14px;">`;
+
+  // Active progress
+  html+=`<div>
+    <div style="font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Active move progress</div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;">`;
+  if(!activeMoves.length){
+    html+=`<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">No moves in progress</div>`;
+  } else {
+    activeMoves.forEach(m=>{
+      const done=m.tasks.filter(t=>t.done).length;
+      const total=m.tasks.length;
+      const pct=Math.round(done/total*100);
+      const barColor=pct===100?'#639922':pct>50?'#BA7517':'#E24B4A';
+      html+=`<div style="padding:10px 14px;border-bottom:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px;">
+          <span style="font-weight:500;">${m.resident} · Unit ${m.unit}</span>
+          <span style="color:${barColor};">${done}/${total}</span>
+        </div>
+        <div style="background:var(--border);border-radius:3px;height:4px;">
+          <div style="width:${pct}%;background:${barColor};height:4px;border-radius:3px;"></div>
+        </div>
+      </div>`;
+    });
+  }
+  html+=`</div></div>`;
+
+  // Maintenance
+  html+=`<div>
+    <div style="font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Open maintenance</div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;">`;
+  if(!openMaint.length){
+    html+=`<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">No open issues ✓</div>`;
+  } else {
+    openMaint.slice(0,4).forEach(m=>{
+      const priColor=m.priority==='high'?'#E24B4A':m.priority==='medium'?'#EF9F27':'#888780';
+      html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;">
+        <div>
+          <div style="font-weight:500;">Unit ${m.unit}: ${m.issue}</div>
+          <div style="color:var(--text-muted);">${m.desc||m.status}</div>
+        </div>
+        <span style="background:${priColor}22;color:${priColor};font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;">${m.priority}</span>
+      </div>`;
+    });
+  }
+  html+=`</div></div>`;
+
+  html+=`</div></div>`;
+  el.innerHTML=html;
+  }catch(err){console.error('Dashboard error:',err);if(el)el.innerHTML='<div style="padding:40px;color:var(--text-muted);">Loading dashboard...</div>';}
+}
+
+// ── AMENITY BOOKINGS ──
+let amenityFilter='all';
+function openAmenityAdd(){openModal('modal-amenity');document.getElementById('am-date').value=today();}
+function saveAmenity(){
+  const resident=document.getElementById('am-resident').value.trim();
+  const unit=document.getElementById('am-unit').value.trim();
+  const date=document.getElementById('am-date').value;
+  if(!resident||!unit||!date){showToast('Fill in resident, unit & date','⚠️');return;}
+  const a={id:uid(),resident,unit,space:document.getElementById('am-space').value,date,start:document.getElementById('am-start').value,end:document.getElementById('am-end').value,type:document.getElementById('am-type').value,fee:document.getElementById('am-fee').value.trim(),notes:document.getElementById('am-notes').value.trim(),createdAt:Date.now()};
+  if(!state.amenities)state.amenities=[];
+  state.amenities.push(a);
+  save();renderAmenities();updateBadges();
+  closeModal('modal-amenity');
+  ['am-resident','am-unit','am-fee','am-notes'].forEach(id=>document.getElementById(id).value='');
+  showToast('Booking added ✓');
+}
+function filterAmenities(f,el){amenityFilter=f;document.querySelectorAll('#section-amenities .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderAmenities();}
+function deleteAmenity(id){if(!confirm('Remove booking?'))return;state.amenities=state.amenities.filter(a=>a.id!==id);save();renderAmenities();updateBadges();}
+function renderAmenities(){
+  const amenities=state.amenities||[];
+  let list=[...amenities];
+  const t=today();
+  if(amenityFilter==='today')list=list.filter(a=>a.date===t);
+  else if(amenityFilter==='upcoming')list=list.filter(a=>a.date>=t);
+  else if(amenityFilter==='event')list=list.filter(a=>a.type==='event');
+  list.sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start));
+  const tbody=document.getElementById('amenities-tbody');
+  if(!tbody)return;
+  const el=document.getElementById('amenities-count');
+  if(el)el.textContent=list.length+' booking'+(list.length===1?'':'s');
+  const inp='border:none;background:transparent;font-family:inherit;outline:none;cursor:text;padding:2px 0;width:100%;font-size:12px;';
+  if(!list.length){tbody.innerHTML='<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">🎉</div><p>No bookings yet.</p></div></td></tr>';return;}
+  tbody.innerHTML=list.map(a=>{
+    const isT=a.date===t;
+    const rowBg=isT?'background:rgba(55,138,221,0.05);border-left:3px solid #185FA5;':'';
+    const typeColor=a.type==='event'?'background:#EEEDFE;color:#3C3489;':'background:#E6F1FB;color:#0C447C;';
+    return `<tr style="${rowBg}">
+      <td style="padding:10px 12px;"><input type="text" value="${a.resident}" onchange="updateAmenityField('${a.id}','resident',this.value)" style="${inp}font-weight:500;"></td>
+      <td style="padding:10px 12px;"><input type="text" value="${a.unit}" onchange="updateAmenityField('${a.id}','unit',this.value)" style="${inp}width:60px;"></td>
+      <td style="padding:10px 12px;font-size:12px;font-weight:500;">${a.space}</td>
+      <td style="padding:10px 12px;"><input type="date" value="${a.date}" onchange="updateAmenityField('${a.id}','date',this.value)" style="${inp}"></td>
+      <td style="padding:10px 12px;font-size:12px;color:var(--text-secondary);">${a.start?a.start:'—'}${a.end?' – '+a.end:''}</td>
+      <td style="padding:10px 12px;"><span style="font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;${typeColor}">${a.type==='event'?'Event':'Reservation'}</span></td>
+      <td style="padding:10px 12px;font-size:12px;color:var(--text-secondary);">${a.fee||'—'}</td>
+      <td style="padding:10px 12px;"><input type="text" value="${a.notes||''}" placeholder="Notes..." onchange="updateAmenityField('${a.id}','notes',this.value)" style="${inp}color:var(--text-secondary);"></td>
+      <td style="padding:10px 4px;"><button class="action-btn del" onclick="deleteAmenity('${a.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+function updateAmenityField(id,field,val){
+  const a=(state.amenities||[]).find(x=>x.id===id);
+  if(a){a[field]=val;save();if(typeof renderCalendar==='function')renderCalendar();}
 }
 
 // ── CALENDAR ──
@@ -1874,6 +2031,13 @@ function renderWeekCal(){
             cellContent+=`<div style="background:#E6F1FB;color:#0C447C;border-radius:3px;padding:2px 5px;font-size:9px;font-weight:500;margin-top:2px;">📞 ${short}</div>`;
           });
         });
+        // Amenity bookings for this day
+        (state.amenities||[]).filter(a=>a.date===dStr).forEach(a=>{
+          const bg=a.type==='event'?'#EEEDFE':'#E6F1FB';
+          const col=a.type==='event'?'#3C3489':'#0C447C';
+          const time=a.start?a.start.substring(0,5):'';
+          cellContent+=`<div style="background:${bg};color:${col};border-radius:3px;padding:2px 5px;font-size:10px;font-weight:500;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎉 ${time} ${a.space.split(' ')[0]}</div>`;
+        });
         html+=`<td style="padding:3px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-width:80px;min-height:44px;vertical-align:top;${isT?'background:rgba(55,138,221,0.04);':''}">${cellContent}</td>`;
       });
       html += '</tr>';
@@ -1923,6 +2087,11 @@ function renderMonthCal(){
             chips+=`<div style="background:#E6F1FB;color:#0C447C;border-radius:3px;padding:2px 5px;font-size:10px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📞 ${m.resident.split(' ')[0]}: ${short}</div>`;
           });
         });
+        (state.amenities||[]).filter(a=>a.date===dStr).forEach(a=>{
+          const bg=a.type==='event'?'#EEEDFE':'#E6F1FB';
+          const col=a.type==='event'?'#3C3489':'#0C447C';
+          chips+=`<div style="background:${bg};color:${col};border-radius:3px;padding:2px 5px;font-size:10px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎉 ${a.space.split(' ')[0]}</div>`;
+        });
         html+=`<td style="padding:4px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:80px;vertical-align:top;${isT?'background:rgba(55,138,221,0.04);':''}"><div style="font-size:11px;font-weight:${isT?'600':'400'};color:${isT?'#185FA5':'var(--text-secondary)'};margin-bottom:3px;">${day}</div>${chips}</td>`;
         day++;
       }
@@ -1933,6 +2102,31 @@ function renderMonthCal(){
   html+='</tbody></table>';
   document.getElementById('cal-body').innerHTML=html;
 }
+
+function dashSearch(q){
+  const el=document.getElementById('dash-search-results');
+  if(!el)return;
+  if(!q.trim()){el.style.display='none';return;}
+  const ql=q.toLowerCase();
+  const results=state.moves.filter(m=>m.resident.toLowerCase().includes(ql)||m.unit.toLowerCase().includes(ql));
+  if(!results.length){el.innerHTML='<div style="padding:14px 16px;font-size:13px;color:var(--text-muted);">No results found</div>';el.style.display='';return;}
+  el.innerHTML=results.slice(0,6).map(m=>{
+    const done=m.tasks.filter(t=>t.done).length;
+    const pct=m.tasks.length>0?Math.round(done/m.tasks.length*100):0;
+    return `<div onclick="switchSection('moves',document.querySelector('.nav-item[onclick*=moves]'));setTimeout(()=>selectMove('${m.id}'),300);" style="padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:13px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">
+      <div><span style="font-weight:500;">${m.resident}</span> <span style="color:var(--text-muted);">· Unit ${m.unit}</span></div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:11px;color:var(--text-muted);">${done}/${m.tasks.length} tasks</span>
+        <span style="background:${m.type==='in'?'#EAF3DE':'#FCEBEB'};color:${m.type==='in'?'#27500A':'#791F1F'};font-size:10px;padding:2px 7px;border-radius:10px;">${m.type==='in'?'Move In':'Move Out'}</span>
+      </div>
+    </div>`;
+  }).join('');
+  el.style.display='';
+}
+
+// Auto-render on load
+function initSecondScript(){renderDashboard();renderAmenities();}
+if(document.readyState==='complete'){initSecondScript();}else{window.addEventListener('load',initSecondScript);}
 </script>
 
 </body>
