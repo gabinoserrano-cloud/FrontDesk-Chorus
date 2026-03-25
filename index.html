@@ -38,12 +38,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--warm-white);color:var(--t
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
 
 .sidebar{width:225px;min-width:225px;background:var(--black);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;transition:width 0.25s,min-width 0.25s;}
-.sidebar.collapsed{width:52px;min-width:52px;overflow:hidden;}
-.sidebar.collapsed .sidebar-brand,.sidebar.collapsed .sidebar-date,.sidebar.collapsed .nav-section-label,.sidebar.collapsed .sidebar-footer{display:none;}
-.sidebar.collapsed .nav-item{justify-content:center;padding:10px 4px;}
-.sidebar.collapsed .nav-item .badge{display:none;}
-.sidebar.collapsed .nav-item span:last-child{display:none;}
-.sidebar-toggle{position:absolute;top:16px;right:-13px;width:26px;height:26px;border-radius:50%;background:var(--black);border:1.5px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.6);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;z-index:100;transition:all 0.2s;line-height:1;}
+.sidebar.collapsed{width:56px;min-width:56px;overflow:hidden;}
+.sidebar.collapsed .sidebar-brand,.sidebar.collapsed .sidebar-date,.sidebar.collapsed .nav-section-label,.sidebar.collapsed .sidebar-footer{display:none!important;}
+.sidebar.collapsed .nav-item{justify-content:center;padding:10px 0;width:56px;}
+.sidebar.collapsed .nav-item .badge{display:none!important;}
+.sidebar.collapsed .nav-item span.nav-label{display:none!important;}
+.sidebar.collapsed .nav-item span.nav-icon{font-size:18px;}
+.sidebar-toggle{position:absolute;top:12px;right:-14px;width:28px;height:28px;border-radius:50%;background:var(--black);border:2px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.8);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;z-index:100;transition:all 0.2s;line-height:1;font-weight:bold;}
 .sidebar-toggle:hover{background:var(--gold);color:var(--black);border-color:var(--gold);}
 .sidebar-brand{padding:24px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.08);}
 .sidebar-brand .eyebrow{font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:4px;}
@@ -240,18 +241,18 @@ tbody tr:hover{background:var(--surface);}
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section-label">Operations</div>
-      <div class="nav-item active" onclick="switchSection('moves',this)"><span class="nav-icon">🚚</span><span>Move Ins / Outs</span><span class="nav-badge" id="badge-moves">0</span></div>
-      <div class="nav-item" onclick="switchSection('vacants',this)"><span class="nav-icon">🏠</span><span>Vacant Units</span><span class="nav-badge" id="badge-vacants">0</span></div>
-      <div class="nav-item" onclick="switchSection('maintenance',this)"><span class="nav-icon">🔧</span><span>Maintenance</span><span class="nav-badge red" id="badge-maint">0</span></div>
+      <div class="nav-item active" onclick="switchSection('moves',this)"><span class="nav-icon">🚚</span><span class="nav-label">Move Ins / Outs</span><span class="nav-badge" id="badge-moves">0</span></div>
+      <div class="nav-item" onclick="switchSection('vacants',this)"><span class="nav-icon">🏠</span><span class="nav-label">Vacant Units</span><span class="nav-badge" id="badge-vacants">0</span></div>
+      <div class="nav-item" onclick="switchSection('maintenance',this)"><span class="nav-icon">🔧</span><span class="nav-label">Maintenance</span><span class="nav-badge red" id="badge-maint">0</span></div>
       <div class="nav-section-label">Resident Services</div>
-      <div class="nav-item" onclick="switchSection('packages',this)"><span class="nav-icon">📦</span><span>Packages</span><span class="nav-badge blue" id="badge-packages">0</span></div>
-      <div class="nav-item" onclick="switchSection('guests',this)"><span class="nav-icon">👥</span><span>Guests & Visitors</span><span class="nav-badge" id="badge-guests">0</span></div>
-      <div class="nav-item" onclick="switchSection('keys',this)"><span class="nav-icon">🗝️</span><span>Key Tracker</span><span class="nav-badge gold" id="badge-keys" style="background:var(--gold)">0</span></div>
+      <div class="nav-item" onclick="switchSection('packages',this)"><span class="nav-icon">📦</span><span class="nav-label">Packages</span><span class="nav-badge blue" id="badge-packages">0</span></div>
+      <div class="nav-item" onclick="switchSection('guests',this)"><span class="nav-icon">👥</span><span class="nav-label">Guests & Visitors</span><span class="nav-badge" id="badge-guests">0</span></div>
+      <div class="nav-item" onclick="switchSection('keys',this)"><span class="nav-icon">🗝️</span><span class="nav-label">Key Tracker</span><span class="nav-badge gold" id="badge-keys" style="background:var(--gold)">0</span></div>
       <div class="nav-section-label">Shift</div>
-      <div class="nav-item" onclick="switchSection('tours',this)"><span class="nav-icon">🏡</span><span>Tour Log</span><span class="nav-badge purple" id="badge-tours">0</span></div>
-      <div class="nav-item" onclick="switchSection('walkthrough',this)"><span class="nav-icon">🚶</span><span>Walkthrough</span></div>
-      <div class="nav-item" onclick="switchSection('passdown',this)"><span class="nav-icon">📋</span><span>Daily Passdown</span></div>
-      <div class="nav-item" onclick="switchSection('calendar',this)"><span class="nav-icon">📅</span><span>Calendar</span></div>
+      <div class="nav-item" onclick="switchSection('tours',this)"><span class="nav-icon">🏡</span><span class="nav-label">Tour Log</span><span class="nav-badge purple" id="badge-tours">0</span></div>
+      <div class="nav-item" onclick="switchSection('walkthrough',this)"><span class="nav-icon">🚶</span><span class="nav-label">Walkthrough</span></div>
+      <div class="nav-item" onclick="switchSection('passdown',this)"><span class="nav-icon">📋</span><span class="nav-label">Daily Passdown</span></div>
+      <div class="nav-item" onclick="switchSection('calendar',this)"><span class="nav-icon">📅</span><span class="nav-label">Calendar</span></div>
     </nav>
     <div class="sidebar-footer">
       <div class="sync-pill" id="sync-pill"><div class="sync-dot"></div><span id="sync-label">Saved locally</span></div>
@@ -765,8 +766,9 @@ function toggleSidebar(){
   const sb=document.getElementById('main-sidebar');
   const btn=document.getElementById('sidebar-toggle');
   sb.classList.toggle('collapsed');
-  btn.innerHTML=sb.classList.contains('collapsed')?'&#8250;':'&#8249;';
-  btn.style.right=sb.classList.contains('collapsed')?'-14px':'-14px';
+  const isCollapsed=sb.classList.contains('collapsed');
+  btn.innerHTML=isCollapsed?'&#8250;':'&#8249;';
+  btn.title=isCollapsed?'Expand sidebar':'Collapse sidebar';
 }
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2);}
 function today(){return new Date().toISOString().split('T')[0];}
@@ -916,7 +918,7 @@ function renderMoves(search=''){
         <span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">${done}/${total}</span>
         <div style="flex:1;background:var(--border);border-radius:3px;height:4px;min-width:60px;"><div style="width:${pct}%;background:${barColor};height:4px;border-radius:3px;transition:width 0.3s;"></div></div>
       </div>
-      ${isComplete?'<span class="badge" style="background:rgba(45,106,79,0.12);color:#2d6a4f;font-size:10px;margin-top:3px;display:inline-block;">✓ Ready</span>':m.elevator==='needed'?'<span class="badge pending" style="margin-top:3px;font-size:10px;">⚠️ Elevator needed</span>':''}
+      ${isComplete?`<span class="badge" style="background:rgba(45,106,79,0.12);color:#2d6a4f;font-size:10px;margin-top:3px;display:inline-block;">✓ Ready</span> <button data-archive-id="${m.id}" onclick="event.stopPropagation();archiveMove(this.dataset.archiveId)" style="font-size:10px;padding:2px 7px;border-radius:4px;border:1px solid rgba(45,106,79,0.3);background:transparent;color:#2d6a4f;cursor:pointer;margin-top:3px;">Archive</button>`:m.elevator==='needed'?'<span class="badge pending" style="margin-top:3px;font-size:10px;">⚠️ Elevator needed</span>':''}
     </td>
     <td><button class="action-btn del" onclick="event.stopPropagation();deleteMove('${m.id}')">✕</button></td>
   </tr>`;
@@ -960,7 +962,10 @@ function renderTasks(){
   if(!move){el.innerHTML='<div class="empty-state"><div class="empty-icon">☑️</div><p>Click a move row to see its tasks.</p></div>';count.textContent='Select a move above';return;}
   count.textContent=`${move.resident} - Unit ${move.unit} - ${move.tasks.filter(t=>t.done).length}/${move.tasks.length} done`;
   if(!move.tasks.length){el.innerHTML='<div class="empty-state"><p>No tasks. Add one above.</p></div>';return;}
-  el.innerHTML=move.tasks.map((t,i)=>`<div class="check-item" style="flex-wrap:wrap;gap:6px;align-items:flex-start;">
+  const tasksToShow = hideDone ? move.tasks.filter(t=>!t.done) : move.tasks;
+  const hiddenCount = move.tasks.length - tasksToShow.length;
+  el.innerHTML=(hiddenCount>0?`<div style="padding:6px 18px;font-size:11px;color:var(--text-muted);background:var(--surface);border-bottom:1px solid var(--border);">${hiddenCount} completed task${hiddenCount>1?'s':''} hidden — click "Show done" to see them</div>`:'')
+  +tasksToShow.map((t,i)=>`<div class="check-item" style="flex-wrap:wrap;gap:6px;align-items:flex-start;">
     <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${move.id}','${t.id}',this.checked)" style="margin-top:3px;flex-shrink:0;">
     <div style="flex:1;min-width:200px;">
       <textarea class="check-label ${t.done?'done':''}" onchange="updateTaskText('${move.id}','${t.id}',this.value)" style="border:none;background:transparent;font-family:inherit;font-size:13px;resize:none;width:100%;outline:none;cursor:text;padding:0;line-height:1.4;min-height:20px;${t.done?'text-decoration:line-through;color:var(--text-muted);':''}" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'">${t.text}</textarea>
@@ -1002,6 +1007,57 @@ function moveTaskDown(mId,tId){
 function toggleTask(mId,tId,done){const t=state.moves.find(m=>m.id===mId)?.tasks.find(t=>t.id===tId);if(t){t.done=done;save();renderTasks();updateStats();}}
 function toggleTaskClick(mId,tId){const t=state.moves.find(m=>m.id===mId)?.tasks.find(t=>t.id===tId);if(t){t.done=!t.done;save();renderTasks();updateStats();}}
 function deleteTask(mId,tId){const m=state.moves.find(m=>m.id===mId);if(m){m.tasks=m.tasks.filter(t=>t.id!==tId);save();renderTasks();}}
+function toggleHideDone(){
+  hideDone=!hideDone;
+  const btn=document.getElementById('hide-done-btn');
+  if(btn)btn.textContent=hideDone?'Show done':'Hide done';
+  renderTasks();
+}
+function toggleArchiveView(){
+  const btn=document.getElementById('archive-view-btn');
+  const tbody=document.getElementById('moves-tbody');
+  const archived=state.archivedMoves||[];
+  if(btn.textContent==='View Archive'){
+    btn.textContent='Back to Active';
+    if(!archived.length){tbody.innerHTML='<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📦</div><p>No archived moves yet.</p></div></td></tr>';return;}
+    const inp='border:none;background:transparent;font-family:inherit;outline:none;padding:2px 0;width:100%;font-size:12px;';
+    tbody.innerHTML=archived.map(m=>`<tr style="opacity:0.7;">
+      <td><strong>${m.unit}</strong></td>
+      <td>${m.resident}</td>
+      <td style="font-size:12px;">${fmtDate(m.date)}</td>
+      <td><span class="badge ${m.type}">${m.type==='in'?'Move In':'Move Out'}</span></td>
+      <td style="font-size:12px;color:#2d6a4f;">${m.moveInTotal?'$'+m.moveInTotal:'-'}</td>
+      <td style="font-size:12px;color:var(--text-muted);">Archived ${m.archivedAt}<br>
+        <button onclick="restoreMove('${m.id}')" style="font-size:10px;padding:2px 7px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;margin-top:3px;">Restore</button>
+      </td>
+    </tr>`).join('');
+  } else {
+    btn.textContent='View Archive';
+    renderMoves();
+  }
+}
+function restoreMove(id){
+  const archived=state.archivedMoves||[];
+  const m=archived.find(m=>m.id===id);
+  if(!m)return;
+  m.archivedAt=null;
+  state.moves.push(m);
+  state.archivedMoves=archived.filter(m=>m.id!==id);
+  save();renderMoves();updateBadges();updateStats();
+  document.getElementById('archive-view-btn').textContent='View Archive';
+  showToast('Move restored');
+}
+function archiveMove(id){
+  if(!confirm('Archive this move? It will be hidden from the main list but saved in the Archive.'))return;
+  const m=state.moves.find(m=>m.id===id);
+  if(!m)return;
+  m.archivedAt=new Date().toLocaleString();
+  if(!state.archivedMoves)state.archivedMoves=[];
+  state.archivedMoves.push(m);
+  state.moves=state.moves.filter(m=>m.id!==id);
+  if(state.selectedMoveId===id){state.selectedMoveId=null;renderTasks();}
+  save();renderMoves();updateBadges();updateStats();showToast('Move archived');
+}
 function clearDoneTasks(){const m=state.moves.find(m=>m.id===state.selectedMoveId);if(!m)return;m.tasks=m.tasks.filter(t=>!t.done);save();renderTasks();showToast('Done tasks cleared');}
 function openAddTask(){if(!state.selectedMoveId){showToast('Select a move first','⚠️');return;}openModal('modal-task');}
 function saveTask(){const text=document.getElementById('t-text').value.trim();if(!text)return;const m=state.moves.find(m=>m.id===state.selectedMoveId);if(!m)return;const dueDate=document.getElementById('t-due').value||null;m.tasks.push({id:uid(),text,cat:document.getElementById('t-cat').value,done:false,dueDate});save();renderTasks();closeModal('modal-task');document.getElementById('t-text').value='';document.getElementById('t-due').value='';showToast('Task added');}
@@ -1270,42 +1326,125 @@ function saveShiftNotes(val){
 }
 
 function generatePassdown(){
-  const tm=state.moves.filter(m=>isToday(m.date));
-  const oi=state.maintenance.filter(m=>m.status!=='resolved');
-  // Add move-in totals for today's move-ins
-  const todayMoveIns=state.moves.filter(m=>m.type==='in'&&isToday(m.date));
-  const todayMoveOuts=state.moves.filter(m=>m.type==='out'&&isToday(m.date));
-  if(todayMoveIns.length){
-    text+='MOVE-INS TODAY:\n';
-    todayMoveIns.forEach(m=>{
-      text+=`  Unit ${m.unit} - ${m.resident}`;
-      if(m.moveInTotal)text+=` | Move-in total: $${m.moveInTotal}`;
+  const dateStr=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  let text=`SHIFT PASSDOWN — ${dateStr}\n${'='.repeat(50)}\n\n`;
+
+  // ── MOVE-INS TODAY ──
+  const todayIns=state.moves.filter(m=>m.type==='in'&&isToday(m.date));
+  const todayOuts=state.moves.filter(m=>m.type==='out'&&isToday(m.date));
+  const tmrw=new Date(Date.now()+86400000).toISOString().split('T')[0];
+  const tmrwMoves=state.moves.filter(m=>m.date===tmrw);
+
+  if(todayIns.length){
+    text+=`MOVE-INS TODAY (${todayIns.length}):\n`;
+    todayIns.forEach(m=>{
+      const done=m.tasks.filter(t=>t.done).length;
+      const pct=m.tasks.length>0?Math.round(done/m.tasks.length*100):0;
+      text+=`  • Unit ${m.unit} — ${m.resident}`;
+      if(m.moveInTotal) text+=` | Move-in total: $${m.moveInTotal}`;
+      if(m.time) text+=` | Time: ${m.time}`;
+      text+=` | Tasks: ${done}/${m.tasks.length} (${pct}% complete)`;
+      if(done===m.tasks.length&&m.tasks.length>0) text+=' ✓ COMPLETE';
+      if(m.notes) text+=`\n    Notes: ${m.notes}`;
+      text+='\n';
+    });
+    text+='\n';
+  } else {
+    text+='MOVE-INS TODAY: None\n\n';
+  }
+
+  // ── MOVE-OUTS TODAY ──
+  if(todayOuts.length){
+    text+=`MOVE-OUTS TODAY (${todayOuts.length}):\n`;
+    todayOuts.forEach(m=>{
+      const done=m.tasks.filter(t=>t.done).length;
+      text+=`  • Unit ${m.unit} — ${m.resident}`;
+      if(m.time) text+=` | Time: ${m.time}`;
+      text+=` | Tasks: ${done}/${m.tasks.length}`;
+      if(done===m.tasks.length&&m.tasks.length>0) text+=' ✓ COMPLETE';
+      if(m.notes) text+=`\n    Notes: ${m.notes}`;
+      text+='\n';
+    });
+    text+='\n';
+  } else {
+    text+='MOVE-OUTS TODAY: None\n\n';
+  }
+
+  // ── UPCOMING MOVES TOMORROW ──
+  if(tmrwMoves.length){
+    text+=`TOMORROW'S MOVES (${tmrwMoves.length}):\n`;
+    tmrwMoves.forEach(m=>{
+      text+=`  • Unit ${m.unit} — ${m.resident} [${m.type==='in'?'MOVE IN':'MOVE OUT'}]`;
+      if(m.moveInTotal&&m.type==='in') text+=` | Move-in total: $${m.moveInTotal}`;
       text+='\n';
     });
     text+='\n';
   }
-  if(todayMoveOuts.length){
-    text+='MOVE-OUTS TODAY:\n';
-    todayMoveOuts.forEach(m=>{text+=`  Unit ${m.unit} - ${m.resident}\n`;});
+
+  // ── MAINTENANCE ──
+  const openMaint=state.maintenance.filter(m=>m.status!=='resolved');
+  const newToday=state.maintenance.filter(m=>m.date===today());
+  if(openMaint.length){
+    text+=`MAINTENANCE (${openMaint.length} active):\n`;
+    if(newToday.length) text+=`  [${newToday.length} new today]\n`;
+    openMaint.forEach(m=>{
+      text+=`  • [${m.priority.toUpperCase()}] Unit ${m.unit}: ${m.issue}`;
+      if(m.desc) text+=` — ${m.desc}`;
+      text+=` [${m.status.replace('-',' ')}]\n`;
+    });
+    text+='\n';
+  } else {
+    text+='MAINTENANCE: No open issues\n\n';
+  }
+
+  // ── PACKAGES ──
+  const unclaimed=state.packages.filter(p=>p.status==='unclaimed');
+  const claimedToday=state.packages.filter(p=>p.status==='claimed'&&p.claimedAt&&new Date(p.claimedAt).toISOString().split('T')[0]===today());
+  if(unclaimed.length||claimedToday.length){
+    text+=`PACKAGES:\n`;
+    if(unclaimed.length){text+=`  Unclaimed (${unclaimed.length}):\n`;unclaimed.forEach(p=>text+=`  • Unit ${p.unit} — ${p.resident}: ${p.carrier}${p.location?' @ '+p.location:''}\n`);}
+    if(claimedToday.length) text+=`  Claimed today: ${claimedToday.length}\n`;
     text+='\n';
   }
+
+  // ── GUESTS ──
+  const checkedIn=state.guests.filter(g=>g.status==='checked-in');
+  const checkedOutToday=state.guests.filter(g=>g.status==='checked-out'&&g.checkoutAt&&new Date(g.checkoutAt).toISOString().split('T')[0]===today());
+  if(checkedIn.length||checkedOutToday.length){
+    text+=`GUESTS:\n`;
+    if(checkedIn.length){text+=`  Currently in building (${checkedIn.length}):\n`;checkedIn.forEach(g=>text+=`  • ${g.name} — Unit ${g.unit}${g.host?' ('+g.host+')':''}\n`);}
+    if(checkedOutToday.length) text+=`  Checked out today: ${checkedOutToday.length}\n`;
+    text+='\n';
+  }
+
+  // ── TOURS ──
+  const toursToday=state.tours.filter(t=>isToday(t.date));
+  if(toursToday.length){
+    text+=`TOURS TODAY (${toursToday.length}):\n`;
+    toursToday.forEach(t=>text+=`  • ${t.name} — Unit ${t.unit||'TBD'} [${t.type.toUpperCase()}]${t.time?' at '+t.time:''}\n`);
+    text+='\n';
+  }
+
+  // ── WALKTHROUGH FLAGS ──
+  const wi=state.walkthroughIssues||[];
+  if(wi.length){
+    text+=`WALKTHROUGH FLAGS (${wi.length}):\n`;
+    wi.forEach(i=>text+=`  • [${i.priority.toUpperCase()}] ${i.location}: ${i.desc}\n`);
+    text+='\n';
+  }
+
+  // ── VACANT UNITS ──
   const vu=state.units.filter(u=>u.status==='vacant');
   const sg=state.units.filter(u=>u.sgt&&u.status==='vacant');
-  const up=state.packages.filter(p=>p.status==='unclaimed');
-  const gi=state.guests.filter(g=>g.status==='checked-in');
-  const tt=state.tours.filter(t=>isToday(t.date));
-  const wi=state.walkthroughIssues||[];
-  let text=`SHIFT PASSDOWN - ${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}\n\n`;
-  if(tm.length){text+=`MOVES TODAY (${tm.length}):\n`;tm.forEach(m=>{const d=m.tasks.filter(t=>t.done).length;text+=`• Unit ${m.unit} - ${m.resident} [${m.type==='in'?'MOVE IN':'MOVE OUT'}]${m.time?' at '+m.time:''} - Tasks: ${d}/${m.tasks.length} complete\n`;});text+='\n';}
-  else text+='MOVES TODAY: None\n\n';
-  if(up.length){text+=`PACKAGES UNCLAIMED (${up.length}):\n`;up.forEach(p=>text+=`• Unit ${p.unit} - ${p.resident}: ${p.carrier} pkg @ ${p.location||'storage'}\n`);text+='\n';}
-  if(gi.length){text+=`GUESTS IN BUILDING (${gi.length}):\n`;gi.forEach(g=>text+=`• ${g.name} visiting Unit ${g.unit} (${g.host||'host unknown'})\n`);text+='\n';}
-  if(tt.length){text+=`TOURS TODAY (${tt.length}):\n`;tt.forEach(t=>text+=`• ${t.name} - Unit ${t.unit||'TBD'} [${t.type.toUpperCase()}]${t.time?' at '+t.time:''}\n`);text+='\n';}
-  if(oi.length){text+=`MAINTENANCE (${oi.length} active):\n`;oi.forEach(m=>text+=`• [${m.priority.toUpperCase()}] Unit ${m.unit}: ${m.issue}${m.desc?' - '+m.desc:''} [${m.status}]\n`);text+='\n';}
-  if(wi.length){text+=`WALKTHROUGH FLAGS (${wi.length}):\n`;wi.forEach(i=>text+=`• [${i.priority.toUpperCase()}] ${i.location}: ${i.desc}\n`);text+='\n';}
-  if(vu.length){text+=`VACANT UNITS (${vu.length}): ${vu.map(u=>'Unit '+u.num).join(', ')}\n`;if(sg.length)text+=`SGT Ready: ${sg.map(u=>'Unit '+u.num).join(', ')}\n`;text+='\n';}
-  text+='NOTES FOR NEXT SHIFT:\n• ';
-  document.getElementById('pd-notes').value=text;showToast('Draft generated ✨');
+  if(vu.length){
+    text+=`VACANT UNITS (${vu.length}): ${vu.map(u=>'Unit '+u.num).join(', ')}\n`;
+    if(sg.length) text+=`SGT Ready: ${sg.map(u=>'Unit '+u.num).join(', ')}\n`;
+    text+='\n';
+  }
+
+  text+='\nNOTES FOR NEXT SHIFT:\n• ';
+  document.getElementById('pd-notes').value=text;
+  showToast('Passdown generated ✨');
 }
 function exportPassdown(){
   if(!state.passdowns.length){showToast('No passdowns to export','⚠️');return;}
