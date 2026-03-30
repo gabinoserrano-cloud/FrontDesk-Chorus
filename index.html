@@ -735,6 +735,48 @@ tbody tr:hover{background:var(--surface);}
   </div>
 </div>
 
+<div class="modal-bg" id="modal-amenity">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">Add Amenity Booking</span><button class="modal-close" onclick="closeModal('modal-amenity')">✕</button></div>
+    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group" style="margin:0;"><label class="form-label">Resident Name</label><input class="form-input" id="am-resident" placeholder="Full name"></div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Unit #</label><input class="form-input" id="am-unit" placeholder="e.g. 444"></div>
+      </div>
+      <div class="form-group" style="margin:0;"><label class="form-label">Amenity Space</label>
+        <select class="form-select" id="am-space">
+          <option value="Belvedere Room">Belvedere Room (28th fl)</option>
+          <option value="28th Floor Terrace">28th Floor Terrace</option>
+          <option value="Chorus Hall">Chorus Hall (1st fl)</option>
+          <option value="3rd Floor Terrace">3rd Floor Terrace</option>
+          <option value="TV Lounge">TV Lounge (2nd fl)</option>
+          <option value="Speakeasy">Speakeasy (2nd fl)</option>
+          <option value="Fitness Center">Fitness Center (10th fl)</option>
+          <option value="Pool/Hot Tub">Pool / Hot Tub (10th fl)</option>
+          <option value="Coworking Space">Coworking Space (1st fl)</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div class="form-group" style="margin:0;"><label class="form-label">Date</label><input class="form-input" type="date" id="am-date"></div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Start Time</label><input class="form-input" type="time" id="am-start"></div>
+        <div class="form-group" style="margin:0;"><label class="form-label">End Time</label><input class="form-input" type="time" id="am-end"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group" style="margin:0;"><label class="form-label">Type</label>
+          <select class="form-select" id="am-type">
+            <option value="reservation">Reservation</option>
+            <option value="event">Resident Event</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Fee (reference only)</label><input class="form-input" id="am-fee" placeholder="e.g. $150"></div>
+      </div>
+      <div class="form-group" style="margin:0;"><label class="form-label">Notes</label><input class="form-input" id="am-notes" placeholder="Any additional details..."></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-amenity')">Cancel</button><button class="btn primary" onclick="saveAmenity()">Add Booking</button></div>
+  </div>
+</div>
+
 <!-- MODAL: Flag Walkthrough Issue -->
 <div class="modal-bg" id="modal-flag">
   <div class="modal" style="max-width:440px;">
@@ -778,6 +820,7 @@ function setSyncState(s){
 
 let state={moves:[],units:[],maintenance:[],packages:[],guests:[],keys:[],tours:[],walkthroughState:{},walkthroughIssues:[],walkthroughReset:null,passdowns:[],shiftNotes:'',selectedMoveId:null};
 let hideDone=false;
+const inp='border:none;background:transparent;font-family:inherit;outline:none;padding:2px 0;width:100%;font-size:12px;';
 let moveFilter='all',unitFilterMode='all',maintFilterMode='all',pkgFilter='all',guestFilter='all',keyFilter='all',tourFilter='all';
 
 function toggleSidebar(){
@@ -818,15 +861,22 @@ function switchSection(id,el){
   else{btn.style.display='';btn.textContent=addLabels[id];}
   if(id==='passdown'&&!document.getElementById('pd-date').value)document.getElementById('pd-date').value=today();
   if(id==='walkthrough')renderWalkthrough();
+  if(id==='calendar'&&typeof renderCalendar==='function')renderCalendar();
+  if(id==='dashboard'&&typeof renderDashboard==='function')renderDashboard();
 }
 function openMainAdd(){
   if(currentSection==='amenities'){openAmenityAdd();return;}
   const m={moves:'modal-move',vacants:'modal-unit',maintenance:'modal-maint',packages:'modal-pkg',guests:'modal-guest',keys:'modal-key',tours:'modal-tour'};
   if(m[currentSection])openModal(m[currentSection]);
 }
-function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
-document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+function openModal(id){
+  const el=document.getElementById(id);
+  if(el){
+    el.classList.add('open');
+    el.onclick=function(e){if(e.target===el)el.classList.remove('open');};
+  }
+}
+function closeModal(id){const el=document.getElementById(id);if(el)el.classList.remove('open');}
 
 // -- MOVE DEFAULTS --
 const DEFAULT_IN=[
@@ -1150,10 +1200,13 @@ function closeUnitDetail(){document.getElementById('unit-detail-card').style.dis
 
 // -- MAINTENANCE --
 function saveMaint(){
+  try{
   const unit=document.getElementById('mn-unit').value.trim(),issue=document.getElementById('mn-issue').value.trim();
   if(!unit||!issue){showToast('Fill in unit and issue','⚠️');return;}
   state.maintenance.push({id:uid(),unit,issue,desc:document.getElementById('mn-desc').value.trim(),priority:document.getElementById('mn-priority').value,status:document.getElementById('mn-status').value,reporter:document.getElementById('mn-reporter').value.trim(),date:today()});
   save();renderMaint();updateBadges();updateStats();closeModal('modal-maint');['mn-unit','mn-issue','mn-desc','mn-reporter'].forEach(id=>document.getElementById(id).value='');showToast('Issue logged');
+
+  }catch(err){showToast("Error saving — try again","⚠️");console.error("saveMaint:",err);}
 }
 function filterMaint(f,el){maintFilterMode=f;document.querySelectorAll('#section-maintenance .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderMaint();}
 function renderMaint(search=''){
@@ -1214,10 +1267,13 @@ function deletePkg(id){if(!confirm('Remove package?'))return;state.packages=stat
 
 // -- GUESTS --
 function saveGuest(){
+  try{
   const name=document.getElementById('g-name').value.trim(),unit=document.getElementById('g-unit').value.trim();
   if(!name||!unit){showToast('Fill in guest name and unit','⚠️');return;}
   state.guests.push({id:uid(),name,unit,host:document.getElementById('g-host').value.trim(),type:document.getElementById('g-type').value,status:document.getElementById('g-status').value,notes:document.getElementById('g-notes').value.trim(),checkinAt:document.getElementById('g-status').value==='checked-in'?Date.now():null,checkoutAt:null,date:today()});
   save();renderGuests();updateBadges();updateStats();closeModal('modal-guest');['g-name','g-unit','g-host','g-notes'].forEach(id=>document.getElementById(id).value='');showToast('Guest logged');
+
+  }catch(err){showToast("Error saving — try again","⚠️");console.error("saveGuest:",err);}
 }
 function filterGuests(f,el){guestFilter=f;document.querySelectorAll('#section-guests .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderGuests();}
 function renderGuests(search=''){
@@ -1248,10 +1304,13 @@ function deleteGuest(id){if(!confirm('Remove?'))return;state.guests=state.guests
 
 // -- KEYS --
 function saveKey(){
+  try{
   const unit=document.getElementById('k-unit').value.trim(),name=document.getElementById('k-name').value.trim();
   if(!unit||!name){showToast('Fill in unit and name','⚠️');return;}
   state.keys.push({id:uid(),unit,name,type:document.getElementById('k-type').value,fob:document.getElementById('k-fob').value.trim(),status:document.getElementById('k-status').value,expiry:document.getElementById('k-expiry').value,notes:document.getElementById('k-notes').value.trim(),issuedAt:Date.now(),returnedAt:null});
   save();renderKeys();updateBadges();updateStats();closeModal('modal-key');['k-unit','k-name','k-fob','k-expiry','k-notes'].forEach(id=>document.getElementById(id).value='');showToast('Key logged');
+
+  }catch(err){showToast("Error saving — try again","⚠️");console.error("saveKey:",err);}
 }
 function filterKeys(f,el){keyFilter=f;document.querySelectorAll('#section-keys .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderKeys();}
 function renderKeys(search=''){
@@ -1280,10 +1339,13 @@ function deleteKey(id){if(!confirm('Remove?'))return;state.keys=state.keys.filte
 
 // -- TOURS --
 function saveTour(){
+  try{
   const name=document.getElementById('tr-name').value.trim(),unit=document.getElementById('tr-unit').value.trim();
   if(!name){showToast('Enter prospect name','⚠️');return;}
   state.tours.push({id:uid(),name,unit,type:document.getElementById('tr-type').value,date:document.getElementById('tr-date').value||today(),time:document.getElementById('tr-time').value.trim(),contact:document.getElementById('tr-contact').value.trim(),notes:document.getElementById('tr-notes').value.trim()});
-  save();renderTours();updateBadges();updateStats();closeModal('modal-tour');['tr-name','tr-unit','tr-date','tr-time','tr-contact','tr-notes'].forEach(id=>document.getElementById(id).value='');showToast('Tour logged');
+  save();renderTours();updateBadges();updateStats();closeModal('modal-tour');['tr-name','tr-unit','tr-time','tr-contact','tr-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('tr-date').value=today();showToast('Tour logged');
+
+  }catch(err){showToast("Error saving — try again","⚠️");console.error("saveTour:",err);}
 }
 function filterTours(f,el){tourFilter=f;document.querySelectorAll('#section-tours .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderTours();}
 function renderTours(search=''){
@@ -1434,6 +1496,26 @@ function generatePassdown(){
     text+='\n';
   }
   text+='\uD83D\uDCCB *Resident Matters*\n\n   - \n\n';
+  // Pending to-dos
+  const pendingTodos=(state.todos||[]).filter(t=>!t.done&&t.priority==='urgent');
+  if(pendingTodos.length){
+    text+='⚠️ *Urgent To-Dos*\n\n';
+    pendingTodos.forEach(t=>{
+      const move=t.moveId?(state.moves||[]).find(m=>m.id===t.moveId):null;
+      text+='   - '+t.text+(move?' ('+move.resident+' · Unit '+move.unit+')':'')+' [URGENT]\n';
+    });
+    text+='\n';
+  }
+  const allPendingTodos=(state.todos||[]).filter(t=>!t.done&&t.priority!=='urgent');
+  if(allPendingTodos.length){
+    text+='📝 *Pending To-Dos*\n\n';
+    allPendingTodos.forEach(t=>{
+      const move=t.moveId?(state.moves||[]).find(m=>m.id===t.moveId):null;
+      text+='   - '+t.text+(move?' ('+move.resident+' · Unit '+move.unit+')':'')+' \n';
+    });
+    text+='\n';
+  }
+
   text+='------------------------------\n\nIf anyone receives updates related to the items above, please note them in the tracker and update the team accordingly. Do not hesitate to reach out if anything comes up that needs clarification.\n\nBest,\n\nGabino S.M.\n\nFront Desk Lead | Chorus - SF\n\ngserrano@alignrealestate.com';
   document.getElementById('pd-notes').value=text;
   showToast('Passdown generated \u2728');
@@ -1535,7 +1617,7 @@ function init(){
     state.moves.forEach(m=>{if(WELCOME_SENT.has(m.resident.toLowerCase().trim())){m.tasks.forEach(t=>{if(t.text===WTASK&&!t.done){t.done=true;patched=true;}});}});
     if(toAdd.length>0||patched){cloudSave(state);}
   } else {
-    state={moves:[],units:[],maintenance:[],packages:[],guests:[],keys:[],tours:[],walkthroughState:{},walkthroughIssues:[],walkthroughReset:null,passdowns:[],shiftNotes:'',selectedMoveId:null,archivedMoves:[],deletedMoveIds:[],amenities:[]};
+    state={moves:[],units:[],maintenance:[],packages:[],guests:[],keys:[],tours:[],walkthroughState:{},walkthroughIssues:[],walkthroughReset:null,passdowns:[],shiftNotes:'',selectedMoveId:null,archivedMoves:[],deletedMoveIds:[],amenities:[],todos:[]};
   }
   
 
@@ -1554,6 +1636,48 @@ function init(){
 init();
 </script>
 <!-- MODAL: Import Master List -->
+<div class="modal-bg" id="modal-amenity">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">Add Amenity Booking</span><button class="modal-close" onclick="closeModal('modal-amenity')">✕</button></div>
+    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group" style="margin:0;"><label class="form-label">Resident Name</label><input class="form-input" id="am-resident" placeholder="Full name"></div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Unit #</label><input class="form-input" id="am-unit" placeholder="e.g. 444"></div>
+      </div>
+      <div class="form-group" style="margin:0;"><label class="form-label">Amenity Space</label>
+        <select class="form-select" id="am-space">
+          <option value="Belvedere Room">Belvedere Room (28th fl)</option>
+          <option value="28th Floor Terrace">28th Floor Terrace</option>
+          <option value="Chorus Hall">Chorus Hall (1st fl)</option>
+          <option value="3rd Floor Terrace">3rd Floor Terrace</option>
+          <option value="TV Lounge">TV Lounge (2nd fl)</option>
+          <option value="Speakeasy">Speakeasy (2nd fl)</option>
+          <option value="Fitness Center">Fitness Center (10th fl)</option>
+          <option value="Pool/Hot Tub">Pool / Hot Tub (10th fl)</option>
+          <option value="Coworking Space">Coworking Space (1st fl)</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div class="form-group" style="margin:0;"><label class="form-label">Date</label><input class="form-input" type="date" id="am-date"></div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Start Time</label><input class="form-input" type="time" id="am-start"></div>
+        <div class="form-group" style="margin:0;"><label class="form-label">End Time</label><input class="form-input" type="time" id="am-end"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group" style="margin:0;"><label class="form-label">Type</label>
+          <select class="form-select" id="am-type">
+            <option value="reservation">Reservation</option>
+            <option value="event">Resident Event</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Fee (reference only)</label><input class="form-input" id="am-fee" placeholder="e.g. $150"></div>
+      </div>
+      <div class="form-group" style="margin:0;"><label class="form-label">Notes</label><input class="form-input" id="am-notes" placeholder="Any additional details..."></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-amenity')">Cancel</button><button class="btn primary" onclick="saveAmenity()">Add Booking</button></div>
+  </div>
+</div>
+
 <div class="modal-bg" id="modal-import">
   <div class="modal" style="max-width:480px;">
     <div class="modal-head">
@@ -1923,7 +2047,33 @@ function renderDashboard(){
   html+=`</div></div>`;
 
   html+=`</div></div>`;
+  // ── TO-DO SECTION ──
+  const todoPending=(state.todos||[]).filter(t=>!t.done);
+  const todoUrgent=todoPending.filter(t=>t.priority==='urgent');
+  html+=`<div style="margin-top:20px;">
+    <div style="font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+      <span>Shift to-do list</span>
+      <div style="display:flex;gap:6px;">
+        <span id="todo-count" style="font-size:11px;color:var(--text-muted);font-weight:400;">${todoPending.length} pending</span>
+        ${(state.todos||[]).some(t=>t.done)?`<button onclick="clearCompletedTodos()" style="font-size:11px;padding:2px 8px;border-radius:5px;border:0.5px solid var(--border);background:var(--surface);color:var(--text-muted);cursor:pointer;font-family:inherit;">Clear done</button>`:''}
+      </div>
+    </div>
+    ${todoUrgent.length?`<div style="background:rgba(220,50,50,0.06);border:0.5px solid rgba(220,50,50,0.3);border-radius:8px;padding:8px 14px;margin-bottom:8px;font-size:12px;color:#A32D2D;">⚠️ <strong>${todoUrgent.length} urgent item${todoUrgent.length>1?'s':''}</strong> — ${todoUrgent.map(t=>t.text).join(' · ')}</div>`:''}
+    <div style="background:var(--white);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;">
+      <div style="padding:10px 14px;border-bottom:0.5px solid var(--border);display:flex;gap:8px;">
+        <input type="text" id="todo-input" placeholder="Add a to-do for this shift..." onkeydown="if(event.key==='Enter'){const v=this.value.trim();if(v){addTodo(v,document.getElementById('todo-priority').value);this.value='';document.getElementById('todo-priority').value='normal';}}" style="flex:1;border:0.5px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text-primary);outline:none;">
+        <select id="todo-priority" style="border:0.5px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--text-primary);cursor:pointer;">
+          <option value="normal">Normal</option>
+          <option value="urgent">⚠️ Urgent</option>
+        </select>
+        <button onclick="const v=document.getElementById('todo-input').value.trim();if(v){addTodo(v,document.getElementById('todo-priority').value);document.getElementById('todo-input').value='';document.getElementById('todo-priority').value='normal';}" style="padding:6px 14px;border-radius:6px;border:0.5px solid var(--border);background:var(--black);color:#fff;cursor:pointer;font-size:13px;font-family:inherit;">Add</button>
+      </div>
+      <div id="todo-list"></div>
+    </div>
+  </div>`;
+
   el.innerHTML=html;
+  renderTodos();
   }catch(err){console.error('Dashboard error:',err);if(el)el.innerHTML='<div style="padding:40px;color:var(--text-muted);">Loading dashboard...</div>';}
 }
 
