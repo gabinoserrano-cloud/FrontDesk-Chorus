@@ -1904,6 +1904,7 @@ function importAllData(file){
 }
 
 // ── DASHBOARD ──
+
 function renderDashboard(){
   const el=document.getElementById('dashboard-body');
   if(!el){setTimeout(renderDashboard,100);return;}
@@ -2073,8 +2074,8 @@ function renderDashboard(){
   </div>`;
 
   el.innerHTML=html;
-  renderTodos();
-  }catch(err){console.error('Dashboard error:',err);if(el)el.innerHTML='<div style="padding:40px;color:var(--text-muted);">Loading dashboard...</div>';}
+  if(typeof renderTodos==='function')renderTodos();
+  }catch(err){console.error('Dashboard error:',err);if(el)el.innerHTML='<div style="padding:40px;color:var(--text-muted);">Error loading dashboard. Please refresh.</div>';}
 }
 
 // ── AMENITY BOOKINGS ──
