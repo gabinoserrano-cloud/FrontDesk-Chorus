@@ -252,7 +252,9 @@ tbody tr:hover{background:var(--surface);}
       <div class="nav-item" onclick="switchSection('amenities',this)"><span class="nav-icon">🎉</span><span class="nav-label">Amenity Bookings</span><span class="nav-badge" id="badge-amenities" style="background:#534AB7;">0</span></div>
       <div class="nav-item" onclick="switchSection('tours',this)"><span class="nav-icon">🏡</span><span class="nav-label">Tour Log</span><span class="nav-badge purple" id="badge-tours">0</span></div>
       <div class="nav-item" onclick="switchSection('walkthrough',this)"><span class="nav-icon">🚶</span><span class="nav-label">Walkthrough</span></div>
-      <div class="nav-item" onclick="switchSection('passdown',this)"><span class="nav-icon">📋</span><span class="nav-label">Daily Passdown</span></div>
+      <div class="nav-item" onclick="switchSection('todos',this)"><span class="nav-icon">✅</span><span class="nav-label">To-Do List</span><span class="nav-badge" id="badge-todos" style="background:#534AB7;">0</span></div>
+      <div class="nav-item" onclick="switchSection('laf',this)"><span class="nav-icon">🔍</span><span class="nav-label">Lost & Found</span><span class="nav-badge" id="badge-laf" style="background:#854F0B;">0</span></div>
+            <div class="nav-item" onclick="switchSection('passdown',this)"><span class="nav-icon">📋</span><span class="nav-label">Daily Passdown</span></div>
       <div class="nav-item" onclick="switchSection('calendar',this)"><span class="nav-icon">📅</span><span class="nav-label">Calendar</span></div>
     </nav>
     <div class="sidebar-footer">
@@ -529,6 +531,114 @@ tbody tr:hover{background:var(--surface);}
         </div>
       </div>
 
+      <!-- TO-DO LIST -->
+      
+      <!-- LOST & FOUND -->
+      <div class="section" id="section-lostandfound">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-head-left"><span class="card-title">Lost & Found Log</span><span class="card-count" id="laf-count">0 items</span></div>
+            <div style="display:flex;gap:8px;">
+              <button class="sub-tab active" onclick="filterLAF('all',this)">All</button>
+              <button class="sub-tab" onclick="filterLAF('unclaimed',this)">Unclaimed</button>
+              <button class="sub-tab" onclick="filterLAF('claimed',this)">Claimed</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;min-width:700px;">
+              <thead><tr>
+                <th style="padding:8px 10px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;background:var(--surface);">Date Found</th>
+                <th style="padding:8px 10px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;background:var(--surface);">Time</th>
+                <th style="padding:8px 10px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;background:var(--surface);">Location Found</th>
+                <th style="padding:8px 10px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;background:var(--surface);">Item Description</th>
+                <th style="padding:8px 10px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;background:var(--surface);">Condition</th>
+                <th style="padding:8px 10px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;background:var(--surface);">Found By</th>
+                <th style="padding:8px 10px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;background:var(--surface);background:#e8f5e9;">Date Claimed</th>
+                <th style="padding:8px 10px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;background:var(--surface);background:#e8f5e9;">Claimed By / Unit</th>
+                <th style="padding:8px 4px;border-bottom:1px solid var(--border);background:var(--surface);"></th>
+              </tr></thead>
+              <tbody id="laf-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TO-DO LIST -->
+      <div class="section" id="section-todos">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-head-left"><span class="card-title">Shift To-Do List</span><span class="card-count" id="todos-section-count">0 pending</span></div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn sm" onclick="clearCompletedTodos()">Clear done</button>
+            </div>
+          </div>
+          <div style="padding:12px 16px;border-bottom:0.5px solid var(--border);display:flex;gap:8px;">
+            <input type="text" id="todos-input" placeholder="Add a to-do..." onkeydown="if(event.key==='Enter'){const v=this.value.trim();if(v){addTodoFromSection();}} " style="flex:1;border:0.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text-primary);outline:none;">
+            <select id="todos-priority" style="border:0.5px solid var(--border);border-radius:6px;padding:7px 8px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--text-primary);cursor:pointer;">
+              <option value="normal">Normal</option>
+              <option value="urgent">⚠️ Urgent</option>
+            </select>
+            <input type="date" id="todos-date" style="border:0.5px solid var(--border);border-radius:6px;padding:7px 8px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--text-primary);cursor:pointer;">
+            <button onclick="addTodoFromSection()" style="padding:7px 14px;border-radius:6px;border:0.5px solid var(--border);background:var(--black);color:#fff;cursor:pointer;font-size:13px;font-family:inherit;">Add</button>
+          </div>
+          
+        </div>
+      </div>
+
+      <!-- LOST & FOUND -->
+      
+      <!-- TO-DO LIST -->
+      <div class="section" id="section-todos">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-head-left"><span class="card-title">Shift To-Do List</span><span class="card-count" id="todos-section-count">0 pending</span></div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn sm" onclick="clearCompletedTodos()">Clear done</button>
+            </div>
+          </div>
+          <div style="padding:12px 16px;border-bottom:0.5px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;">
+            <input type="text" id="todos-input" placeholder="Add a to-do for this shift..." onkeydown="if(event.key==='Enter'){addTodoFromSection();}" style="flex:1;min-width:200px;border:0.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text-primary);outline:none;">
+            <select id="todos-priority" style="border:0.5px solid var(--border);border-radius:6px;padding:7px 8px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--text-primary);cursor:pointer;">
+              <option value="normal">Normal</option>
+              <option value="urgent">⚠️ Urgent</option>
+            </select>
+            <input type="date" id="todos-date" title="Due date (optional)" style="border:0.5px solid var(--border);border-radius:6px;padding:7px 8px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--text-primary);cursor:pointer;">
+            <button onclick="addTodoFromSection()" style="padding:7px 16px;border-radius:6px;border:0.5px solid var(--border);background:var(--black);color:#fff;cursor:pointer;font-size:13px;font-family:inherit;">Add</button>
+          </div>
+          <div id="todos-section-list"></div>
+        </div>
+      </div>
+
+      <!-- LOST & FOUND -->
+      <div class="section" id="section-laf">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-head-left"><span class="card-title">Lost & Found Log</span><span class="card-count" id="laf-count">0 items</span></div>
+            <div style="display:flex;gap:8px;">
+              <button class="sub-tab active" onclick="filterLAF('all',this)">All</button>
+              <button class="sub-tab" onclick="filterLAF('unclaimed',this)">Unclaimed</button>
+              <button class="sub-tab" onclick="filterLAF('claimed',this)">Claimed</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;min-width:700px;">
+              <thead><tr>
+                <th style="padding:8px 12px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em;">Date Found</th>
+                <th style="padding:8px 12px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em;">Time</th>
+                <th style="padding:8px 12px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em;">Location</th>
+                <th style="padding:8px 12px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em;">Description</th>
+                <th style="padding:8px 12px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em;">Condition</th>
+                <th style="padding:8px 12px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em;">Found By</th>
+                <th style="padding:8px 12px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em;background:#f0f7f4;">Date Claimed</th>
+                <th style="padding:8px 12px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em;background:#f0f7f4;">Claimed By</th>
+                <th style="padding:4px;border-bottom:1px solid var(--border);"></th>
+              </tr></thead>
+              <tbody id="laf-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- CALENDAR -->
       <div class="section" id="section-calendar">
         <div class="card">
@@ -735,6 +845,8 @@ tbody tr:hover{background:var(--surface);}
   </div>
 </div>
 
+
+
 <div class="modal-bg" id="modal-amenity">
   <div class="modal">
     <div class="modal-head"><span class="modal-title">Add Amenity Booking</span><button class="modal-close" onclick="closeModal('modal-amenity')">✕</button></div>
@@ -774,6 +886,58 @@ tbody tr:hover{background:var(--surface);}
       <div class="form-group" style="margin:0;"><label class="form-label">Notes</label><input class="form-input" id="am-notes" placeholder="Any additional details..."></div>
     </div>
     <div class="modal-foot"><button class="btn" onclick="closeModal('modal-amenity')">Cancel</button><button class="btn primary" onclick="saveAmenity()">Add Booking</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-laf">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">Log Lost & Found Item</span><button class="modal-close" onclick="closeModal('modal-laf')">✕</button></div>
+    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div class="form-group" style="margin:0;"><label class="form-label">Date Found</label><input class="form-input" type="date" id="laf-date"></div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Time</label><input class="form-input" type="time" id="laf-time"></div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Found By (Staff)</label><input class="form-input" id="laf-foundby" placeholder="Your name"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group" style="margin:0;"><label class="form-label">Location Found</label><input class="form-input" id="laf-location" placeholder="e.g. Lobby, 10th floor gym..."></div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Condition</label>
+          <select class="form-select" id="laf-condition">
+            <option value="Good">Good</option>
+            <option value="Fair">Fair</option>
+            <option value="Damaged">Damaged</option>
+            <option value="Unknown">Unknown</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin:0;"><label class="form-label">Item Description</label><input class="form-input" id="laf-desc" placeholder="e.g. Black iPhone 15, AirPods case, Blue water bottle..."></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-laf')">Cancel</button><button class="btn primary" onclick="saveLAF()">Log Item</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-laf">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">Log Lost & Found Item</span><button class="modal-close" onclick="closeModal('modal-laf')">✕</button></div>
+    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div class="form-group" style="margin:0;"><label class="form-label">Date Found</label><input class="form-input" type="date" id="laf-date"></div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Time Found</label><input class="form-input" type="time" id="laf-time"></div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Found By (Staff)</label><input class="form-input" id="laf-foundby" placeholder="Your name"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;ga
+        <div class="form-group" style="margin:0;"><label class="form-label">Condition</label>
+          <select class="form-select" id="laf-condition">
+            <option value="Good">Good</option>
+            <option value="Fair">Fair</option>
+            <option value="Damaged">Damaged</option>
+            <option value="Unknown">Unknown</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin:0;"><label class="form-label">Item Description</label><input class="form-input" id="laf-desc" placeholder="e.g. Black iPhone 15 with clear case, AirPods in white case..."></div>
+      <div class="form-group" style="margin:0;"><label class="form-label">Notes (optional)</label><input class="form-input" id="laf-notes" placeholder="Any additional details..."></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-laf')">Cancel</button><button class="btn primary" onclick="saveLAF()">Log Item</button></div>
   </div>
 </div>
 
@@ -843,8 +1007,8 @@ function showToast(msg,icon='✓'){const t=document.getElementById('toast');t.in
 let saveTimer=null;
 function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>cloudSave(state),700);}
 
-const sectionTitles={dashboard:'Dashboard',moves:'Move Ins / Outs',vacants:'Vacant Units & Tours',maintenance:'Maintenance Log',guests:'Guests & Visitors',keys:'Key Tracker',tours:'Tour Log',walkthrough:'Building Walkthrough',passdown:'Daily Passdown',calendar:'Calendar',amenities:'Amenity Bookings'};
-const addLabels={dashboard:null,moves:'+ Add Move',vacants:'+ Add Unit',maintenance:'+ Log Issue',guests:'+ Log Guest',keys:'+ Log Key',tours:'+ Log Tour',walkthrough:null,passdown:null,calendar:null,amenities:'+ Add Booking'};
+const sectionTitles={dashboard:'Dashboard',moves:'Move Ins / Outs',vacants:'Vacant Units',maintenance:'Maintenance',guests:'Guests & Visitors',keys:'Key Tracker',amenities:'Amenity Bookings',tours:'Tour Log',walkthrough:'Building Walkthrough',todos:'To-Do List',laf:'Lost & Found',passdown:'Daily Passdown',calendar:'Calendar'};
+const addLabels={dashboard:null,moves:'+ Add Move',vacants:'+ Add Unit',maintenance:'+ Log Issue',guests:'+ Log Guest',keys:'+ Log Key',amenities:'+ Add Booking',tours:'+ Log Tour',walkthrough:null,todos:'+ Add To-Do',laf:'+ Log Item',passdown:null,calendar:null};
 let currentSection='moves';
 
 function switchSection(id,el){
@@ -866,6 +1030,14 @@ function switchSection(id,el){
 }
 function openMainAdd(){
   if(currentSection==='amenities'){openAmenityAdd();return;}
+  if(currentSection==='todos'){const inp=document.getElementById('todos-input');if(inp)inp.focus();return;}
+  if(currentSection==='laf'){openLAFAdd();return;}
+  if(currentSection==='lostandfound'){openLAFAdd();return;}
+  if(currentSection==='todos'){
+    const inp=document.getElementById('todo-tab-input');
+    if(inp)inp.focus();
+    return;
+  }
   const m={moves:'modal-move',vacants:'modal-unit',maintenance:'modal-maint',packages:'modal-pkg',guests:'modal-guest',keys:'modal-key',tours:'modal-tour'};
   if(m[currentSection])openModal(m[currentSection]);
 }
@@ -1617,7 +1789,7 @@ function init(){
     state.moves.forEach(m=>{if(WELCOME_SENT.has(m.resident.toLowerCase().trim())){m.tasks.forEach(t=>{if(t.text===WTASK&&!t.done){t.done=true;patched=true;}});}});
     if(toAdd.length>0||patched){cloudSave(state);}
   } else {
-    state={moves:[],units:[],maintenance:[],packages:[],guests:[],keys:[],tours:[],walkthroughState:{},walkthroughIssues:[],walkthroughReset:null,passdowns:[],shiftNotes:'',selectedMoveId:null,archivedMoves:[],deletedMoveIds:[],amenities:[],todos:[]};
+    state={moves:[],units:[],maintenance:[],packages:[],guests:[],keys:[],tours:[],walkthroughState:{},walkthroughIssues:[],walkthroughReset:null,passdowns:[],shiftNotes:'',selectedMoveId:null,archivedMoves:[],deletedMoveIds:[],amenities:[],todos:[],lostFound:[]};
   }
   
 
@@ -2224,12 +2396,28 @@ function renderWeekCal(){
           });
         });
         // Amenity bookings for this day
+        (state.todos||[]).filter(t=>t.dueDate===dStr&&!t.done).forEach(t=>{
+          const short=t.text.substring(0,20);
+          chips+=`<div style="background:#EEEDFE;color:#3C3489;border-radius:3px;padding:2px 5px;font-size:10px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📌 ${short}</div>`;
+        });
+        // To-do items due this day
+        (state.todos||[]).filter(t=>t.dueDate===dStr&&!t.done).forEach(t=>{
+          const short=t.text.substring(0,20);
+          chips+=`<div style="background:#EEEDFE;color:#3C3489;border-radius:3px;padding:2px 5px;font-size:10px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📌 ${short}</div>`;
+        });
         (state.amenities||[]).filter(a=>a.date===dStr).forEach(a=>{
           const bg=a.type==='event'?'#EEEDFE':'#E6F1FB';
           const col=a.type==='event'?'#3C3489':'#0C447C';
           const time=a.start?a.start.substring(0,5):'';
           cellContent+=`<div style="background:${bg};color:${col};border-radius:3px;padding:2px 5px;font-size:10px;font-weight:500;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎉 ${time} ${a.space.split(' ')[0]}</div>`;
         });
+        // To-do items due on this day (not unit-specific, show in first column)
+        if(unit===units[0]||(units.length===0)){
+          (state.todos||[]).filter(t=>t.dueDate===dStr&&!t.done).forEach(t=>{
+            const short=t.text.substring(0,20);
+            cellContent+=`<div style="background:#EEEDFE;color:#3C3489;border-radius:3px;padding:2px 5px;font-size:9px;font-weight:500;margin-top:2px;">📌 ${short}</div>`;
+          });
+        }
         html+=`<td style="padding:3px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-width:80px;min-height:44px;vertical-align:top;${isT?'background:rgba(55,138,221,0.04);':''}">${cellContent}</td>`;
       });
       html += '</tr>';
@@ -2279,6 +2467,10 @@ function renderMonthCal(){
             chips+=`<div style="background:#E6F1FB;color:#0C447C;border-radius:3px;padding:2px 5px;font-size:10px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📞 ${m.resident.split(' ')[0]}: ${short}</div>`;
           });
         });
+        (state.todos||[]).filter(t=>t.dueDate===dStr&&!t.done).forEach(t=>{
+          const short=t.text.substring(0,20);
+          chips+=`<div style="background:#EEEDFE;color:#3C3489;border-radius:3px;padding:2px 5px;font-size:10px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📌 ${short}</div>`;
+        });
         (state.amenities||[]).filter(a=>a.date===dStr).forEach(a=>{
           const bg=a.type==='event'?'#EEEDFE':'#E6F1FB';
           const col=a.type==='event'?'#3C3489':'#0C447C';
@@ -2316,8 +2508,118 @@ function dashSearch(q){
   el.style.display='';
 }
 
+
+// ── TO-DO SECTION TAB ──
+function addTodoFromSection(){
+  const input=document.getElementById('todos-input');
+  const priority=document.getElementById('todos-priority');
+  const dateEl=document.getElementById('todos-date');
+  const text=input?input.value.trim():'';
+  if(!text){showToast('Enter a to-do first','⚠️');return;}
+  addTodo(text,priority?priority.value:'normal',null,dateEl?dateEl.value||null:null);
+  if(input)input.value='';
+  if(dateEl)dateEl.value='';
+  if(priority)priority.value='normal';
+  renderTodoSection();
+}
+function renderTodoSection(){
+  const el=document.getElementById('todos-section-list');
+  if(!el)return;
+  const countEl=document.getElementById('todos-section-count');
+  const todos=state.todos||[];
+  const sorted=[...todos].sort((a,b)=>{
+    if(a.done!==b.done)return a.done?1:-1;
+    if(a.priority==='urgent'&&b.priority!=='urgent')return -1;
+    if(b.priority==='urgent'&&a.priority!=='urgent')return 1;
+    if(a.dueDate&&b.dueDate)return a.dueDate.localeCompare(b.dueDate);
+    if(a.dueDate&&!b.dueDate)return -1;
+    if(!a.dueDate&&b.dueDate)return 1;
+    return b.createdAt-a.createdAt;
+  });
+  const pending=sorted.filter(t=>!t.done);
+  if(countEl)countEl.textContent=pending.length+' pending';
+  updateTodoBadge();
+  if(!sorted.length){el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">No to-dos yet — add one above</div>';return;}
+  el.innerHTML=sorted.map(t=>{
+    const urgentBorder=t.priority==='urgent'&&!t.done?'border-left:3px solid #E24B4A;':'border-left:3px solid transparent;';
+    const move=t.moveId?(state.moves||[]).find(m=>m.id===t.moveId):null;
+    const dueFmt=t.dueDate?new Date(t.dueDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
+    return '<div style="display:flex;align-items:flex-start;gap:10px;padding:11px 16px;border-bottom:0.5px solid var(--border);'+urgentBorder+(t.done?'opacity:0.5;':'')+'">'+
+      '<input type="checkbox" '+(t.done?'checked':'')+' onchange="toggleTodo(\''+t.id+'\')" style="margin-top:3px;flex-shrink:0;accent-color:var(--green);cursor:pointer;">'+
+      '<div style="flex:1;min-width:0;">'+
+        '<textarea onchange="updateTodoText(\''+t.id+'\',this.value)" style="border:none;background:transparent;font-family:inherit;font-size:13px;resize:none;width:100%;outline:none;cursor:text;padding:0;line-height:1.4;min-height:20px;'+(t.done?'text-decoration:line-through;color:var(--text-muted);':'')+'" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'">'+t.text+'</textarea>'+
+        '<div style="display:flex;gap:8px;align-items:center;margin-top:3px;flex-wrap:wrap;">'+
+          (dueFmt?'<span style="font-size:11px;color:#185FA5;">📅 '+dueFmt+'</span>':'')+
+          (move?'<span style="font-size:11px;color:var(--text-muted);">🔗 '+move.resident+' · Unit '+move.unit+'</span>':'')+
+          '<input type="date" value="'+(t.dueDate||'')+'" onchange="updateTodoDue(\''+t.id+'\',this.value)" title="Set due date" style="font-size:10px;border:0.5px solid var(--border);border-radius:4px;padding:1px 4px;background:var(--surface);color:var(--text-secondary);cursor:pointer;max-width:120px;">'+
+        '</div>'+
+      '</div>'+
+      '<button onclick="updateTodoPriority(\''+t.id+'\',\''+(t.priority==='urgent'?'normal':'urgent')+'\')" style="font-size:11px;padding:2px 7px;border-radius:4px;border:0.5px solid var(--border);background:'+(t.priority==='urgent'?'rgba(220,50,50,0.1)':'var(--surface)')+';color:'+(t.priority==='urgent'?'#A32D2D':'var(--text-muted)')+';cursor:pointer;flex-shrink:0;">!</button>'+
+      '<button onclick="deleteTodo(\''+t.id+'\')" style="font-size:11px;padding:2px 7px;border-radius:4px;border:0.5px solid var(--border);background:var(--surface);color:var(--text-muted);cursor:pointer;flex-shrink:0;">✕</button>'+
+    '</div>';
+  }).join('');
+  el.querySelectorAll('textarea').forEach(ta=>{ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';});
+}
+function updateTodoText(id,val){const t=(state.todos||[]).find(x=>x.id===id);if(t){t.text=val;save();}}
+function updateTodoDue(id,val){const t=(state.todos||[]).find(x=>x.id===id);if(t){t.dueDate=val||null;save();if(typeof renderCalendar==='function')renderCalendar();renderTodoSection();}}
+function updateTodoBadge(){const b=document.getElementById('badge-todos');if(b)b.textContent=(state.todos||[]).filter(t=>!t.done).length;}
+
+// ── LOST & FOUND ──
+let lafFilter='all';
+function updateLAFBadge(){const b=document.getElementById('badge-laf');if(b)b.textContent=(state.laf||[]).filter(i=>!i.claimedAt).length;}
+function openLAFAdd(){openModal('modal-laf');const d=document.getElementById('laf-date');if(d)d.value=today();}
+function filterLAF(f,el){lafFilter=f;document.querySelectorAll('#section-laf .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderLAF();}
+function saveLAF(){
+  try{
+    const desc=document.getElementById('laf-desc').value.trim();
+    if(!desc){showToast('Enter item description','⚠️');return;}
+    if(!state.laf)state.laf=[];
+    state.laf.push({id:uid(),date:document.getElementById('laf-date').value||today(),time:document.getElementById('laf-time').value||'',foundBy:document.getElementById('laf-foundby').value.trim(),location:document.getElementById('laf-location').value.trim(),condition:document.getElementById('laf-condition').value,desc,notes:document.getElementById('laf-notes').value.trim(),claimedAt:null,claimedBy:'',claimedUnit:'',loggedAt:Date.now()});
+    save();renderLAF();updateLAFBadge();
+    closeModal('modal-laf');
+    ['laf-foundby','laf-location','laf-desc','laf-notes','laf-time'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    const ld=document.getElementById('laf-date');if(ld)ld.value=today();
+    const lc=document.getElementById('laf-condition');if(lc)lc.value='Good';
+    showToast('Item logged ✓');
+  }catch(err){showToast('Error saving','⚠️');console.error('saveLAF:',err);}
+}
+function claimLAF(id){
+  const item=(state.laf||[]).find(x=>x.id===id);if(!item)return;
+  const by=prompt('Claimed by (name):');if(by===null)return;
+  const unit=prompt('Unit # (leave blank if not a resident):');
+  item.claimedBy=by.trim();item.claimedUnit=(unit||'').trim();item.claimedAt=Date.now();
+  save();renderLAF();updateLAFBadge();showToast('Item marked as claimed ✓');
+}
+function deleteLAF(id){if(!confirm('Remove this item?'))return;state.laf=(state.laf||[]).filter(x=>x.id!==id);save();renderLAF();updateLAFBadge();showToast('Removed','🗑');}
+function renderLAF(){
+  const tbody=document.getElementById('laf-tbody');if(!tbody)return;
+  let list=[...(state.laf||[])];
+  if(lafFilter==='unclaimed')list=list.filter(i=>!i.claimedAt);
+  else if(lafFilter==='claimed')list=list.filter(i=>!!i.claimedAt);
+  list.sort((a,b)=>b.loggedAt-a.loggedAt);
+  const countEl=document.getElementById('laf-count');if(countEl)countEl.textContent=list.length+' item'+(list.length===1?'':'s');
+  updateLAFBadge();
+  const inp='border:none;background:transparent;font-family:inherit;outline:none;cursor:text;padding:2px 0;width:100%;font-size:12px;';
+  if(!list.length){tbody.innerHTML='<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">🔍</div><p>No items logged yet.</p></div></td></tr>';return;}
+  tbody.innerHTML=list.map(i=>{
+    const cs=i.claimedAt?'background:#f0f7f4;':'background:#fff8f0;';
+    return '<tr style="'+(i.claimedAt?'opacity:0.7;':'')+'">'+
+      '<td style="padding:10px 12px;"><input type="date" value="'+i.date+'" onchange="updateLAFField(\''+i.id+'\',\'date\',this.value)" style="'+inp+'"></td>'+
+      '<td style="padding:10px 12px;"><input type="time" value="'+(i.time||'')+'" onchange="updateLAFField(\''+i.id+'\',\'time\',this.value)" style="'+inp+'"></td>'+
+      '<td style="padding:10px 12px;"><input type="text" value="'+(i.location||'')+'" placeholder="Location..." onchange="updateLAFField(\''+i.id+'\',\'location\',this.value)" style="'+inp+'"></td>'+
+      '<td style="padding:10px 12px;font-weight:500;min-width:140px;"><input type="text" value="'+i.desc+'" onchange="updateLAFField(\''+i.id+'\',\'desc\',this.value)" style="'+inp+'font-weight:500;"></td>'+
+      '<td style="padding:10px 12px;"><select onchange="updateLAFField(\''+i.id+'\',\'condition\',this.value)" style="border:none;background:transparent;font-size:12px;font-family:inherit;cursor:pointer;outline:none;"><option '+(i.condition==='Good'?'selected':'')+'>Good</option><option '+(i.condition==='Fair'?'selected':'')+'>Fair</option><option '+(i.condition==='Damaged'?'selected':'')+'>Damaged</option><option '+(i.condition==='Unknown'?'selected':'')+'>Unknown</option></select></td>'+
+      '<td style="padding:10px 12px;"><input type="text" value="'+(i.foundBy||'')+'" placeholder="Staff..." onchange="updateLAFField(\''+i.id+'\',\'foundBy\',this.value)" style="'+inp+'"></td>'+
+      '<td style="padding:10px 12px;font-size:12px;'+cs+'">'+(i.claimedAt?new Date(i.claimedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'<button onclick="claimLAF(\''+i.id+'\')" style="font-size:10px;padding:2px 8px;border-radius:4px;border:0.5px solid #639922;background:#EAF3DE;color:#27500A;cursor:pointer;">Mark Claimed</button>')+'</td>'+
+      '<td style="padding:10px 12px;font-size:12px;'+cs+'">'+(i.claimedBy?i.claimedBy+(i.claimedUnit?' (Unit '+i.claimedUnit+')':''):'-')+'</td>'+
+      '<td style="padding:10px 4px;"><button class="action-btn del" onclick="deleteLAF(\''+i.id+'\')">✕</button></td>'+
+    '</tr>';
+  }).join('');
+}
+function updateLAFField(id,field,val){const item=(state.laf||[]).find(x=>x.id===id);if(item){item[field]=val;save();}}
+
 // Auto-render on load
-function initSecondScript(){renderDashboard();renderAmenities();}
+function initSecondScript(){renderDashboard();renderAmenities();updateTodoBadge();updateLAFBadge();}
 if(document.readyState==='complete'){initSecondScript();}else{window.addEventListener('load',initSecondScript);}
 </script>
 
