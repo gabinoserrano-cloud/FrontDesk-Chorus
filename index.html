@@ -532,78 +532,20 @@ tbody tr:hover{background:var(--surface);}
       </div>
 
       <!-- TO-DO LIST -->
-      
-      <!-- LOST & FOUND -->
-      <div class="section" id="section-lostandfound">
-        <div class="card">
-          <div class="card-head">
-            <div class="card-head-left"><span class="card-title">Lost & Found Log</span><span class="card-count" id="laf-count">0 items</span></div>
-            <div style="display:flex;gap:8px;">
-              <button class="sub-tab active" onclick="filterLAF('all',this)">All</button>
-              <button class="sub-tab" onclick="filterLAF('unclaimed',this)">Unclaimed</button>
-              <button class="sub-tab" onclick="filterLAF('claimed',this)">Claimed</button>
-            </div>
-          </div>
-          <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;min-width:700px;">
-              <thead><tr>
-                <th style="padding:8px 10px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;background:var(--surface);">Date Found</th>
-                <th style="padding:8px 10px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;background:var(--surface);">Time</th>
-                <th style="padding:8px 10px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;background:var(--surface);">Location Found</th>
-                <th style="padding:8px 10px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;background:var(--surface);">Item Description</th>
-                <th style="padding:8px 10px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;background:var(--surface);">Condition</th>
-                <th style="padding:8px 10px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;background:var(--surface);">Found By</th>
-                <th style="padding:8px 10px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;background:var(--surface);background:#e8f5e9;">Date Claimed</th>
-                <th style="padding:8px 10px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;background:var(--surface);background:#e8f5e9;">Claimed By / Unit</th>
-                <th style="padding:8px 4px;border-bottom:1px solid var(--border);background:var(--surface);"></th>
-              </tr></thead>
-              <tbody id="laf-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- TO-DO LIST -->
       <div class="section" id="section-todos">
         <div class="card">
           <div class="card-head">
             <div class="card-head-left"><span class="card-title">Shift To-Do List</span><span class="card-count" id="todos-section-count">0 pending</span></div>
-            <div style="display:flex;gap:8px;">
-              <button class="btn sm" onclick="clearCompletedTodos()">Clear done</button>
-            </div>
-          </div>
-          <div style="padding:12px 16px;border-bottom:0.5px solid var(--border);display:flex;gap:8px;">
-            <input type="text" id="todos-input" placeholder="Add a to-do..." onkeydown="if(event.key==='Enter'){const v=this.value.trim();if(v){addTodoFromSection();}} " style="flex:1;border:0.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text-primary);outline:none;">
-            <select id="todos-priority" style="border:0.5px solid var(--border);border-radius:6px;padding:7px 8px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--text-primary);cursor:pointer;">
-              <option value="normal">Normal</option>
-              <option value="urgent">⚠️ Urgent</option>
-            </select>
-            <input type="date" id="todos-date" style="border:0.5px solid var(--border);border-radius:6px;padding:7px 8px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--text-primary);cursor:pointer;">
-            <button onclick="addTodoFromSection()" style="padding:7px 14px;border-radius:6px;border:0.5px solid var(--border);background:var(--black);color:#fff;cursor:pointer;font-size:13px;font-family:inherit;">Add</button>
-          </div>
-          
-        </div>
-      </div>
-
-      <!-- LOST & FOUND -->
-      
-      <!-- TO-DO LIST -->
-      <div class="section" id="section-todos">
-        <div class="card">
-          <div class="card-head">
-            <div class="card-head-left"><span class="card-title">Shift To-Do List</span><span class="card-count" id="todos-section-count">0 pending</span></div>
-            <div style="display:flex;gap:8px;">
-              <button class="btn sm" onclick="clearCompletedTodos()">Clear done</button>
-            </div>
+            <button class="btn sm" onclick="clearCompletedTodos()">Clear done</button>
           </div>
           <div style="padding:12px 16px;border-bottom:0.5px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;">
-            <input type="text" id="todos-input" placeholder="Add a to-do for this shift..." onkeydown="if(event.key==='Enter'){addTodoFromSection();}" style="flex:1;min-width:200px;border:0.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text-primary);outline:none;">
-            <select id="todos-priority" style="border:0.5px solid var(--border);border-radius:6px;padding:7px 8px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--text-primary);cursor:pointer;">
+            <input type="text" id="todos-input" placeholder="Add a to-do for this shift..." onkeydown="if(event.key==='Enter'){addTodoFromSection();}" style="flex:1;min-width:180px;border:0.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text-primary);outline:none;">
+            <select id="todos-priority" style="border:0.5px solid var(--border);border-radius:6px;padding:7px 8px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--text-primary);">
               <option value="normal">Normal</option>
               <option value="urgent">⚠️ Urgent</option>
             </select>
-            <input type="date" id="todos-date" title="Due date (optional)" style="border:0.5px solid var(--border);border-radius:6px;padding:7px 8px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--text-primary);cursor:pointer;">
-            <button onclick="addTodoFromSection()" style="padding:7px 16px;border-radius:6px;border:0.5px solid var(--border);background:var(--black);color:#fff;cursor:pointer;font-size:13px;font-family:inherit;">Add</button>
+            <input type="date" id="todos-date" title="Due date (optional)" style="border:0.5px solid var(--border);border-radius:6px;padding:7px 8px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--text-primary);">
+            <button onclick="addTodoFromSection()" style="padding:7px 16px;border-radius:6px;background:var(--black);color:#fff;border:none;cursor:pointer;font-size:13px;font-family:inherit;">Add</button>
           </div>
           <div id="todos-section-list"></div>
         </div>
@@ -1376,10 +1318,7 @@ function saveMaint(){
   const unit=document.getElementById('mn-unit').value.trim(),issue=document.getElementById('mn-issue').value.trim();
   if(!unit||!issue){showToast('Fill in unit and issue','⚠️');return;}
   state.maintenance.push({id:uid(),unit,issue,desc:document.getElementById('mn-desc').value.trim(),priority:document.getElementById('mn-priority').value,status:document.getElementById('mn-status').value,reporter:document.getElementById('mn-reporter').value.trim(),date:today()});
-  save();updateBadges();updateStats();closeModal('modal-maint');
-  const mNav=document.querySelector(".nav-item[onclick*='maintenance']");
-  if(mNav&&currentSection!=='maintenance')switchSection('maintenance',mNav);
-  renderMaint();['mn-unit','mn-issue','mn-desc','mn-reporter'].forEach(id=>document.getElementById(id).value='');showToast('Issue logged');
+  save();renderMaint();updateBadges();updateStats();closeModal('modal-maint');['mn-unit','mn-issue','mn-desc','mn-reporter'].forEach(id=>document.getElementById(id).value='');showToast('Issue logged');
 
   }catch(err){showToast("Error saving — try again","⚠️");console.error("saveMaint:",err);}
 }
@@ -1446,10 +1385,7 @@ function saveGuest(){
   const name=document.getElementById('g-name').value.trim(),unit=document.getElementById('g-unit').value.trim();
   if(!name||!unit){showToast('Fill in guest name and unit','⚠️');return;}
   state.guests.push({id:uid(),name,unit,host:document.getElementById('g-host').value.trim(),type:document.getElementById('g-type').value,status:document.getElementById('g-status').value,notes:document.getElementById('g-notes').value.trim(),checkinAt:document.getElementById('g-status').value==='checked-in'?Date.now():null,checkoutAt:null,date:today()});
-  save();updateBadges();updateStats();closeModal('modal-guest');
-  const gNav=document.querySelector(".nav-item[onclick*='guests']");
-  if(gNav&&currentSection!=='guests')switchSection('guests',gNav);
-  renderGuests();['g-name','g-unit','g-host','g-notes'].forEach(id=>document.getElementById(id).value='');showToast('Guest logged');
+  save();renderGuests();updateBadges();updateStats();closeModal('modal-guest');['g-name','g-unit','g-host','g-notes'].forEach(id=>document.getElementById(id).value='');showToast('Guest logged');
 
   }catch(err){showToast("Error saving — try again","⚠️");console.error("saveGuest:",err);}
 }
@@ -1486,10 +1422,7 @@ function saveKey(){
   const unit=document.getElementById('k-unit').value.trim(),name=document.getElementById('k-name').value.trim();
   if(!unit||!name){showToast('Fill in unit and name','⚠️');return;}
   state.keys.push({id:uid(),unit,name,type:document.getElementById('k-type').value,fob:document.getElementById('k-fob').value.trim(),status:document.getElementById('k-status').value,expiry:document.getElementById('k-expiry').value,notes:document.getElementById('k-notes').value.trim(),issuedAt:Date.now(),returnedAt:null});
-  save();updateBadges();updateStats();closeModal('modal-key');
-  const kNav=document.querySelector(".nav-item[onclick*='keys']");
-  if(kNav&&currentSection!=='keys')switchSection('keys',kNav);
-  renderKeys();['k-unit','k-name','k-fob','k-expiry','k-notes'].forEach(id=>document.getElementById(id).value='');showToast('Key logged');
+  save();renderKeys();updateBadges();updateStats();closeModal('modal-key');['k-unit','k-name','k-fob','k-expiry','k-notes'].forEach(id=>document.getElementById(id).value='');showToast('Key logged');
 
   }catch(err){showToast("Error saving — try again","⚠️");console.error("saveKey:",err);}
 }
@@ -1524,10 +1457,7 @@ function saveTour(){
   const name=document.getElementById('tr-name').value.trim(),unit=document.getElementById('tr-unit').value.trim();
   if(!name){showToast('Enter prospect name','⚠️');return;}
   state.tours.push({id:uid(),name,unit,type:document.getElementById('tr-type').value,date:document.getElementById('tr-date').value||today(),time:document.getElementById('tr-time').value.trim(),contact:document.getElementById('tr-contact').value.trim(),notes:document.getElementById('tr-notes').value.trim()});
-  save();updateBadges();updateStats();closeModal('modal-tour');
-  const tourNav=document.querySelector(".nav-item[onclick*='tours']");
-  if(tourNav&&currentSection!=='tours')switchSection('tours',tourNav);
-  renderTours();['tr-name','tr-unit','tr-time','tr-contact','tr-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('tr-date').value=today();showToast('Tour logged');
+  save();renderTours();updateBadges();updateStats();closeModal('modal-tour');['tr-name','tr-unit','tr-time','tr-contact','tr-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('tr-date').value=today();showToast('Tour logged');
 
   }catch(err){showToast("Error saving — try again","⚠️");console.error("saveTour:",err);}
 }
@@ -2273,10 +2203,7 @@ function saveAmenity(){
   const a={id:uid(),resident,unit,space:document.getElementById('am-space').value,date,start:document.getElementById('am-start').value,end:document.getElementById('am-end').value,type:document.getElementById('am-type').value,fee:document.getElementById('am-fee').value.trim(),notes:document.getElementById('am-notes').value.trim(),createdAt:Date.now()};
   if(!state.amenities)state.amenities=[];
   state.amenities.push(a);
-  save();updateBadges();
-  const amNav=document.querySelector(".nav-item[onclick*='amenities']");
-  if(amNav&&currentSection!=='amenities')switchSection('amenities',amNav);
-  renderAmenities();
+  save();renderAmenities();updateBadges();
   closeModal('modal-amenity');
   ['am-resident','am-unit','am-fee','am-notes'].forEach(id=>document.getElementById(id).value='');
   showToast('Booking added ✓');
@@ -2592,9 +2519,6 @@ function saveLAF(){
     state.laf.push({id:uid(),date:document.getElementById('laf-date').value||today(),time:document.getElementById('laf-time').value||'',foundBy:document.getElementById('laf-foundby').value.trim(),location:document.getElementById('laf-location').value.trim(),condition:document.getElementById('laf-condition').value,desc,notes:document.getElementById('laf-notes').value.trim(),claimedAt:null,claimedBy:'',claimedUnit:'',loggedAt:Date.now()});
     save();
     closeModal('modal-laf');
-    // Switch to laf section so tbody exists, then render
-    const lafNav=document.querySelector(".nav-item[onclick*='laf']");
-    if(lafNav)switchSection('laf',lafNav);
     renderLAF();updateLAFBadge();
     ['laf-foundby','laf-location','laf-desc','laf-notes','laf-time'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     const ld=document.getElementById('laf-date');if(ld)ld.value=today();
