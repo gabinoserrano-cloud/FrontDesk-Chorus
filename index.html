@@ -125,7 +125,7 @@ tbody tr:hover{background:var(--surface);}
 .badge.unclaimed{background:var(--amber-light);color:var(--amber);}
 .badge.resident{background:var(--gold-light);color:var(--gold);}
 .badge.joiner{background:var(--blue-light);color:var(--blue);}
-.badge.one-time{background:var(--purple-light);color:var(--purple);}
+.badg  // ── TO-DO SECTION ──e.one-time{background:var(--purple-light);color:var(--purple);}
 .badge.mobile{background:var(--green-light);color:var(--green);}
 .badge.issued{background:var(--green-light);color:var(--green);}
 .badge.returned{background:var(--surface2);color:var(--text-secondary);}
@@ -1576,71 +1576,177 @@ function generatePassdown(){
   const greeting=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
   const dateStr=(now.getMonth()+1)+'/'+now.getDate()+'/'+now.getFullYear();
   const t=today();
-  const _end=new Date();_end.setDate(_end.getDate()+7);
+  const dayOfWeek=now.getDay(); // 0=Sun,1=Mon...6=Sat
+  const isSunday=dayOfWeek===0;
+
+  // ── Date helpers ──
+  const toStr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const fmtShort=d=>(d.getMonth()+1)+'/'+d.getDate();
+  const fmtMoveDate=s=>{const d=new Date(s+'T12:00:00');return (d.getMonth()+1)+'/'+(d.getDate());};
+
+  // ── Week range for Sunday preview (this Sunday through next Saturday) ──
+  const weekStart=new Date(now);weekStart.setHours(0,0,0,0);
+  // Sunday = start of display week
+  const weekEnd=new Date(weekStart);weekEnd.setDate(weekStart.getDate()+6);
+  const weekStartStr=toStr(weekStart);
+  const weekEndStr=toStr(weekEnd);
+
+  // ── Next 7 days for daily passdown ──
+  const _end=new Date(now);_end.setDate(now.getDate()+7);
+  const endDateStr=toStr(_end);
   const endStr=(_end.getMonth()+1)+'/'+_end.getDate()+'/'+_end.getFullYear();
-  const upcomingIns=state.moves.filter(m=>m.type==='in'&&m.date>=t).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8);
-  const upcomingOuts=state.moves.filter(m=>m.type==='out'&&m.date>=t).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8);
-  const openMaint=state.maintenance.filter(m=>m.status!=='resolved');
-  const checkedInGuests=state.guests.filter(g=>g.status==='checked-in');
-  const issuedKeys=state.keys.filter(k=>k.status==='issued'&&k.type!=='resident');
-  let text=greeting+' team,\n\nHere is today\'s passdown with active items only based on the '+dateStr+' tracker. Please review carefully and follow up as needed during your shift.\n\n';
+
+  // ── Data pulls ──
+  const upcomingIns=(state.moves||[]).filter(m=>m.type==='in'&&m.date>=t&&!m.archivedAt).sort((a,b)=>a.date.localeCompare(b.date));
+  const upcomingOuts=(state.moves||[]).filter(m=>m.type==='out'&&m.date>=t&&!m.archivedAt).sort((a,b)=>a.date.localeCompare(b.date));
+  const openMaint=(state.maintenance||[]).filter(m=>m.status!=='resolved');
+  const checkedInGuests=(state.guests||[]).filter(g=>g.status==='checked-in');
+  const issuedKeys=(state.keys||[]).filter(k=>k.status==='issued');
+  const todayLAF=(state.laf||[]).filter(i=>i.date===t&&!i.claimedAt);
+  const todayAmenities=(state.amenities||[]).filter(a=>a.date===t).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+  const urgentTodos=(state.todos||[]).filter(x=>!x.done&&x.priority==='urgent');
+  const pendingTodos=(state.todos||[]).filter(x=>!x.done&&x.priority!=='urgent');
+
+  let text=greeting+' team,\n\n';
+
+  if(isSunday){
+    // ── SUNDAY: WEEKLY PREVIEW (Mon–Sun, covers part-timer days too) ──
+    text+='Here is the *weekly preview* for the week of '+fmtShort(weekStart)+' \u2013 '+fmtShort(weekEnd)+'. This covers the full week including days managed by part-time staff on Friday and Saturday. Please review and plan accordingly.\n\n';
+
+    const weekIns=upcomingIns.filter(m=>m.date>=weekStartStr&&m.date<=weekEndStr);
+    const weekOuts=upcomingOuts.filter(m=>m.date>=weekStartStr&&m.date<=weekEndStr);
+    const weekAmenities=(state.amenities||[]).filter(a=>a.date>=weekStartStr&&a.date<=weekEndStr).sort((a,b)=>a.date.localeCompare(b.date)||(a.start||'').localeCompare(b.start||''));
+
+    if(weekIns.length){
+      text+='\uD83D\uDCE6 *Move-Ins This Week ('+weekIns.length+' total)*\n\n';
+      weekIns.forEach(m=>{
+        text+='   - *'+fmtMoveDate(m.date)+' \u2014 Unit '+m.unit+' \u2013 '+m.resident+'*';
+        if(m.moveInTotal)text+=' | Move-in total: $'+m.moveInTotal;
+        if(m.notes)text+=' | '+m.notes;
+        text+='\n';
+      });
+      text+='\n';
+    }
+    if(weekOuts.length){
+      text+='\uD83D\uDE9A *Move-Outs This Week ('+weekOuts.length+' total)*\n\n';
+      weekOuts.forEach(m=>{
+        text+='   - *'+fmtMoveDate(m.date)+' \u2014 Unit '+m.unit+' \u2013 '+m.resident+'*';
+        if(m.notes)text+=' | '+m.notes;
+        text+='\n';
+      });
+      text+='\n';
+    }
+
+    // Tight turnovers this week
+    const turnovers=[];
+    weekOuts.forEach(out=>{
+      const matchIn=weekIns.find(i=>i.unit===out.unit);
+      if(matchIn){
+        const gap=Math.round((new Date(matchIn.date+'T12:00:00')-new Date(out.date+'T12:00:00'))/86400000);
+        if(gap<=5)turnovers.push({unit:out.unit,out:out.resident,outDate:out.date,inn:matchIn.resident,inDate:matchIn.date,gap});
+      }
+    });
+    if(turnovers.length){
+      text+='\u26A0\uFE0F *Tight Turnovers This Week*\n\n';
+      turnovers.forEach(t2=>{
+        text+='   - *Unit '+t2.unit+'* | '+t2.out+' out '+fmtMoveDate(t2.outDate)+' \u2192 '+t2.inn+' in '+fmtMoveDate(t2.inDate)+' ('+t2.gap+' day'+(t2.gap===1?'':'s')+')\n';
+      });
+      text+='\n';
+    }
+
+    if(weekAmenities.length){
+      text+='\uD83C\uDF89 *Amenity Bookings This Week*\n\n';
+      weekAmenities.forEach(a=>{
+        text+='   - *'+fmtMoveDate(a.date)+' \u2014 '+a.space+'* | '+a.resident+' (Unit '+a.unit+')'+(a.start?' | '+a.start+(a.end?' \u2013 '+a.end:''):'')+(a.notes?' | '+a.notes:'')+'\n';
+      });
+      text+='\n';
+    }
+  } else {
+    text+='Here is today\'s passdown with active items based on the '+dateStr+' tracker. Please review carefully and follow up as needed during your shift.\n\n';
+  }
+
+  // ── DAILY SECTIONS (always included) ──
+
+  // Keys / Access
   let keysSection='';
-  issuedKeys.forEach(k=>{keysSection+='   - *'+k.unit+' \u2013 '+k.name+'* | '+(k.notes||'Key issued \u2014 please follow up.')+'\n';});
-  checkedInGuests.forEach(g=>{keysSection+='   - *Unit '+g.unit+' \u2013 '+g.name+'* | Guest checked in'+(g.host?' for '+g.host:'')+(g.notes?' \u2014 '+g.notes:'')+'.\n';});
+  issuedKeys.forEach(k=>{keysSection+='   - *Unit '+k.unit+' \u2013 '+k.name+'* | '+(k.notes||'Key issued \u2014 please follow up.')+'\n';});
+  checkedInGuests.forEach(g=>{keysSection+='   - *Unit '+g.unit+' \u2013 '+g.name+'* | Guest checked in'+(g.host?' for '+g.host:'')+(g.notes?' \u2014 '+g.notes:'')+'\n';});
   if(keysSection)text+='\uD83D\uDD1D *Keys / Access*\n\n'+keysSection+'\n';
-  if(upcomingIns.length){
+
+  // Today amenities
+  if(todayAmenities.length){
+    text+='\uD83C\uDF89 *Amenity Bookings Today*\n\n';
+    todayAmenities.forEach(a=>{
+      text+='   - *'+a.space+'* | '+a.resident+' (Unit '+a.unit+')'+(a.start?' | '+a.start+(a.end?' \u2013 '+a.end:''):'')+(a.notes?' | '+a.notes:'')+'\n';
+    });
+    text+='\n';
+  }
+
+  // Upcoming move-ins
+  const nearIns=upcomingIns.filter(m=>m.date<=endDateStr).slice(0,10);
+  if(nearIns.length){
     text+='\uD83D\uDCE6 *Upcoming Move-Ins (through '+endStr+')*\n\n';
-    upcomingIns.forEach(m=>{
-      const dd=new Date(m.date+'T12:00:00');
-      const dl=(dd.getMonth()+1)+'/'+(dd.getDate());
-      text+='   - *'+dl+' \u2014 '+m.unit+' \u2013 '+m.resident+'*';
+    nearIns.forEach(m=>{
+      text+='   - *'+fmtMoveDate(m.date)+' \u2014 Unit '+m.unit+' \u2013 '+m.resident+'*';
       if(m.notes)text+=' | '+m.notes;
       if(m.moveInTotal)text+=' | Move-in total: $'+m.moveInTotal;
       text+='\n';
     });
     text+='\n';
   }
-  if(upcomingOuts.length){
+
+  // Upcoming move-outs
+  const nearOuts=upcomingOuts.filter(m=>m.date<=endDateStr).slice(0,10);
+  if(nearOuts.length){
     text+='\uD83D\uDE9A *Upcoming Move-Outs (through '+endStr+')*\n\n';
-    upcomingOuts.forEach(m=>{
-      const dd=new Date(m.date+'T12:00:00');
-      const dl=(dd.getMonth()+1)+'/'+(dd.getDate());
-      text+='   - *'+dl+' \u2014 '+m.unit+' \u2013 '+m.resident+'*';
+    nearOuts.forEach(m=>{
+      text+='   - *'+fmtMoveDate(m.date)+' \u2014 Unit '+m.unit+' \u2013 '+m.resident+'*';
       if(m.notes)text+=' | '+m.notes;
       text+='\n';
     });
     text+='\n';
   }
+
+  // Maintenance
   if(openMaint.length){
     text+='\uD83D\uDD27 *Maintenance*\n\n';
     openMaint.forEach(m=>{text+='   - *Unit '+m.unit+'* | ['+m.priority.toUpperCase()+'] '+m.issue+(m.desc?' \u2014 '+m.desc:'')+' ['+m.status.replace('-',' ')+']\n';});
     text+='\n';
   }
-  text+='\uD83D\uDCCB *Resident Matters*\n\n   - \n\n';
-  // Pending to-dos
-  const pendingTodos=(state.todos||[]).filter(t=>!t.done&&t.priority==='urgent');
-  if(pendingTodos.length){
-    text+='⚠️ *Urgent To-Dos*\n\n';
-    pendingTodos.forEach(t=>{
-      const move=t.moveId?(state.moves||[]).find(m=>m.id===t.moveId):null;
-      text+='   - '+t.text+(move?' ('+move.resident+' · Unit '+move.unit+')':'')+' [URGENT]\n';
-    });
-    text+='\n';
-  }
-  const allPendingTodos=(state.todos||[]).filter(t=>!t.done&&t.priority!=='urgent');
-  if(allPendingTodos.length){
-    text+='📝 *Pending To-Dos*\n\n';
-    allPendingTodos.forEach(t=>{
-      const move=t.moveId?(state.moves||[]).find(m=>m.id===t.moveId):null;
-      text+='   - '+t.text+(move?' ('+move.resident+' · Unit '+move.unit+')':'')+' \n';
+
+  // Lost & Found logged today
+  if(todayLAF.length){
+    text+='\uD83D\uDD0D *Lost & Found \u2014 Logged Today*\n\n';
+    todayLAF.forEach(i=>{
+      text+='   - *'+i.desc+'*'+(i.location?' | Found: '+i.location:'')+(i.foundBy?' | By: '+i.foundBy:'')+' [Unclaimed]\n';
     });
     text+='\n';
   }
 
+  // Resident Matters
+  text+='\uD83D\uDCCB *Resident Matters*\n\n   - \n\n';
+
+  // Urgent to-dos
+  if(urgentTodos.length){
+    text+='\u26A0\uFE0F *Urgent To-Dos*\n\n';
+    urgentTodos.forEach(x=>{text+='   - '+x.text+' [URGENT]\n';});
+    text+='\n';
+  }
+
+  // Pending to-dos
+  if(pendingTodos.length){
+    text+='\uD83D\uDCDD *Pending To-Dos*\n\n';
+    pendingTodos.forEach(x=>{text+='   - '+x.text+'\n';});
+    text+='\n';
+  }
+
   text+='------------------------------\n\nIf anyone receives updates related to the items above, please note them in the tracker and update the team accordingly. Do not hesitate to reach out if anything comes up that needs clarification.\n\nBest,\n\nGabino S.M.\n\nFront Desk Lead | Chorus - SF\n\ngserrano@alignrealestate.com';
+
   document.getElementById('pd-notes').value=text;
-  showToast('Passdown generated \u2728');
+  showToast(isSunday?'Weekly preview generated \u2728':'Passdown generated \u2728');
 }
+
+
 function copyPassdown(){
   const text=document.getElementById('pd-notes').value;
   if(!text.trim()){showToast('Nothing to copy yet','⚠️');return;}
@@ -2092,63 +2198,671 @@ function renderDashboard(){
   </div>`;
 
   // Two column layout
-  html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">`;
+    // ── TIGHT TURNOVERS ALERT ──
+  const allOuts=(state.moves||[]).filter(m=>m.type==='out'&&!m.archivedAt);
+  const allIns2=(state.moves||[]).filter(m=>m.type==='in'&&!m.archivedAt);
+  const tightTurnovers=[];
+  allOuts.forEach(out=>{
+    const matchIn=allIns2.find(i=>i.unit===out.unit);
+    if(matchIn){
+      const gap=Math.round((new Date(matchIn.date+'T12:00:00')-new Date(out.date+'T12:00:00'))/86400000);
+      if(gap>=0&&gap<=5)tightTurnovers.push({unit:out.unit,outRes:out.resident,outDate:out.date,inRes:matchIn.resident,inDate:matchIn.date,gap});
+    }
+  });
+  if(tightTurnovers.length){
+    html+=`<div style="background:rgba(186,117,23,0.08);border:1px solid rgba(186,117,23,0.35);border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:12px;">
+      <div style="font-weight:600;color:#633806;margin-bottom:4px;">⚡ Tight Turnovers — ${tightTurnovers.length} unit${tightTurnovers.length>1?'s':''} need attention</div>
+      ${tightTurnovers.map(tt=>`<div style="color:#633806;margin-top:3px;">Unit ${tt.unit}: ${tt.outRes} out ${new Date(tt.outDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})} → ${tt.inRes} in ${new Date(tt.inDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})} <strong>(${tt.gap} day${tt.gap===1?'':'s'})</strong></div>`).join('')}
+    </div>`;
+  }
+
+  html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">`;
 
   // Left: This week's moves
-  // Dedup by id in case same move appears in multiple arrays
+  const _seen=new Set();
+  const weekAll=[...todayIns,...todayOuts,...weekMoves].filter(m=>{if(_seen.has(m.id))return false;_seen.add(m.id);return true;}).slice(0,8);
+  html+=`<div>
+    <div style="font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">This week\'s moves</div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;">`;
+  if(!weekAll.length){
+    html+=`<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">No moves this week</div>`;
+  } else {
+    weekAll.forEach(m=>{
+      const isT=m.date===t;
+      const isTmrw=m.date===tmrw;
+      const bg=isT?'background:rgba(220,50,50,0.04);':isTmrw?'background:rgba(255,180,0,0.04);':'';
+      html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);cursor:pointer;${bg}" onclick="switchSection('moves',document.querySelector('.nav-item[onclick*=moves]'));setTimeout(()=>selectMove('${m.id}'),200);" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">
+        <div><div style="font-size:13px;font-weight:500;">${m.resident}</div>
+        <div style="font-size:11px;color:var(--text-muted);">Unit ${m.unit} · ${isT?'Today':isTmrw?'Tomorrow':new Date(m.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div></div>
+        ${m.type==='in'?'<span style="background:#EAF3DE;color:#27500A;font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;">Move In</span>':'<span style="background:#FCEBEB;color:#791F1F;font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;">Move Out</span>'}
+      </div>`;
+    });
+  }
+  html+=`</div></div>`;
+
+  // Right: Active move progress
+  html+=`<div>
+    <div style="font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Active move progress</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">`;
+  if(!activeMoves.length){
+    html+=`<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">No moves in progress</div>`;
+  } else {
+    activeMoves.forEach(m=>{
+      const done=m.tasks.filter(t2=>t2.done).length;
+      const pct=Math.round(done/m.tasks.length*100);
+      const barColor=pct<30?'#E24B4A':pct<70?'#EF9F27':'#639922';
+      html+=`<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;" onclick="switchSection('moves',document.querySelector('.nav-item[onclick*=moves]'));setTimeout(()=>selectMove('${m.id}'),200);">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <div style="font-size:12px;font-weight:500;">${m.resident} · Unit ${m.unit}</div>
+          <div style="font-size:11px;color:${barColor};font-weight:600;">${done}/${m.tasks.length}</div>
+        </div>
+        <div style="background:var(--surface);border-radius:4px;height:5px;">
+          <div style="background:${barColor};height:100%;width:${pct}%;border-radius:4px;"></div>
+        </div>
+      </div>`;
+    });
+  }
+  html+=`</div></div></div>`;
+
+  // ── 3-COLUMN BOTTOM PANELS ──
+  html+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;">`;
+
+  // Panel 1: Open Maintenance
+  html+=`<div>
+    <div style="font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Open maintenance</div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;">`;
+  if(!openMaint.length){
+    html+=`<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">No open issues ✓</div>`;
+  } else {
+    openMaint.slice(0,4).forEach(m=>{
+      const pc=m.priority==='high'?'#E24B4A':m.priority==='medium'?'#EF9F27':'#888780';
+      html+=`<div style="padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;display:flex;justify-content:space-between;align-items:center;">
+        <div><div style="font-weight:500;">Unit ${m.unit}: ${m.issue}</div>
+        <div style="color:var(--text-muted);font-size:11px;">${m.status.replace('-',' ')}</div></div>
+        <span style="background:${pc}22;color:${pc};font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;flex-shrink:0;">${m.priority}</span>
+      </div>`;
+    });
+    if(openMaint.length>4)html+=`<div style="padding:6px 14px;font-size:11px;color:var(--text-muted);">+${openMaint.length-4} more</div>`;
+  }
+  html+=`</div></div>`;
+
+  // Panel 2: Keys currently out
+  const keysOut=(state.keys||[]).filter(k=>k.status==='issued');
+  html+=`<div>
+    <div style="font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Keys currently out</div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;">`;
+  if(!keysOut.length){
+    html+=`<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">All keys returned ✓</div>`;
+  } else {
+    keysOut.slice(0,4).forEach(k=>{
+      html+=`<div style="padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;">
+        <div style="font-weight:500;">Unit ${k.unit} — ${k.name}</div>
+        <div style="color:var(--text-muted);font-size:11px;">${k.type}${k.fob?' · #'+k.fob:''}</div>
+      </div>`;
+    });
+    if(keysOut.length>4)html+=`<div style="padding:6px 14px;font-size:11px;color:var(--text-muted);">+${keysOut.length-4} more — see Key Tracker</div>`;
+  }
+  html+=`</div></div>`;
+
+  // Panel 3: Lost & Found unclaimed
+  const lafUnclaimed=(state.laf||[]).filter(i=>!i.claimedAt);
+  const lafOverdue=lafUnclaimed.filter(i=>Math.floor((Date.now()-i.loggedAt)/86400000)>=30);
+  html+=`<div>
+    <div style="font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Lost & found unclaimed${lafOverdue.length?` <span style="color:#E24B4A;">(${lafOverdue.length} over 30 days)</span>`:''}</div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;">`;
+  if(!lafUnclaimed.length){
+    html+=`<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">No unclaimed items ✓</div>`;
+  } else {
+    lafUnclaimed.slice(0,4).forEach(i=>{
+      const days=Math.floor((Date.now()-i.loggedAt)/86400000);
+      const old=days>=30;
+      html+=`<div style="padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;${old?'background:rgba(220,50,50,0.03);':''}">
+        <div style="font-weight:500;${old?'color:#A32D2D;':''}">${i.desc.substring(0,30)}${i.desc.length>30?'...':''}</div>
+        <div style="font-size:11px;color:${old?'#A32D2D':'var(--text-muted)'};">${old?'⚠️ ':''} ${days===0?'Today':days+' day'+(days===1?'':'s')+' ago'}${i.location?' · '+i.location:''}</div>
+      </div>`;
+    });
+    if(lafUnclaimed.length>4)html+=`<div style="padding:6px 14px;font-size:11px;color:var(--text-muted);">+${lafUnclaimed.length-4} more — see Lost & Found</div>`;
+  }
+  html+=`</div></div>`;
+
+  html+=`</div>`;
+
+  // ── TO-DO SECTION ──
+  const todoPending=(state.todos||[]).filter(t=>!t.done);
+  const todoUrgent=todoPending.filter(t=>t.priority==='urgent');
+  html+=`<div style="margin-top:20px;">
+    <div style="font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+      <span>Shift to-do list</span>
+      <div style="display:flex;gap:6px;">
+        <span id="todo-count" style="font-size:11px;color:var(--text-muted);font-weight:400;">${todoPending.length} pending</span>
+        ${(state.todos||[]).some(t=>t.done)?`<button onclick="clearCompletedTodos()" style="font-size:11px;padding:2px 8px;border-radius:5px;border:0.5px solid var(--border);background:var(--surface);color:var(--text-muted);cursor:pointer;font-family:inherit;">Clear done</button>`:''}
+      </div>
+    </div>
+    ${todoUrgent.length?`<div style="background:rgba(220,50,50,0.06);border:0.5px solid rgba(220,50,50,0.3);border-radius:8px;padding:8px 14px;margin-bottom:8px;font-size:12px;color:#A32D2D;">⚠️ <strong>${todoUrgent.length} urgent item${todoUrgent.length>1?'s':''}</strong> — ${todoUrgent.map(t=>t.text).join(' · ')}</div>`:''}
+    <div style="background:var(--white);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;">
+      <div style="padding:10px 14px;border-bottom:0.5px solid var(--border);display:flex;gap:8px;">
+        <input type="text" id="todo-input" placeholder="Add a to-do for this shift..." onkeydown="if(event.key==='Enter'){const v=this.value.trim();if(v){addTodo(v,document.getElementById('todo-priority').value);this.value='';document.getElementById('todo-priority').value='normal';}}" style="flex:1;border:0.5px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text-primary);outline:none;">
+        <select id="todo-priority" style="border:0.5px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--text-primary);cursor:pointer;">
+          <option value="normal">Normal</option>
+          <option value="urgent">⚠️ Urgent</option>
+        </select>
+        <button onclick="const v=document.getElementById('todo-input').value.trim();if(v){addTodo(v,document.getElementById('todo-priority').value);document.getElementById('todo-input').value='';document.getElementById('todo-priority').value='normal';}" style="padding:6px 14px;border-radius:6px;border:0.5px solid var(--border);background:var(--black);color:#fff;cursor:pointer;font-size:13px;font-family:inherit;">Add</button>
+      </div>
+      <div id="todo-list"></div>
+    </div>
+  </div>`;
+
+  el.innerHTML=html;
+  if(typeof renderTodos==='function')renderTodos();
+  }catch(err){console.error('Dashboard error:',err);if(el)el.innerHTML='<div style="padding:40px;color:var(--text-muted);">Error loading dashboard. Please refresh.</div>';}
+}
+
+// ── AMENITY BOOKINGS ──
+let amenityFilter='all';
+function openAmenityAdd(){openModal('modal-amenity');document.getElementById('am-date').value=today();}
+function saveAmenity(){
+  const resident=document.getElementById('am-resident').value.trim();
+  const unit=document.getElementById('am-unit').value.trim();
+  const date=document.getElementById('am-date').value;
+  if(!resident||!unit||!date){showToast('Fill in resident, unit & date','⚠️');return;}
+  const a={id:uid(),resident,unit,space:document.getElementById('am-space').value,date,start:document.getElementById('am-start').value,end:document.getElementById('am-end').value,type:document.getElementById('am-type').value,fee:document.getElementById('am-fee').value.trim(),notes:document.getElementById('am-notes').value.trim(),createdAt:Date.now()};
+  if(!state.amenities)state.amenities=[];
+  state.amenities.push(a);
+  save();renderAmenities();updateBadges();
+  closeModal('modal-amenity');
+  ['am-resident','am-unit','am-fee','am-notes'].forEach(id=>document.getElementById(id).value='');
+  showToast('Booking added ✓');
+}
+function filterAmenities(f,el){amenityFilter=f;document.querySelectorAll('#section-amenities .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderAmenities();}
+function deleteAmenity(id){if(!confirm('Remove booking?'))return;state.amenities=state.amenities.filter(a=>a.id!==id);save();renderAmenities();updateBadges();}
+function renderAmenities(){
+  const amenities=state.amenities||[];
+  let list=[...amenities];
+  const t=today();
+  if(amenityFilter==='today')list=list.filter(a=>a.date===t);
+  else if(amenityFilter==='upcoming')list=list.filter(a=>a.date>=t);
+  else if(amenityFilter==='event')list=list.filter(a=>a.type==='event');
+  list.sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start));
+  const tbody=document.getElementById('amenities-tbody');
+  if(!tbody)return;
+  const el=document.getElementById('amenities-count');
+  if(el)el.textContent=list.length+' booking'+(list.length===1?'':'s');
+  const inp='border:none;background:transparent;font-family:inherit;outline:none;cursor:text;padding:2px 0;width:100%;font-size:12px;';
+  if(!list.length){tbody.innerHTML='<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">🎉</div><p>No bookings yet.</p></div></td></tr>';return;}
+  tbody.innerHTML=list.map(a=>{
+    const isT=a.date===t;
+    const rowBg=isT?'background:rgba(55,138,221,0.05);border-left:3px solid #185FA5;':'';
+    const typeColor=a.type==='event'?'background:#EEEDFE;color:#3C3489;':'background:#E6F1FB;color:#0C447C;';
+    return `<tr style="${rowBg}">
+      <td style="padding:10px 12px;"><input type="text" value="${a.resident}" onchange="updateAmenityField('${a.id}','resident',this.value)" style="${inp}font-weight:500;"></td>
+      <td style="padding:10px 12px;"><input type="text" value="${a.unit}" onchange="updateAmenityField('${a.id}','unit',this.value)" style="${inp}width:60px;"></td>
+      <td style="padding:10px 12px;font-size:12px;font-weight:500;">${a.space}</td>
+      <td style="padding:10px 12px;"><input type="date" value="${a.date}" onchange="updateAmenityField('${a.id}','date',this.value)" style="${inp}"></td>
+      <td style="padding:10px 12px;font-size:12px;color:var(--text-secondary);">${a.start?a.start:'—'}${a.end?' – '+a.end:''}</td>
+      <td style="padding:10px 12px;"><span style="font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;${typeColor}">${a.type==='event'?'Event':'Reservation'}</span></td>
+      <td style="padding:10px 12px;font-size:12px;color:var(--text-secondary);">${a.fee||'—'}</td>
+      <td style="padding:10px 12px;"><input type="text" value="${a.notes||''}" placeholder="Notes..." onchange="updateAmenityField('${a.id}','notes',this.value)" style="${inp}color:var(--text-secondary);"></td>
+      <td style="padding:10px 4px;"><button class="action-btn del" onclick="deleteAmenity('${a.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+function updateAmenityField(id,field,val){
+  const a=(state.amenities||[]).find(x=>x.id===id);
+  if(a){a[field]=val;save();if(typeof renderCalendar==='function')renderCalendar();}
+}
+
+// ── CALENDAR ──
+let calViewMode = 'week';
+let calOffset = 0;
+
+function toggleCalView(){
+  calViewMode = calViewMode === 'week' ? 'month' : 'week';
+  document.getElementById('cal-toggle-btn').textContent = calViewMode === 'week' ? 'Monthly' : 'Weekly';
+  renderCalendar();
+}
+function calPrev(){ calOffset--; renderCalendar(); }
+function calNext(){ calOffset++; renderCalendar(); }
+function calToday(){ calOffset=0; renderCalendar(); }
+
+function getWeekStart(offset){
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() - d.getDay() + offset * 7);
+  return d;
+}
+
+function renderCalendar(){
+  if(calViewMode === 'week') renderWeekCal();
+  else renderMonthCal();
+}
+
+function renderWeekCal(){
+  const ws = getWeekStart(calOffset);
+  const days = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(ws);
+    d.setDate(d.getDate()+i);
+    days.push(d);
+  }
+  const todayStr = today();
+  const fmt = d => d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  document.getElementById('cal-title').textContent = 'Week of '+fmt(days[0])+' - '+fmt(days[6]);
+
+  // Get all units that have moves
+  const unitSet = new Set(state.moves.map(m=>m.unit));
+  const units = [...unitSet].sort((a,b)=>parseInt(a)-parseInt(b));
+
+  // Check tight turnovers per unit
+  const tightUnits = new Set();
+  units.forEach(u=>{
+    const uMoves = state.moves.filter(m=>m.unit===u).sort((a,b)=>a.date.localeCompare(b.date));
+    for(let i=0;i<uMoves.length-1;i++){
+      const d1=new Date(uMoves[i].date+'T12:00:00');
+      const d2=new Date(uMoves[i+1].date+'T12:00:00');
+      const diff=(d2-d1)/86400000;
+      if(diff<=3&&diff>=0) tightUnits.add(u+'|'+uMoves[i].date+'|'+uMoves[i+1].date);
+    }
+  });
+
+  let html = '<table style="width:100%;border-collapse:collapse;min-width:600px;">';
+  // Header
+  html += '<thead><tr><th style="width:60px;padding:8px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:var(--surface);">Unit</th>';
+  days.forEach(d=>{
+    const dStr = d.toISOString().split('T')[0];
+    const isT = dStr===todayStr;
+    html+=`<th style="padding:8px 4px;font-size:10px;font-weight:500;text-align:center;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:var(--surface);color:${isT?'#185FA5':'var(--text-muted)'};">${d.toLocaleDateString('en-US',{weekday:'short'})}<br><span style="font-size:11px;font-weight:${isT?'600':'400'};">${d.getDate()}</span></th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  if(units.length===0){
+    html += '<tr><td colspan="8" style="padding:40px;text-align:center;color:var(--text-muted);font-size:13px;">No moves scheduled yet.</td></tr>';
+  } else {
+    units.forEach(unit=>{
+      html += `<tr><td style="padding:6px 8px;font-size:11px;font-weight:600;border-right:1px solid var(--border);border-bottom:1px solid var(--border);color:var(--text-secondary);white-space:nowrap;">${unit}</td>`;
+      days.forEach(d=>{
+        const dStr = d.toISOString().split('T')[0];
+        const isT = dStr===todayStr;
+        const dayMoves = state.moves.filter(m=>m.unit===unit&&m.date===dStr);
+        let cellContent = '';
+        dayMoves.forEach(m=>{
+          const isIn = m.type==='in';
+          const bg = isIn?'#EAF3DE':'#FCEBEB';
+          const col = isIn?'#27500A':'#791F1F';
+          const label = isIn?'IN':'OUT';
+          const name = m.resident.split(' ')[0];
+          cellContent+=`<div style="background:${bg};color:${col};border-radius:3px;padding:2px 5px;font-size:10px;font-weight:500;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${label} ${name}</div>`;
+        });
+        // Check tight turnover
+        const isTight=[...tightUnits].some(k=>{const [u,d1,d2]=k.split('|');return u===unit&&(dStr===d1||dStr===d2);});
+        if(isTight&&dayMoves.length>0) cellContent+=`<div style="background:#FAEEDA;border:1px dashed #BA7517;border-radius:3px;padding:1px 4px;font-size:9px;color:#854F0B;margin-top:1px;">tight turn</div>`;
+        // Task due dates for this unit on this day
+        state.moves.filter(m=>m.unit===unit).forEach(m=>{
+          m.tasks&&m.tasks.filter(t=>t.dueDate===dStr&&!t.done).forEach(t=>{
+            const short=t.text.replace(/^\[.*?\]\s*/,'').substring(0,22);
+            cellContent+=`<div style="background:#E6F1FB;color:#0C447C;border-radius:3px;padding:2px 5px;font-size:9px;font-weight:500;margin-top:2px;">📞 ${short}</div>`;
+          });
+        });
+        // Amenity bookings for this day
+        (state.todos||[]).filter(t=>t.dueDate===dStr&&!t.done).forEach(t=>{
+          const short=t.text.substring(0,20);
+          chips+=`<div style="background:#EEEDFE;color:#3C3489;border-radius:3px;padding:2px 5px;font-size:10px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📌 ${short}</div>`;
+        });
+        // To-do items due this day
+        (state.todos||[]).filter(t=>t.dueDate===dStr&&!t.done).forEach(t=>{
+          const short=t.text.substring(0,20);
+          chips+=`<div style="background:#EEEDFE;color:#3C3489;border-radius:3px;padding:2px 5px;font-size:10px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📌 ${short}</div>`;
+        });
+        (state.amenities||[]).filter(a=>a.date===dStr).forEach(a=>{
+          const bg=a.type==='event'?'#EEEDFE':'#E6F1FB';
+          const col=a.type==='event'?'#3C3489':'#0C447C';
+          const time=a.start?a.start.substring(0,5):'';
+          cellContent+=`<div style="background:${bg};color:${col};border-radius:3px;padding:2px 5px;font-size:10px;font-weight:500;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎉 ${time} ${a.space.split(' ')[0]}</div>`;
+        });
+        // To-do items due on this day (not unit-specific, show in first column)
+        if(unit===units[0]||(units.length===0)){
+          (state.todos||[]).filter(t=>t.dueDate===dStr&&!t.done).forEach(t=>{
+            const short=t.text.substring(0,20);
+            cellContent+=`<div style="background:#EEEDFE;color:#3C3489;border-radius:3px;padding:2px 5px;font-size:9px;font-weight:500;margin-top:2px;">📌 ${short}</div>`;
+          });
+        }
+        html+=`<td style="padding:3px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-width:80px;min-height:44px;vertical-align:top;${isT?'background:rgba(55,138,221,0.04);':''}">${cellContent}</td>`;
+      });
+      html += '</tr>';
+    });
+  }
+  html += '</tbody></table>';
+  document.getElementById('cal-body').innerHTML = html;
+}
+
+function renderMonthCal(){
+  const now = new Date();
+  now.setDate(1);
+  now.setMonth(now.getMonth()+calOffset);
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const todayStr = today();
+
+  document.getElementById('cal-title').textContent = now.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+
+  const firstDay = new Date(year,month,1).getDay();
+  const daysInMonth = new Date(year,month+1,0).getDate();
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  let html='<table style="width:100%;border-collapse:collapse;">';
+  html+='<thead><tr>'+days.map(d=>`<th style="padding:6px;font-size:10px;font-weight:500;color:var(--text-muted);text-align:center;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:var(--surface);">${d}</th>`).join('')+'</tr></thead><tbody>';
+
+  let day=1;
+  for(let r=0;r<6;r++){
+    html+='<tr>';
+    for(let c=0;c<7;c++){
+      const cellIdx=r*7+c;
+      if(cellIdx<firstDay||day>daysInMonth){
+        html+=`<td style="border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:80px;background:var(--surface);opacity:0.4;padding:4px;vertical-align:top;"><span style="font-size:11px;color:var(--text-muted);">${cellIdx<firstDay?new Date(year,month,1-firstDay+cellIdx).getDate():day<=daysInMonth?'':day-daysInMonth}</span></td>`;
+        if(cellIdx>=firstDay)day++;
+      } else {
+        const dStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const isT=dStr===todayStr;
+        const dayMoves=state.moves.filter(m=>m.date===dStr);
+        let chips='';
+        dayMoves.forEach(m=>{
+          const isIn=m.type==='in';
+          chips+=`<div style="background:${isIn?'#EAF3DE':'#FCEBEB'};color:${isIn?'#27500A':'#791F1F'};border-radius:3px;padding:2px 5px;font-size:10px;font-weight:500;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${isIn?'IN':'OUT'} ${m.unit} ${m.resident.split(' ')[0]}</div>`;
+        });
+        state.moves.forEach(m=>{
+          m.tasks&&m.tasks.filter(t=>t.dueDate===dStr&&!t.done).forEach(t=>{
+            const short=t.text.replace(/^\[.*?\]\s*/,'').substring(0,18);
+            chips+=`<div style="background:#E6F1FB;color:#0C447C;border-radius:3px;padding:2px 5px;font-size:10px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📞 ${m.resident.split(' ')[0]}: ${short}</div>`;
+          });
+        });
+        (state.todos||[]).filter(t=>t.dueDate===dStr&&!t.done).forEach(t=>{
+          const short=t.text.substring(0,20);
+          chips+=`<div style="background:#EEEDFE;color:#3C3489;border-radius:3px;padding:2px 5px;font-size:10px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📌 ${short}</div>`;
+        });
+        (state.amenities||[]).filter(a=>a.date===dStr).forEach(a=>{
+          const bg=a.type==='event'?'#EEEDFE':'#E6F1FB';
+          const col=a.type==='event'?'#3C3489':'#0C447C';
+          chips+=`<div style="background:${bg};color:${col};border-radius:3px;padding:2px 5px;font-size:10px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎉 ${a.space.split(' ')[0]}</div>`;
+        });
+        html+=`<td style="padding:4px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:80px;vertical-align:top;${isT?'background:rgba(55,138,221,0.04);':''}"><div style="font-size:11px;font-weight:${isT?'600':'400'};color:${isT?'#185FA5':'var(--text-secondary)'};margin-bottom:3px;">${day}</div>${chips}</td>`;
+        day++;
+      }
+    }
+    html+='</tr>';
+    if(day>daysInMonth&&r>=3)break;
+  }
+  html+='</tbody></table>';
+  document.getElementById('cal-body').innerHTML=html;
+}
+
+function dashSearch(q){
+  const el=document.getElementById('dash-search-results');
+  if(!el)return;
+  if(!q.trim()){el.style.display='none';return;}
+  const ql=q.toLowerCase();
+  const results=state.moves.filter(m=>m.resident.toLowerCase().includes(ql)||m.unit.toLowerCase().includes(ql));
+  if(!results.length){el.innerHTML='<div style="padding:14px 16px;font-size:13px;color:var(--text-muted);">No results found</div>';el.style.display='';return;}
+  el.innerHTML=results.slice(0,6).map(m=>{
+    const done=m.tasks.filter(t=>t.done).length;
+    const pct=m.tasks.length>0?Math.round(done/m.tasks.length*100):0;
+    return `<div onclick="switchSection('moves',document.querySelector('.nav-item[onclick*=moves]'));setTimeout(()=>selectMove('${m.id}'),300);" style="padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:13px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">
+      <div><span style="font-weight:500;">${m.resident}</span> <span style="color:var(--text-muted);">· Unit ${m.unit}</span></div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:11px;color:var(--text-muted);">${done}/${m.tasks.length} tasks</span>
+        <span style="background:${m.type==='in'?'#EAF3DE':'#FCEBEB'};color:${m.type==='in'?'#27500A':'#791F1F'};font-size:10px;padding:2px 7px;border-radius:10px;">${m.type==='in'?'Move In':'Move Out'}</span>
+      </div>
+    </div>`;
+  }).join('');
+  el.style.display='';
+}
+
+
+// ── TO-DO SECTION TAB ──
+// ── CORE TO-DO FUNCTIONS ──
+function addTodo(text, priority, moveId, dueDate){
+  if(!text||!text.trim())return;
+  if(!state.todos)state.todos=[];
+  state.todos.push({
+    id:uid(),
+    text:text.trim(),
+    priority:priority||'normal',
+    moveId:moveId||null,
+    dueDate:dueDate||null,
+    done:false,
+    createdAt:Date.now(),
+    date:today()
+  });
+  save();
+  updateTodoBadge();
+  if(typeof renderTodoSection==='function')renderTodoSection();
+  if(typeof renderDashboard==='function')renderDashboard();
+  if(dueDate&&typeof renderCalendar==='function')renderCalendar();
+}
+function toggleTodo(id){
+  const t=(state.todos||[]).find(x=>x.id===id);
+  if(!t)return;
+  t.done=!t.done;
+  t.completedAt=t.done?Date.now():null;
+  save();
+  updateTodoBadge();
+  renderTodoSection();
+  if(typeof renderDashboard==='function')renderDashboard();
+}
+function deleteTodo(id){
+  state.todos=(state.todos||[]).filter(x=>x.id!==id);
+  save();
+  updateTodoBadge();
+  renderTodoSection();
+  if(typeof renderDashboard==='function')renderDashboard();
+}
+function updateTodoPriority(id,p){
+  const t=(state.todos||[]).find(x=>x.id===id);
+  if(!t)return;
+  t.priority=p;
+  save();
+  renderTodoSection();
+}
+function clearCompletedTodos(){
+  if(!confirm('Clear all completed to-dos?'))return;
+  state.todos=(state.todos||[]).filter(t=>!t.done);
+  save();
+  updateTodoBadge();
+  renderTodoSection();
+  if(typeof renderDashboard==='function')renderDashboard();
+  showToast('Cleared ✓');
+}
+function renderTodos(){
+  // Dashboard mini-list (just shows summary)
+  updateTodoBadge();
+}
+
+function addTodoFromSection(){
+  const input=document.getElementById('todos-input');
+  const priority=document.getElementById('todos-priority');
+  const dateEl=document.getElementById('todos-date');
+  const text=input?input.value.trim():'';
+  if(!text){showToast('Enter a to-do first','⚠️');return;}
+  addTodo(text,priority?priority.value:'normal',null,dateEl?dateEl.value||null:null);
+  if(input)input.value='';
+  if(dateEl)dateEl.value='';
+  if(priority)priority.value='normal';
+  renderTodoSection();
+}
+function renderTodoSection(){
+  const el=document.getElementById('todos-section-list');
+  if(!el)return;
+  const countEl=document.getElementById('todos-section-count');
+  const todos=state.todos||[];
+  const sorted=[...todos].sort((a,b)=>{
+    if(a.done!==b.done)return a.done?1:-1;
+    if(a.priority==='urgent'&&b.priority!=='urgent')return -1;
+    if(b.priority==='urgent'&&a.priority!=='urgent')return 1;
+    if(a.dueDate&&b.dueDate)return a.dueDate.localeCompare(b.dueDate);
+    if(a.dueDate&&!b.dueDate)return -1;
+    if(!a.dueDate&&b.dueDate)return 1;
+    return b.createdAt-a.createdAt;
+  });
+  const pending=sorted.filter(t=>!t.done);
+  if(countEl)countEl.textContent=pending.length+' pending';
+  updateTodoBadge();
+  if(!sorted.length){el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">No to-dos yet — add one above</div>';return;}
+  el.innerHTML=sorted.map(t=>{
+    const urgentBorder=t.priority==='urgent'&&!t.done?'border-left:3px solid #E24B4A;':'border-left:3px solid transparent;';
+    const move=t.moveId?(state.moves||[]).find(m=>m.id===t.moveId):null;
+    const dueFmt=t.dueDate?new Date(t.dueDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
+    return '<div style="display:flex;align-items:flex-start;gap:10px;padding:11px 16px;border-bottom:0.5px solid var(--border);'+urgentBorder+(t.done?'opacity:0.5;':'')+'">'+
+      '<input type="checkbox" '+(t.done?'checked':'')+' onchange="toggleTodo(\''+t.id+'\')" style="margin-top:3px;flex-shrink:0;accent-color:var(--green);cursor:pointer;">'+
+      '<div style="flex:1;min-width:0;">'+
+        '<textarea onchange="updateTodoText(\''+t.id+'\',this.value)" style="border:none;background:transparent;font-family:inherit;font-size:13px;resize:none;width:100%;outline:none;cursor:text;padding:0;line-height:1.4;min-height:20px;'+(t.done?'text-decoration:line-through;color:var(--text-muted);':'')+'" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'">'+t.text+'</textarea>'+
+        '<div style="display:flex;gap:8px;align-items:center;margin-top:3px;flex-wrap:wrap;">'+
+          (dueFmt?'<span style="font-size:11px;color:#185FA5;">📅 '+dueFmt+'</span>':'')+
+          (move?'<span style="font-size:11px;color:var(--text-muted);">🔗 '+move.resident+' · Unit '+move.unit+'</span>':'')+
+          '<input type="date" value="'+(t.dueDate||'')+'" onchange="updateTodoDue(\''+t.id+'\',this.value)" title="Set due date" style="font-size:10px;border:0.5px solid var(--border);border-radius:4px;padding:1px 4px;background:var(--surface);color:var(--text-secondary);cursor:pointer;max-width:120px;">'+
+        '</div>'+
+      '</div>'+
+      '<button onclick="updateTodoPriority(\''+t.id+'\',\''+(t.priority==='urgent'?'normal':'urgent')+'\')" style="font-size:11px;padding:2px 7px;border-radius:4px;border:0.5px solid var(--border);background:'+(t.priority==='urgent'?'rgba(220,50,50,0.1)':'var(--surface)')+';color:'+(t.priority==='urgent'?'#A32D2D':'var(--text-muted)')+';cursor:pointer;flex-shrink:0;">!</button>'+
+      '<button onclick="deleteTodo(\''+t.id+'\')" style="font-size:11px;padding:2px 7px;border-radius:4px;border:0.5px solid var(--border);background:var(--surface);color:var(--text-muted);cursor:pointer;flex-shrink:0;">✕</button>'+
+    '</div>';
+  }).join('');
+  el.querySelectorAll('textarea').forEach(ta=>{ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';});
+}
+function updateTodoText(id,val){const t=(state.todos||[]).find(x=>x.id===id);if(t){t.text=val;save();}}
+function updateTodoDue(id,val){const t=(state.todos||[]).find(x=>x.id===id);if(t){t.dueDate=val||null;save();if(typeof renderCalendar==='function')renderCalendar();renderTodoSection();}}
+function updateTodoBadge(){const b=document.getElementById('badge-todos');if(b)b.textContent=(state.todos||[]).filter(t=>!t.done).length;}
+
+// ── LOST & FOUND ──
+let lafFilter='all';
+function updateLAFBadge(){const b=document.getElementById('badge-laf');if(b)b.textContent=(state.laf||[]).filter(i=>!i.claimedAt).length;}
+function openLAFAdd(){openModal('modal-laf');const d=document.getElementById('laf-date');if(d)d.value=today();}
+function filterLAF(f,el){lafFilter=f;document.querySelectorAll('#section-laf .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderLAF();}
+function saveLAF(){
+  try{
+    const desc=document.getElementById('laf-desc').value.trim();
+    if(!desc){showToast('Enter item description','⚠️');return;}
+    if(!state.laf)state.laf=[];
+    state.laf.push({id:uid(),date:document.getElementById('laf-date').value||today(),time:document.getElementById('laf-time').value||'',foundBy:document.getElementById('laf-foundby').value.trim(),location:document.getElementById('laf-location').value.trim(),condition:document.getElementById('laf-condition').value,desc,notes:document.getElementById('laf-notes').value.trim(),claimedAt:null,claimedBy:'',claimedUnit:'',loggedAt:Date.now()});
+    save();
+    closeModal('modal-laf');
+    renderLAF();updateLAFBadge();
+    ['laf-foundby','laf-location','laf-desc','laf-notes','laf-time'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    const ld=document.getElementById('laf-date');if(ld)ld.value=today();
+    const lc=document.getElementById('laf-condition');if(lc)lc.value='Good';
+    showToast('Item logged ✓');
+  }catch(err){showToast('Error saving','⚠️');console.error('saveLAF:',err);}
+}
+function claimLAF(id){
+  const item=(state.laf||[]).find(x=>x.id===id);if(!item)return;
+  const by=prompt('Claimed by (name):');if(by===null)return;
+  const unit=prompt('Unit # (leave blank if not a resident):');
+  item.claimedBy=by.trim();item.claimedUnit=(unit||'').trim();item.claimedAt=Date.now();
+  save();renderLAF();updateLAFBadge();showToast('Item marked as claimed ✓');
+}
+function deleteLAF(id){if(!confirm('Remove this item?'))return;state.laf=(state.laf||[]).filter(x=>x.id!==id);save();renderLAF();updateLAFBadge();showToast('Removed','🗑');}
+function renderLAF(){
+  const tbody=document.getElementById('laf-tbody');if(!tbody)return;
+  let list=[...(state.laf||[])];
+  if(lafFilter==='unclaimed')list=list.filter(i=>!i.claimedAt);
+  else if(lafFilter==='claimed')list=list.filter(i=>!!i.claimedAt);
+  list.sort((a,b)=>b.loggedAt-a.loggedAt);
+  const countEl=document.getElementById('laf-count');if(countEl)countEl.textContent=list.length+' item'+(list.length===1?'':'s');
+  updateLAFBadge();
+  const inp='border:none;background:transparent;font-family:inherit;outline:none;cursor:text;padding:2px 0;width:100%;font-size:12px;';
+  if(!list.length){tbody.innerHTML='<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">🔍</div><p>No items logged yet.</p></div></td></tr>';return;}
+  tbody.innerHTML=list.map(i=>{
+    const cs=i.claimedAt?'background:#f0f7f4;':'background:#fff8f0;';
+    return '<tr style="'+(i.claimedAt?'opacity:0.7;':'')+'">'+
+      '<td style="padding:10px 12px;"><input type="date" value="'+i.date+'" onchange="updateLAFField(\''+i.id+'\',\'date\',this.value)" style="'+inp+'"></td>'+
+      '<td style="padding:10px 12px;"><input type="time" value="'+(i.time||'')+'" onchange="updateLAFField(\''+i.id+'\',\'time\',this.value)" style="'+inp+'"></td>'+
+      '<td style="padding:10px 12px;"><input type="text" value="'+(i.location||'')+'" placeholder="Location..." onchange="updateLAFField(\''+i.id+'\',\'location\',this.value)" style="'+inp+'"></td>'+
+      '<td style="padding:10px 12px;font-weight:500;min-width:140px;"><input type="text" value="'+i.desc+'" onchange="updateLAFField(\''+i.id+'\',\'desc\',this.value)" style="'+inp+'font-weight:500;"></td>'+
+      '<td style="padding:10px 12px;"><select onchange="updateLAFField(\''+i.id+'\',\'condition\',this.value)" style="border:none;background:transparent;font-size:12px;font-family:inherit;cursor:pointer;outline:none;"><option '+(i.condition==='Good'?'selected':'')+'>Good</option><option '+(i.condition==='Fair'?'selected':'')+'>Fair</option><option '+(i.condition==='Damaged'?'selected':'')+'>Damaged</option><option '+(i.condition==='Unknown'?'selected':'')+'>Unknown</option></select></td>'+
+      '<td style="padding:10px 12px;"><input type="text" value="'+(i.foundBy||'')+'" placeholder="Staff..." onchange="updateLAFField(\''+i.id+'\',\'foundBy\',this.value)" style="'+inp+'"></td>'+
+      '<td style="padding:10px 12px;font-size:12px;'+cs+'">'+(i.claimedAt?new Date(i.claimedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'<button onclick="claimLAF(\''+i.id+'\')" style="font-size:10px;padding:2px 8px;border-radius:4px;border:0.5px solid #639922;background:#EAF3DE;color:#27500A;cursor:pointer;">Mark Claimed</button>')+'</td>'+
+      '<td style="padding:10px 12px;font-size:12px;'+cs+'">'+(i.claimedBy?i.claimedBy+(i.claimedUnit?' (Unit '+i.claimedUnit+')':''):'-')+'</td>'+
+      '<td style="padding:10px 4px;"><button class="action-btn del" onclick="deleteLAF(\''+i.id+'\')">✕</button></td>'+
+    '</tr>';
+  }).join('');
+}
+function updateLAFField(id,field,val){const item=(state.laf||[]).find(x=>x.id===id);if(item){item[field]=val;save();}}
+
+// Auto-render on load
+function initSecondScript(){renderDashboard();renderAmenities();updateTodoBadge();updateLAFBadge();}
+if(document.readyState==='complete'){initSecondScript();}else{window.addEventListener('load',initSecondScript);}
+</script>
+
+</body>
+</html>  // ── TIGHT TURNOVERS ALERT ──
+  const allOuts=(state.moves||[]).filter(m=>m.type==='out'&&!m.archivedAt);
+  const allIns=(state.moves||[]).filter(m=>m.type==='in'&&!m.archivedAt);
+  const tightTurnovers=[];
+  allOuts.forEach(out=>{
+    const matchIn=allIns.find(i=>i.unit===out.unit);
+    if(matchIn){
+      const gap=Math.round((new Date(matchIn.date+'T12:00:00')-new Date(out.date+'T12:00:00'))/86400000);
+      if(gap>=0&&gap<=5)tightTurnovers.push({unit:out.unit,outRes:out.resident,outDate:out.date,inRes:matchIn.resident,inDate:matchIn.date,gap});
+    }
+  });
+  if(tightTurnovers.length){
+    html+=`<div style="background:rgba(186,117,23,0.08);border:1px solid rgba(186,117,23,0.35);border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:12px;">
+      <div style="font-weight:600;color:#633806;margin-bottom:4px;">⚡ Tight Turnovers — ${tightTurnovers.length} unit${tightTurnovers.length>1?'s':''} need attention</div>
+      ${tightTurnovers.map(tt=>`<div style="color:#633806;margin-top:3px;">Unit ${tt.unit}: ${tt.outRes} out ${new Date(tt.outDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})} → ${tt.inRes} in ${new Date(tt.inDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})} <span style="font-weight:600;">(${tt.gap} day${tt.gap===1?'':'s'})</span></div>`).join('')}
+    </div>`;
+  }
+
+  html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">`;
+
+  // This week's moves
   const _seen=new Set();
   const weekAll=[...todayIns,...todayOuts,...weekMoves].filter(m=>{if(_seen.has(m.id))return false;_seen.add(m.id);return true;}).slice(0,8);
   html+=`<div>
     <div style="font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">This week's moves</div>
     <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;">`;
   if(!weekAll.length){
-    html+=`<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">No moves this week</div>`;
+    html+=`<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">No moves this week</div>`;
   } else {
     weekAll.forEach(m=>{
       const isT=m.date===t;
       const isTmrw=m.date===tmrw;
-      const rowBg=isT?'background:rgba(220,50,50,0.05);border-left:3px solid #E24B4A;':isTmrw?'background:rgba(255,180,0,0.07);border-left:3px solid #EF9F27;':'border-left:3px solid transparent;';
-      const dateLabel=isT?'Today':isTmrw?'Tomorrow':fmtDate(m.date);
-      html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;cursor:pointer;${rowBg}" onclick="switchSection('moves',document.querySelector('.nav-item[onclick*=moves]'))">
+      const bg=isT?'background:rgba(220,50,50,0.04);':isTmrw?'background:rgba(255,180,0,0.04);':'';
+      html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);cursor:pointer;${bg}" onclick="switchSection('moves',document.querySelector('.nav-item[onclick*=moves]'));setTimeout(()=>selectMove('${m.id}'),200);" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='${bg.replace('background:','').replace(';','')}'">
         <div>
-          <div style="font-weight:500;">${m.resident}</div>
-          <div style="color:var(--text-muted);">Unit ${m.unit} · ${dateLabel}</div>
+          <div style="font-size:13px;font-weight:500;">${m.resident}</div>
+          <div style="font-size:11px;color:var(--text-muted);">Unit ${m.unit} · ${isT?'Today':isTmrw?'Tomorrow':new Date(m.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
         </div>
-        ${chip(m.type)}
+        ${m.type==='in'?'<span style="background:#EAF3DE;color:#27500A;font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;">Move In</span>':'<span style="background:#FCEBEB;color:#791F1F;font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;">Move Out</span>'}
       </div>`;
     });
   }
   html+=`</div></div>`;
 
-  // Right: Active move progress + maintenance
-  html+=`<div style="display:flex;flex-direction:column;gap:14px;">`;
-
-  // Active progress
+  // Active move progress
   html+=`<div>
     <div style="font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Active move progress</div>
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;">`;
+    <div style="display:flex;flex-direction:column;gap:8px;">`;
   if(!activeMoves.length){
-    html+=`<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">No moves in progress</div>`;
+    html+=`<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">No moves in progress</div>`;
   } else {
     activeMoves.forEach(m=>{
-      const done=m.tasks.filter(t=>t.done).length;
-      const total=m.tasks.length;
-      const pct=Math.round(done/total*100);
-      const barColor=pct===100?'#639922':pct>50?'#BA7517':'#E24B4A';
-      html+=`<div style="padding:10px 14px;border-bottom:1px solid var(--border);">
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px;">
-          <span style="font-weight:500;">${m.resident} · Unit ${m.unit}</span>
-          <span style="color:${barColor};">${done}/${total}</span>
+      const done=m.tasks.filter(t2=>t2.done).length;
+      const pct=Math.round(done/m.tasks.length*100);
+      const barColor=pct<30?'#E24B4A':pct<70?'#EF9F27':'#639922';
+      html+=`<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;" onclick="switchSection('moves',document.querySelector('.nav-item[onclick*=moves]'));setTimeout(()=>selectMove('${m.id}'),200);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-size:12px;font-weight:500;">${m.resident} · Unit ${m.unit}</div>
+          <div style="font-size:11px;color:${barColor};font-weight:600;">${done}/${m.tasks.length}</div>
         </div>
-        <div style="background:var(--border);border-radius:3px;height:4px;">
-          <div style="width:${pct}%;background:${barColor};height:4px;border-radius:3px;"></div>
+        <div style="background:var(--surface);border-radius:4px;height:5px;overflow:hidden;">
+          <div style="background:${barColor};height:100%;width:${pct}%;border-radius:4px;transition:width 0.3s;"></div>
         </div>
       </div>`;
     });
   }
   html+=`</div></div>`;
+  html+=`</div>`;
 
-  // Maintenance
+  // ── BOTTOM PANELS: 3 column ──
+  html+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;">`;
+
+  // Open Maintenance
   html+=`<div>
     <div style="font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Open maintenance</div>
     <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;">`;
@@ -2157,18 +2871,59 @@ function renderDashboard(){
   } else {
     openMaint.slice(0,4).forEach(m=>{
       const priColor=m.priority==='high'?'#E24B4A':m.priority==='medium'?'#EF9F27':'#888780';
-      html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;">
-        <div>
-          <div style="font-weight:500;">Unit ${m.unit}: ${m.issue}</div>
-          <div style="color:var(--text-muted);">${m.desc||m.status}</div>
-        </div>
-        <span style="background:${priColor}22;color:${priColor};font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;">${m.priority}</span>
+      html+=`<div style="padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;display:flex;justify-content:space-between;align-items:center;">
+        <div><div style="font-weight:500;">Unit ${m.unit}: ${m.issue}</div><div style="color:var(--text-muted);font-size:11px;">${m.status.replace('-',' ')}</div></div>
+        <span style="background:${priColor}22;color:${priColor};font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;flex-shrink:0;">${m.priority}</span>
       </div>`;
     });
   }
   html+=`</div></div>`;
 
+  // Keys currently out
+  const issuedKeysDash=(state.keys||[]).filter(k=>k.status==='issued');
+  html+=`<div>
+    <div style="font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Keys currently out</div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;">`;
+  if(!issuedKeysDash.length){
+    html+=`<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">All keys returned ✓</div>`;
+  } else {
+    issuedKeysDash.slice(0,4).forEach(k=>{
+      html+=`<div style="padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;">
+        <div style="font-weight:500;">Unit ${k.unit} — ${k.name}</div>
+        <div style="color:var(--text-muted);font-size:11px;">${k.type}${k.fob?' · #'+k.fob:''}</div>
+      </div>`;
+    });
+    if(issuedKeysDash.length>4)html+=`<div style="padding:6px 14px;font-size:11px;color:var(--text-muted);">+${issuedKeysDash.length-4} more — see Key Tracker</div>`;
+  }
   html+=`</div></div>`;
+
+  // Lost & Found unclaimed 30+ days
+  const lafOld=(state.laf||[]).filter(i=>{
+    if(i.claimedAt)return false;
+    const daysSince=Math.floor((Date.now()-i.loggedAt)/86400000);
+    return daysSince>=0; // show all unclaimed, highlight old ones
+  });
+  const lafOverdue=lafOld.filter(i=>Math.floor((Date.now()-i.loggedAt)/86400000)>=30);
+  html+=`<div>
+    <div style="font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Lost & Found unclaimed</div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;">`;
+  if(!lafOld.length){
+    html+=`<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">No unclaimed items ✓</div>`;
+  } else {
+    lafOld.slice(0,4).forEach(i=>{
+      const days=Math.floor((Date.now()-i.loggedAt)/86400000);
+      const isOld=days>=30;
+      html+=`<div style="padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;${isOld?'background:rgba(220,50,50,0.03);':''}">
+        <div style="font-weight:500;${isOld?'color:#A32D2D;':''}">${i.desc.substring(0,28)}${i.desc.length>28?'...':''}</div>
+        <div style="font-size:11px;color:${isOld?'#A32D2D':'var(--text-muted)'};">${isOld?'⚠️ ':''}${days===0?'Today':days+' day'+(days===1?'':'s')+' ago'}${i.location?' · '+i.location:''}</div>
+      </div>`;
+    });
+    if(lafOld.length>4)html+=`<div style="padding:6px 14px;font-size:11px;color:var(--text-muted);">+${lafOld.length-4} more — see Lost & Found tab</div>`;
+  }
+  html+=`</div></div>`;
+
+  html+=`</div>`;
+
   // ── TO-DO SECTION ──
   const todoPending=(state.todos||[]).filter(t=>!t.done);
   const todoUrgent=todoPending.filter(t=>t.priority==='urgent');
