@@ -982,7 +982,7 @@ function setSyncState(s){
   else if(s==='error')label.textContent='Sync error';
 }
 
-let state={moves:[],units:[],maintenance:[],packages:[],guests:[],keys:[],tours:[],walkthroughState:{},walkthroughIssues:[],walkthroughReset:null,passdowns:[],shiftNotes:'',selectedMoveId:null};
+let state={moves:[],units:[],maintenance:[],packages:[],guests:[],keys:[],tours:[],walkthroughState:{},walkthroughIssues:[],walkthroughReset:null,passdowns:[],shiftNotes:'',selectedMoveId:null,archivedMoves:[],deletedMoveIds:[],amenities:[],todos:[],laf:[]};
 let hideDone=false;
 const inp='border:none;background:transparent;font-family:inherit;outline:none;padding:2px 0;width:100%;font-size:12px;';
 let moveFilter='all',unitFilterMode='all',maintFilterMode='all',pkgFilter='all',guestFilter='all',keyFilter='all',tourFilter='all';
@@ -1767,7 +1767,7 @@ function init(){
   
   const data=cloudLoad();
   if(data){
-    state={moves:[],units:[],maintenance:[],packages:[],guests:[],keys:[],tours:[],walkthroughState:{},walkthroughIssues:[],walkthroughReset:null,passdowns:[],selectedMoveId:null,...data};
+    state={moves:[],units:[],maintenance:[],packages:[],guests:[],keys:[],tours:[],walkthroughState:{},walkthroughIssues:[],walkthroughReset:null,passdowns:[],shiftNotes:'',selectedMoveId:null,archivedMoves:[],deletedMoveIds:[],amenities:[],todos:[],laf:[],...data};
     // Merge any preloaded moves not yet in cloud
     const existingIds=new Set(state.moves.map(m=>m.id));
     const archivedIds=new Set((state.archivedMoves||[]).map(m=>m.id));
