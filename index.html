@@ -969,6 +969,13 @@ function switchSection(id,el){
   if(id==='walkthrough')renderWalkthrough();
   if(id==='calendar'&&typeof renderCalendar==='function')renderCalendar();
   if(id==='dashboard'&&typeof renderDashboard==='function')renderDashboard();
+  if(id==='laf'&&typeof renderLAF==='function')renderLAF();
+  if(id==='todos'&&typeof renderTodoSection==='function')renderTodoSection();
+  if(id==='amenities'&&typeof renderAmenities==='function')renderAmenities();
+  if(id==='maintenance'&&typeof renderMaint==='function')renderMaint();
+  if(id==='guests'&&typeof renderGuests==='function')renderGuests();
+  if(id==='keys'&&typeof renderKeys==='function')renderKeys();
+  if(id==='tours'&&typeof renderTours==='function')renderTours();
 }
 function openMainAdd(){
   if(currentSection==='amenities'){openAmenityAdd();return;}
@@ -2452,6 +2459,64 @@ function dashSearch(q){
 
 
 // ── TO-DO SECTION TAB ──
+// ── CORE TO-DO FUNCTIONS ──
+function addTodo(text, priority, moveId, dueDate){
+  if(!text||!text.trim())return;
+  if(!state.todos)state.todos=[];
+  state.todos.push({
+    id:uid(),
+    text:text.trim(),
+    priority:priority||'normal',
+    moveId:moveId||null,
+    dueDate:dueDate||null,
+    done:false,
+    createdAt:Date.now(),
+    date:today()
+  });
+  save();
+  updateTodoBadge();
+  if(typeof renderTodoSection==='function')renderTodoSection();
+  if(typeof renderDashboard==='function')renderDashboard();
+  if(dueDate&&typeof renderCalendar==='function')renderCalendar();
+}
+function toggleTodo(id){
+  const t=(state.todos||[]).find(x=>x.id===id);
+  if(!t)return;
+  t.done=!t.done;
+  t.completedAt=t.done?Date.now():null;
+  save();
+  updateTodoBadge();
+  renderTodoSection();
+  if(typeof renderDashboard==='function')renderDashboard();
+}
+function deleteTodo(id){
+  state.todos=(state.todos||[]).filter(x=>x.id!==id);
+  save();
+  updateTodoBadge();
+  renderTodoSection();
+  if(typeof renderDashboard==='function')renderDashboard();
+}
+function updateTodoPriority(id,p){
+  const t=(state.todos||[]).find(x=>x.id===id);
+  if(!t)return;
+  t.priority=p;
+  save();
+  renderTodoSection();
+}
+function clearCompletedTodos(){
+  if(!confirm('Clear all completed to-dos?'))return;
+  state.todos=(state.todos||[]).filter(t=>!t.done);
+  save();
+  updateTodoBadge();
+  renderTodoSection();
+  if(typeof renderDashboard==='function')renderDashboard();
+  showToast('Cleared ✓');
+}
+function renderTodos(){
+  // Dashboard mini-list (just shows summary)
+  updateTodoBadge();
+}
+
 function addTodoFromSection(){
   const input=document.getElementById('todos-input');
   const priority=document.getElementById('todos-priority');
