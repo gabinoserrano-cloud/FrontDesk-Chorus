@@ -186,6 +186,14 @@
   .cl-text{font-size:13px;flex:1}.cl-text.done{text-decoration:line-through;color:var(--text3)}
   .cl-cat{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;flex-shrink:0}
   .cl-due{font-size:10px;color:var(--accent);font-family:'DM Mono',monospace;flex-shrink:0}
+  .cl-text-input{flex:1;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);padding:2px 4px;border-radius:4px;outline:none;min-width:0}
+  .cl-text-input:hover,.cl-text-input:focus{background:var(--accent-light)}
+  .cl-text-input.done{text-decoration:line-through;color:var(--text3)}
+  .cl-due-input{width:110px;flex-shrink:0;border:none;background:transparent;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);padding:2px 4px;border-radius:4px;outline:none;cursor:pointer}
+  .cl-due-input:hover,.cl-due-input:focus{background:var(--accent-light)}
+  .cl-due-input::-webkit-calendar-picker-indicator{opacity:0.5;cursor:pointer}
+  .cl-cat-input{flex-shrink:0;border:none;background:transparent;font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);padding:2px 4px;border-radius:4px;outline:none;cursor:pointer;max-width:90px}
+  .cl-cat-input:hover,.cl-cat-input:focus{background:var(--bg)}
 
   /* MOBILE MOVE CARDS */
   @media(max-width:650px){.moves-tbl-wrap{display:none}#moves-cards{display:block}}
@@ -843,16 +851,38 @@ function buildCL(m) {
   html += '<button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();openAddTask(\'' + m.id + '\')">+ Task</button></div></div>';
   if (!tasks.length) { html += '<div class="text-3 text-sm" style="padding:8px 0">No tasks yet.</div>'; return html; }
   tasks.forEach(function (t) {
-    var dueHtml = t.dueDate ? '<span class="cl-due">' + fmtShort(t.dueDate) + '</span>' : '';
     html += '<div class="cl-item" onclick="event.stopPropagation()">';
     html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTask(\'' + m.id + '\',\'' + t.id + '\',this.checked)">';
-    html += '<span class="cl-text ' + (t.done ? 'done' : '') + '">' + t.text + '</span>';
-    html += dueHtml;
-    html += '<span class="cl-cat">' + t.cat + '</span>';
-    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);padding:1px 5px" onclick="deleteTask(\'' + m.id + '\',\'' + t.id + '\')">x</button>';
+    // Editable task text
+    html += '<input type="text" class="cl-text-input ' + (t.done ? 'done' : '') + '" value="' + t.text.replace(/"/g, '&quot;') + '" onblur="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'text\',this.value)" onclick="event.stopPropagation()">';
+    // Editable due date
+    html += '<input type="date" class="cl-due-input" value="' + (t.dueDate || '') + '" title="Due date" onchange="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'dueDate\',this.value)" onclick="event.stopPropagation()">';
+    // Editable category
+    html += '<select class="cl-cat-input" onchange="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'cat\',this.value)" onclick="event.stopPropagation()">';
+    ['Move In','Move Out','Keys & Access','Elevator','General'].forEach(function(cat) {
+      html += '<option value="' + cat + '" ' + (t.cat === cat ? 'selected' : '') + '>' + cat + '</option>';
+    });
+    html += '</select>';
+    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);padding:1px 5px;flex-shrink:0" onclick="deleteTask(\'' + m.id + '\',\'' + t.id + '\')">x</button>';
     html += '</div>';
   });
   return html;
+}
+
+function updateTaskField(moveId, taskId, field, value) {
+  var m = (state.moves || []).find(function (x) { return x.id === moveId; }); if (!m) return;
+  var t = (m.tasks || []).find(function (x) { return x.id === taskId; }); if (!t) return;
+  var trimmed = typeof value === 'string' ? value.trim() : value;
+  if (field === 'text' && !trimmed) return; // don't save empty text
+  t[field] = trimmed || null;
+  scheduleSave();
+  // Re-render just the progress text without collapsing the checklist
+  var ci = document.querySelector('#cl-' + moveId + ' .cl-prog-txt');
+  var mci = document.querySelector('#mc-' + moveId + ' .cl-prog-txt');
+  var done = (m.tasks || []).filter(function (t2) { return t2.done; }).length;
+  var total = (m.tasks || []).length;
+  if (ci) ci.textContent = done + '/' + total + ' tasks';
+  if (mci) mci.textContent = done + '/' + total + ' tasks';
 }
 
 function renderMoves() {
