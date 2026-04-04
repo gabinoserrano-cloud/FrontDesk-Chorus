@@ -192,6 +192,8 @@
   .cl-due-input{width:110px;flex-shrink:0;border:none;background:transparent;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);padding:2px 4px;border-radius:4px;outline:none;cursor:pointer}
   .cl-due-input:hover,.cl-due-input:focus{background:var(--accent-light)}
   .cl-due-input::-webkit-calendar-picker-indicator{opacity:0.5;cursor:pointer}
+  .cl-cat-input{border:none;background:transparent;font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);padding:2px 2px;border-radius:4px;outline:none;cursor:pointer;flex-shrink:0;max-width:90px}
+  .cl-cat-input:hover,.cl-cat-input:focus{background:var(--accent-light);color:var(--accent)}
   .cl-cat-input{flex-shrink:0;border:none;background:transparent;font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);padding:2px 4px;border-radius:4px;outline:none;cursor:pointer;max-width:90px}
   .cl-cat-input:hover,.cl-cat-input:focus{background:var(--bg)}
 
@@ -1407,10 +1409,30 @@ function toggleCalView() { calMode = calMode === 'week' ? 'month' : 'week'; g('c
 function calNav(dir) { if (dir === 0) calOffset = 0; else calOffset += dir; renderCalendar(); }
 function getChips(dateStr, unit) {
   var chips = '';
-  (state.moves || []).filter(function (m) { return m.date === dateStr && !m.archivedAt && (!unit || m.unit === unit); }).forEach(function (m) { chips += '<div class="cal-chip ' + (m.type === 'in' ? 'cal-chip-in' : 'cal-chip-out') + '">' + (m.type === 'in' ? 'IN' : 'OUT') + ' ' + m.resident.split(' ')[0] + '</div>'; });
-  if (unit) { (state.moves || []).forEach(function (m) { if (m.unit === unit) (m.tasks || []).filter(function (t) { return t.dueDate === dateStr && !t.done; }).forEach(function (t) { chips += '<div class="cal-chip cal-chip-task">' + t.text.slice(0, 18) + '</div>'; }); }); }
-  (state.todos || []).filter(function (t) { return t.dueDate === dateStr && !t.done; }).forEach(function (t) { chips += '<div class="cal-chip cal-chip-todo">' + t.text.slice(0, 18) + '</div>'; });
-  (state.amenities || []).filter(function (a) { return a.date === dateStr; }).forEach(function (a) { chips += '<div class="cal-chip cal-chip-amenity">' + a.space.split(' ')[0] + '</div>'; });
+  // Move in/out chips
+  (state.moves || []).filter(function (m) { return m.date === dateStr && !m.archivedAt && (!unit || m.unit === unit); }).forEach(function (m) {
+    chips += '<div class="cal-chip ' + (m.type === 'in' ? 'cal-chip-in' : 'cal-chip-out') + '">' + (m.type === 'in' ? 'IN' : 'OUT') + ' ' + m.resident.split(' ')[0] + '</div>';
+  });
+  // Task due date chips — show on matching unit row, or always in month/general view
+  (state.moves || []).filter(function (m) { return !m.archivedAt; }).forEach(function (m) {
+    (m.tasks || []).filter(function (t) { return t.dueDate === dateStr && !t.done; }).forEach(function (t) {
+      if (!unit || m.unit === unit) {
+        chips += '<div class="cal-chip cal-chip-task" title="' + m.resident + ' Unit ' + m.unit + '">' + t.text.slice(0, 20) + '</div>';
+      }
+    });
+  });
+  // General items (todos, amenities, tours) — only in month view (unit=null) or General row
+  if (!unit) {
+    (state.todos || []).filter(function (t) { return t.dueDate === dateStr && !t.done; }).forEach(function (t) {
+      chips += '<div class="cal-chip cal-chip-todo">' + t.text.slice(0, 20) + '</div>';
+    });
+    (state.amenities || []).filter(function (a) { return a.date === dateStr; }).forEach(function (a) {
+      chips += '<div class="cal-chip cal-chip-amenity">' + a.space.split(' ')[0] + ' - ' + a.resident.split(' ')[0] + '</div>';
+    });
+    (state.tours || []).filter(function (tr) { return tr.date === dateStr; }).forEach(function (tr) {
+      chips += '<div class="cal-chip" style="background:var(--purple-light);color:var(--purple)">Tour: ' + tr.name.split(' ')[0] + '</div>';
+    });
+  }
   return chips;
 }
 function renderCalendar() { if (calMode === 'week') renderWeekCal(); else renderMonthCal(); }
@@ -1429,13 +1451,13 @@ function renderWeekCal() {
   else units.forEach(function (unit) { html += '<tr><td class="unit-lbl">' + unit + '</td>'; days.forEach(function (d) { var ds = d.toISOString().split('T')[0]; html += '<td class="' + (ds === todayStr ? 'today-col' : '') + '">' + getChips(ds, unit) + '</td>'; }); html += '</tr>'; });
   var hasTodos = (state.todos || []).some(function (t) { return t.dueDate; });
   var hasAmenities = (state.amenities || []).length > 0;
-  if (hasTodos || hasAmenities) {
+  var hasTaskDates = (state.moves || []).some(function (m) { return (m.tasks || []).some(function (t) { return t.dueDate; }); });
+  var hasTours = (state.tours || []).length > 0;
+  if (hasTodos || hasAmenities || hasTaskDates || hasTours) {
     html += '<tr><td class="unit-lbl" style="color:var(--text3)">General</td>';
     days.forEach(function (d) {
-      var ds = d.toISOString().split('T')[0], chips = '';
-      (state.todos || []).filter(function (t) { return t.dueDate === ds && !t.done; }).forEach(function (t) { chips += '<div class="cal-chip cal-chip-todo">' + t.text.slice(0, 18) + '</div>'; });
-      (state.amenities || []).filter(function (a) { return a.date === ds; }).forEach(function (a) { chips += '<div class="cal-chip cal-chip-amenity">' + a.space.split(' ')[0] + '</div>'; });
-      html += '<td class="' + (ds === todayStr ? 'today-col' : '') + '">' + chips + '</td>';
+      var ds = d.toISOString().split('T')[0];
+      html += '<td class="' + (ds === todayStr ? 'today-col' : '') + '">' + getChips(ds, null) + '</td>';
     });
     html += '</tr>';
   }
