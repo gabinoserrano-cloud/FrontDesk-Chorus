@@ -270,6 +270,32 @@
   .text-2{color:var(--text2)}.text-3{color:var(--text3)}.text-sm{font-size:12px}.text-xs{font-size:11px}
   .mono{font-family:'DM Mono',monospace}.font-600{font-weight:600}
   .done-text{text-decoration:line-through;color:var(--text3)}.archive-row td{opacity:.55}
+
+  /* TASK INLINE EDIT INPUTS */
+  .cl-text-input{border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;flex:1;padding:2px 5px;border-radius:4px;min-width:0;cursor:text}
+  .cl-text-input:hover,.cl-text-input:focus{background:var(--accent-light)}
+  .cl-text-input.done{text-decoration:line-through;color:var(--text3)}
+  .cl-due-input{border:1px solid transparent;background:transparent;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);outline:none;width:110px;flex-shrink:0;padding:1px 3px;border-radius:4px;cursor:pointer}
+  .cl-due-input:hover,.cl-due-input:focus{border-color:var(--accent);background:var(--accent-light)}
+  .cl-due-input::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer}
+  .cl-cat-input{border:none;background:transparent;font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);outline:none;flex-shrink:0;padding:1px 3px;border-radius:4px;cursor:pointer;max-width:90px}
+  .cl-cat-input:hover,.cl-cat-input:focus{background:var(--bg)}
+
+  /* CALENDAR POPOVER */
+  #cal-popover{display:none;position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);z-index:500;min-width:220px;max-width:300px;font-size:13px}
+  #cal-popover.open{display:block}
+  .cal-pop-hdr{padding:10px 14px 8px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+  .cal-pop-title{font-weight:600;font-size:13px}
+  .cal-pop-close{background:none;border:none;font-size:16px;color:var(--text3);cursor:pointer;line-height:1;padding:2px 4px}
+  .cal-pop-body{padding:10px 14px}
+  .cal-pop-item{padding:6px 0;border-bottom:1px solid var(--border2);font-size:12.5px}
+  .cal-pop-item:last-child{border-bottom:none}
+  .cal-pop-item .pop-type{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:2px}
+  .cal-pop-item .pop-main{font-weight:500}
+  .cal-pop-item .pop-sub{font-size:11px;color:var(--text2);margin-top:1px}
+  .cal-pop-goto{display:block;margin-top:10px;font-size:12px;color:var(--accent);cursor:pointer;text-align:center;padding:6px;border:1px solid var(--accent-light);border-radius:6px;background:var(--accent-light)}
+  .cal-pop-goto:hover{background:var(--accent);color:#fff}
+  .cal-chip{cursor:pointer}.cal-chip:hover{opacity:.8}
 </style>
 </head>
 <body>
@@ -533,6 +559,13 @@
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-import')">Cancel</button><button class="btn btn-primary" onclick="processImport()">Import</button></div>
 </div></div>
 
+<div id="cal-popover">
+  <div class="cal-pop-hdr">
+    <span class="cal-pop-title" id="cal-pop-title">Events</span>
+    <button class="cal-pop-close" onclick="closeCalPop()">&#x2715;</button>
+  </div>
+  <div class="cal-pop-body" id="cal-pop-body"></div>
+</div>
 <div id="toast"></div>
 
 <script>
@@ -1407,34 +1440,106 @@ function deletePD(id) { if (!confirm('Delete passdown?')) return; state.passdown
 var calMode = 'week', calOffset = 0;
 function toggleCalView() { calMode = calMode === 'week' ? 'month' : 'week'; g('cal-toggle').textContent = calMode === 'week' ? 'Monthly' : 'Weekly'; calOffset = 0; renderCalendar(); }
 function calNav(dir) { if (dir === 0) calOffset = 0; else calOffset += dir; renderCalendar(); }
-function getChips(dateStr, unit) {
-  var chips = '';
-  // Move in/out chips
-  (state.moves || []).filter(function (m) { return m.date === dateStr && !m.archivedAt && (!unit || m.unit === unit); }).forEach(function (m) {
-    chips += '<div class="cal-chip ' + (m.type === 'in' ? 'cal-chip-in' : 'cal-chip-out') + '">' + (m.type === 'in' ? 'IN' : 'OUT') + ' ' + m.resident.split(' ')[0] + '</div>';
+// ─── CALENDAR POPOVER ───
+function closeCalPop() { g('cal-popover').classList.remove('open'); }
+document.addEventListener('click', function (e) { var pop = g('cal-popover'); if (pop && pop.classList.contains('open') && !pop.contains(e.target) && !e.target.classList.contains('cal-chip')) closeCalPop(); });
+
+function openCalPop(dateStr, evt) {
+  evt.stopPropagation();
+  var items = [];
+  // Move ins/outs
+  (state.moves || []).filter(function (m) { return m.date === dateStr && !m.archivedAt; }).forEach(function (m) {
+    items.push({ type: m.type === 'in' ? 'Move In' : 'Move Out', typeClass: m.type === 'in' ? 'pill-in' : 'pill-out', main: m.resident, sub: 'Unit ' + m.unit + (m.time ? ' · ' + m.time : '') + (m.total ? ' · $' + m.total : ''), sec: 'moves', moveId: m.id });
   });
-  // Task due date chips — show on matching unit row, or always in month/general view
+  // Task due dates
   (state.moves || []).filter(function (m) { return !m.archivedAt; }).forEach(function (m) {
     (m.tasks || []).filter(function (t) { return t.dueDate === dateStr && !t.done; }).forEach(function (t) {
-      if (!unit || m.unit === unit) {
-        chips += '<div class="cal-chip cal-chip-task" title="' + m.resident + ' Unit ' + m.unit + '">' + t.text.slice(0, 20) + '</div>';
-      }
+      items.push({ type: 'Task Due', typeClass: 'pill-reservation', main: t.text, sub: m.resident + ' · Unit ' + m.unit, sec: 'moves', moveId: m.id });
     });
   });
-  // General items (todos, amenities, tours) — only in month view (unit=null) or General row
+  // To-dos
+  (state.todos || []).filter(function (t) { return t.dueDate === dateStr && !t.done; }).forEach(function (t) {
+    items.push({ type: 'To-Do', typeClass: 'pill-medium', main: t.text, sub: t.priority === 'urgent' ? 'Urgent' : '', sec: 'todos' });
+  });
+  // Amenity bookings
+  (state.amenities || []).filter(function (a) { return a.date === dateStr; }).forEach(function (a) {
+    items.push({ type: 'Booking', typeClass: 'pill-event', main: a.space, sub: a.resident + ' · Unit ' + a.unit + (a.start ? ' · ' + a.start : ''), sec: 'amenities' });
+  });
+  // Tours
+  (state.tours || []).filter(function (tr) { return tr.date === dateStr; }).forEach(function (tr) {
+    items.push({ type: tr.type === 'sgt' ? 'SGT Tour' : 'Guided Tour', typeClass: 'pill-resolved', main: tr.name, sub: (tr.unit ? 'Unit ' + tr.unit : '') + (tr.time ? ' · ' + tr.time : ''), sec: 'tours' });
+  });
+
+  if (!items.length) return; // nothing to show
+
+  var fmtted = new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  g('cal-pop-title').textContent = fmtted;
+
+  // Build a unique set of destination sections for "Go to" links
+  var secs = {};
+  items.forEach(function (item) { secs[item.sec] = true; });
+  var secList = Object.keys(secs);
+
+  var html = '';
+  items.forEach(function (item) {
+    html += '<div class="cal-pop-item">';
+    html += '<div class="pop-type"><span class="pill ' + item.typeClass + '" style="font-size:10px;padding:1px 6px">' + item.type + '</span></div>';
+    html += '<div class="pop-main">' + item.main + '</div>';
+    if (item.sub) html += '<div class="pop-sub">' + item.sub + '</div>';
+    html += '</div>';
+  });
+
+  // Go-to buttons
+  secList.forEach(function (sec) {
+    var label = { moves: 'Open Move Ins / Outs', todos: 'Open To-Do List', amenities: 'Open Amenity Bookings', tours: 'Open Tour Log' }[sec] || sec;
+    html += '<div class="cal-pop-goto" onclick="closeCalPop();navToSec(\'' + sec + '\')">' + label + ' &rarr;</div>';
+  });
+
+  g('cal-pop-body').innerHTML = html;
+
+  // Position popover near the click
+  var pop = g('cal-popover');
+  pop.classList.add('open');
+  var vw = window.innerWidth, vh = window.innerHeight;
+  var x = evt.clientX, y = evt.clientY;
+  pop.style.left = (x + 240 > vw ? Math.max(4, x - 250) : x + 10) + 'px';
+  pop.style.top = (y + 280 > vh ? Math.max(4, y - 290) : y + 10) + 'px';
+}
+
+function navToSec(sec) {
+  var item = document.querySelector('.nav-item[data-sec="' + sec + '"]');
+  if (item) nav(item);
+}
+
+function getChips(dateStr, unit) {
+  var chips = '';
+  // Move in/out
+  (state.moves || []).filter(function (m) { return m.date === dateStr && !m.archivedAt && (!unit || m.unit === unit); }).forEach(function (m) {
+    var cls = m.type === 'in' ? 'cal-chip-in' : 'cal-chip-out';
+    var label = (m.type === 'in' ? 'IN' : 'OUT') + ' ' + m.resident.split(' ')[0];
+    chips += '<div class="cal-chip ' + cls + '" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + m.resident + '">' + label + '</div>';
+  });
+  // Task due dates
+  (state.moves || []).filter(function (m) { return !m.archivedAt; }).forEach(function (m) {
+    (m.tasks || []).filter(function (t) { return t.dueDate === dateStr && !t.done && (!unit || m.unit === unit); }).forEach(function (t) {
+      chips += '<div class="cal-chip cal-chip-task" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + t.text + '">' + t.text.slice(0, 18) + '</div>';
+    });
+  });
+  // General — todos, amenities, tours (shown in month view or General row in week view)
   if (!unit) {
     (state.todos || []).filter(function (t) { return t.dueDate === dateStr && !t.done; }).forEach(function (t) {
-      chips += '<div class="cal-chip cal-chip-todo">' + t.text.slice(0, 20) + '</div>';
+      chips += '<div class="cal-chip cal-chip-todo" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + t.text + '">' + t.text.slice(0, 18) + '</div>';
     });
     (state.amenities || []).filter(function (a) { return a.date === dateStr; }).forEach(function (a) {
-      chips += '<div class="cal-chip cal-chip-amenity">' + a.space.split(' ')[0] + ' - ' + a.resident.split(' ')[0] + '</div>';
+      chips += '<div class="cal-chip cal-chip-amenity" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + a.space + '">' + a.space.split(' ')[0] + ' \u00b7 ' + a.resident.split(' ')[0] + '</div>';
     });
     (state.tours || []).filter(function (tr) { return tr.date === dateStr; }).forEach(function (tr) {
-      chips += '<div class="cal-chip" style="background:var(--purple-light);color:var(--purple)">Tour: ' + tr.name.split(' ')[0] + '</div>';
+      chips += '<div class="cal-chip" style="background:var(--purple-light);color:var(--purple);cursor:pointer" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + tr.name + '">Tour: ' + tr.name.split(' ')[0] + '</div>';
     });
   }
   return chips;
 }
+
 function renderCalendar() { if (calMode === 'week') renderWeekCal(); else renderMonthCal(); }
 function renderWeekCal() {
   var ws = new Date(); ws.setHours(0, 0, 0, 0); ws.setDate(ws.getDate() - ws.getDay() + calOffset * 7);
