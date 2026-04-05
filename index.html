@@ -475,12 +475,21 @@
     </div>
     <div class="section" id="section-import">
       <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">&#128247; Import from Screenshot</span></div>
+        <div class="card-hdr"><span class="card-title">&#128247; Import from Screenshot (via Claude)</span></div>
         <div class="card-body">
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Take or upload a screenshot of your EliseAI calendar, move list, or Excel sheet. Claude will read it and extract the data automatically.</p>
-          <div class="form-group">
-            <label>What does this screenshot contain?</label>
-            <select id="img-import-type" style="margin-bottom:10px">
+          <div style="background:var(--accent-light);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--accent)">
+            <strong>How it works:</strong> Paste your screenshot into a Claude chat (claude.ai), ask it to extract the data as JSON, then paste the result below. Takes about 30 seconds.
+          </div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.8">
+            <strong style="color:var(--text)">Step 1</strong> &mdash; Take a screenshot of your EliseAI calendar, move list, or Excel sheet.<br>
+            <strong style="color:var(--text)">Step 2</strong> &mdash; Paste it into <a href="https://claude.ai" target="_blank" style="color:var(--accent)">claude.ai</a> and send this message:<br>
+            <div id="prompt-copy-area" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin:8px 0;font-family:'DM Mono',monospace;font-size:11.5px;line-height:1.7;white-space:pre-wrap" id="claude-prompt-display"></div>
+            <button class="btn btn-secondary btn-sm" onclick="copyClaudePrompt()" style="margin-top:4px">&#128203; Copy prompt</button><br>
+            <strong style="color:var(--text)">Step 3</strong> &mdash; Paste Claude's JSON response in the box below and click Import.
+          </div>
+          <div class="fg">
+            <label>What are you importing?</label>
+            <select id="img-import-type" onchange="updateClaudePrompt()" style="margin-bottom:10px">
               <option value="tours">Tours / Scheduled Showings (EliseAI)</option>
               <option value="moves">Move Ins / Move Outs</option>
               <option value="maintenance">Maintenance Issues</option>
@@ -488,11 +497,11 @@
             </select>
           </div>
           <div class="fg">
-            <label>Upload Screenshot</label>
-            <input type="file" id="img-import-file" accept="image/*">
+            <label>Paste Claude's JSON response here</label>
+            <textarea id="img-import-json" rows="6" placeholder="Paste the JSON array Claude gives you here..."></textarea>
           </div>
           <div style="margin-top:10px">
-            <button class="btn btn-primary" onclick="importFromImage()">&#10024; Extract with AI</button>
+            <button class="btn btn-primary" onclick="importFromPastedJSON()">&#8679; Import JSON</button>
           </div>
           <div id="img-import-status" style="margin-top:12px;font-size:13px;color:var(--text2);display:none"></div>
           <div id="img-import-preview" style="margin-top:12px;display:none"></div>
@@ -1810,7 +1819,7 @@ function calNav(dir) { if (dir === 0) calOffset = 0; else calOffset += dir; rend
 
 // ─── IMPORT CENTER ───────────────────────────────────────────────────────────
 
-function renderImportCenter() { /* static HTML, nothing to render dynamically */ }
+function renderImportCenter() { setTimeout(updateClaudePrompt, 0); }
 
 // ── CSV IMPORT ───────────────────────────────────────────────────────────────
 function importFromCSV() {
@@ -2028,75 +2037,55 @@ function showImportPreview(prefix, preview) {
 }
 
 // ── IMAGE / SCREENSHOT IMPORT ─────────────────────────────────────────────
-function importFromImage() {
-  var file = g('img-import-file').files[0];
-  if (!file) { toast('Upload a screenshot first'); return; }
+var IMG_PROMPTS = {
+  tours: 'I am attaching a screenshot of a tour schedule or calendar from a property management system. Please extract every scheduled tour or showing you can see. Return ONLY a raw JSON array (no markdown, no explanation) with these keys for each entry:\n  name (prospect name), date (YYYY-MM-DD), time, unit (unit number if visible), type ("sgt" or "guided"), contact, notes\nExample: [{"name":"John Smith","date":"2026-04-10","time":"2:00 PM","unit":"804","type":"guided","contact":"","notes":""}]',
+  moves: 'I am attaching a screenshot of a move schedule or move list. Extract every move entry. Return ONLY a raw JSON array (no markdown) with keys:\n  unit, resident, date (YYYY-MM-DD), type ("in" or "out"), time, total (move-in charge if shown), elevator ("yes"/"no"), notes',
+  maintenance: 'I am attaching a screenshot of a maintenance log or work order list. Extract every issue. Return ONLY a raw JSON array (no markdown) with keys:\n  unit, issue, description, priority ("high"/"medium"/"low"), status ("open"/"in-progress"/"resolved"), reporter',
+  amenities: 'I am attaching a screenshot of amenity bookings or a reservation list. Extract every booking. Return ONLY a raw JSON array (no markdown) with keys:\n  resident, unit, space, date (YYYY-MM-DD), start, end, type ("reservation"/"event"), fee, notes'
+};
+
+function updateClaudePrompt() {
+  var type = g('img-import-type') ? g('img-import-type').value : 'tours';
+  var el = g('claude-prompt-display');
+  if (el) el.textContent = IMG_PROMPTS[type] || IMG_PROMPTS.tours;
+}
+
+function copyClaudePrompt() {
+  var type = g('img-import-type') ? g('img-import-type').value : 'tours';
+  var prompt = IMG_PROMPTS[type] || IMG_PROMPTS.tours;
+  navigator.clipboard.writeText(prompt).then(function () { toast('Prompt copied'); }).catch(function () { toast('Copy failed'); });
+}
+
+function importFromPastedJSON() {
+  var raw = (g('img-import-json').value || '').trim();
   var type = g('img-import-type').value;
   var statusEl = g('img-import-status');
   var previewEl = g('img-import-preview');
+  if (!raw) { toast('Paste the JSON first'); return; }
   statusEl.style.display = 'block';
-  statusEl.style.color = 'var(--amber)';
-  statusEl.textContent = 'Reading screenshot with AI...';
   previewEl.style.display = 'none';
-  previewEl.innerHTML = '';
-
-  var reader = new FileReader();
-  reader.onload = function (e) {
-    var base64 = e.target.result.split(',')[1];
-    var mediaType = file.type || 'image/jpeg';
-    var prompts = {
-      tours: 'This is a screenshot of a property management calendar or tour schedule. Extract ALL scheduled tours or showings. For each, provide: prospect name, date (YYYY-MM-DD), time, unit number shown (if visible), tour type (sgt or guided), contact info, notes. Return ONLY a JSON array of objects with keys: name, date, time, unit, type, contact, notes. No markdown, no explanation.',
-      moves: 'This is a screenshot of a move schedule or move list. Extract ALL move entries. For each: unit number, resident name, date (YYYY-MM-DD), type (in or out), time window, move-in total amount (if shown), elevator info, notes. Return ONLY a JSON array with keys: unit, resident, date, type, time, total, elevator, notes. No markdown.',
-      maintenance: 'This is a screenshot of a maintenance log or work order list. Extract ALL issues. For each: unit/location, issue type, description, priority (high/medium/low), status (open/in-progress/resolved), reporter. Return ONLY a JSON array with keys: unit, issue, description, priority, status, reporter. No markdown.',
-      amenities: 'This is a screenshot of amenity bookings or reservations. Extract ALL bookings. For each: resident name, unit, amenity space, date (YYYY-MM-DD), start time, end time, type (reservation or event), fee, notes. Return ONLY a JSON array with keys: resident, unit, space, date, start, end, type, fee, notes. No markdown.'
-    };
-
-    fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2000,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-            { type: 'text', text: prompts[type] || prompts.tours }
-          ]
-        }]
-      })
-    })
-    .then(function (res) { return res.json(); })
-    .then(function (data) {
-      var text = '';
-      if (data.content && data.content.length) {
-        data.content.forEach(function (block) { if (block.type === 'text') text += block.text; });
-      }
-      // Strip markdown fences if present
-      text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-      var rows;
-      try { rows = JSON.parse(text); } catch (e) {
-        statusEl.style.color = 'var(--red)';
-        statusEl.textContent = 'Could not parse AI response. Try a clearer screenshot.';
-        return;
-      }
-      if (!Array.isArray(rows) || !rows.length) {
-        statusEl.style.color = 'var(--amber)';
-        statusEl.textContent = 'No data extracted. Try a clearer screenshot or different crop.';
-        return;
-      }
-      var result = applyImport(type, rows);
-      statusEl.style.color = 'var(--green)';
-      statusEl.textContent = 'Done: ' + result.msg;
-      showImportPreview('img', result.preview);
-      scheduleSave(); renderAll();
-    })
-    .catch(function (err) {
-      statusEl.style.color = 'var(--red)';
-      statusEl.textContent = 'Error: ' + err.message;
-    });
-  };
-  reader.readAsDataURL(file);
+  // Strip markdown fences
+  raw = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+  var rows;
+  try { rows = JSON.parse(raw); }
+  catch (e) {
+    statusEl.style.color = 'var(--red)';
+    statusEl.textContent = 'Invalid JSON. Make sure you copied the full response from Claude.';
+    return;
+  }
+  if (!Array.isArray(rows)) {
+    // Maybe it is an object wrapping an array
+    var keys = Object.keys(rows);
+    if (keys.length === 1 && Array.isArray(rows[keys[0]])) rows = rows[keys[0]];
+    else { statusEl.style.color = 'var(--red)'; statusEl.textContent = 'Expected a JSON array. Copy the full response from Claude.'; return; }
+  }
+  if (!rows.length) { statusEl.style.color = 'var(--amber)'; statusEl.textContent = 'Array was empty — nothing to import.'; return; }
+  var result = applyImport(type, rows);
+  statusEl.style.color = 'var(--green)';
+  statusEl.textContent = 'Done: ' + result.msg;
+  showImportPreview('img', result.preview);
+  g('img-import-json').value = '';
+  scheduleSave(); renderAll();
 }
 
 // ─── CALENDAR POPOVER ───
