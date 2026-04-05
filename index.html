@@ -1147,28 +1147,37 @@ function openEditMove(id) {
 
 function saveMove() {
   var unit = g('mv-unit').value.trim(), resident = g('mv-resident').value.trim(), date = g('mv-date').value;
-  if (!unit || !resident || !date) { toast('Fill in unit, resident & date'); return; }
+  if (!unit || !resident || !date) { toast('Fill in unit, resident & lease start date'); return; }
+  var apptDate = (g('mv-appt-date') && g('mv-appt-date').value) || '';
+  var apptTime = (g('mv-appt-time') && g('mv-appt-time').value) || '';
+  var total = g('mv-total').value.trim();
+  var notes = g('mv-notes').value.trim();
+  var moveType = g('mv-type').value;
+  // Conflict check
+  if (apptDate && apptTime) {
+    var conflicts = checkApptConflict(apptDate, apptTime, editingMoveId);
+    if (conflicts) {
+      if (!confirm('Elevator/dock conflict with Unit ' + conflicts[0].unit + ' (' + conflicts[0].resident + '). Save anyway?')) return;
+    }
+  }
   if (editingMoveId) {
-    // Editing existing move — update fields but keep tasks
     var m = (state.moves || []).find(function (x) { return x.id === editingMoveId; });
     if (!m) return;
-    m.unit = unit; m.resident = resident; m.date = date; m.type = g('mv-type').value;
-    m.time = g('mv-time').value.trim(); m.total = g('mv-total').value.trim();
-    m.elevator = g('mv-elevator').value; m.notes = g('mv-notes').value.trim();
+    m.unit = unit; m.resident = resident; m.date = date; m.type = moveType;
+    m.total = total; m.notes = notes; m.apptDate = apptDate; m.apptTime = apptTime;
     editingMoveId = null;
     scheduleSave(); closeModal('modal-move'); renderMoves(); updateBadges(); renderDash();
-    toast('Move updated');
-    return;
+    toast('Move updated'); return;
   }
   // New move
-  var type = g('mv-type').value;
   var customIn = state.customInTasks || DEFAULT_IN_TASKS;
   var customOut = state.customOutTasks || DEFAULT_OUT_TASKS;
-  var tasks = (type === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null }; });
-  var m = { id: uid(), unit: unit, resident: resident, date: date, type: type, time: g('mv-time').value.trim(), total: g('mv-total').value.trim(), elevator: g('mv-elevator').value, notes: g('mv-notes').value.trim(), tasks: tasks, archivedAt: null, createdAt: Date.now() };
+  var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null }; });
+  var m = { id: uid(), unit: unit, resident: resident, date: date, type: moveType, total: total, notes: notes, apptDate: apptDate, apptTime: apptTime, tasks: tasks, archivedAt: null, createdAt: Date.now() };
   if (!state.moves) state.moves = [];
-  state.moves.push(m); scheduleSave(); closeModal('modal-move'); openMoveId = m.id; renderMoves(); updateBadges(); renderDash();
-  ['mv-unit', 'mv-resident', 'mv-time', 'mv-total', 'mv-notes'].forEach(function (id) { g(id).value = ''; });
+  state.moves.push(m);
+  scheduleSave(); closeModal('modal-move'); openMoveId = m.id; renderMoves(); updateBadges(); renderDash();
+  ['mv-unit', 'mv-resident', 'mv-total', 'mv-notes'].forEach(function (id) { g(id).value = ''; });
   toast('Move added');
 }
 function filterMoves(f, item) { moveFilter = f; document.querySelectorAll('#moves-tabs .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderMoves(); }
