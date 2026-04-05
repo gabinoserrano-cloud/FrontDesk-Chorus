@@ -271,6 +271,14 @@
   .text-2{color:var(--text2)}.text-3{color:var(--text3)}.text-sm{font-size:12px}.text-xs{font-size:11px}
   .mono{font-family:'DM Mono',monospace}.font-600{font-weight:600}
   .done-text{text-decoration:line-through;color:var(--text3)}.archive-row td{opacity:.55}
+  /* MOVE APPOINTMENT STATES */
+  .appt-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+  .appt-badge.no-appt{background:var(--amber-light);color:var(--amber)}
+  .appt-badge.has-appt{background:var(--green-light);color:var(--green)}
+  .appt-badge.conflict{background:var(--red-light);color:var(--red)}
+  .conflict-warn{background:var(--red-light);border:1px solid #F0BFBF;border-radius:var(--radius);padding:8px 12px;font-size:12px;color:var(--red);margin-top:6px}
+  .needs-appt-alert{background:#FFF8E6;border:1px solid #F5D39A;border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;font-size:12.5px}
+  .na-title{font-weight:600;color:var(--amber);margin-bottom:4px}
 
 
   /* SETTINGS TASK ROWS */
@@ -405,7 +413,7 @@
         <div class="card-hdr"><span class="card-title">Scheduled Moves</span><span class="card-count" id="moves-count">0 entries</span>
           <div class="ml-auto flex gap-8"><button class="btn btn-secondary btn-sm" onclick="generatePassdownFromMoves()">Passdown</button><button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button></div>
         </div>
-        <div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident</th><th>Date</th><th>Type</th><th>Total</th><th>Elevator</th><th>Notes</th><th></th></tr></thead><tbody id="moves-tbody"></tbody></table></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident</th><th>Lease Start</th><th>Type</th><th>Appt</th><th>Total</th><th>Notes</th><th></th></tr></thead><tbody id="moves-tbody"></tbody></table></div>
       </div>
       <div id="moves-cards"></div>
       <div class="card" id="tight-panel" style="display:none"><div class="card-hdr"><span class="card-title">Tight Turnovers</span></div><div class="card-body" id="tight-body"></div></div>
@@ -609,8 +617,15 @@
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Unit #</label><input id="mv-unit" type="text" placeholder="e.g. 1204"></div><div class="fg"><label>Type</label><select id="mv-type"><option value="in">Move In</option><option value="out">Move Out</option></select></div></div>
     <div class="fg"><label>Resident Name</label><input id="mv-resident" type="text"></div>
-    <div class="fr"><div class="fg"><label>Date</label><input id="mv-date" type="date"></div><div class="fg"><label>Time Window</label><input id="mv-time" type="text" placeholder="e.g. 9am-1pm"></div></div>
-    <div class="fr"><div class="fg"><label>Move-In Total ($)</label><input id="mv-total" type="text" placeholder="e.g. 4500"></div><div class="fg"><label>Elevator</label><select id="mv-elevator"><option value="yes">Yes - Reserved</option><option value="no">No</option><option value="needed">Needs Reservation</option></select></div></div>
+    <div style="background:var(--accent-light);border-radius:var(--radius);padding:10px 13px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Lease</div>
+      <div class="fr"><div class="fg" style="margin-bottom:0"><label>Lease Start Date</label><input id="mv-date" type="date"></div><div class="fg" style="margin-bottom:0"><label>Move-In Total ($)</label><input id="mv-total" type="text" placeholder="e.g. 4500"></div></div>
+    </div>
+    <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px 13px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Move-In Appointment <span style="font-weight:400;color:var(--text3)">(confirm when booked)</span></div>
+      <div class="fr"><div class="fg" style="margin-bottom:0"><label>Appointment Date</label><input id="mv-appt-date" type="date" placeholder="When they actually move in"></div><div class="fg" style="margin-bottom:0"><label>Start Time</label><select id="mv-appt-time"><option value="">— No appointment yet —</option></select></div></div>
+      <div style="margin-top:8px;font-size:11.5px;color:var(--text2)" id="mv-conflict-msg"></div>
+    </div>
     <div class="fg"><label>Notes</label><textarea id="mv-notes" rows="2"></textarea></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-move')">Cancel</button><button class="btn btn-primary" id="move-modal-save-btn" onclick="saveMove()">Save Move</button></div>
@@ -954,7 +969,9 @@ function setMBadge(id, n) { var e = g(id); if (!e) return; e.textContent = n; e.
 function renderDash() {
   var t = today(), moves = state.moves || [];
   var active = moves.filter(function (m) { return !m.archivedAt; });
-  var todayM = active.filter(function (m) { return m.date === t; });
+  // Today = moves with appt today, OR lease start today with no appt yet
+  var todayM = active.filter(function (m) { return m.apptDate === t || (!m.apptDate && m.date === t); });
+  var needsAppt = active.filter(function (m) { return m.type === 'in' && !m.apptDate && m.date >= t; });
   var d7 = new Date(); d7.setDate(d7.getDate() + 7);
   var wEnd = d7.toISOString().split('T')[0];
   var weekM = active.filter(function (m) { return m.date >= t && m.date <= wEnd; });
@@ -984,10 +1001,15 @@ function renderDash() {
     tights.forEach(function (tt) { html += '<div class="tight-row">Unit ' + tt.unit + ': <strong>' + tt.outRes + '</strong> out ' + fmtShort(tt.outDate) + ' &rarr; <strong>' + tt.inRes + '</strong> in ' + fmtShort(tt.inDate) + ' <span class="pill pill-' + (tt.gap <= 2 ? 'high' : 'medium') + '">' + tt.gap + 'd gap</span></div>'; });
     html += '</div>';
   }
+  if (needsAppt.length) {
+    html += '<div class="needs-appt-alert"><div class="na-title">&#128197; ' + needsAppt.length + ' Move-In' + (needsAppt.length > 1 ? 's' : '') + ' Need an Appointment</div>';
+    needsAppt.slice(0,4).forEach(function (m) { html += '<div class="tight-row"><strong>Unit ' + m.unit + '</strong> - ' + m.resident + ' - Lease starts ' + fmtShort(m.date) + ' <button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="openEditMove(\'' + m.id + '\')">Schedule</button></div>'; });
+    html += '</div>';
+  }
   html += '<div class="dash-grid">';
   html += '<div class="card"><div class="card-hdr"><span class="card-title">Today\'s Moves</span><span class="card-count">' + todayM.length + ' scheduled</span></div><div class="card-body" style="padding:8px 14px">';
   if (!todayM.length) html += '<div class="text-3 text-sm">No moves today</div>';
-  else todayM.forEach(function (m) { var dn = (m.tasks || []).filter(function (t) { return t.done; }).length, tot = (m.tasks || []).length; var pct2 = tot ? Math.round(dn/tot*100) : 0; html += '<div class="mrd"><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'IN' : 'OUT') + '</span><span class="mono text-sm">Unit ' + m.unit + '</span><span style="flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + m.resident + (m.time ? ' <span style="font-weight:400;color:var(--text3)">· ' + m.time + '</span>' : '') + '</span>' + (pct2===100 ? '<span class="pill pill-resolved" style="font-size:10px">Done</span>' : '<span class="text-xs text-3">' + dn + '/' + tot + '</span>') + '</div>'; });
+  else todayM.forEach(function (m) { var dn = (m.tasks || []).filter(function (t) { return t.done; }).length, tot = (m.tasks || []).length; var pct2 = tot ? Math.round(dn/tot*100) : 0; var apptStr = m.apptTime ? fmtTime(m.apptTime) : (m.apptDate ? 'Appt confirmed' : ''); html += '<div class="mrd"><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'IN' : 'OUT') + '</span><span class="mono text-sm">Unit ' + m.unit + '</span><span style="flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + m.resident + (apptStr ? ' <span style="font-weight:400;color:var(--text3)">· ' + apptStr + '</span>' : '') + '</span>' + (pct2===100 ? '<span class="pill pill-resolved" style="font-size:10px">Done</span>' : '<span class="text-xs text-3">' + dn + '/' + tot + '</span>') + '</div>'; });
   html += '</div></div>';
   var d30 = new Date(); d30.setDate(d30.getDate()+30); var wEnd30 = d30.toISOString().split('T')[0];
   var withP = active.filter(function (m) { return (m.tasks || []).length > 0 && m.date >= t && m.date <= wEnd30; });
@@ -1027,14 +1049,77 @@ document.addEventListener('click', function (e) { if (!e.target.closest('.search
 var moveFilter = 'all', openMoveId = null;
 var editingMoveId = null;
 
+// Build 30-min time slots 8:00am – 5:30pm
+function buildTimeSlots() {
+  var sel = g('mv-appt-time'); if (!sel) return;
+  sel.innerHTML = '<option value="">— No appointment yet —</option>';
+  var hour = 8, min = 0;
+  while (hour < 17 || (hour === 17 && min === 30)) {
+    var h12 = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
+    var ampm = hour < 12 ? 'am' : 'pm';
+    var label = h12 + ':' + (min === 0 ? '00' : min) + ampm;
+    var val = String(hour).padStart(2,'0') + ':' + (min === 0 ? '00' : '30');
+    sel.innerHTML += '<option value="' + val + '">' + label + '</option>';
+    min += 30; if (min === 60) { min = 0; hour++; }
+  }
+}
+
+function checkApptConflict(date, startTime, excludeId) {
+  if (!date || !startTime) return null;
+  // A block is 3 hours. Check if any other move on same date has overlapping block.
+  var startMins = timeToMins(startTime);
+  var endMins = startMins + 180; // 3 hours
+  var conflicts = [];
+  (state.moves || []).filter(function (m) {
+    return m.id !== excludeId && !m.archivedAt && m.apptDate === date && m.apptTime;
+  }).forEach(function (m) {
+    var ms = timeToMins(m.apptTime), me = ms + 180;
+    if (startMins < me && endMins > ms) conflicts.push(m);
+  });
+  return conflicts.length ? conflicts : null;
+}
+
+function timeToMins(t) {
+  if (!t) return 0;
+  var parts = t.split(':');
+  return parseInt(parts[0]) * 60 + parseInt(parts[1] || 0);
+}
+
+function onApptChange() {
+  var date = g('mv-appt-date').value;
+  var time = g('mv-appt-time').value;
+  var msgEl = g('mv-conflict-msg');
+  if (!msgEl) return;
+  if (!date || !time) { msgEl.innerHTML = ''; return; }
+  var conflicts = checkApptConflict(date, time, editingMoveId);
+  if (conflicts) {
+    msgEl.innerHTML = '<div class="conflict-warn">&#9888; Conflict: ' + conflicts.map(function(c){ return 'Unit ' + c.unit + ' (' + c.resident + ') at ' + fmtTime(c.apptTime) + ')'; }).join(', ') + ' — elevator/dock already booked.</div>';
+  } else {
+    msgEl.innerHTML = '<span style="color:var(--green);font-size:12px">&#10003; No conflicts — time slot is available</span>';
+  }
+}
+
+function fmtTime(t) {
+  if (!t) return '';
+  var parts = t.split(':'); var h = parseInt(parts[0]), m = parseInt(parts[1]||0);
+  var h12 = h > 12 ? h-12 : (h===0?12:h), ampm = h < 12 ? 'am' : 'pm';
+  return h12 + ':' + (m===0?'00':m) + ampm;
+}
+
 function openAddMove() {
   editingMoveId = null;
   g('move-modal-title').textContent = 'Add Move';
   g('move-modal-save-btn').textContent = 'Save Move';
-  ['mv-unit', 'mv-resident', 'mv-time', 'mv-total', 'mv-notes'].forEach(function (id) { g(id).value = ''; });
+  ['mv-unit', 'mv-resident', 'mv-total', 'mv-notes'].forEach(function (id) { g(id).value = ''; });
   g('mv-date').value = today();
+  g('mv-appt-date').value = '';
   g('mv-type').value = 'in';
-  g('mv-elevator').value = 'yes';
+  buildTimeSlots();
+  g('mv-appt-time').value = '';
+  var msgEl = g('mv-conflict-msg'); if (msgEl) msgEl.innerHTML = '';
+  // Wire up conflict check on appt change
+  g('mv-appt-date').onchange = onApptChange;
+  g('mv-appt-time').onchange = onApptChange;
   openModal('modal-move');
 }
 
@@ -1048,10 +1133,15 @@ function openEditMove(id) {
   g('mv-resident').value = m.resident || '';
   g('mv-date').value = m.date || today();
   g('mv-type').value = m.type || 'in';
-  g('mv-time').value = m.time || '';
   g('mv-total').value = m.total || '';
-  g('mv-elevator').value = m.elevator || 'yes';
   g('mv-notes').value = m.notes || '';
+  buildTimeSlots();
+  g('mv-appt-date').value = m.apptDate || '';
+  g('mv-appt-time').value = m.apptTime || '';
+  var msgEl = g('mv-conflict-msg'); if (msgEl) msgEl.innerHTML = '';
+  g('mv-appt-date').onchange = onApptChange;
+  g('mv-appt-time').onchange = onApptChange;
+  if (m.apptDate && m.apptTime) onApptChange();
   openModal('modal-move');
 }
 
@@ -1149,13 +1239,24 @@ function renderMoves() {
         var isOpen = m.id === openMoveId;
         var archBtn = !m.archivedAt ? '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();archiveMove(\'' + m.id + '\')">Archive</button>' : '';
         rows += '<tr class="move-row ' + (isOpen ? 'sel ' : '') + (m.archivedAt ? 'archive-row' : '') + '" onclick="toggleCL(\'' + m.id + '\')">';
+        var apptBadge = '';
+        if (!m.apptDate) {
+          apptBadge = '<span class="appt-badge no-appt">No Appt</span>';
+        } else {
+          var apptConflicts = checkApptConflict(m.apptDate, m.apptTime, m.id);
+          if (apptConflicts) {
+            apptBadge = '<span class="appt-badge conflict">&#9888; Conflict</span>';
+          } else {
+            apptBadge = '<span class="appt-badge has-appt">&#10003; ' + fmtShort(m.apptDate) + (m.apptTime ? ' ' + fmtTime(m.apptTime) : '') + '</span>';
+          }
+        }
         rows += '<td><span class="mono font-600">' + m.unit + '</span></td>';
-        rows += '<td><div class="font-600">' + m.resident + '</div>' + (m.date === t ? '<div class="text-xs" style="color:var(--accent)">Today</div>' : '') + '</td>';
+        rows += '<td><div class="font-600">' + m.resident + '</div>' + (m.date === t ? '<div class="text-xs" style="color:var(--accent)">Lease starts today</div>' : '') + '</td>';
         rows += '<td class="mono text-sm">' + fmtShort(m.date) + '</td>';
         rows += '<td><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'Move In' : 'Move Out') + '</span></td>';
+        rows += '<td>' + apptBadge + '</td>';
         rows += '<td class="mono text-sm">' + (m.total ? '$' + m.total : '-') + '</td>';
-        rows += '<td class="text-xs text-2">' + (m.elevator === 'yes' ? 'Reserved' : m.elevator === 'needed' ? 'Needed' : '-') + '</td>';
-        rows += '<td class="text-sm text-2" style="max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (m.notes || '-') + '</td>';
+        rows += '<td class="text-sm text-2" style="max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (m.notes || '-') + '</td>';
         rows += '<td><div class="flex gap-4" style="justify-content:flex-end;align-items:center">';
         rows += pct === 100 ? '<span class="pill pill-resolved" style="font-size:10px">Done</span>' : '<div style="width:40px"><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div><div class="text-xs text-3 mono" style="text-align:right;margin-top:2px">' + dn + '/' + tot + '</div></div>';
         rows += '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openEditMove(\'' + m.id + '\')" title="Edit">&#9998;</button>';
@@ -1185,7 +1286,17 @@ function renderMoves() {
         html += '<div class="mc-hdr" onclick="toggleCL(\'' + m.id + '\')">';
         html += '<span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'IN' : 'OUT') + '</span>';
         html += '<div class="mc-meta"><div class="mc-name">' + m.resident + '</div>';
-        html += '<div class="mc-sub">Unit ' + m.unit + ' - ' + fmtShort(m.date) + (m.date === t ? ' - Today' : '') + '</div>';
+        var mcApptLine = '';
+        if (!m.apptDate) {
+          mcApptLine = '<div class="appt-badge no-appt" style="margin-top:4px;display:inline-flex">No appointment yet</div>';
+        } else {
+          var mcConf = checkApptConflict(m.apptDate, m.apptTime, m.id);
+          mcApptLine = mcConf
+            ? '<div class="appt-badge conflict" style="margin-top:4px;display:inline-flex">&#9888; Elevator conflict</div>'
+            : '<div class="appt-badge has-appt" style="margin-top:4px;display:inline-flex">Appt: ' + fmtShort(m.apptDate) + (m.apptTime ? ' ' + fmtTime(m.apptTime) : '') + '</div>';
+        }
+        html += '<div class="mc-sub">Unit ' + m.unit + ' - Lease: ' + fmtShort(m.date) + (m.date === t ? ' (today)' : '') + '</div>';
+        html += mcApptLine;
         html += '<div class="prog-wrap" style="margin-top:5px"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div>';
         html += '<div class="text-xs text-3 mono" style="margin-top:2px">' + dn + '/' + tot + ' tasks</div></div>';
         html += '<span style="color:var(--text3);font-size:18px;flex-shrink:0">' + (isOpen ? '&#9650;' : '&#9660;') + '</span></div>';
@@ -1254,7 +1365,7 @@ function renderTightTurnovers() {
   var outs = (state.moves || []).filter(function (m) { return m.type === 'out' && !m.archivedAt; });
   var ins = (state.moves || []).filter(function (m) { return m.type === 'in' && !m.archivedAt; });
   var tights = [];
-  outs.forEach(function (out) { var mi = ins.find(function (i) { return i.unit === out.unit && i.date > out.date; }); if (mi) { var gap = Math.round((new Date(mi.date + 'T12:00:00') - new Date(out.date + 'T12:00:00')) / 86400000); if (gap >= 0 && gap <= 5) tights.push({ unit: out.unit, outRes: out.resident, outDate: out.date, inRes: mi.resident, inDate: mi.date, gap: gap }); } });
+  outs.forEach(function (out) { var mi = ins.find(function (i) { return i.unit === out.unit && (i.apptDate || i.date) > (out.apptDate || out.date); }); if (mi) { var outD = out.apptDate || out.date, inD = mi.apptDate || mi.date; var gap = Math.round((new Date(inD + 'T12:00:00') - new Date(outD + 'T12:00:00')) / 86400000); if (gap >= 0 && gap <= 5) tights.push({ unit: out.unit, outRes: out.resident, outDate: outD, inRes: mi.resident, inDate: inD, gap: gap }); } });
   if (!tights.length) { panel.style.display = 'none'; return; }
   panel.style.display = '';
   body.innerHTML = tights.map(function (tt) { return '<div class="tight-row"><strong>Unit ' + tt.unit + '</strong>: ' + tt.outRes + ' out ' + fmtShort(tt.outDate) + ' &rarr; ' + tt.inRes + ' in ' + fmtShort(tt.inDate) + ' <span class="pill pill-' + (tt.gap <= 2 ? 'high' : 'medium') + '">' + tt.gap + 'd gap</span></div>'; }).join('');
@@ -1627,18 +1738,17 @@ function autoGeneratePassdown() {
     inSection += 'Total upcoming: ' + upIn.length + '\n';
     upIn.forEach(function (m) {
       var label = m.date === t ? 'TODAY' : m.date === tmrw ? 'Tomorrow' : fmtShort(m.date);
-      inSection += '- Unit ' + m.unit + ' - *' + m.resident + '* - ' + label;
-      if (m.time) inSection += ' (' + m.time + ')';
+      inSection += '- Unit ' + m.unit + ' - *' + m.resident + '* - Lease: ' + label;
+      if (m.apptDate) { inSection += ' - Appt: ' + (m.apptDate === t ? 'TODAY' : fmtShort(m.apptDate)); if (m.apptTime) inSection += ' ' + fmtTime(m.apptTime); }
+      else inSection += ' - Appt: TBD';
       if (m.total) inSection += ' - Move-In Total: $' + m.total;
-      if (m.elevator === 'yes') inSection += ' - Elevator: reserved';
-      else if (m.elevator === 'needed') inSection += ' - Elevator: needs reservation';
       inSection += '\n';
     });
   }
   var upOut = moves.filter(function (m) { return m.type === 'out' && !m.archivedAt && m.date >= t && m.date <= wEnd; }).sort(function (a, b) { return a.date.localeCompare(b.date); });
   var outSection = '\n\uD83D\uDE9A Upcoming Move-Outs\n';
   if (!upOut.length) outSection += '- No upcoming move-outs.\n';
-  else upOut.forEach(function (m) { var label = m.date === t ? 'TODAY' : m.date === tmrw ? 'Tomorrow' : fmtShort(m.date); outSection += '- Unit ' + m.unit + ' - *' + m.resident + '* - ' + label + (m.time ? ' (' + m.time + ')' : '') + '\n'; });
+  else upOut.forEach(function (m) { var label = m.date === t ? 'TODAY' : m.date === tmrw ? 'Tomorrow' : fmtShort(m.date); outSection += '- Unit ' + m.unit + ' - *' + m.resident + '* - Lease: ' + label; if (m.apptDate) { outSection += ' - Appt: ' + (m.apptDate === t ? 'TODAY' : fmtShort(m.apptDate)); if (m.apptTime) outSection += ' ' + fmtTime(m.apptTime); } else outSection += ' - Appt: TBD'; outSection += '\n'; });
   var openMt = (state.maintenance || []).filter(function (m) { return m.status === 'open'; });
   var mtSection = '\n\uD83D\uDCCB Resident Matters\n';
   if (!openMt.length) mtSection += '- No open items.\n';
@@ -2162,7 +2272,8 @@ function navToSec(sec) {
 function getChips(dateStr, unit, viewMode) {
   var chips = '';
   // Move in/out
-  (state.moves || []).filter(function (m) { return m.date === dateStr && !m.archivedAt && (!unit || m.unit === unit); }).forEach(function (m) {
+  // Show chip on apptDate if set, otherwise lease start date
+  (state.moves || []).filter(function (m) { var chipDate = m.apptDate || m.date; return chipDate === dateStr && !m.archivedAt && (!unit || m.unit === unit); }).forEach(function (m) {
     var cls = m.type === 'in' ? 'cal-chip-in' : 'cal-chip-out';
     var typeLabel = m.type === 'in' ? 'IN' : 'OUT';
     // Week view: row already shows unit, so show resident first name
