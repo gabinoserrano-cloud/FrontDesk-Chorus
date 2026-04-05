@@ -271,6 +271,16 @@
   .mono{font-family:'DM Mono',monospace}.font-600{font-weight:600}
   .done-text{text-decoration:line-through;color:var(--text3)}.archive-row td{opacity:.55}
 
+
+  /* SETTINGS TASK ROWS */
+  .stask-row{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border2)}
+  .stask-row:last-child{border-bottom:none}
+  .stask-row:hover{background:var(--surface2)}
+  .stask-text{flex:1;font-size:13px}
+  .stask-cat{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;flex-shrink:0}
+  .stask-arrows{display:flex;flex-direction:column;gap:1px;flex-shrink:0}
+  .stask-arrow{background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px;padding:1px 3px;line-height:1;border-radius:3px}
+  .stask-arrow:hover{background:var(--bg);color:var(--text)}
   /* TASK INLINE EDIT INPUTS */
   .cl-text-input{border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;flex:1;padding:2px 5px;border-radius:4px;min-width:0;cursor:text}
   .cl-text-input:hover,.cl-text-input:focus{background:var(--accent-light)}
@@ -333,6 +343,10 @@
     <div class="nav-item" data-sec="passdown" onclick="nav(this)"><span class="icon">&#128203;</span><span class="nav-txt">Daily Passdown</span></div>
     <div class="nav-item" data-sec="calendar" onclick="nav(this)"><span class="icon">&#128197;</span><span class="nav-txt">Calendar</span></div>
   </div>
+  <div class="nav-group">
+    <div class="nav-label">System</div>
+    <div class="nav-item" data-sec="settings" onclick="nav(this)"><span class="icon">&#9881;</span><span class="nav-txt">Settings</span></div>
+  </div>
   <div class="sb-footer">
     <div class="save-status" id="save-status"><span class="sync-dot" id="sync-dot"></span><span id="sync-label">Loading...</span></div>
     <button class="footer-btn" onclick="exportData()"><span>&#128190;</span><span>Export Backup</span></button>
@@ -362,7 +376,7 @@
       </div>
       <div class="card moves-tbl-wrap">
         <div class="card-hdr"><span class="card-title">Scheduled Moves</span><span class="card-count" id="moves-count">0 entries</span>
-          <div class="ml-auto flex gap-8"><button class="btn btn-secondary btn-sm" onclick="generatePassdownFromMoves()">Passdown</button><button class="btn btn-primary btn-sm" onclick="openModal('modal-move')">+ Add Move</button></div>
+          <div class="ml-auto flex gap-8"><button class="btn btn-secondary btn-sm" onclick="generatePassdownFromMoves()">Passdown</button><button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button></div>
         </div>
         <div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident</th><th>Date</th><th>Type</th><th>Total</th><th>Elevator</th><th>Notes</th><th></th></tr></thead><tbody id="moves-tbody"></tbody></table></div>
       </div>
@@ -376,26 +390,26 @@
     <div class="section" id="section-maintenance">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterMaint('all',this)">All</div><div class="sub-tab" onclick="filterMaint('open',this)">Open</div><div class="sub-tab" onclick="filterMaint('in-progress',this)">In Progress</div><div class="sub-tab" onclick="filterMaint('resolved',this)">Resolved</div></div>
       <div class="stat-grid" id="maint-stats"></div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Maintenance Log</span><span class="card-count" id="maint-count">0 issues</span><button class="btn btn-primary btn-sm ml-auto" onclick="openModal('modal-maint')">+ Log Issue</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Issue</th><th>Priority</th><th>Status</th><th>Reported</th><th></th></tr></thead><tbody id="maint-tbody"></tbody></table></div></div>
+      <div class="card"><div class="card-hdr"><span class="card-title">Maintenance Log</span><span class="card-count" id="maint-count">0 issues</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddMaint()">+ Log Issue</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Issue</th><th>Priority</th><th>Status</th><th>Reported</th><th></th></tr></thead><tbody id="maint-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-guests">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterGuests('all',this)">All</div><div class="sub-tab" onclick="filterGuests('in',this)">In Building</div><div class="sub-tab" onclick="filterGuests('pending',this)">Pending</div><div class="sub-tab" onclick="filterGuests('out',this)">Checked Out</div></div>
       <div class="stat-grid" id="guests-stats"></div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Guest &amp; Visitor Log</span><span class="card-count" id="guests-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openModal('modal-guest')">+ Log Guest</button></div><div class="tbl-wrap"><table><thead><tr><th>Guest</th><th>Unit</th><th>Host</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody id="guests-tbody"></tbody></table></div></div>
+      <div class="card"><div class="card-hdr"><span class="card-title">Guest &amp; Visitor Log</span><span class="card-count" id="guests-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddGuest()">+ Log Guest</button></div><div class="tbl-wrap"><table><thead><tr><th>Guest</th><th>Unit</th><th>Host</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody id="guests-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-keys">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('resident',this)">Resident</div><div class="sub-tab" onclick="filterKeys('joiner',this)">Joiner</div><div class="sub-tab" onclick="filterKeys('one-time',this)">One-Time</div><div class="sub-tab" onclick="filterKeys('issued',this)">Out Now</div></div>
       <div class="key-stat-row" id="keys-stats"></div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Key Log</span><span class="card-count" id="keys-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openModal('modal-key')">+ Log Key</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Name</th><th>Type</th><th>Fob</th><th>Status</th><th>Expiry</th><th></th></tr></thead><tbody id="keys-tbody"></tbody></table></div></div>
+      <div class="card"><div class="card-hdr"><span class="card-title">Key Log</span><span class="card-count" id="keys-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddKey()">+ Log Key</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Name</th><th>Type</th><th>Fob</th><th>Status</th><th>Expiry</th><th></th></tr></thead><tbody id="keys-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-amenities">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterAmenities('all',this)">All</div><div class="sub-tab" onclick="filterAmenities('today',this)">Today</div><div class="sub-tab" onclick="filterAmenities('upcoming',this)">Upcoming</div><div class="sub-tab" onclick="filterAmenities('event',this)">Events</div></div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Amenity Bookings</span><span class="card-count" id="amenities-count">0 bookings</span><button class="btn btn-primary btn-sm ml-auto" onclick="openModal('modal-amenity')">+ Add Booking</button></div><div class="tbl-wrap"><table><thead><tr><th>Resident</th><th>Unit</th><th>Amenity</th><th>Date</th><th>Time</th><th>Type</th><th>Notes</th><th></th></tr></thead><tbody id="amenities-tbody"></tbody></table></div></div>
+      <div class="card"><div class="card-hdr"><span class="card-title">Amenity Bookings</span><span class="card-count" id="amenities-count">0 bookings</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddAmenity()">+ Add Booking</button></div><div class="tbl-wrap"><table><thead><tr><th>Resident</th><th>Unit</th><th>Amenity</th><th>Date</th><th>Time</th><th>Type</th><th>Notes</th><th></th></tr></thead><tbody id="amenities-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-tours">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterTours('all',this)">All</div><div class="sub-tab" onclick="filterTours('sgt',this)">SGT</div><div class="sub-tab" onclick="filterTours('guided',this)">Guided</div><div class="sub-tab" onclick="filterTours('today',this)">Today</div></div>
       <div class="stat-grid" id="tours-stats"></div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Tour Log</span><span class="card-count" id="tours-count">0 tours</span><button class="btn btn-primary btn-sm ml-auto" onclick="openModal('modal-tour')">+ Log Tour</button></div><div class="tbl-wrap"><table><thead><tr><th>Prospect</th><th>Unit(s)</th><th>Date</th><th>Type</th><th>Notes</th><th></th></tr></thead><tbody id="tours-tbody"></tbody></table></div></div>
+      <div class="card"><div class="card-hdr"><span class="card-title">Tour Log</span><span class="card-count" id="tours-count">0 tours</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddTour()">+ Log Tour</button></div><div class="tbl-wrap"><table><thead><tr><th>Prospect</th><th>Unit(s)</th><th>Date</th><th>Type</th><th>Notes</th><th></th></tr></thead><tbody id="tours-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-walkthrough">
       <div class="stat-grid" id="wt-stats"></div>
@@ -417,7 +431,7 @@
     </div>
     <div class="section" id="section-laf">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterLAF('all',this)">All</div><div class="sub-tab" onclick="filterLAF('unclaimed',this)">Unclaimed</div><div class="sub-tab" onclick="filterLAF('claimed',this)">Claimed</div></div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Lost &amp; Found Log</span><span class="card-count" id="laf-count">0 items</span><button class="btn btn-primary btn-sm ml-auto" onclick="openModal('modal-laf')">+ Log Item</button></div><div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Location</th><th>Description</th><th>Condition</th><th>Found By</th><th>Status</th><th></th></tr></thead><tbody id="laf-tbody"></tbody></table></div></div>
+      <div class="card"><div class="card-hdr"><span class="card-title">Lost &amp; Found Log</span><span class="card-count" id="laf-count">0 items</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddLAF()">+ Log Item</button></div><div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Location</th><th>Description</th><th>Condition</th><th>Found By</th><th>Status</th><th></th></tr></thead><tbody id="laf-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-passdown">
       <div class="two-col">
@@ -430,6 +444,38 @@
           <div class="card"><div class="card-hdr"><span class="card-title">Preview</span></div><div class="card-body" style="padding:10px 14px"><div class="pd-preview" id="pd-preview">Generated passdown will appear here...</div></div></div>
         </div>
         <div><div class="card"><div class="card-hdr"><span class="card-title">Passdown History</span></div><div class="card-body" id="pd-history" style="padding:8px 12px"><div class="text-3 text-sm">No passdowns saved yet.</div></div></div></div>
+      </div>
+    </div>
+    <div class="section" id="section-settings">
+      <div class="two-col">
+        <div>
+          <div class="card mb-12">
+            <div class="card-hdr"><span class="card-title">Default Move-In Tasks</span><span class="card-count" id="in-tasks-count"></span></div>
+            <div class="card-body" style="padding:8px 0" id="settings-in-tasks"></div>
+            <div style="padding:10px 14px;border-top:1px solid var(--border2)">
+              <div class="flex gap-8"><input type="text" id="new-in-task" placeholder="New move-in task..." style="flex:1"><select id="new-in-cat" style="width:130px"><option>Move In</option><option>Keys &amp; Access</option><option>Elevator</option><option>General</option></select><button class="btn btn-primary btn-sm" onclick="addDefaultTask('in')">Add</button></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card mb-12">
+            <div class="card-hdr"><span class="card-title">Default Move-Out Tasks</span><span class="card-count" id="out-tasks-count"></span></div>
+            <div class="card-body" style="padding:8px 0" id="settings-out-tasks"></div>
+            <div style="padding:10px 14px;border-top:1px solid var(--border2)">
+              <div class="flex gap-8"><input type="text" id="new-out-task" placeholder="New move-out task..." style="flex:1"><select id="new-out-cat" style="width:130px"><option>Move Out</option><option>Keys &amp; Access</option><option>Elevator</option><option>General</option></select><button class="btn btn-primary btn-sm" onclick="addDefaultTask('out')">Add</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">About</span></div>
+        <div class="card-body" style="font-size:13px;color:var(--text2);line-height:1.8">
+          <div><strong>Chorus SF Front Desk Hub</strong></div>
+          <div>30 Otis St &middot; Managed by Align Real Estate</div>
+          <div style="margin-top:8px">Front Desk: (415) 707-3030 &middot; Hours 9am&ndash;6pm</div>
+          <div>Valet: chorus@unitedsfparking.com</div>
+          <div>WiFi Support: roversupport@baiconnect.com &middot; 1-844-691-7687</div>
+        </div>
       </div>
     </div>
     <div class="section" id="section-calendar">
@@ -455,7 +501,7 @@
 
 <!-- MODALS -->
 <div class="modal-ov" id="modal-move"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title">Add Move</span><button class="modal-close" onclick="closeModal('modal-move')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="move-modal-title">Add Move</span><button class="modal-close" onclick="closeModal('modal-move')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Unit #</label><input id="mv-unit" type="text" placeholder="e.g. 1204"></div><div class="fg"><label>Type</label><select id="mv-type"><option value="in">Move In</option><option value="out">Move Out</option></select></div></div>
     <div class="fg"><label>Resident Name</label><input id="mv-resident" type="text"></div>
@@ -463,7 +509,7 @@
     <div class="fr"><div class="fg"><label>Move-In Total ($)</label><input id="mv-total" type="text" placeholder="e.g. 4500"></div><div class="fg"><label>Elevator</label><select id="mv-elevator"><option value="yes">Yes - Reserved</option><option value="no">No</option><option value="needed">Needs Reservation</option></select></div></div>
     <div class="fg"><label>Notes</label><textarea id="mv-notes" rows="2"></textarea></div>
   </div>
-  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-move')">Cancel</button><button class="btn btn-primary" onclick="saveMove()">Save Move</button></div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-move')">Cancel</button><button class="btn btn-primary" id="move-modal-save-btn" onclick="saveMove()">Save Move</button></div>
 </div></div>
 
 <div class="modal-ov" id="modal-task"><div class="modal">
@@ -476,7 +522,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-maint"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title">Log Maintenance Issue</span><button class="modal-close" onclick="closeModal('modal-maint')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-maint-title">Log Maintenance Issue</span><button class="modal-close" onclick="closeModal('modal-maint')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Unit / Location</label><input id="mt-unit" type="text" placeholder="e.g. 804 or Lobby"></div><div class="fg"><label>Issue Type</label><input id="mt-issue" type="text" placeholder="e.g. HVAC, Plumbing"></div></div>
     <div class="fg"><label>Description</label><textarea id="mt-desc" rows="3"></textarea></div>
@@ -487,7 +533,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-guest"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title">Log Guest / Visitor</span><button class="modal-close" onclick="closeModal('modal-guest')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-guest-title">Log Guest / Visitor</span><button class="modal-close" onclick="closeModal('modal-guest')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fg"><label>Guest Name</label><input id="gs-name" type="text"></div>
     <div class="fr"><div class="fg"><label>Visiting Unit #</label><input id="gs-unit" type="text"></div><div class="fg"><label>Host Resident</label><input id="gs-host" type="text"></div></div>
@@ -498,7 +544,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-key"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title">Log Key / Access</span><button class="modal-close" onclick="closeModal('modal-key')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-key-title">Log Key / Access</span><button class="modal-close" onclick="closeModal('modal-key')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Unit #</label><input id="ky-unit" type="text"></div><div class="fg"><label>Name</label><input id="ky-name" type="text"></div></div>
     <div class="fr"><div class="fg"><label>Key Type</label><select id="ky-type"><option value="resident">Resident Key Fob</option><option value="joiner">Joiner Key</option><option value="one-time">One-Time Key</option><option value="mobile">Mobile Key</option></select></div><div class="fg"><label>Fob # / ID</label><input id="ky-fob" type="text"></div></div>
@@ -509,7 +555,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-amenity"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title">Add Amenity Booking</span><button class="modal-close" onclick="closeModal('modal-amenity')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-amenity-title">Add Amenity Booking</span><button class="modal-close" onclick="closeModal('modal-amenity')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Resident Name</label><input id="am-resident" type="text"></div><div class="fg"><label>Unit #</label><input id="am-unit" type="text"></div></div>
     <div class="fg"><label>Amenity Space</label><select id="am-space"><option>Belvedere Room (28th fl)</option><option>28th Floor Terrace</option><option>Chorus Hall (1st fl)</option><option>3rd Floor Terrace</option><option>TV Lounge (2nd fl)</option><option>Speakeasy (2nd fl)</option><option>Fitness Center (10th fl)</option><option>Pool / Hot Tub (10th fl)</option><option>Coworking Space (1st fl)</option><option>Other</option></select></div>
@@ -521,7 +567,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-tour"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title">Log Tour</span><button class="modal-close" onclick="closeModal('modal-tour')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-tour-title">Log Tour</span><button class="modal-close" onclick="closeModal('modal-tour')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Prospect Name</label><input id="tr-name" type="text"></div><div class="fg"><label>Unit(s) Shown</label><input id="tr-unit" type="text" placeholder="e.g. 804, 1102"></div></div>
     <div class="fr"><div class="fg"><label>Tour Type</label><select id="tr-type"><option value="sgt">SGT (Self-Guided)</option><option value="guided">Guided</option></select></div><div class="fg"><label>Date</label><input id="tr-date" type="date"></div></div>
@@ -542,7 +588,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-laf"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title">Log Lost &amp; Found Item</span><button class="modal-close" onclick="closeModal('modal-laf')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-laf-title">Log Lost &amp; Found Item</span><button class="modal-close" onclick="closeModal('modal-laf')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Date Found</label><input id="lf-date" type="date"></div><div class="fg"><label>Time Found</label><input id="lf-time" type="time"></div></div>
     <div class="fr"><div class="fg"><label>Found By</label><input id="lf-foundby" type="text"></div><div class="fg"><label>Location</label><input id="lf-location" type="text"></div></div>
@@ -725,16 +771,16 @@ function openMobSidebar() { g('sidebar').classList.add('mob-open'); g('sb-ov').s
 function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov').style.display = 'none'; }
 
 // ─── NAV ───
-var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Building Walkthrough', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar' };
+var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Building Walkthrough', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings' };
 var SEC_ACTIONS = {
   moves: '<button class="btn btn-primary btn-sm" onclick="openModal(\'modal-move\')">+ Add Move</button>',
-  maintenance: '<button class="btn btn-primary btn-sm" onclick="openModal(\'modal-maint\')">+ Log Issue</button>',
-  guests: '<button class="btn btn-primary btn-sm" onclick="openModal(\'modal-guest\')">+ Log Guest</button>',
-  keys: '<button class="btn btn-primary btn-sm" onclick="openModal(\'modal-key\')">+ Log Key</button>',
-  amenities: '<button class="btn btn-primary btn-sm" onclick="openModal(\'modal-amenity\')">+ Add Booking</button>',
-  tours: '<button class="btn btn-primary btn-sm" onclick="openModal(\'modal-tour\')">+ Log Tour</button>',
+  maintenance: '<button class="btn btn-primary btn-sm" onclick="openAddMaint()">+ Log Issue</button>',
+  guests: '<button class="btn btn-primary btn-sm" onclick="openAddGuest()">+ Log Guest</button>',
+  keys: '<button class="btn btn-primary btn-sm" onclick="openAddKey()">+ Log Key</button>',
+  amenities: '<button class="btn btn-primary btn-sm" onclick="openAddAmenity()">+ Add Booking</button>',
+  tours: '<button class="btn btn-primary btn-sm" onclick="openAddTour()">+ Log Tour</button>',
   walkthrough: '<button class="btn btn-secondary btn-sm" onclick="openModal(\'modal-flag\')">Flag Issue</button>',
-  laf: '<button class="btn btn-primary btn-sm" onclick="openModal(\'modal-laf\')">+ Log Item</button>',
+  laf: '<button class="btn btn-primary btn-sm" onclick="openAddLAF()">+ Log Item</button>',
   vacant: '<button class="btn btn-primary btn-sm" onclick="addUnitPrompt()">+ Add Unit</button>'
 };
 var curSec = 'dashboard';
@@ -761,7 +807,7 @@ function mobNav(item) {
   curSec = sec; renderSection(sec);
 }
 function renderSection(sec) {
-  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar };
+  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings };
   if (map[sec]) map[sec]();
 }
 function renderAll() { renderSection(curSec); updateBadges(); }
@@ -865,11 +911,56 @@ document.addEventListener('click', function (e) { if (!e.target.closest('.search
 
 // ─── MOVES ───
 var moveFilter = 'all', openMoveId = null;
+var editingMoveId = null;
+
+function openAddMove() {
+  editingMoveId = null;
+  g('move-modal-title').textContent = 'Add Move';
+  g('move-modal-save-btn').textContent = 'Save Move';
+  ['mv-unit', 'mv-resident', 'mv-time', 'mv-total', 'mv-notes'].forEach(function (id) { g(id).value = ''; });
+  g('mv-date').value = today();
+  g('mv-type').value = 'in';
+  g('mv-elevator').value = 'yes';
+  openModal('modal-move');
+}
+
+function openEditMove(id) {
+  var m = (state.moves || []).find(function (x) { return x.id === id; });
+  if (!m) return;
+  editingMoveId = id;
+  g('move-modal-title').textContent = 'Edit Move';
+  g('move-modal-save-btn').textContent = 'Save Changes';
+  g('mv-unit').value = m.unit || '';
+  g('mv-resident').value = m.resident || '';
+  g('mv-date').value = m.date || today();
+  g('mv-type').value = m.type || 'in';
+  g('mv-time').value = m.time || '';
+  g('mv-total').value = m.total || '';
+  g('mv-elevator').value = m.elevator || 'yes';
+  g('mv-notes').value = m.notes || '';
+  openModal('modal-move');
+}
+
 function saveMove() {
   var unit = g('mv-unit').value.trim(), resident = g('mv-resident').value.trim(), date = g('mv-date').value;
   if (!unit || !resident || !date) { toast('Fill in unit, resident & date'); return; }
+  if (editingMoveId) {
+    // Editing existing move — update fields but keep tasks
+    var m = (state.moves || []).find(function (x) { return x.id === editingMoveId; });
+    if (!m) return;
+    m.unit = unit; m.resident = resident; m.date = date; m.type = g('mv-type').value;
+    m.time = g('mv-time').value.trim(); m.total = g('mv-total').value.trim();
+    m.elevator = g('mv-elevator').value; m.notes = g('mv-notes').value.trim();
+    editingMoveId = null;
+    scheduleSave(); closeModal('modal-move'); renderMoves(); updateBadges(); renderDash();
+    toast('Move updated');
+    return;
+  }
+  // New move
   var type = g('mv-type').value;
-  var tasks = (type === 'in' ? DEFAULT_IN_TASKS : DEFAULT_OUT_TASKS).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null }; });
+  var customIn = state.customInTasks || DEFAULT_IN_TASKS;
+  var customOut = state.customOutTasks || DEFAULT_OUT_TASKS;
+  var tasks = (type === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null }; });
   var m = { id: uid(), unit: unit, resident: resident, date: date, type: type, time: g('mv-time').value.trim(), total: g('mv-total').value.trim(), elevator: g('mv-elevator').value, notes: g('mv-notes').value.trim(), tasks: tasks, archivedAt: null, createdAt: Date.now() };
   if (!state.moves) state.moves = [];
   state.moves.push(m); scheduleSave(); closeModal('modal-move'); openMoveId = m.id; renderMoves(); updateBadges(); renderDash();
@@ -953,6 +1044,7 @@ function renderMoves() {
         rows += '<td class="text-sm text-2" style="max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (m.notes || '-') + '</td>';
         rows += '<td><div class="flex gap-4" style="justify-content:flex-end;align-items:center">';
         rows += '<div style="width:40px"><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div><div class="text-xs text-3 mono" style="text-align:right;margin-top:2px">' + dn + '/' + tot + '</div></div>';
+        rows += editBtn;
         rows += archBtn;
         rows += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="event.stopPropagation();deleteMove(\'' + m.id + '\')">x</button>';
         rows += '</div></td></tr>';
@@ -984,7 +1076,7 @@ function renderMoves() {
         html += '<div class="text-xs text-3 mono" style="margin-top:2px">' + dn + '/' + tot + ' tasks</div></div>';
         html += '<span style="color:var(--text3);font-size:18px;flex-shrink:0">' + (isOpen ? '&#9650;' : '&#9660;') + '</span></div>';
         html += '<div class="mc-cl">' + buildCL(m) + '</div>';
-        html += '<div class="mc-actions">' + archBtn + '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteMove(\'' + m.id + '\')">Delete</button><button class="btn btn-secondary btn-xs ml-auto" onclick="openAddTask(\'' + m.id + '\')">+ Task</button></div>';
+        html += '<div class="mc-actions">' + editBtn2 + archBtn + '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteMove(\'' + m.id + '\')">Delete</button><button class="btn btn-secondary btn-xs ml-auto" onclick="openAddTask(\'' + m.id + '\')">+ Task</button></div>';
         html += '</div>';
       });
       cardsEl.innerHTML = html;
@@ -1096,6 +1188,11 @@ function filterMaint(f, item) { maintFilter = f; document.querySelectorAll('#sec
 function saveMaint() {
   var unit = g('mt-unit').value.trim(), issue = g('mt-issue').value.trim();
   if (!unit || !issue) { toast('Fill in unit and issue type'); return; }
+  if (editingMaintId) {
+    var m = (state.maintenance||[]).find(function(x){return x.id===editingMaintId;}); if(!m) return;
+    m.unit=unit; m.issue=issue; m.desc=g('mt-desc').value.trim(); m.priority=g('mt-priority').value; m.status=g('mt-status').value; m.reporter=g('mt-reporter').value.trim();
+    editingMaintId=null; scheduleSave(); closeModal('modal-maint'); renderMaint(); updateBadges(); renderDash(); toast('Issue updated'); return;
+  }
   var m = { id: uid(), unit: unit, issue: issue, desc: g('mt-desc').value.trim(), priority: g('mt-priority').value, status: g('mt-status').value, reporter: g('mt-reporter').value.trim(), createdAt: Date.now() };
   if (!state.maintenance) state.maintenance = [];
   state.maintenance.push(m); scheduleSave(); closeModal('modal-maint'); renderMaint(); updateBadges(); renderDash();
@@ -1120,7 +1217,7 @@ function renderMaint() {
     html += '<td><span class="pill pill-' + m.priority + '">' + m.priority + '</span></td>';
     html += '<td><select class="ie-sel" onchange="updateMaintStatus(\'' + m.id + '\',this.value)"><option value="open" ' + (m.status === 'open' ? 'selected' : '') + '>Open</option><option value="in-progress" ' + (m.status === 'in-progress' ? 'selected' : '') + '>In Progress</option><option value="resolved" ' + (m.status === 'resolved' ? 'selected' : '') + '>Resolved</option></select></td>';
     html += '<td class="text-xs text-3">' + new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</td>';
-    html += '<td><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteMaint(\'' + m.id + '\')">x</button></td></tr>';
+    html += '<td><button class="btn btn-ghost btn-xs" onclick="openEditMaint(\'' + m.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteMaint(\'' + m.id + '\')">x</button></td></tr>';
   });
   tbody.innerHTML = html;
   setBadge('badge-maint', open + inp);
@@ -1134,6 +1231,11 @@ function filterGuests(f, item) { guestFilter = f; document.querySelectorAll('#se
 function saveGuest() {
   var name = g('gs-name').value.trim(), unit = g('gs-unit').value.trim();
   if (!name || !unit) { toast('Fill in guest name and unit'); return; }
+  if (editingGuestId) {
+    var gst = (state.guests||[]).find(function(x){return x.id===editingGuestId;}); if(!gst) return;
+    gst.name=name; gst.unit=unit; gst.host=g('gs-host').value.trim(); gst.type=g('gs-type').value; gst.status=g('gs-status').value; gst.notes=g('gs-notes').value.trim();
+    editingGuestId=null; scheduleSave(); closeModal('modal-guest'); renderGuests(); updateBadges(); toast('Guest updated'); return;
+  }
   var gst = { id: uid(), name: name, unit: unit, host: g('gs-host').value.trim(), type: g('gs-type').value, status: g('gs-status').value, notes: g('gs-notes').value.trim(), checkIn: Date.now(), checkOut: null, createdAt: Date.now() };
   if (!state.guests) state.guests = [];
   state.guests.push(gst); scheduleSave(); closeModal('modal-guest'); renderGuests(); updateBadges();
@@ -1154,7 +1256,7 @@ function renderGuests() {
   list.forEach(function (gst) {
     html += '<tr><td class="font-600">' + gst.name + '</td><td class="mono">' + gst.unit + '</td><td class="text-sm text-2">' + (gst.host || '-') + '</td><td class="text-sm">' + gst.type + '</td>';
     html += '<td><select class="ie-sel" onchange="updateGuestStatus(\'' + gst.id + '\',this.value)"><option value="pending" ' + (gst.status === 'pending' ? 'selected' : '') + '>Pending</option><option value="in" ' + (gst.status === 'in' ? 'selected' : '') + '>Checked In</option><option value="out" ' + (gst.status === 'out' ? 'selected' : '') + '>Checked Out</option></select></td>';
-    html += '<td><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteGuest(\'' + gst.id + '\')">x</button></td></tr>';
+    html += '<td><button class="btn btn-ghost btn-xs" onclick="openEditGuest(\'' + gst.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteGuest(\'' + gst.id + '\')">x</button></td></tr>';
   });
   tbody.innerHTML = html;
   setBadge('badge-guests', allG.filter(function (gst) { return gst.status === 'in'; }).length);
@@ -1168,6 +1270,11 @@ function filterKeys(f, item) { keyFilter = f; document.querySelectorAll('#sectio
 function saveKey() {
   var unit = g('ky-unit').value.trim(), name = g('ky-name').value.trim();
   if (!unit || !name) { toast('Fill in unit and name'); return; }
+  if (editingKeyId) {
+    var k = (state.keys||[]).find(function(x){return x.id===editingKeyId;}); if(!k) return;
+    k.unit=unit; k.name=name; k.type=g('ky-type').value; k.fob=g('ky-fob').value.trim(); k.status=g('ky-status').value; k.expiry=g('ky-expiry').value||null; k.notes=g('ky-notes').value.trim();
+    editingKeyId=null; scheduleSave(); closeModal('modal-key'); renderKeys(); updateBadges(); renderDash(); toast('Key updated'); return;
+  }
   var k = { id: uid(), unit: unit, name: name, type: g('ky-type').value, fob: g('ky-fob').value.trim(), status: g('ky-status').value, expiry: g('ky-expiry').value || null, notes: g('ky-notes').value.trim(), issuedAt: Date.now(), returnedAt: null, createdAt: Date.now() };
   if (!state.keys) state.keys = [];
   state.keys.push(k); scheduleSave(); closeModal('modal-key'); renderKeys(); updateBadges(); renderDash();
@@ -1188,7 +1295,7 @@ function renderKeys() {
   list.forEach(function (k) {
     html += '<tr><td class="mono font-600">' + k.unit + '</td><td>' + k.name + '</td><td class="text-sm">' + k.type + '</td><td class="mono text-sm">' + (k.fob || '-') + '</td>';
     html += '<td><select class="ie-sel" onchange="updateKeyStatus(\'' + k.id + '\',this.value)"><option value="issued" ' + (k.status === 'issued' ? 'selected' : '') + '>Issued</option><option value="returned" ' + (k.status === 'returned' ? 'selected' : '') + '>Returned</option></select></td>';
-    html += '<td class="mono text-xs text-2">' + (k.expiry ? fmtShort(k.expiry) : '-') + '</td><td><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteKey(\'' + k.id + '\')">x</button></td></tr>';
+    html += '<td class="mono text-xs text-2">' + (k.expiry ? fmtShort(k.expiry) : '-') + '</td><td><button class="btn btn-ghost btn-xs" onclick="openEditKey(\'' + k.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteKey(\'' + k.id + '\')">x</button></td></tr>';
   });
   tbody.innerHTML = html;
   setBadge('badge-keys', allK.filter(function (k) { return k.status === 'issued'; }).length);
@@ -1202,6 +1309,11 @@ function filterAmenities(f, item) { amenityFilter = f; document.querySelectorAll
 function saveAmenity() {
   var resident = g('am-resident').value.trim(), unit = g('am-unit').value.trim(), date = g('am-date').value;
   if (!resident || !unit || !date) { toast('Fill in resident, unit & date'); return; }
+  if (editingAmenityId) {
+    var a = (state.amenities||[]).find(function(x){return x.id===editingAmenityId;}); if(!a) return;
+    a.resident=resident; a.unit=unit; a.space=g('am-space').value; a.date=date; a.start=g('am-start').value; a.end=g('am-end').value; a.type=g('am-type').value; a.fee=g('am-fee').value.trim(); a.notes=g('am-notes').value.trim();
+    editingAmenityId=null; scheduleSave(); closeModal('modal-amenity'); renderAmenities(); updateBadges(); renderCalendar(); toast('Booking updated'); return;
+  }
   var a = { id: uid(), resident: resident, unit: unit, space: g('am-space').value, date: date, start: g('am-start').value, end: g('am-end').value, type: g('am-type').value, fee: g('am-fee').value.trim(), notes: g('am-notes').value.trim(), createdAt: Date.now() };
   if (!state.amenities) state.amenities = [];
   state.amenities.push(a); scheduleSave(); closeModal('modal-amenity'); renderAmenities(); updateBadges();
@@ -1222,7 +1334,7 @@ function renderAmenities() {
     var time = a.start ? (a.start + (a.end ? ' - ' + a.end : '')) : '-';
     html += '<tr' + style + '><td class="font-600">' + a.resident + '</td><td class="mono">' + a.unit + '</td><td class="text-sm">' + a.space + '</td><td class="mono text-sm">' + fmtShort(a.date) + '</td><td class="text-sm">' + time + '</td>';
     html += '<td><span class="pill ' + (a.type === 'event' ? 'pill-event' : 'pill-reservation') + '">' + (a.type === 'event' ? 'Event' : 'Reservation') + '</span></td>';
-    html += '<td class="text-sm text-2">' + (a.notes || '-') + '</td><td><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteAmenity(\'' + a.id + '\')">x</button></td></tr>';
+    html += '<td class="text-sm text-2">' + (a.notes || '-') + '</td><td><button class="btn btn-ghost btn-xs" onclick="openEditAmenity(\'' + a.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteAmenity(\'' + a.id + '\')">x</button></td></tr>';
   });
   tbody.innerHTML = html;
   setBadge('badge-amenities', (state.amenities || []).filter(function (a) { return a.date >= t; }).length);
@@ -1235,6 +1347,11 @@ function filterTours(f, item) { tourFilter = f; document.querySelectorAll('#sect
 function saveTour() {
   var name = g('tr-name').value.trim(), date = g('tr-date').value;
   if (!name || !date) { toast('Fill in prospect name and date'); return; }
+  if (editingTourId) {
+    var tr = (state.tours||[]).find(function(x){return x.id===editingTourId;}); if(!tr) return;
+    tr.name=name; tr.unit=g('tr-unit').value.trim(); tr.type=g('tr-type').value; tr.date=date; tr.time=g('tr-time').value; tr.contact=g('tr-contact').value.trim(); tr.notes=g('tr-notes').value.trim();
+    editingTourId=null; scheduleSave(); closeModal('modal-tour'); renderTours(); updateBadges(); toast('Tour updated'); return;
+  }
   var tr = { id: uid(), name: name, unit: g('tr-unit').value.trim(), type: g('tr-type').value, date: date, time: g('tr-time').value, contact: g('tr-contact').value.trim(), notes: g('tr-notes').value.trim(), createdAt: Date.now() };
   if (!state.tours) state.tours = [];
   state.tours.push(tr); scheduleSave(); closeModal('modal-tour'); renderTours(); updateBadges();
@@ -1255,7 +1372,7 @@ function renderTours() {
   list.forEach(function (tr) {
     html += '<tr><td class="font-600">' + tr.name + '</td><td class="mono text-sm">' + (tr.unit || '-') + '</td><td class="mono text-sm">' + fmtShort(tr.date) + '</td>';
     html += '<td><span class="pill ' + (tr.type === 'sgt' ? 'pill-reservation' : 'pill-event') + '">' + (tr.type === 'sgt' ? 'SGT' : 'Guided') + '</span></td>';
-    html += '<td class="text-sm text-2">' + (tr.notes || '-') + '</td><td><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteTour(\'' + tr.id + '\')">x</button></td></tr>';
+    html += '<td class="text-sm text-2">' + (tr.notes || '-') + '</td><td><button class="btn btn-ghost btn-xs" onclick="openEditTour(\'' + tr.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteTour(\'' + tr.id + '\')">x</button></td></tr>';
   });
   tbody.innerHTML = html;
   setBadge('badge-tours', allT.filter(function (tr) { return tr.date === t; }).length);
@@ -1332,7 +1449,7 @@ function renderTodos() {
     html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTodo(\'' + t.id + '\',this.checked)">';
     html += '<div style="flex:1;min-width:0"><div class="todo-text ' + (t.done ? 'strk' : '') + '">' + urgIcon + t.text + '</div>';
     html += '<div class="todo-meta">' + due + '<span class="text-xs text-3">' + new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span></div></div>';
-    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteTodo(\'' + t.id + '\')">x</button></div>';
+    html += '<button class="btn btn-ghost btn-xs" onclick="openEditTodo(\'' + t.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteTodo(\'' + t.id + '\')">x</button></div>';
   });
   list.innerHTML = html;
   setBadge('badge-todos', pending); setMBadge('mb-todos', pending);
@@ -1346,6 +1463,11 @@ var lafFilter = 'all';
 function filterLAF(f, item) { lafFilter = f; document.querySelectorAll('#section-laf .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderLAF(); }
 function saveLAF() {
   var desc = g('lf-desc').value.trim(); if (!desc) { toast('Enter item description'); return; }
+  if (editingLAFId) {
+    var item = (state.laf||[]).find(function(x){return x.id===editingLAFId;}); if(!item) return;
+    item.date=g('lf-date').value||today(); item.time=g('lf-time').value||''; item.foundBy=g('lf-foundby').value.trim(); item.location=g('lf-location').value.trim(); item.condition=g('lf-condition').value; item.desc=desc; item.notes=g('lf-notes').value.trim();
+    editingLAFId=null; scheduleSave(); closeModal('modal-laf'); renderLAF(); updateBadges(); toast('Item updated'); return;
+  }
   var item = { id: uid(), date: g('lf-date').value || today(), time: g('lf-time').value || '', foundBy: g('lf-foundby').value.trim(), location: g('lf-location').value.trim(), condition: g('lf-condition').value, desc: desc, notes: g('lf-notes').value.trim(), claimedAt: null, claimedBy: '', claimedUnit: '', loggedAt: Date.now() };
   if (!state.laf) state.laf = [];
   state.laf.push(item); scheduleSave(); closeModal('modal-laf'); renderLAF(); updateBadges();
@@ -1366,7 +1488,7 @@ function renderLAF() {
     html += '<tr ' + (i.claimedAt ? 'style="opacity:0.6"' : '') + '>';
     html += '<td class="mono text-sm">' + fmtShort(i.date) + '</td><td class="text-sm">' + (i.location || '-') + '</td><td class="font-600">' + i.desc + '</td>';
     html += '<td class="text-sm text-2">' + i.condition + '</td><td class="text-sm">' + (i.foundBy || '-') + '</td>';
-    html += '<td class="text-sm">' + statusCell + '</td><td><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteLAF(\'' + i.id + '\')">x</button></td></tr>';
+    html += '<td class="text-sm">' + statusCell + '</td><td><button class="btn btn-ghost btn-xs" onclick="openEditLAF(\'' + i.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteLAF(\'' + i.id + '\')">x</button></td></tr>';
   });
   tbody.innerHTML = html;
   setBadge('badge-laf', (state.laf || []).filter(function (i) { return !i.claimedAt; }).length);
@@ -1435,6 +1557,146 @@ function renderPassdownHistory() {
 }
 function copyPD(id) { var p = (state.passdowns || []).find(function (x) { return x.id === id; }); if (!p) return; navigator.clipboard.writeText(p.text).then(function () { toast('Copied'); }).catch(function () { toast('Copy failed'); }); }
 function deletePD(id) { if (!confirm('Delete passdown?')) return; state.passdowns = (state.passdowns || []).filter(function (p) { return p.id !== id; }); scheduleSave(); renderPassdownHistory(); toast('Deleted'); }
+
+
+// ─── GENERIC EDIT HELPERS ───
+function setModalMode(titleId, btnId, titleText, btnText) {
+  var t = g(titleId), b = g(btnId);
+  if (t) t.textContent = titleText;
+  if (b) b.textContent = btnText;
+}
+
+// ─── MAINTENANCE EDIT ───
+var editingMaintId = null;
+function openAddMaint() {
+  editingMaintId = null;
+  setModalMode('modal-maint-title','modal-maint-savebtn','Log Maintenance Issue','Save Issue');
+  ['mt-unit','mt-issue','mt-desc','mt-reporter'].forEach(function(id){g(id).value='';});
+  g('mt-priority').value='medium'; g('mt-status').value='open';
+  openModal('modal-maint');
+}
+function openEditMaint(id) {
+  var m = (state.maintenance||[]).find(function(x){return x.id===id;}); if(!m) return;
+  editingMaintId = id;
+  setModalMode('modal-maint-title','modal-maint-savebtn','Edit Issue','Save Changes');
+  g('mt-unit').value = m.unit||''; g('mt-issue').value = m.issue||'';
+  g('mt-desc').value = m.desc||''; g('mt-reporter').value = m.reporter||'';
+  g('mt-priority').value = m.priority||'medium'; g('mt-status').value = m.status||'open';
+  openModal('modal-maint');
+}
+
+// ─── GUEST EDIT ───
+var editingGuestId = null;
+function openAddGuest() {
+  editingGuestId = null;
+  setModalMode('modal-guest-title','modal-guest-savebtn','Log Guest / Visitor','Log Guest');
+  ['gs-name','gs-unit','gs-host','gs-notes'].forEach(function(id){g(id).value='';});
+  g('gs-type').value='Visitor'; g('gs-status').value='pending';
+  openModal('modal-guest');
+}
+function openEditGuest(id) {
+  var gst = (state.guests||[]).find(function(x){return x.id===id;}); if(!gst) return;
+  editingGuestId = id;
+  setModalMode('modal-guest-title','modal-guest-savebtn','Edit Guest','Save Changes');
+  g('gs-name').value=gst.name||''; g('gs-unit').value=gst.unit||'';
+  g('gs-host').value=gst.host||''; g('gs-notes').value=gst.notes||'';
+  g('gs-type').value=gst.type||'Visitor'; g('gs-status').value=gst.status||'pending';
+  openModal('modal-guest');
+}
+
+// ─── KEY EDIT ───
+var editingKeyId = null;
+function openAddKey() {
+  editingKeyId = null;
+  setModalMode('modal-key-title','modal-key-savebtn','Log Key / Access','Save');
+  ['ky-unit','ky-name','ky-fob','ky-notes'].forEach(function(id){g(id).value='';});
+  g('ky-type').value='resident'; g('ky-status').value='issued'; g('ky-expiry').value='';
+  openModal('modal-key');
+}
+function openEditKey(id) {
+  var k = (state.keys||[]).find(function(x){return x.id===id;}); if(!k) return;
+  editingKeyId = id;
+  setModalMode('modal-key-title','modal-key-savebtn','Edit Key','Save Changes');
+  g('ky-unit').value=k.unit||''; g('ky-name').value=k.name||'';
+  g('ky-fob').value=k.fob||''; g('ky-notes').value=k.notes||'';
+  g('ky-type').value=k.type||'resident'; g('ky-status').value=k.status||'issued';
+  g('ky-expiry').value=k.expiry||'';
+  openModal('modal-key');
+}
+
+// ─── AMENITY EDIT ───
+var editingAmenityId = null;
+function openAddAmenity() {
+  editingAmenityId = null;
+  setModalMode('modal-amenity-title','modal-amenity-savebtn','Add Amenity Booking','Add Booking');
+  ['am-resident','am-unit','am-fee','am-notes'].forEach(function(id){g(id).value='';});
+  g('am-start').value=''; g('am-end').value=''; g('am-date').value=today();
+  g('am-type').value='reservation';
+  openModal('modal-amenity');
+}
+function openEditAmenity(id) {
+  var a = (state.amenities||[]).find(function(x){return x.id===id;}); if(!a) return;
+  editingAmenityId = id;
+  setModalMode('modal-amenity-title','modal-amenity-savebtn','Edit Booking','Save Changes');
+  g('am-resident').value=a.resident||''; g('am-unit').value=a.unit||'';
+  g('am-fee').value=a.fee||''; g('am-notes').value=a.notes||'';
+  g('am-date').value=a.date||today(); g('am-start').value=a.start||''; g('am-end').value=a.end||'';
+  g('am-type').value=a.type||'reservation';
+  // Set space select
+  var spaceEl=g('am-space');
+  if(spaceEl){for(var i=0;i<spaceEl.options.length;i++){if(spaceEl.options[i].value===a.space||spaceEl.options[i].text===a.space){spaceEl.selectedIndex=i;break;}}}
+  openModal('modal-amenity');
+}
+
+// ─── TOUR EDIT ───
+var editingTourId = null;
+function openAddTour() {
+  editingTourId = null;
+  setModalMode('modal-tour-title','modal-tour-savebtn','Log Tour','Log Tour');
+  ['tr-name','tr-unit','tr-contact','tr-notes'].forEach(function(id){g(id).value='';});
+  g('tr-time').value=''; g('tr-date').value=today(); g('tr-type').value='sgt';
+  openModal('modal-tour');
+}
+function openEditTour(id) {
+  var tr = (state.tours||[]).find(function(x){return x.id===id;}); if(!tr) return;
+  editingTourId = id;
+  setModalMode('modal-tour-title','modal-tour-savebtn','Edit Tour','Save Changes');
+  g('tr-name').value=tr.name||''; g('tr-unit').value=tr.unit||'';
+  g('tr-contact').value=tr.contact||''; g('tr-notes').value=tr.notes||'';
+  g('tr-time').value=tr.time||''; g('tr-date').value=tr.date||today();
+  g('tr-type').value=tr.type||'sgt';
+  openModal('modal-tour');
+}
+
+// ─── LAF EDIT ───
+var editingLAFId = null;
+function openAddLAF() {
+  editingLAFId = null;
+  setModalMode('modal-laf-title','modal-laf-savebtn','Log Lost & Found Item','Log Item');
+  ['lf-foundby','lf-location','lf-desc','lf-notes','lf-time'].forEach(function(id){g(id).value='';});
+  g('lf-date').value=today(); g('lf-condition').value='Good';
+  openModal('modal-laf');
+}
+function openEditLAF(id) {
+  var item = (state.laf||[]).find(function(x){return x.id===id;}); if(!item) return;
+  editingLAFId = id;
+  setModalMode('modal-laf-title','modal-laf-savebtn','Edit L&F Item','Save Changes');
+  g('lf-date').value=item.date||today(); g('lf-time').value=item.time||'';
+  g('lf-foundby').value=item.foundBy||''; g('lf-location').value=item.location||'';
+  g('lf-desc').value=item.desc||''; g('lf-notes').value=item.notes||'';
+  g('lf-condition').value=item.condition||'Good';
+  openModal('modal-laf');
+}
+
+// ─── TODO INLINE EDIT ───
+function openEditTodo(id) {
+  var t = (state.todos||[]).find(function(x){return x.id===id;}); if(!t) return;
+  var newText = prompt('Edit to-do:', t.text); if(newText===null) return;
+  var trimmed = newText.trim(); if(!trimmed) return;
+  t.text = trimmed;
+  // Also allow changing due date
+  scheduleSave(); renderTodos(); renderDash(); toast('Updated');
+}
 
 // ─── CALENDAR ───
 var calMode = 'week', calOffset = 0;
@@ -1583,6 +1845,85 @@ function renderMonthCal() {
   }
   html += '</div>';
   g('cal-body').innerHTML = html;
+}
+
+
+// ─── SETTINGS ───
+function getCustomInTasks() { return state.customInTasks && state.customInTasks.length ? state.customInTasks : DEFAULT_IN_TASKS.slice(); }
+function getCustomOutTasks() { return state.customOutTasks && state.customOutTasks.length ? state.customOutTasks : DEFAULT_OUT_TASKS.slice(); }
+
+function renderSettings() {
+  renderTaskList('in');
+  renderTaskList('out');
+}
+
+function renderTaskList(type) {
+  var tasks = type === 'in' ? getCustomInTasks() : getCustomOutTasks();
+  var elId = type === 'in' ? 'settings-in-tasks' : 'settings-out-tasks';
+  var cntId = type === 'in' ? 'in-tasks-count' : 'out-tasks-count';
+  var el2 = g(elId), cnt = g(cntId);
+  if (!el2) return;
+  if (cnt) cnt.textContent = tasks.length + ' tasks';
+  if (!tasks.length) { el2.innerHTML = '<div class="text-3 text-sm" style="padding:12px 14px">No tasks. Add one below.</div>'; return; }
+  var html = '';
+  tasks.forEach(function (t, i) {
+    html += '<div class="stask-row">';
+    html += '<div class="stask-arrows"><button class="stask-arrow" onclick="moveTask('' + type + '',' + i + ',-1)" title="Move up">&#9650;</button><button class="stask-arrow" onclick="moveTask('' + type + '',' + i + ',1)" title="Move down">&#9660;</button></div>';
+    html += '<input type="text" class="stask-text" value="' + t.text.replace(/"/g, '&quot;') + '" onblur="updateDefaultTask('' + type + '',' + i + ','text',this.value)" style="border:none;background:transparent;font-size:13px;flex:1;outline:none;padding:2px 4px;border-radius:4px" onfocus="this.style.background='var(--accent-light)'" onblur2="this.style.background='transparent'">';
+    html += '<select class="stask-cat ie-sel" onchange="updateDefaultTask('' + type + '',' + i + ','cat',this.value)">';
+    ['Move In','Move Out','Keys & Access','Elevator','General'].forEach(function (cat) {
+      html += '<option value="' + cat + '" ' + (t.cat === cat ? 'selected' : '') + '>' + cat + '</option>';
+    });
+    html += '</select>';
+    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="removeDefaultTask('' + type + '',' + i + ')">x</button>';
+    html += '</div>';
+  });
+  el2.innerHTML = html;
+}
+
+function ensureCustomTasks(type) {
+  if (type === 'in') {
+    if (!state.customInTasks || !state.customInTasks.length) state.customInTasks = DEFAULT_IN_TASKS.map(function(t){ return {text:t.text,cat:t.cat}; });
+  } else {
+    if (!state.customOutTasks || !state.customOutTasks.length) state.customOutTasks = DEFAULT_OUT_TASKS.map(function(t){ return {text:t.text,cat:t.cat}; });
+  }
+}
+
+function addDefaultTask(type) {
+  var inputId = type === 'in' ? 'new-in-task' : 'new-out-task';
+  var catId = type === 'in' ? 'new-in-cat' : 'new-out-cat';
+  var text = g(inputId).value.trim(); if (!text) { toast('Enter a task description'); return; }
+  ensureCustomTasks(type);
+  var list = type === 'in' ? state.customInTasks : state.customOutTasks;
+  list.push({ text: text, cat: g(catId).value });
+  g(inputId).value = '';
+  scheduleSave(); renderTaskList(type); toast('Task added');
+}
+
+function removeDefaultTask(type, idx) {
+  if (!confirm('Remove this default task?')) return;
+  ensureCustomTasks(type);
+  var list = type === 'in' ? state.customInTasks : state.customOutTasks;
+  list.splice(idx, 1);
+  scheduleSave(); renderTaskList(type); toast('Task removed');
+}
+
+function updateDefaultTask(type, idx, field, value) {
+  ensureCustomTasks(type);
+  var list = type === 'in' ? state.customInTasks : state.customOutTasks;
+  if (!list[idx]) return;
+  var trimmed = value.trim(); if (field === 'text' && !trimmed) return;
+  list[idx][field] = trimmed;
+  scheduleSave();
+}
+
+function moveTask(type, idx, dir) {
+  ensureCustomTasks(type);
+  var list = type === 'in' ? state.customInTasks : state.customOutTasks;
+  var newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= list.length) return;
+  var temp = list[idx]; list[idx] = list[newIdx]; list[newIdx] = temp;
+  scheduleSave(); renderTaskList(type);
 }
 
 // ─── INIT ───
