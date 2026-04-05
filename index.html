@@ -1867,16 +1867,17 @@ function renderTaskList(type) {
   if (!tasks.length) { el2.innerHTML = '<div class="text-3 text-sm" style="padding:12px 14px">No tasks. Add one below.</div>'; return; }
   var html = '';
   tasks.forEach(function (t, i) {
-    html += '<div class="stask-row">';
-    html += '<div class="stask-arrows"><button class="stask-arrow" onclick="moveTask('' + type + '',' + i + ',-1)" title="Move up">&#9650;</button><button class="stask-arrow" onclick="moveTask('' + type + '',' + i + ',1)" title="Move down">&#9660;</button></div>';
-    html += '<input type="text" class="stask-text" value="' + t.text.replace(/"/g, '&quot;') + '" onblur="updateDefaultTask('' + type + '',' + i + ','text',this.value)" style="border:none;background:transparent;font-size:13px;flex:1;outline:none;padding:2px 4px;border-radius:4px" onfocus="this.style.background='var(--accent-light)'" onblur2="this.style.background='transparent'">';
-    html += '<select class="stask-cat ie-sel" onchange="updateDefaultTask('' + type + '',' + i + ','cat',this.value)">';
-    ['Move In','Move Out','Keys & Access','Elevator','General'].forEach(function (cat) {
-      html += '<option value="' + cat + '" ' + (t.cat === cat ? 'selected' : '') + '>' + cat + '</option>';
+    var upBtn = '<button class="stask-arrow" onclick="moveTask(\'' + type + '\',' + i + ',-1)" title="Move up">&#9650;</button>';
+    var dnBtn = '<button class="stask-arrow" onclick="moveTask(\'' + type + '\',' + i + ',1)" title="Move down">&#9660;</button>';
+    var rmBtn = '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="removeDefaultTask(\'' + type + '\',' + i + ')">x</button>';
+    var catOpts = '';
+    ['Move In', 'Move Out', 'Keys & Access', 'Elevator', 'General'].forEach(function (cat) {
+      catOpts += '<option value="' + cat + '" ' + (t.cat === cat ? 'selected' : '') + '>' + cat + '</option>';
     });
-    html += '</select>';
-    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="removeDefaultTask('' + type + '',' + i + ')">x</button>';
-    html += '</div>';
+    var catSel = '<select class="stask-cat ie-sel" onchange="updateDefaultTask(\'' + type + '\',' + i + ',\'cat\',this.value)">' + catOpts + '</select>';
+    var safeVal = t.text.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    var textInput = '<input type="text" class="stask-text" value="' + safeVal + '" onblur="updateDefaultTask(\'' + type + '\',' + i + ',\'text\',this.value)" style="border:none;background:transparent;font-size:13px;flex:1;outline:none;padding:2px 4px;border-radius:4px">';
+    html += '<div class="stask-row"><div class="stask-arrows">' + upBtn + dnBtn + '</div>' + textInput + catSel + rmBtn + '</div>';
   });
   el2.innerHTML = html;
 }
