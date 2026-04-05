@@ -282,6 +282,29 @@
   .stask-arrows{display:flex;flex-direction:column;gap:1px;flex-shrink:0}
   .stask-arrow{background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px;padding:1px 3px;line-height:1;border-radius:3px}
   .stask-arrow:hover{background:var(--bg);color:var(--text)}
+
+  /* SMART IMPORT MODAL */
+  .import-tabs{display:flex;gap:0;margin-bottom:14px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+  .import-tab{flex:1;padding:8px;font-size:12.5px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--text2);border:none;font-family:'DM Sans',sans-serif;text-align:center;transition:background .1s}
+  .import-tab.active{background:var(--accent);color:#fff}
+  .import-tab:not(.active):hover{background:var(--bg)}
+  .import-preview{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-top:12px}
+  .import-preview-hdr{padding:8px 12px;background:var(--bg);font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);display:flex;gap:12px}
+  .import-preview-hdr span{display:flex;align-items:center;gap:4px}
+  .import-row{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--border2);font-size:12.5px}
+  .import-row:last-child{border-bottom:none}
+  .import-row.new-row{background:var(--green-light)}
+  .import-row.update-row{background:var(--amber-light)}
+  .import-row.skip-row{background:var(--surface2);opacity:.6}
+  .import-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;flex-shrink:0;font-family:'DM Mono',monospace}
+  .badge-new{background:var(--green);color:#fff}
+  .badge-update{background:var(--amber);color:#fff}
+  .badge-skip{background:var(--text3);color:#fff}
+  .import-row-main{flex:1;min-width:0}
+  .import-row-detail{font-size:11px;color:var(--text2);margin-top:1px}
+  .import-hint{font-size:11.5px;color:var(--text3);background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px;line-height:1.7}
+  .import-hint code{background:var(--border2);padding:1px 4px;border-radius:3px;font-family:'DM Mono',monospace;font-size:11px}
+
   /* TASK INLINE EDIT INPUTS */
   .cl-text-input{border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;flex:1;padding:2px 5px;border-radius:4px;min-width:0;cursor:text}
   .cl-text-input:hover,.cl-text-input:focus{background:var(--accent-light)}
@@ -346,6 +369,7 @@
   </div>
   <div class="nav-group">
     <div class="nav-label">System</div>
+    <div class="nav-item" data-sec="import" onclick="nav(this)"><span class="icon">&#8679;</span><span class="nav-txt">Import Center</span></div>
     <div class="nav-item" data-sec="settings" onclick="nav(this)"><span class="icon">&#9881;</span><span class="nav-txt">Settings</span></div>
   </div>
   <div class="sb-footer">
@@ -447,6 +471,74 @@
           <div class="card"><div class="card-hdr"><span class="card-title">Preview</span></div><div class="card-body" style="padding:10px 14px"><div class="pd-preview" id="pd-preview">Generated passdown will appear here...</div></div></div>
         </div>
         <div><div class="card"><div class="card-hdr"><span class="card-title">Passdown History</span></div><div class="card-body" id="pd-history" style="padding:8px 12px"><div class="text-3 text-sm">No passdowns saved yet.</div></div></div></div>
+      </div>
+    </div>
+    <div class="section" id="section-import">
+      <div class="card mb-12">
+        <div class="card-hdr"><span class="card-title">&#128247; Import from Screenshot</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Take or upload a screenshot of your EliseAI calendar, move list, or Excel sheet. Claude will read it and extract the data automatically.</p>
+          <div class="form-group">
+            <label>What does this screenshot contain?</label>
+            <select id="img-import-type" style="margin-bottom:10px">
+              <option value="tours">Tours / Scheduled Showings (EliseAI)</option>
+              <option value="moves">Move Ins / Move Outs</option>
+              <option value="maintenance">Maintenance Issues</option>
+              <option value="amenities">Amenity Bookings</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Upload Screenshot</label>
+            <input type="file" id="img-import-file" accept="image/*">
+          </div>
+          <div style="margin-top:10px">
+            <button class="btn btn-primary" onclick="importFromImage()">&#10024; Extract with AI</button>
+          </div>
+          <div id="img-import-status" style="margin-top:12px;font-size:13px;color:var(--text2);display:none"></div>
+          <div id="img-import-preview" style="margin-top:12px;display:none"></div>
+        </div>
+      </div>
+
+      <div class="card mb-12">
+        <div class="card-hdr"><span class="card-title">&#128196; Import from CSV / Excel</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Export from EliseAI or save your Excel sheet as CSV (File &rarr; Save As &rarr; CSV). New records are added, existing ones are matched by unit+date and updated — no duplicates.</p>
+          <div class="fg">
+            <label>What are you importing?</label>
+            <select id="csv-import-type" style="margin-bottom:10px">
+              <option value="tours">Tours / Scheduled Showings</option>
+              <option value="moves">Move Ins / Move Outs</option>
+              <option value="maintenance">Maintenance Issues</option>
+              <option value="amenities">Amenity Bookings</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Upload CSV File</label>
+            <input type="file" id="csv-import-file" accept=".csv,.xlsx,.xls,.txt">
+          </div>
+          <div style="margin-top:10px">
+            <button class="btn btn-primary" onclick="importFromCSV()">Import CSV</button>
+          </div>
+          <div id="csv-import-status" style="margin-top:12px;font-size:13px;display:none"></div>
+          <div id="csv-import-preview" style="margin-top:12px;display:none"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">&#128196; CSV Format Guide</span></div>
+        <div class="card-body" style="font-size:12.5px;color:var(--text2);line-height:1.9">
+          <div style="margin-bottom:12px"><strong style="color:var(--text)">Tours CSV columns (any order):</strong><br>
+          <code style="font-family:var(--mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">name, date, time, unit, type (sgt/guided), contact, notes</code></div>
+          <div style="margin-bottom:12px"><strong style="color:var(--text)">Moves CSV columns:</strong><br>
+          <code style="font-family:var(--mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">unit, resident, date, type (in/out), time, total, elevator (yes/no), notes</code></div>
+          <div style="margin-bottom:12px"><strong style="color:var(--text)">Maintenance CSV columns:</strong><br>
+          <code style="font-family:var(--mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">unit, issue, description, priority (high/medium/low), status (open/in-progress/resolved), reporter</code></div>
+          <div><strong style="color:var(--text)">Amenity Bookings CSV columns:</strong><br>
+          <code style="font-family:var(--mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">resident, unit, space, date, start, end, type (reservation/event), fee, notes</code></div>
+          <div style="margin-top:12px;padding:10px 12px;background:var(--accent-light);border-radius:var(--radius);color:var(--accent);font-size:12px">
+            <strong>Tip:</strong> Column names are flexible &mdash; the importer matches common variations (e.g. "Prospect Name", "prospect_name", "Name" all map to <em>name</em>).
+          </div>
+        </div>
       </div>
     </div>
     <div class="section" id="section-settings">
@@ -780,7 +872,7 @@ function openMobSidebar() { g('sidebar').classList.add('mob-open'); g('sb-ov').s
 function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov').style.display = 'none'; }
 
 // ─── NAV ───
-var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Building Walkthrough', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings' };
+var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Building Walkthrough', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center' };
 var SEC_ACTIONS = {
   moves: '<button class="btn btn-primary btn-sm" onclick="openModal(\'modal-move\')">+ Add Move</button>',
   maintenance: '<button class="btn btn-primary btn-sm" onclick="openAddMaint()">+ Log Issue</button>',
@@ -816,7 +908,7 @@ function mobNav(item) {
   curSec = sec; renderSection(sec);
 }
 function renderSection(sec) {
-  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings };
+  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter };
   if (map[sec]) map[sec]();
 }
 function renderAll() { renderSection(curSec); updateBadges(); }
@@ -1715,6 +1807,298 @@ function openEditTodo(id) {
 var calMode = 'week', calOffset = 0;
 function toggleCalView() { calMode = calMode === 'week' ? 'month' : 'week'; g('cal-toggle').textContent = calMode === 'week' ? 'Monthly' : 'Weekly'; calOffset = 0; renderCalendar(); }
 function calNav(dir) { if (dir === 0) calOffset = 0; else calOffset += dir; renderCalendar(); }
+
+// ─── IMPORT CENTER ───────────────────────────────────────────────────────────
+
+function renderImportCenter() { /* static HTML, nothing to render dynamically */ }
+
+// ── CSV IMPORT ───────────────────────────────────────────────────────────────
+function importFromCSV() {
+  var file = g('csv-import-file').files[0];
+  if (!file) { toast('Choose a CSV file first'); return; }
+  var type = g('csv-import-type').value;
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      var rows = parseCSV(e.target.result);
+      if (!rows.length) { showImportStatus('csv', 'error', 'No data found in file.'); return; }
+      var result = applyImport(type, rows);
+      showImportStatus('csv', 'success', result.msg);
+      showImportPreview('csv', result.preview);
+      scheduleSave(); renderAll();
+    } catch (err) {
+      showImportStatus('csv', 'error', 'Error reading file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function parseCSV(text) {
+  // Normalize line endings, handle quoted fields
+  text = text.split('\r\n').join('\n').split('\r').join('\n');
+  var lines = text.split('\n').filter(function (l) { return l.trim(); });
+  if (lines.length < 2) return [];
+  var headers = splitCSVLine(lines[0]).map(function (h) { return h.trim().toLowerCase().replace(/[^a-z0-9]/g, ''); });
+  var rows = [];
+  for (var i = 1; i < lines.length; i++) {
+    var vals = splitCSVLine(lines[i]);
+    var row = {};
+    headers.forEach(function (h, idx) { row[h] = (vals[idx] || '').trim(); });
+    rows.push(row);
+  }
+  return rows;
+}
+
+function splitCSVLine(line) {
+  var result = [], cur = '', inQ = false;
+  for (var i = 0; i < line.length; i++) {
+    var ch = line[i];
+    if (ch === '"') { inQ = !inQ; }
+    else if (ch === ',' && !inQ) { result.push(cur); cur = ''; }
+    else { cur += ch; }
+  }
+  result.push(cur);
+  return result;
+}
+
+// Flexible header matcher — tries multiple aliases per field
+function getField(row, aliases) {
+  for (var i = 0; i < aliases.length; i++) {
+    var key = aliases[i].toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (row[key] !== undefined && row[key] !== '') return row[key];
+  }
+  return '';
+}
+
+function normalizeDate(raw) {
+  if (!raw) return '';
+  // Try common formats: M/D/YYYY, MM-DD-YYYY, YYYY-MM-DD, "Apr 4 2025", etc.
+  raw = raw.trim();
+  // Already ISO
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  // M/D/YYYY or MM/DD/YYYY
+  var mdy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (mdy) {
+    var yr = mdy[3].length === 2 ? '20' + mdy[3] : mdy[3];
+    return yr + '-' + mdy[1].padStart(2,'0') + '-' + mdy[2].padStart(2,'0');
+  }
+  // Try Date.parse as fallback
+  var d = new Date(raw);
+  if (!isNaN(d)) {
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  return raw;
+}
+
+function applyImport(type, rows) {
+  var added = 0, updated = 0, skipped = 0;
+  var preview = [];
+
+  if (type === 'tours') {
+    if (!state.tours) state.tours = [];
+    rows.forEach(function (row) {
+      var name = getField(row, ['name','prospectname','prospect','guestname','residentname','tenant']);
+      var date = normalizeDate(getField(row, ['date','tourdate','scheduleddate','appointmentdate','startdate']));
+      var time = getField(row, ['time','starttime','tourtime','appointmenttime']);
+      var unit = getField(row, ['unit','unitnumber','unitsshown','units','unitid']);
+      var tourType = getField(row, ['type','tourtype','kind']);
+      if (!tourType) tourType = 'sgt';
+      else tourType = tourType.toLowerCase().includes('guid') ? 'guided' : 'sgt';
+      var contact = getField(row, ['contact','email','phone','contactinfo']);
+      var notes = getField(row, ['notes','note','comments','outcome','description']);
+      if (!name || !date) { skipped++; return; }
+      // Dedup: match on name (normalized) + date
+      var normName = name.toLowerCase().trim();
+      var existing = state.tours.find(function (t) { return t.date === date && t.name.toLowerCase().trim() === normName; });
+      if (existing) {
+        existing.time = time || existing.time; existing.unit = unit || existing.unit;
+        existing.type = tourType; existing.contact = contact || existing.contact; existing.notes = notes || existing.notes;
+        updated++; preview.push({ action:'updated', label: name + ' on ' + date });
+      } else {
+        state.tours.push({ id: uid(), name: name, date: date, time: time, unit: unit, type: tourType, contact: contact, notes: notes, createdAt: Date.now() });
+        added++; preview.push({ action:'added', label: name + ' on ' + date });
+      }
+    });
+
+  } else if (type === 'moves') {
+    if (!state.moves) state.moves = [];
+    rows.forEach(function (row) {
+      var unit = getField(row, ['unit','unitnumber','unitnum','apt','apartment']);
+      var resident = getField(row, ['resident','residentname','name','tenant','tenantname','lessee']);
+      var date = normalizeDate(getField(row, ['date','movedate','moveindate','moveoutdate','scheduleddate']));
+      var moveType = getField(row, ['type','movetype','direction','kind']);
+      if (!moveType) moveType = 'in';
+      else moveType = moveType.toLowerCase().includes('out') ? 'out' : 'in';
+      var time = getField(row, ['time','window','timewindow']);
+      var total = getField(row, ['total','moveincharge','charge','amount','fee','moveintotal']);
+      var elevator = getField(row, ['elevator','elevreserved','lift']);
+      if (elevator) elevator = elevator.toLowerCase().includes('yes') || elevator.toLowerCase().includes('y') ? 'yes' : 'no';
+      var notes = getField(row, ['notes','note','comments']);
+      if (!unit || !date) { skipped++; return; }
+      // Dedup: match on unit + date + type
+      var existing = state.moves.find(function (m) { return m.unit === unit && m.date === date && m.type === moveType && !m.archivedAt; });
+      if (existing) {
+        if (resident) existing.resident = resident; if (time) existing.time = time;
+        if (total) existing.total = total; if (elevator) existing.elevator = elevator; if (notes) existing.notes = notes;
+        updated++; preview.push({ action:'updated', label: (resident||unit) + ' Unit ' + unit + ' ' + date });
+      } else {
+        var customIn = state.customInTasks || DEFAULT_IN_TASKS;
+        var customOut = state.customOutTasks || DEFAULT_OUT_TASKS;
+        var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null }; });
+        state.moves.push({ id: uid(), unit: unit, resident: resident||'', date: date, type: moveType, time: time, total: total, elevator: elevator||'no', notes: notes, tasks: tasks, archivedAt: null, createdAt: Date.now() });
+        added++; preview.push({ action:'added', label: (resident||unit) + ' Unit ' + unit + ' ' + date });
+      }
+    });
+
+  } else if (type === 'maintenance') {
+    if (!state.maintenance) state.maintenance = [];
+    rows.forEach(function (row) {
+      var unit = getField(row, ['unit','unitnumber','location','apt']);
+      var issue = getField(row, ['issue','issuetype','type','category','problem']);
+      var desc = getField(row, ['description','desc','detail','notes','comments']);
+      var priority = getField(row, ['priority','urgency','severity']);
+      if (!priority) priority = 'medium'; else priority = priority.toLowerCase();
+      if (!['high','medium','low'].includes(priority)) priority = 'medium';
+      var status = getField(row, ['status','state']);
+      if (!status) status = 'open'; else status = status.toLowerCase().replace(' ','-');
+      if (!['open','in-progress','resolved'].includes(status)) status = 'open';
+      var reporter = getField(row, ['reporter','reportedby','submittedby','submitter']);
+      if (!unit || !issue) { skipped++; return; }
+      var existing = state.maintenance.find(function (m) { return m.unit === unit && m.issue.toLowerCase() === issue.toLowerCase() && m.status !== 'resolved'; });
+      if (existing) {
+        if (desc) existing.desc = desc; if (priority) existing.priority = priority; if (status) existing.status = status;
+        updated++; preview.push({ action:'updated', label: 'Unit ' + unit + ' - ' + issue });
+      } else {
+        state.maintenance.push({ id: uid(), unit: unit, issue: issue, desc: desc, priority: priority, status: status, reporter: reporter, createdAt: Date.now() });
+        added++; preview.push({ action:'added', label: 'Unit ' + unit + ' - ' + issue });
+      }
+    });
+
+  } else if (type === 'amenities') {
+    if (!state.amenities) state.amenities = [];
+    rows.forEach(function (row) {
+      var resident = getField(row, ['resident','residentname','name','tenant']);
+      var unit = getField(row, ['unit','unitnumber','apt']);
+      var space = getField(row, ['space','amenity','amenityspace','room','location']);
+      var date = normalizeDate(getField(row, ['date','bookingdate','eventdate','reservationdate']));
+      var start = getField(row, ['start','starttime','from','begin']);
+      var end = getField(row, ['end','endtime','to','until','finish']);
+      var bookType = getField(row, ['type','bookingtype','kind']);
+      if (!bookType) bookType = 'reservation'; else bookType = bookType.toLowerCase().includes('event') ? 'event' : 'reservation';
+      var fee = getField(row, ['fee','charge','cost','amount']);
+      var notes = getField(row, ['notes','note','comments']);
+      if (!date || !space) { skipped++; return; }
+      var existing = state.amenities.find(function (a) { return a.date === date && a.space === space && (a.unit === unit || a.resident === resident); });
+      if (existing) {
+        if (resident) existing.resident = resident; if (start) existing.start = start; if (end) existing.end = end;
+        if (fee) existing.fee = fee; if (notes) existing.notes = notes;
+        updated++; preview.push({ action:'updated', label: (resident||unit) + ' - ' + space + ' ' + date });
+      } else {
+        state.amenities.push({ id: uid(), resident: resident, unit: unit, space: space, date: date, start: start, end: end, type: bookType, fee: fee, notes: notes, createdAt: Date.now() });
+        added++; preview.push({ action:'added', label: (resident||unit) + ' - ' + space + ' ' + date });
+      }
+    });
+  }
+
+  var msg = added + ' added, ' + updated + ' updated' + (skipped ? ', ' + skipped + ' skipped (missing required fields)' : '');
+  return { msg: msg, preview: preview };
+}
+
+function showImportStatus(prefix, type, msg) {
+  var el = g(prefix + '-import-status');
+  if (!el) return;
+  el.style.display = 'block';
+  el.style.color = type === 'error' ? 'var(--red)' : type === 'success' ? 'var(--green)' : 'var(--text2)';
+  el.textContent = msg;
+}
+
+function showImportPreview(prefix, preview) {
+  var el = g(prefix + '-import-preview');
+  if (!el || !preview || !preview.length) return;
+  el.style.display = 'block';
+  var show = preview.slice(0, 12);
+  var html = '<div style="font-size:12px;max-height:160px;overflow-y:auto;background:var(--bg);border-radius:var(--radius);padding:8px 12px;border:1px solid var(--border)">';
+  show.forEach(function (p) {
+    var color = p.action === 'added' ? 'var(--green)' : 'var(--amber)';
+    html += '<div style="padding:2px 0;color:var(--text2)"><span style="color:' + color + ';font-weight:600;margin-right:6px;font-size:10px;text-transform:uppercase">' + p.action + '</span>' + p.label + '</div>';
+  });
+  if (preview.length > 12) html += '<div style="color:var(--text3);margin-top:4px;font-size:11px">...and ' + (preview.length - 12) + ' more</div>';
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+// ── IMAGE / SCREENSHOT IMPORT ─────────────────────────────────────────────
+function importFromImage() {
+  var file = g('img-import-file').files[0];
+  if (!file) { toast('Upload a screenshot first'); return; }
+  var type = g('img-import-type').value;
+  var statusEl = g('img-import-status');
+  var previewEl = g('img-import-preview');
+  statusEl.style.display = 'block';
+  statusEl.style.color = 'var(--amber)';
+  statusEl.textContent = 'Reading screenshot with AI...';
+  previewEl.style.display = 'none';
+  previewEl.innerHTML = '';
+
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    var base64 = e.target.result.split(',')[1];
+    var mediaType = file.type || 'image/jpeg';
+    var prompts = {
+      tours: 'This is a screenshot of a property management calendar or tour schedule. Extract ALL scheduled tours or showings. For each, provide: prospect name, date (YYYY-MM-DD), time, unit number shown (if visible), tour type (sgt or guided), contact info, notes. Return ONLY a JSON array of objects with keys: name, date, time, unit, type, contact, notes. No markdown, no explanation.',
+      moves: 'This is a screenshot of a move schedule or move list. Extract ALL move entries. For each: unit number, resident name, date (YYYY-MM-DD), type (in or out), time window, move-in total amount (if shown), elevator info, notes. Return ONLY a JSON array with keys: unit, resident, date, type, time, total, elevator, notes. No markdown.',
+      maintenance: 'This is a screenshot of a maintenance log or work order list. Extract ALL issues. For each: unit/location, issue type, description, priority (high/medium/low), status (open/in-progress/resolved), reporter. Return ONLY a JSON array with keys: unit, issue, description, priority, status, reporter. No markdown.',
+      amenities: 'This is a screenshot of amenity bookings or reservations. Extract ALL bookings. For each: resident name, unit, amenity space, date (YYYY-MM-DD), start time, end time, type (reservation or event), fee, notes. Return ONLY a JSON array with keys: resident, unit, space, date, start, end, type, fee, notes. No markdown.'
+    };
+
+    fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+            { type: 'text', text: prompts[type] || prompts.tours }
+          ]
+        }]
+      })
+    })
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      var text = '';
+      if (data.content && data.content.length) {
+        data.content.forEach(function (block) { if (block.type === 'text') text += block.text; });
+      }
+      // Strip markdown fences if present
+      text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+      var rows;
+      try { rows = JSON.parse(text); } catch (e) {
+        statusEl.style.color = 'var(--red)';
+        statusEl.textContent = 'Could not parse AI response. Try a clearer screenshot.';
+        return;
+      }
+      if (!Array.isArray(rows) || !rows.length) {
+        statusEl.style.color = 'var(--amber)';
+        statusEl.textContent = 'No data extracted. Try a clearer screenshot or different crop.';
+        return;
+      }
+      var result = applyImport(type, rows);
+      statusEl.style.color = 'var(--green)';
+      statusEl.textContent = 'Done: ' + result.msg;
+      showImportPreview('img', result.preview);
+      scheduleSave(); renderAll();
+    })
+    .catch(function (err) {
+      statusEl.style.color = 'var(--red)';
+      statusEl.textContent = 'Error: ' + err.message;
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
 // ─── CALENDAR POPOVER ───
 function closeCalPop() { g('cal-popover').classList.remove('open'); }
 document.addEventListener('click', function (e) { var pop = g('cal-popover'); if (pop && pop.classList.contains('open') && !pop.contains(e.target) && !e.target.classList.contains('cal-chip')) closeCalPop(); });
@@ -1786,18 +2170,23 @@ function navToSec(sec) {
   if (item) nav(item);
 }
 
-function getChips(dateStr, unit) {
+function getChips(dateStr, unit, viewMode) {
   var chips = '';
   // Move in/out
   (state.moves || []).filter(function (m) { return m.date === dateStr && !m.archivedAt && (!unit || m.unit === unit); }).forEach(function (m) {
     var cls = m.type === 'in' ? 'cal-chip-in' : 'cal-chip-out';
-    var label = (m.type === 'in' ? 'IN' : 'OUT') + ' ' + m.resident.split(' ')[0];
-    chips += '<div class="cal-chip ' + cls + '" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + m.resident + '">' + label + '</div>';
+    var typeLabel = m.type === 'in' ? 'IN' : 'OUT';
+    // Week view: row already shows unit, so show resident first name
+    // Month view: show unit number (more scannable at a glance)
+    var label = viewMode === 'month'
+      ? typeLabel + ' ' + m.unit
+      : typeLabel + ' ' + m.resident.split(' ')[0];
+    chips += '<div class="cal-chip ' + cls + '" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + m.resident + ' · Unit ' + m.unit + '">' + label + '</div>';
   });
   // Task due dates
   (state.moves || []).filter(function (m) { return !m.archivedAt; }).forEach(function (m) {
     (m.tasks || []).filter(function (t) { return t.dueDate === dateStr && !t.done && (!unit || m.unit === unit); }).forEach(function (t) {
-      chips += '<div class="cal-chip cal-chip-task" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + t.text + '">' + t.text.slice(0, 18) + '</div>';
+      chips += '<div class="cal-chip cal-chip-task" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + t.text + ' · Unit ' + m.unit + '">' + t.text.slice(0, 18) + '</div>';
     });
   });
   // General — todos, amenities, tours (shown in month view or General row in week view)
@@ -1806,10 +2195,15 @@ function getChips(dateStr, unit) {
       chips += '<div class="cal-chip cal-chip-todo" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + t.text + '">' + t.text.slice(0, 18) + '</div>';
     });
     (state.amenities || []).filter(function (a) { return a.date === dateStr; }).forEach(function (a) {
-      chips += '<div class="cal-chip cal-chip-amenity" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + a.space + '">' + a.space.split(' ')[0] + ' \u00b7 ' + a.resident.split(' ')[0] + '</div>';
+      // Show unit number in month, space name in week general row
+      var amLabel = viewMode === 'month'
+        ? a.space.split(' ')[0] + ' ' + a.unit
+        : a.space.split(' ')[0] + ' \u00b7 ' + a.resident.split(' ')[0];
+      chips += '<div class="cal-chip cal-chip-amenity" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + a.space + ' · Unit ' + a.unit + '">' + amLabel + '</div>';
     });
     (state.tours || []).filter(function (tr) { return tr.date === dateStr; }).forEach(function (tr) {
-      chips += '<div class="cal-chip" style="background:var(--purple-light);color:var(--purple);cursor:pointer" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + tr.name + '">Tour: ' + tr.name.split(' ')[0] + '</div>';
+      var tourLabel = viewMode === 'month' ? 'Tour ' + (tr.unit || tr.name.split(' ')[0]) : 'Tour: ' + tr.name.split(' ')[0];
+      chips += '<div class="cal-chip" style="background:var(--purple-light);color:var(--purple);cursor:pointer" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + tr.name + (tr.unit ? ' · Unit ' + tr.unit : '') + '">' + tourLabel + '</div>';
     });
   }
   return chips;
@@ -1828,7 +2222,7 @@ function renderWeekCal() {
   days.forEach(function (d) { var ds = d.toISOString().split('T')[0]; html += '<th class="' + (ds === todayStr ? 'today-hdr' : '') + '">' + d.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' + d.getDate() + '</th>'; });
   html += '</tr></thead><tbody>';
   if (!units.length) html += '<tr><td colspan="8" class="tbl-empty">No moves scheduled.</td></tr>';
-  else units.forEach(function (unit) { html += '<tr><td class="unit-lbl">' + unit + '</td>'; days.forEach(function (d) { var ds = d.toISOString().split('T')[0]; html += '<td class="' + (ds === todayStr ? 'today-col' : '') + '">' + getChips(ds, unit) + '</td>'; }); html += '</tr>'; });
+  else units.forEach(function (unit) { html += '<tr><td class="unit-lbl">' + unit + '</td>'; days.forEach(function (d) { var ds = d.toISOString().split('T')[0]; html += '<td class="' + (ds === todayStr ? 'today-col' : '') + '">' + getChips(ds, unit, 'week') + '</td>'; }); html += '</tr>'; });
   var hasTodos = (state.todos || []).some(function (t) { return t.dueDate; });
   var hasAmenities = (state.amenities || []).length > 0;
   var hasTaskDates = (state.moves || []).some(function (m) { return (m.tasks || []).some(function (t) { return t.dueDate; }); });
@@ -1837,7 +2231,7 @@ function renderWeekCal() {
     html += '<tr><td class="unit-lbl" style="color:var(--text3)">General</td>';
     days.forEach(function (d) {
       var ds = d.toISOString().split('T')[0];
-      html += '<td class="' + (ds === todayStr ? 'today-col' : '') + '">' + getChips(ds, null) + '</td>';
+      html += '<td class="' + (ds === todayStr ? 'today-col' : '') + '">' + getChips(ds, null, 'week') + '</td>';
     });
     html += '</tr>';
   }
@@ -1854,7 +2248,7 @@ function renderMonthCal() {
   var totalCells = Math.ceil((firstDay + daysInM) / 7) * 7, day = 1;
   for (var i = 0; i < totalCells; i++) {
     if (i < firstDay || day > daysInM) { html += '<div class="cal-month-day other-month"></div>'; }
-    else { var ds = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0'); html += '<div class="cal-month-day ' + (ds === todayStr ? 'today' : '') + '"><div class="cal-day-num">' + day + '</div>' + getChips(ds, null) + '</div>'; day++; }
+    else { var ds = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0'); html += '<div class="cal-month-day ' + (ds === todayStr ? 'today' : '') + '"><div class="cal-day-num">' + day + '</div>' + getChips(ds, null, 'month') + '</div>'; day++; }
   }
   html += '</div>';
   g('cal-body').innerHTML = html;
