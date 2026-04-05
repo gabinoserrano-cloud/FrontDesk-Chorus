@@ -615,15 +615,15 @@
 <div class="modal-ov" id="modal-move"><div class="modal">
   <div class="modal-hdr"><span class="modal-title" id="move-modal-title">Add Move</span><button class="modal-close" onclick="closeModal('modal-move')">&#x2715;</button></div>
   <div class="modal-bdy">
-    <div class="fr"><div class="fg"><label>Unit #</label><input id="mv-unit" type="text" placeholder="e.g. 1204"></div><div class="fg"><label>Type</label><select id="mv-type"><option value="in">Move In</option><option value="out">Move Out</option></select></div></div>
+    <div class="fr"><div class="fg"><label>Unit #</label><input id="mv-unit" type="text" placeholder="e.g. 1204"></div><div class="fg"><label>Type</label><select id="mv-type" onchange="updateMoveModalLabels()"><option value="in">Move In</option><option value="out">Move Out</option></select></div></div>
     <div class="fg"><label>Resident Name</label><input id="mv-resident" type="text"></div>
     <div style="background:var(--accent-light);border-radius:var(--radius);padding:10px 13px;margin-bottom:12px">
       <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Lease</div>
-      <div class="fr"><div class="fg" style="margin-bottom:0"><label>Lease Start Date</label><input id="mv-date" type="date"></div><div class="fg" style="margin-bottom:0"><label>Move-In Total ($)</label><input id="mv-total" type="text" placeholder="e.g. 4500"></div></div>
+      <div class="fr"><div class="fg" style="margin-bottom:0"><label id="mv-label-date">Lease Start Date</label><input id="mv-date" type="date"></div><div class="fg" style="margin-bottom:0"><label id="mv-label-total">Move-In Total ($)</label><input id="mv-total" type="text" placeholder="e.g. 4500"></div></div>
     </div>
     <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px 13px;margin-bottom:12px">
-      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Move-In Appointment <span style="font-weight:400;color:var(--text3)">(confirm when booked)</span></div>
-      <div class="fr"><div class="fg" style="margin-bottom:0"><label>Appointment Date</label><input id="mv-appt-date" type="date" placeholder="When they actually move in"></div><div class="fg" style="margin-bottom:0"><label>Start Time</label><select id="mv-appt-time"><option value="">— No appointment yet —</option></select></div></div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px" id="mv-label-appt-hdr">Move-In Appointment <span style="font-weight:400;color:var(--text3)">(confirm when booked)</span></div>
+      <div class="fr"><div class="fg" style="margin-bottom:0"><label>Appointment Date</label><input id="mv-appt-date" type="date"></div><div class="fg" style="margin-bottom:0"><label>Start Time</label><select id="mv-appt-time"><option value="">— No appointment yet —</option></select></div></div>
       <div style="margin-top:8px;font-size:11.5px;color:var(--text2)" id="mv-conflict-msg"></div>
     </div>
     <div class="fg"><label>Notes</label><textarea id="mv-notes" rows="2"></textarea></div>
@@ -1050,6 +1050,16 @@ var moveFilter = 'all', openMoveId = null;
 var editingMoveId = null;
 
 // Build 30-min time slots 8:00am – 5:30pm
+function updateMoveModalLabels() {
+  var type = g('mv-type') ? g('mv-type').value : 'in';
+  var isIn = type === 'in';
+  var lDate = g('mv-label-date'); if (lDate) lDate.textContent = 'Lease Start Date';
+  var lTotal = g('mv-label-total'); if (lTotal) lTotal.textContent = isIn ? 'Move-In Total ($)' : 'Notes / Charges ($)';
+  var lAppt = g('mv-label-appt-hdr');
+  if (lAppt) lAppt.innerHTML = (isIn ? 'Move-In Appointment' : 'Move-Out Appointment') + ' <span style="font-weight:400;color:var(--text3)">(confirm when booked)</span>';
+  var totalPh = g('mv-total'); if (totalPh) totalPh.placeholder = isIn ? 'e.g. 4500' : 'e.g. cleaning fee';
+}
+
 function buildTimeSlots() {
   var sel = g('mv-appt-time'); if (!sel) return;
   sel.innerHTML = '<option value="">— No appointment yet —</option>';
@@ -1114,6 +1124,7 @@ function openAddMove() {
   g('mv-date').value = today();
   g('mv-appt-date').value = '';
   g('mv-type').value = 'in';
+  updateMoveModalLabels();
   buildTimeSlots();
   g('mv-appt-time').value = '';
   var msgEl = g('mv-conflict-msg'); if (msgEl) msgEl.innerHTML = '';
@@ -1133,6 +1144,7 @@ function openEditMove(id) {
   g('mv-resident').value = m.resident || '';
   g('mv-date').value = m.date || today();
   g('mv-type').value = m.type || 'in';
+  updateMoveModalLabels();
   g('mv-total').value = m.total || '';
   g('mv-notes').value = m.notes || '';
   buildTimeSlots();
