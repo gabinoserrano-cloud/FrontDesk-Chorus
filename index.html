@@ -59,6 +59,7 @@
   .sync-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;background:var(--text3)}
   .sync-dot.synced{background:var(--green)}.sync-dot.syncing{background:var(--amber);animation:pulse 1s infinite}.sync-dot.error{background:var(--red)}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  #sidebar-wrap{position:relative;display:flex;flex-shrink:0}
   #collapse-btn{position:absolute;top:16px;right:-13px;width:26px;height:26px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:201;box-shadow:var(--shadow);font-size:11px;color:var(--text2);transition:transform .22s;flex-shrink:0}
   body.sc #collapse-btn{transform:scaleX(-1)}
   @media(max-width:700px){#collapse-btn{display:none}}
@@ -311,8 +312,8 @@
 <body>
 <div id="sb-ov" onclick="closeMobSidebar()"></div>
 
+<div id="sidebar-wrap">
 <nav id="sidebar">
-  <div id="collapse-btn" onclick="toggleSidebar()" title="Collapse">&#8249;</div>
   <div class="sb-logo">
     <div class="bldg">Chorus SF</div>
     <div class="sub">30 Otis St &middot; Front Desk</div>
@@ -354,6 +355,8 @@
     <button class="footer-btn" style="color:var(--red)" onclick="resetData()"><span>&#8635;</span><span>Reset Data</span></button>
   </div>
 </nav>
+<div id="collapse-btn" onclick="toggleSidebar()" title="Collapse">&#8249;</div>
+</div><!-- /sidebar-wrap -->
 
 <div id="main">
   <div id="header">
@@ -759,7 +762,13 @@ function resetData() {
 
 // ─── UTILS ───
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
-function today() { return new Date().toISOString().split('T')[0]; }
+function today() {
+  var d = new Date();
+  var yr = d.getFullYear();
+  var mo = String(d.getMonth() + 1).padStart(2, '0');
+  var dy = String(d.getDate()).padStart(2, '0');
+  return yr + '-' + mo + '-' + dy;
+}
 function fmtShort(d) { if (!d) return '-'; return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
 function toast(msg) { var e = g('toast'); e.textContent = msg; e.classList.add('show'); setTimeout(function () { e.classList.remove('show'); }, 2500); }
 function g(id) { return document.getElementById(id); }
@@ -847,7 +856,7 @@ function renderDash() {
   var todayM = active.filter(function (m) { return m.date === t; });
   var d7 = new Date(); d7.setDate(d7.getDate() + 7);
   var wEnd = d7.toISOString().split('T')[0];
-  var weekM = active.filter(function (m) { return m.date > t && m.date <= wEnd; });
+  var weekM = active.filter(function (m) { return m.date >= t && m.date <= wEnd; });
   var openMt = (state.maintenance || []).filter(function (m) { return m.status !== 'resolved'; });
   var issuedK = (state.keys || []).filter(function (k) { return k.status === 'issued'; });
   var pendTd = (state.todos || []).filter(function (t2) { return !t2.done; });
@@ -859,9 +868,12 @@ function renderDash() {
     var mi = ins.find(function (i) { return i.unit === out.unit && i.date > out.date; });
     if (mi) { var gap = Math.round((new Date(mi.date + 'T12:00:00') - new Date(out.date + 'T12:00:00')) / 86400000); if (gap >= 0 && gap <= 5) tights.push({ unit: out.unit, outRes: out.resident, outDate: out.date, inRes: mi.resident, inDate: mi.date, gap: gap }); }
   });
-  var html = '<div class="stat-grid">';
+  var hour = new Date().getHours();
+  var greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  var html = '<div style="margin-bottom:14px"><div style="font-size:18px;font-weight:600;letter-spacing:-.3px">' + greeting + ', Gabino.</div><div style="font-size:12px;color:var(--text3);margin-top:2px;font-family:var(--mono)">' + new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) + ' &nbsp;&middot;&nbsp; Front Desk</div></div>';
+  html += '<div class="stat-grid">';
   html += '<div class="stat-card"><div class="stat-num">' + todayM.length + '</div><div class="stat-lbl">Moves Today</div></div>';
-  html += '<div class="stat-card"><div class="stat-num">' + weekM.length + '</div><div class="stat-lbl">This Week</div></div>';
+  html += '<div class="stat-card"><div class="stat-num">' + weekM.length + '</div><div class="stat-lbl">Next 7 Days</div></div>';
   html += '<div class="stat-card ' + (openMt.length > 0 ? 'red' : '') + '"><div class="stat-num">' + openMt.length + '</div><div class="stat-lbl">Open Maintenance</div></div>';
   html += '<div class="stat-card ' + (issuedK.length > 0 ? 'accent' : '') + '"><div class="stat-num">' + issuedK.length + '</div><div class="stat-lbl">Keys Out</div></div>';
   html += '<div class="stat-card"><div class="stat-num">' + pendTd.length + '</div><div class="stat-lbl">Pending To-Dos</div></div>';
@@ -874,9 +886,10 @@ function renderDash() {
   html += '<div class="dash-grid">';
   html += '<div class="card"><div class="card-hdr"><span class="card-title">Today\'s Moves</span><span class="card-count">' + todayM.length + ' scheduled</span></div><div class="card-body" style="padding:8px 14px">';
   if (!todayM.length) html += '<div class="text-3 text-sm">No moves today</div>';
-  else todayM.forEach(function (m) { var dn = (m.tasks || []).filter(function (t) { return t.done; }).length, tot = (m.tasks || []).length; html += '<div class="mrd"><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'IN' : 'OUT') + '</span><span class="mono text-sm">Unit ' + m.unit + '</span><span style="flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + m.resident + '</span><span class="text-xs text-3">' + dn + '/' + tot + '</span></div>'; });
+  else todayM.forEach(function (m) { var dn = (m.tasks || []).filter(function (t) { return t.done; }).length, tot = (m.tasks || []).length; var pct2 = tot ? Math.round(dn/tot*100) : 0; html += '<div class="mrd"><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'IN' : 'OUT') + '</span><span class="mono text-sm">Unit ' + m.unit + '</span><span style="flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + m.resident + (m.time ? ' <span style="font-weight:400;color:var(--text3)">· ' + m.time + '</span>' : '') + '</span>' + (pct2===100 ? '<span class="pill pill-resolved" style="font-size:10px">Done</span>' : '<span class="text-xs text-3">' + dn + '/' + tot + '</span>') + '</div>'; });
   html += '</div></div>';
-  var withP = active.filter(function (m) { return (m.tasks || []).length > 0; });
+  var d30 = new Date(); d30.setDate(d30.getDate()+30); var wEnd30 = d30.toISOString().split('T')[0];
+  var withP = active.filter(function (m) { return (m.tasks || []).length > 0 && m.date >= t && m.date <= wEnd30; });
   html += '<div class="card"><div class="card-hdr"><span class="card-title">Move Progress</span></div><div class="card-body" style="padding:8px 14px">';
   if (!withP.length) html += '<div class="text-3 text-sm">No active moves with tasks</div>';
   else withP.slice(0, 5).forEach(function (m) { var dn = (m.tasks || []).filter(function (t) { return t.done; }).length, tot = (m.tasks || []).length, pct = Math.round(dn / tot * 100); var bc = pct < 30 ? 'var(--red)' : pct < 70 ? 'var(--amber)' : 'var(--green)'; html += '<div style="margin-bottom:8px"><div class="flex items-center gap-4" style="margin-bottom:3px"><span class="text-sm font-600" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + m.resident + '</span><span class="mono text-xs text-3">Unit ' + m.unit + '</span><span class="mono text-xs text-3 ml-auto">' + dn + '/' + tot + '</span></div><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div></div>'; });
@@ -1043,7 +1056,7 @@ function renderMoves() {
         rows += '<td class="text-xs text-2">' + (m.elevator === 'yes' ? 'Reserved' : m.elevator === 'needed' ? 'Needed' : '-') + '</td>';
         rows += '<td class="text-sm text-2" style="max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (m.notes || '-') + '</td>';
         rows += '<td><div class="flex gap-4" style="justify-content:flex-end;align-items:center">';
-        rows += '<div style="width:40px"><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div><div class="text-xs text-3 mono" style="text-align:right;margin-top:2px">' + dn + '/' + tot + '</div></div>';
+        rows += pct === 100 ? '<span class="pill pill-resolved" style="font-size:10px">Done</span>' : '<div style="width:40px"><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div><div class="text-xs text-3 mono" style="text-align:right;margin-top:2px">' + dn + '/' + tot + '</div></div>';
         rows += '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openEditMove(\'' + m.id + '\')" title="Edit">&#9998;</button>';
         rows += archBtn;
         rows += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="event.stopPropagation();deleteMove(\'' + m.id + '\')">x</button>';
@@ -1930,7 +1943,7 @@ function moveTask(type, idx, dir) {
 // ─── INIT ───
 async function init() {
   if (localStorage.getItem('chorus-sc') === '1') document.body.classList.add('sc');
-  var chip = g('today-chip'); if (chip) chip.textContent = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  var chip = g('today-chip'); if (chip) chip.textContent = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
   var pdDate = g('pd-date'); if (pdDate) pdDate.value = today();
   await pullCloud();
   lastSyncTs = Date.now();
