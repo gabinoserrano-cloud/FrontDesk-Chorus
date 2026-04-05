@@ -1044,7 +1044,7 @@ function renderMoves() {
         rows += '<td class="text-sm text-2" style="max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (m.notes || '-') + '</td>';
         rows += '<td><div class="flex gap-4" style="justify-content:flex-end;align-items:center">';
         rows += '<div style="width:40px"><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div><div class="text-xs text-3 mono" style="text-align:right;margin-top:2px">' + dn + '/' + tot + '</div></div>';
-        rows += editBtn;
+        rows += '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openEditMove(\'' + m.id + '\')" title="Edit">&#9998;</button>';
         rows += archBtn;
         rows += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="event.stopPropagation();deleteMove(\'' + m.id + '\')">x</button>';
         rows += '</div></td></tr>';
@@ -1076,7 +1076,7 @@ function renderMoves() {
         html += '<div class="text-xs text-3 mono" style="margin-top:2px">' + dn + '/' + tot + ' tasks</div></div>';
         html += '<span style="color:var(--text3);font-size:18px;flex-shrink:0">' + (isOpen ? '&#9650;' : '&#9660;') + '</span></div>';
         html += '<div class="mc-cl">' + buildCL(m) + '</div>';
-        html += '<div class="mc-actions">' + editBtn2 + archBtn + '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteMove(\'' + m.id + '\')">Delete</button><button class="btn btn-secondary btn-xs ml-auto" onclick="openAddTask(\'' + m.id + '\')">+ Task</button></div>';
+        html += '<div class="mc-actions"><button class="btn btn-secondary btn-xs" onclick="openEditMove(\'' + m.id + '\')" title="Edit">&#9998; Edit</button>' + archBtn + '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteMove(\'' + m.id + '\')">Delete</button><button class="btn btn-secondary btn-xs ml-auto" onclick="openAddTask(\'' + m.id + '\')">+ Task</button></div>';
         html += '</div>';
       });
       cardsEl.innerHTML = html;
