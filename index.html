@@ -407,10 +407,11 @@
         <div class="sub-tab" onclick="filterMoves('in',this)">Move Ins</div>
         <div class="sub-tab" onclick="filterMoves('out',this)">Move Outs</div>
         <div class="sub-tab" onclick="filterMoves('today',this)">Today</div>
+        <div class="sub-tab" onclick="filterMoves('postmovein',this)">Post Move-In</div>
         <div class="sub-tab" onclick="filterMoves('archive',this)">Archive</div>
       </div>
       <div class="card moves-tbl-wrap">
-        <div class="card-hdr"><span class="card-title">Scheduled Moves</span><span class="card-count" id="moves-count">0 entries</span>
+        <div class="card-hdr"><span class="card-title" id="moves-card-title">Scheduled Moves</span><span class="card-count" id="moves-count">0 entries</span>
           <div class="ml-auto flex gap-8"><button class="btn btn-secondary btn-sm" onclick="generatePassdownFromMoves()">Passdown</button><button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button></div>
         </div>
         <div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident</th><th>Lease Start</th><th>Type</th><th>Appt</th><th>Total</th><th>Notes</th><th></th></tr></thead><tbody id="moves-tbody"></tbody></table></div>
@@ -565,7 +566,7 @@
             <div class="card-hdr"><span class="card-title">Default Move-In Tasks</span><span class="card-count" id="in-tasks-count"></span></div>
             <div class="card-body" style="padding:8px 0" id="settings-in-tasks"></div>
             <div style="padding:10px 14px;border-top:1px solid var(--border2)">
-              <div class="flex gap-8"><input type="text" id="new-in-task" placeholder="New move-in task..." style="flex:1"><select id="new-in-cat" style="width:130px"><option>Move In</option><option>Keys &amp; Access</option><option>Elevator</option><option>General</option></select><button class="btn btn-primary btn-sm" onclick="addDefaultTask('in')">Add</button></div>
+              <div class="flex gap-8"><input type="text" id="new-in-task" placeholder="New move-in task..." style="flex:1"><select id="new-in-cat" style="width:130px"><option>Move In</option><option>Keys &amp; Access</option><option>Elevator</option><option>Post Move-In</option><option>General</option></select><button class="btn btn-primary btn-sm" onclick="addDefaultTask('in')">Add</button></div>
             </div>
           </div>
         </div>
@@ -578,6 +579,12 @@
             </div>
           </div>
         </div>
+      </div>
+      <div class="card mb-12">
+        <div class="card-hdr"><span class="card-title">Walkthrough Floors &amp; Areas</span>
+          <button class="btn btn-primary btn-sm ml-auto" onclick="openAddWTFloor()">+ Add Floor</button>
+        </div>
+        <div id="settings-wt-floors" style="padding:0"></div>
       </div>
       <div class="card">
         <div class="card-hdr"><span class="card-title">About</span></div>
@@ -635,7 +642,7 @@
   <div class="modal-hdr"><span class="modal-title" id="modal-task-title">Add Task</span><button class="modal-close" onclick="closeModal('modal-task')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fg"><label>Task Description</label><input id="task-text" type="text" placeholder="e.g. Confirm move time with resident"></div>
-    <div class="fr"><div class="fg"><label>Category</label><select id="task-cat"><option>Move In</option><option>Move Out</option><option>Keys &amp; Access</option><option>Elevator</option><option>General</option></select></div><div class="fg"><label>Due Date (optional)</label><input id="task-due" type="date"></div></div>
+    <div class="fr"><div class="fg"><label>Category</label><select id="task-cat"><option>Move In</option><option>Move Out</option><option>Keys &amp; Access</option><option>Elevator</option><option>Post Move-In</option><option>General</option></select></div><div class="fg"><label>Due Date (optional)</label><input id="task-due" type="date"></div></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-task')">Cancel</button><button class="btn btn-primary" onclick="saveTask()">Add Task</button></div>
 </div></div>
@@ -733,7 +740,7 @@
 </div>
 <div id="toast"></div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ─── SUPABASE CONFIG ───
 var SUPA_URL = 'https://adovwmwpvwomljggscge.supabase.co';
 var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkb3Z3bXdwdndvbWxqZ2dzY2dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNzkxNjcsImV4cCI6MjA5MDg1NTE2N30.dZgl3jEL1FbBSe_gM3LN9Tc3wGGmsf_Bq6YaKJf4dyk';
@@ -762,7 +769,7 @@ function setSyncStatus(cls, msg) {
 }
 
 // ─── STATE ───
-var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [] };
+var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [] };
 
 var DEFAULT_IN_TASKS = [
   { text: 'Confirm move-in date and time window', cat: 'Move In' },
@@ -784,7 +791,11 @@ var DEFAULT_IN_TASKS = [
   { text: 'Notify leasing team of completed move-in', cat: 'Move In' },
   { text: 'Post-move elevator pad removal confirmed', cat: 'Elevator' },
   { text: 'Any damage noted and reported', cat: 'Move In' },
-  { text: 'Follow-up call scheduled (48hr check-in)', cat: 'Move In' }
+  { text: 'Follow-up call scheduled (48hr check-in)', cat: 'Post Move-In' },
+  { text: 'Confirm resident received welcome email', cat: 'Post Move-In' },
+  { text: 'Verify app access (Sentral/Rise) working', cat: 'Post Move-In' },
+  { text: 'Confirm WiFi connected successfully', cat: 'Post Move-In' },
+  { text: 'Check in on any outstanding issues from move day', cat: 'Post Move-In' }
 ];
 var DEFAULT_OUT_TASKS = [
   { text: 'Confirm move-out date and time window', cat: 'Move Out' },
@@ -818,7 +829,7 @@ function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(stat
 function loadLocal() {
   try {
     var raw = localStorage.getItem(LOCAL_KEY);
-    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [] }, JSON.parse(raw));
+    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [] }, JSON.parse(raw));
   } catch (e) {}
 }
 function scheduleSave() { saveLocal(); clearTimeout(syncTO); syncTO = setTimeout(pushCloud, 800); }
@@ -834,7 +845,7 @@ async function pullCloud() {
   try {
     var row = await supaGet();
     if (row && row.data && Object.keys(row.data).length > 0) {
-      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [] }, row.data);
+      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [] }, row.data);
       saveLocal();
     } else { loadLocal(); await supaPush(state); }
     setSyncStatus('synced', 'Synced');
@@ -847,7 +858,7 @@ setInterval(async function () {
     if (row && row.updated_at) {
       var ts = new Date(row.updated_at).getTime();
       if (lastSyncTs && ts > lastSyncTs + 2000) {
-        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [] }, row.data);
+        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [] }, row.data);
         saveLocal(); lastSyncTs = ts;
         renderSection(curSec); updateBadges();
         setSyncStatus('synced', 'Updated'); setTimeout(function () { setSyncStatus('synced', 'Synced'); }, 2000);
@@ -865,14 +876,14 @@ function processImport() {
   var file = g('import-file').files[0]; if (!file) { toast('Choose a file first'); return; }
   var reader = new FileReader();
   reader.onload = function (e) {
-    try { state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [] }, JSON.parse(e.target.result)); scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported'); }
+    try { state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [] }, JSON.parse(e.target.result)); scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported'); }
     catch (err) { toast('Invalid file'); }
   };
   reader.readAsText(file);
 }
 function resetData() {
   if (!confirm('Reset ALL data? Cannot be undone.')) return;
-  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [] };
+  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [] };
   scheduleSave(); renderAll(); toast('Data reset');
 }
 
@@ -888,7 +899,7 @@ function today() {
 function fmtShort(d) { if (!d) return '-'; return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
 function toast(msg) { var e = g('toast'); e.textContent = msg; e.classList.add('show'); setTimeout(function () { e.classList.remove('show'); }, 2500); }
 function g(id) { return document.getElementById(id); }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [] }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [] }; }
 
 // ─── SIDEBAR ───
 function toggleSidebar() { document.body.classList.toggle('sc'); localStorage.setItem('chorus-sc', document.body.classList.contains('sc') ? '1' : '0'); }
@@ -1053,7 +1064,7 @@ var editingMoveId = null;
 function updateMoveModalLabels() {
   var type = g('mv-type') ? g('mv-type').value : 'in';
   var isIn = type === 'in';
-  var lDate = g('mv-label-date'); if (lDate) lDate.textContent = 'Lease Start Date';
+  var lDate = g('mv-label-date'); if (lDate) lDate.textContent = isIn ? 'Lease Start Date' : 'Lease End Date';
   var lTotal = g('mv-label-total'); if (lTotal) lTotal.textContent = isIn ? 'Move-In Total ($)' : 'Notes / Charges ($)';
   var lAppt = g('mv-label-appt-hdr');
   if (lAppt) lAppt.innerHTML = (isIn ? 'Move-In Appointment' : 'Move-Out Appointment') + ' <span style="font-weight:400;color:var(--text3)">(confirm when booked)</span>';
@@ -1210,7 +1221,7 @@ function buildCL(m) {
     html += '<input type="date" class="cl-due-input" value="' + (t.dueDate || '') + '" title="Due date" onchange="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'dueDate\',this.value)" onclick="event.stopPropagation()">';
     // Editable category
     html += '<select class="cl-cat-input" onchange="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'cat\',this.value)" onclick="event.stopPropagation()">';
-    ['Move In','Move Out','Keys & Access','Elevator','General'].forEach(function(cat) {
+    ['Move In','Move Out','Keys & Access','Elevator','Post Move-In','General'].forEach(function(cat) {
       html += '<option value="' + cat + '" ' + (t.cat === cat ? 'selected' : '') + '>' + cat + '</option>';
     });
     html += '</select>';
@@ -1242,10 +1253,36 @@ function renderMoves() {
   if (moveFilter === 'in') list = list.filter(function (m) { return m.type === 'in' && !m.archivedAt; });
   else if (moveFilter === 'out') list = list.filter(function (m) { return m.type === 'out' && !m.archivedAt; });
   else if (moveFilter === 'today') list = list.filter(function (m) { return m.date === t && !m.archivedAt; });
+  else if (moveFilter === 'postmovein') {
+    // Moved-in residents (lease start in past) with at least one incomplete Post Move-In task
+    list = list.filter(function (m) {
+      return m.type === 'in' && !m.archivedAt && m.date <= t &&
+        (m.tasks || []).some(function (tk) { return tk.cat === 'Post Move-In' && !tk.done; });
+    });
+  }
   else if (moveFilter === 'archive') list = list.filter(function (m) { return !!m.archivedAt; });
   else list = list.filter(function (m) { return !m.archivedAt; });
   list.sort(function (a, b) { return a.date.localeCompare(b.date); });
   var cnt = g('moves-count'); if (cnt) cnt.textContent = list.length + (list.length === 1 ? ' entry' : ' entries');
+  var cardTitle = g('moves-card-title');
+  if (cardTitle) {
+    if (moveFilter === 'postmovein') cardTitle.textContent = 'Post Move-In Follow-Up';
+    else cardTitle.textContent = 'Scheduled Moves';
+  }
+  // Post move-in info banner
+  var pmiInfo = g('pmi-info-banner');
+  if (moveFilter === 'postmovein') {
+    if (!pmiInfo) {
+      var banner = document.createElement('div');
+      banner.id = 'pmi-info-banner';
+      banner.style.cssText = 'background:var(--purple-light);border:1px solid #C8C0F0;border-radius:var(--radius);padding:10px 14px;margin-bottom:10px;font-size:12.5px;color:var(--purple)';
+      banner.innerHTML = '<strong>Post Move-In tasks</strong> are tagged with the "Post Move-In" category. Only residents already moved in (lease start in past) with incomplete post move-in tasks appear here. Tag tasks as "Post Move-In" in Settings or the checklist.';
+      var movesSection = g('section-moves');
+      if (movesSection) movesSection.insertBefore(banner, movesSection.querySelector('.card.moves-tbl-wrap') || movesSection.querySelector('.card'));
+    }
+  } else {
+    if (pmiInfo) pmiInfo.parentNode.removeChild(pmiInfo);
+  }
   // Desktop table
   var tbody = g('moves-tbody');
   if (tbody) {
@@ -1626,11 +1663,18 @@ function renderTours() {
 function deleteTour(id) { if (!confirm('Delete?')) return; state.tours = (state.tours || []).filter(function (tr) { return tr.id !== id; }); scheduleSave(); renderTours(); updateBadges(); toast('Deleted'); }
 
 // ─── WALKTHROUGH ───
+function toggleWTFloor(hdr) { hdr.parentElement.classList.toggle('open'); }
+
+function getWTFloors() {
+  if (state.wtFloors && state.wtFloors.length) return state.wtFloors;
+  return WT_FLOORS.map(function(f) { return { label: f.label, items: f.items.slice() }; });
+}
+
 function renderWT() {
-  var wt = state.walkthrough || {}, flags = state.flags || [];
+  var wt = state.walkthrough || {}, floors = getWTFloors();
   var checked = 0, total = 0;
-  WT_FLOORS.forEach(function (f) { total += f.items.length; f.items.forEach(function (item, i) { if (wt[f.label + '_' + i]) checked++; }); });
-  var activeFlags = flags.filter(function (f) { return !f.resolved; });
+  floors.forEach(function (f) { total += f.items.length; f.items.forEach(function (item, i) { if (wt[f.label + '_' + i]) checked++; }); });
+  var activeFlags = (state.flags || []).filter(function (f) { return !f.resolved; });
   g('wt-stats').innerHTML = '<div class="stat-card green"><div class="stat-num">' + checked + '</div><div class="stat-lbl">Completed</div></div><div class="stat-card ' + (total - checked > 0 ? 'red' : '') + '"><div class="stat-num">' + (total - checked) + '</div><div class="stat-lbl">Remaining</div></div><div class="stat-card ' + (activeFlags.length > 0 ? 'red' : '') + '"><div class="stat-num">' + activeFlags.length + '</div><div class="stat-lbl">Flagged</div></div><div class="stat-card"><div class="stat-num">' + total + '</div><div class="stat-lbl">Total Items</div></div>';
   var fc = g('wt-flag-count'); if (fc) fc.textContent = activeFlags.length;
   var fb = g('wt-flags-body');
@@ -1640,20 +1684,175 @@ function renderWT() {
     activeFlags.forEach(function (f) { fhtml += '<div class="flagged-item"><div class="flex items-center gap-8"><span class="font-600">' + f.location + '</span><span class="pill pill-' + f.priority + '">' + f.priority + '</span><button class="btn btn-green btn-xs ml-auto" onclick="resolveFlag(\'' + f.id + '\')">Resolve</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteFlag(\'' + f.id + '\')">x</button></div><div class="text-sm text-2 mt-8">' + f.desc + '</div></div>'; });
     fb.innerHTML = fhtml;
   }
+  // Preserve which floors are currently open
+  var openFloors = {};
+  document.querySelectorAll('.wt-floor.open').forEach(function (el) {
+    var lbl = el.querySelector('.wt-fhdr span:first-child');
+    if (lbl) openFloors[lbl.textContent.trim()] = true;
+  });
   var floorsHtml = '';
-  WT_FLOORS.forEach(function (floor) {
+  floors.forEach(function (floor, fi) {
     var dc = floor.items.filter(function (item, i) { return wt[floor.label + '_' + i]; }).length;
-    floorsHtml += '<div class="wt-floor"><div class="wt-fhdr" onclick="this.parentElement.classList.toggle(\'open\')"><span>' + floor.label + '</span><span class="wt-fprog">' + dc + '/' + floor.items.length + '</span></div><div class="wt-fbody">';
+    var isOpen = openFloors[floor.label] || false;
+    floorsHtml += '<div class="wt-floor' + (isOpen ? ' open' : '') + '">';
+    floorsHtml += '<div class="wt-fhdr" onclick="toggleWTFloor(this)">';
+    floorsHtml += '<span>' + floor.label + '</span>';
+    floorsHtml += '<div class="flex items-center gap-8"><span class="wt-fprog">' + dc + '/' + floor.items.length + '</span>';
+    floorsHtml += '<button class="btn btn-ghost btn-xs" style="font-size:11px" onclick="event.stopPropagation();openEditWTFloor(' + fi + ')" title="Edit floor">&#9998;</button></div></div>';
+    floorsHtml += '<div class="wt-fbody">';
     floor.items.forEach(function (item, i) {
       var key = floor.label + '_' + i, done = !!wt[key];
-      floorsHtml += '<div class="wt-item"><input type="checkbox" ' + (done ? 'checked' : '') + ' onchange="toggleWTItem(\'' + key + '\',this.checked)"><span class="wt-item-text ' + (done ? 'done-text' : '') + '">' + item + '</span></div>';
+      floorsHtml += '<div class="wt-item">';
+      floorsHtml += '<input type="checkbox" ' + (done ? 'checked' : '') + ' onchange="toggleWTItem(\'' + key + '\',this.checked)">';
+      floorsHtml += '<span class="wt-item-text ' + (done ? 'done-text' : '') + '">' + item + '</span>';
+      floorsHtml += '</div>';
     });
     floorsHtml += '</div></div>';
   });
+  // Add new floor button at bottom
+  floorsHtml += '<div style="margin-top:8px"><button class="btn btn-secondary btn-sm" onclick="openAddWTFloor()">+ Add Floor / Area</button></div>';
   g('wt-floors').innerHTML = floorsHtml;
 }
-function toggleWTItem(key, checked) { if (!state.walkthrough) state.walkthrough = {}; state.walkthrough[key] = checked; scheduleSave(); renderWT(); }
+function toggleWTItem(key, checked) {
+  if (!state.walkthrough) state.walkthrough = {};
+  state.walkthrough[key] = checked;
+  scheduleSave();
+  // Update label in-place without collapsing any floors
+  var el = event.target;
+  if (el) {
+    var textEl = el.parentElement ? el.parentElement.querySelector('.wt-item-text') : null;
+    if (textEl) textEl.className = 'wt-item-text' + (checked ? ' done-text' : '');
+  }
+  // Re-render stats row and per-floor progress counts without touching floor open/close state
+  var floors = getWTFloors();
+  var wt = state.walkthrough || {};
+  var checked2 = 0, total = 0;
+  floors.forEach(function (f) { total += f.items.length; f.items.forEach(function (item, i) { if (wt[f.label + '_' + i]) checked2++; }); });
+  var activeFlags = (state.flags || []).filter(function (f) { return !f.resolved; });
+  var statsEl = g('wt-stats');
+  if (statsEl) statsEl.innerHTML = '<div class="stat-card green"><div class="stat-num">' + checked2 + '</div><div class="stat-lbl">Completed</div></div><div class="stat-card ' + (total - checked2 > 0 ? 'red' : '') + '"><div class="stat-num">' + (total - checked2) + '</div><div class="stat-lbl">Remaining</div></div><div class="stat-card ' + (activeFlags.length > 0 ? 'red' : '') + '"><div class="stat-num">' + activeFlags.length + '</div><div class="stat-lbl">Flagged</div></div><div class="stat-card"><div class="stat-num">' + total + '</div><div class="stat-lbl">Total Items</div></div>';
+  // Update each floor progress label
+  document.querySelectorAll('.wt-floor').forEach(function (floorEl) {
+    var lbl = floorEl.querySelector('.wt-fhdr span:first-child');
+    if (!lbl) return;
+    var floorName = lbl.textContent.trim();
+    var floor = floors.find(function (f) { return f.label === floorName; });
+    if (!floor) return;
+    var dc = floor.items.filter(function (item, i) { return wt[floor.label + '_' + i]; }).length;
+    var prog = floorEl.querySelector('.wt-fprog');
+    if (prog) prog.textContent = dc + '/' + floor.items.length;
+  });
+}
 function resetWT() { if (!confirm('Reset walkthrough?')) return; state.walkthrough = {}; scheduleSave(); renderWT(); toast('Walkthrough reset'); }
+
+// ─── WALKTHROUGH FLOOR EDITOR ───
+function openAddWTFloor() {
+  var label = prompt('Floor / Area name (e.g. "Rooftop Deck"):');
+  if (!label || !label.trim()) return;
+  if (!state.wtFloors) state.wtFloors = getWTFloors();
+  // Check for duplicate
+  if (state.wtFloors.find(function(f){ return f.label === label.trim(); })) { toast('Floor already exists'); return; }
+  state.wtFloors.push({ label: label.trim(), items: [] });
+  scheduleSave(); renderWT(); toast('Floor added');
+}
+
+function openEditWTFloor(fi) {
+  var floors = getWTFloors();
+  var floor = floors[fi]; if (!floor) return;
+  var floorEl = document.querySelectorAll('.wt-floor')[fi];
+  if (!floorEl) return;
+  var body = floorEl.querySelector('.wt-fbody'); if (!body) return;
+  var wt = state.walkthrough || {};
+  var html = '';
+  floor.items.forEach(function (item, i) {
+    var key = floor.label + '_' + i, done = !!wt[key];
+    var safeItem = item.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    html += '<div class="wt-item">';
+    html += '<input type="checkbox" ' + (done ? 'checked' : '') + ' onchange="toggleWTItem(\'' + key + '\',this.checked)">';
+    html += '<input type="text" class="cl-text-input" value="' + safeItem + '" onblur="updateWTItem(' + fi + ',' + i + ',this.value)" style="flex:1;font-size:13px">';
+    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteWTItem(' + fi + ',' + i + ')">x</button>';
+    html += '</div>';
+  });
+  html += '<div class="wt-item" style="border-top:1px dashed var(--border2);background:var(--surface2)">';
+  html += '<input type="text" placeholder="Add checklist item..." style="border:none;background:transparent;font-size:13px;flex:1;outline:none;padding:2px 4px" id="wt-new-' + fi + '">';
+  html += '<button class="btn btn-ghost btn-xs" onclick="addWTItem(' + fi + ')">+ Add</button>';
+  html += '</div>';
+  html += '<div class="flex gap-8 items-center" style="padding:8px 14px;border-top:1px solid var(--border2);background:var(--bg)">';
+  html += '<button class="btn btn-secondary btn-xs" onclick="renameWTFloor(' + fi + ')">Rename Floor</button>';
+  html += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteWTFloor(' + fi + ')">Delete Floor</button>';
+  html += '<button class="btn btn-ghost btn-xs ml-auto" onclick="renderWT()">Done</button>';
+  html += '</div>';
+  body.innerHTML = html;
+  // Wire up enter key on the add input
+  var inp = document.getElementById('wt-new-' + fi);
+  if (inp) inp.addEventListener('keydown', function(e){ if(e.key==='Enter') addWTItem(fi); });
+  floorEl.classList.add('open');
+}
+
+
+function updateWTItem(fi, ii, value) {
+  if (!state.wtFloors) state.wtFloors = getWTFloors();
+  var floor = state.wtFloors[fi]; if (!floor) return;
+  var trimmed = value.trim(); if (!trimmed) return;
+  // Remap walkthrough keys if label changed
+  var oldText = floor.items[ii];
+  floor.items[ii] = trimmed;
+  scheduleSave();
+}
+
+function addWTItem(fi) {
+  var inputEl = document.getElementById('wt-new-' + fi);
+  if (!inputEl) return;
+  var text = inputEl.value.trim(); if (!text) { toast('Enter item text'); return; }
+  if (!state.wtFloors) state.wtFloors = getWTFloors();
+  var floor = state.wtFloors[fi]; if (!floor) return;
+  floor.items.push(text);
+  scheduleSave(); renderWT();
+  // Re-open edit mode for that floor and scroll to it
+  setTimeout(function() {
+    openEditWTFloor(fi);
+    var floorEl = document.querySelectorAll('.wt-floor')[fi];
+    if (floorEl) floorEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 50);
+  toast('Item added');
+}
+
+function deleteWTItem(fi, ii) {
+  if (!confirm('Remove this checklist item?')) return;
+  if (!state.wtFloors) state.wtFloors = getWTFloors();
+  var floor = state.wtFloors[fi]; if (!floor) return;
+  floor.items.splice(ii, 1);
+  scheduleSave(); renderWT();
+  setTimeout(function() { openEditWTFloor(fi); }, 50);
+  toast('Item removed');
+}
+
+function renameWTFloor(fi) {
+  if (!state.wtFloors) state.wtFloors = getWTFloors();
+  var floor = state.wtFloors[fi]; if (!floor) return;
+  var newLabel = prompt('Rename floor:', floor.label);
+  if (!newLabel || !newLabel.trim() || newLabel.trim() === floor.label) return;
+  // Remap walkthrough keys
+  var wt = state.walkthrough || {};
+  floor.items.forEach(function (item, i) {
+    var oldKey = floor.label + '_' + i;
+    var newKey = newLabel.trim() + '_' + i;
+    if (wt[oldKey] !== undefined) { wt[newKey] = wt[oldKey]; delete wt[oldKey]; }
+  });
+  floor.label = newLabel.trim();
+  scheduleSave(); renderWT(); toast('Floor renamed');
+}
+
+function deleteWTFloor(fi) {
+  if (!state.wtFloors) state.wtFloors = getWTFloors();
+  var floor = state.wtFloors[fi]; if (!floor) return;
+  if (!confirm('Delete floor "' + floor.label + '" and all its items? Checkmark progress for this floor will be lost.')) return;
+  // Clean up walkthrough keys for this floor
+  var wt = state.walkthrough || {};
+  floor.items.forEach(function (item, i) { delete wt[floor.label + '_' + i]; });
+  state.wtFloors.splice(fi, 1);
+  scheduleSave(); renderWT(); toast('Floor deleted');
+}
 function saveFlag() {
   var location = g('fl-location').value.trim(), desc = g('fl-desc').value.trim();
   if (!location || !desc) { toast('Fill in location and description'); return; }
@@ -1748,10 +1947,18 @@ function autoGeneratePassdown() {
   var t = today(), moves = state.moves || [];
   var d2 = new Date(); d2.setDate(d2.getDate() + 1); var tmrw = d2.toISOString().split('T')[0];
   var d7 = new Date(); d7.setDate(d7.getDate() + 7); var wEnd = d7.toISOString().split('T')[0];
+
+  // KEYS / ACCESS
   var issuedK = (state.keys || []).filter(function (k) { return k.status === 'issued'; });
   var keysSection = '\n\uD83D\uDDDD Keys / Access\n';
   if (!issuedK.length) keysSection += '- No keys currently out.\n';
-  else issuedK.forEach(function (k) { keysSection += '- Unit ' + k.unit + ' - *' + k.name + '* (' + k.type + (k.fob ? ', fob #' + k.fob : '') + ')\n'; });
+  else issuedK.forEach(function (k) {
+    keysSection += '- Unit ' + k.unit + ' - *' + k.name + '* (' + k.type + (k.fob ? ', fob #' + k.fob : '') + ')';
+    if (k.notes) keysSection += ' - ' + k.notes;
+    keysSection += '\n';
+  });
+
+  // MOVE-INS (next 7 days)
   var upIn = moves.filter(function (m) { return m.type === 'in' && !m.archivedAt && m.date >= t && m.date <= wEnd; }).sort(function (a, b) { return a.date.localeCompare(b.date); });
   var inSection = '\n\uD83D\uDCE6 Upcoming Move-Ins\n';
   if (!upIn.length) inSection += '- No upcoming move-ins.\n';
@@ -1763,21 +1970,118 @@ function autoGeneratePassdown() {
       if (m.apptDate) { inSection += ' - Appt: ' + (m.apptDate === t ? 'TODAY' : fmtShort(m.apptDate)); if (m.apptTime) inSection += ' ' + fmtTime(m.apptTime); }
       else inSection += ' - Appt: TBD';
       if (m.total) inSection += ' - Move-In Total: $' + m.total;
+      if (m.notes) inSection += ' - Note: ' + m.notes;
+      // Incomplete tasks summary
+      var pendingTasks = (m.tasks || []).filter(function (tk) { return !tk.done; });
+      if (pendingTasks.length) inSection += ' - ' + pendingTasks.length + ' task(s) pending';
       inSection += '\n';
     });
   }
+
+  // MOVE-OUTS (next 7 days)
   var upOut = moves.filter(function (m) { return m.type === 'out' && !m.archivedAt && m.date >= t && m.date <= wEnd; }).sort(function (a, b) { return a.date.localeCompare(b.date); });
   var outSection = '\n\uD83D\uDE9A Upcoming Move-Outs\n';
   if (!upOut.length) outSection += '- No upcoming move-outs.\n';
-  else upOut.forEach(function (m) { var label = m.date === t ? 'TODAY' : m.date === tmrw ? 'Tomorrow' : fmtShort(m.date); outSection += '- Unit ' + m.unit + ' - *' + m.resident + '* - Lease: ' + label; if (m.apptDate) { outSection += ' - Appt: ' + (m.apptDate === t ? 'TODAY' : fmtShort(m.apptDate)); if (m.apptTime) outSection += ' ' + fmtTime(m.apptTime); } else outSection += ' - Appt: TBD'; outSection += '\n'; });
-  var openMt = (state.maintenance || []).filter(function (m) { return m.status === 'open'; });
-  var mtSection = '\n\uD83D\uDCCB Resident Matters\n';
-  if (!openMt.length) mtSection += '- No open items.\n';
-  else openMt.forEach(function (m) { mtSection += '- Unit ' + m.unit + ' - *' + m.issue + '* [' + m.priority + ']\n'; });
+  else upOut.forEach(function (m) {
+    var label = m.date === t ? 'TODAY' : m.date === tmrw ? 'Tomorrow' : fmtShort(m.date);
+    outSection += '- Unit ' + m.unit + ' - *' + m.resident + '* - Lease end: ' + label;
+    if (m.apptDate) { outSection += ' - Appt: ' + (m.apptDate === t ? 'TODAY' : fmtShort(m.apptDate)); if (m.apptTime) outSection += ' ' + fmtTime(m.apptTime); }
+    else outSection += ' - Appt: TBD';
+    if (m.notes) outSection += ' - Note: ' + m.notes;
+    outSection += '\n';
+  });
+
+  // MAINTENANCE (open + in-progress)
+  var openMt = (state.maintenance || []).filter(function (m) { return m.status !== 'resolved'; });
+  var mtSection = '\n\uD83D\uDD27 Maintenance\n';
+  if (!openMt.length) mtSection += '- No open maintenance items.\n';
+  else openMt.forEach(function (m) {
+    mtSection += '- Unit ' + m.unit + ' - *' + m.issue + '* [' + m.priority + ' / ' + m.status + ']';
+    if (m.desc) mtSection += ' - ' + m.desc;
+    if (m.reporter) mtSection += ' (reported by ' + m.reporter + ')';
+    mtSection += '\n';
+  });
+
+  // TOURS TODAY
+  var todayTours = (state.tours || []).filter(function (tr) { return tr.date === t; });
+  var tourSection = '';
+  if (todayTours.length) {
+    tourSection = '\n\uD83C\uDFE0 Tours Today\n';
+    todayTours.forEach(function (tr) {
+      tourSection += '- *' + tr.name + '* - ' + (tr.type === 'sgt' ? 'SGT' : 'Guided');
+      if (tr.unit) tourSection += ' - Unit(s): ' + tr.unit;
+      if (tr.time) tourSection += ' at ' + tr.time;
+      if (tr.notes) tourSection += ' - ' + tr.notes;
+      tourSection += '\n';
+    });
+  }
+
+  // AMENITY BOOKINGS TODAY
+  var todayAm = (state.amenities || []).filter(function (a) { return a.date === t; });
+  var amSection = '';
+  if (todayAm.length) {
+    amSection = '\n\uD83C\uDF89 Amenity Bookings Today\n';
+    todayAm.forEach(function (a) {
+      amSection += '- ' + a.space + ' - *' + a.resident + '* Unit ' + a.unit;
+      if (a.start) amSection += ' ' + a.start + (a.end ? '-' + a.end : '');
+      if (a.notes) amSection += ' - ' + a.notes;
+      amSection += '\n';
+    });
+  }
+
+  // LOST & FOUND (unclaimed)
+  var unclLAF = (state.laf || []).filter(function (i) { return !i.claimedAt; });
+  var lafSection = '';
+  if (unclLAF.length) {
+    lafSection = '\n\uD83D\uDD0D Lost & Found\n';
+    lafSection += 'Total unclaimed: ' + unclLAF.length + '\n';
+    unclLAF.slice(0, 5).forEach(function (i) {
+      lafSection += '- *' + i.desc + '*';
+      if (i.location) lafSection += ' - Found: ' + i.location;
+      lafSection += ' (' + fmtShort(i.date) + ')';
+      if (i.foundBy) lafSection += ' by ' + i.foundBy;
+      lafSection += '\n';
+    });
+    if (unclLAF.length > 5) lafSection += '- ...and ' + (unclLAF.length - 5) + ' more\n';
+  }
+
+  // FLAGGED WALKTHROUGH ISSUES
+  var activeFlags = (state.flags || []).filter(function (f) { return !f.resolved; });
+  var flagSection = '';
+  if (activeFlags.length) {
+    flagSection = '\n\uD83D\uDEA8 Flagged Issues\n';
+    activeFlags.forEach(function (f) {
+      flagSection += '- *' + f.location + '* [' + f.priority + '] - ' + f.desc + '\n';
+    });
+  }
+
+  // POST MOVE-IN follow-ups
+  var postMoveIns = moves.filter(function (m) {
+    return m.type === 'in' && !m.archivedAt && m.date <= t &&
+      (m.tasks || []).some(function (tk) { return tk.cat === 'Post Move-In' && !tk.done; });
+  });
+  var postSection = '';
+  if (postMoveIns.length) {
+    postSection = '\n\uD83D\uDCDE Post Move-In Follow-Ups\n';
+    postMoveIns.forEach(function (m) {
+      var pending = (m.tasks || []).filter(function (tk) { return tk.cat === 'Post Move-In' && !tk.done; });
+      postSection += '- Unit ' + m.unit + ' - *' + m.resident + '* (' + pending.length + ' tasks pending)\n';
+      pending.forEach(function (tk) { postSection += '   • ' + tk.text + '\n'; });
+    });
+  }
+
   var notes = (g('pd-notes').value || '').trim();
   var shift = g('pd-shift').value, date = g('pd-date').value || t;
   var dateFmt = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-  var pd = '\uD83D\uDCCB Passdown - ' + dateFmt + '\n' + shift + '\n' + keysSection + inSection + outSection + mtSection + (notes ? '\n\uD83D\uDCDD Shift Notes\n' + notes + '\n' : '') + '\n-\nGabino S.M. | Front Desk Lead | Chorus - SF | gserrano@alignrealestate.com';
+  var pd = '\uD83D\uDCCB Passdown - ' + dateFmt + '\n' + shift + '\n';
+  pd += keysSection + inSection + outSection + mtSection;
+  if (tourSection) pd += tourSection;
+  if (amSection) pd += amSection;
+  if (lafSection) pd += lafSection;
+  if (flagSection) pd += flagSection;
+  if (postSection) pd += postSection;
+  if (notes) pd += '\n\uD83D\uDCDD Shift Notes\n' + notes + '\n';
+  pd += '\n-\nGabino S.M. | Front Desk Lead | Chorus - SF | gserrano@alignrealestate.com';
   g('pd-preview').textContent = pd; toast('Passdown generated');
 }
 function savePassdown() {
@@ -2383,6 +2687,66 @@ function getCustomOutTasks() { return state.customOutTasks && state.customOutTas
 function renderSettings() {
   renderTaskList('in');
   renderTaskList('out');
+  renderSettingsWTFloors();
+}
+
+function renderSettingsWTFloors() {
+  var el = g('settings-wt-floors'); if (!el) return;
+  var floors = getWTFloors();
+  if (!floors.length) { el.innerHTML = '<div class="text-3 text-sm" style="padding:12px 14px">No floors defined.</div>'; return; }
+  var html = '';
+  floors.forEach(function (floor, fi) {
+    html += '<div class="stask-row" style="flex-direction:column;align-items:flex-start;gap:4px">';
+    html += '<div class="flex items-center gap-8" style="width:100%">';
+    html += '<span class="font-600 text-sm" style="flex:1">' + floor.label + '</span>';
+    html += '<span class="text-xs text-3 mono">' + floor.items.length + ' items</span>';
+    html += '<button class="btn btn-ghost btn-xs" onclick="settingsEditWTFloor(' + fi + ')">&#9998; Edit</button>';
+    html += '<button class="btn btn-ghost btn-xs" onclick="renameWTFloor(' + fi + ')">Rename</button>';
+    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteWTFloor(' + fi + ')">x</button>';
+    html += '</div>';
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function settingsEditWTFloor(fi) {
+  var floors = getWTFloors();
+  var floor = floors[fi]; if (!floor) return;
+  var el = g('settings-wt-floors'); if (!el) return;
+  var rows = el.querySelectorAll('.stask-row');
+  var row = rows[fi]; if (!row) return;
+  var expanded = row.querySelector('.wt-items-edit');
+  if (expanded) { row.removeChild(expanded); return; }
+  var div = document.createElement('div');
+  div.className = 'wt-items-edit';
+  div.style.cssText = 'width:100%;padding:4px 0';
+  var itemHtml = '';
+  floor.items.forEach(function (item, i) {
+    var safeItem = item.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    itemHtml += '<div class="flex items-center gap-8" style="padding:3px 0;border-bottom:1px solid var(--border2)">';
+    itemHtml += '<input type="text" class="cl-text-input" value="' + safeItem + '" onblur="updateWTItem(' + fi + ',' + i + ',this.value)" style="flex:1;font-size:12px">';
+    itemHtml += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteWTItem(' + fi + ',' + i + ')">x</button>';
+    itemHtml += '</div>';
+  });
+  itemHtml += '<div class="flex gap-8 items-center" style="margin-top:6px">';
+  itemHtml += '<input type="text" id="stwt-new-' + fi + '" placeholder="Add item..." style="flex:1;font-size:12px;border:1px solid var(--border);border-radius:var(--radius);padding:5px 8px">';
+  itemHtml += '<button class="btn btn-secondary btn-xs" onclick="addWTItemFromSettings(' + fi + ')">+ Add</button>';
+  itemHtml += '</div>';
+  div.innerHTML = itemHtml;
+  row.appendChild(div);
+  var inp = document.getElementById('stwt-new-' + fi);
+  if (inp) inp.addEventListener('keydown', function(e){ if(e.key==='Enter') addWTItemFromSettings(fi); });
+}
+
+
+function addWTItemFromSettings(fi) {
+  var inputEl = document.getElementById('stwt-new-' + fi);
+  if (!inputEl) return;
+  var text = inputEl.value.trim(); if (!text) { toast('Enter item text'); return; }
+  if (!state.wtFloors) state.wtFloors = getWTFloors();
+  var floor = state.wtFloors[fi]; if (!floor) return;
+  floor.items.push(text);
+  scheduleSave(); renderSettingsWTFloors(); toast('Item added');
 }
 
 function renderTaskList(type) {
@@ -2399,7 +2763,7 @@ function renderTaskList(type) {
     var dnBtn = '<button class="stask-arrow" onclick="moveTask(\'' + type + '\',' + i + ',1)" title="Move down">&#9660;</button>';
     var rmBtn = '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="removeDefaultTask(\'' + type + '\',' + i + ')">x</button>';
     var catOpts = '';
-    ['Move In', 'Move Out', 'Keys & Access', 'Elevator', 'General'].forEach(function (cat) {
+    ['Move In', 'Move Out', 'Keys & Access', 'Elevator', 'Post Move-In', 'General'].forEach(function (cat) {
       catOpts += '<option value="' + cat + '" ' + (t.cat === cat ? 'selected' : '') + '>' + cat + '</option>';
     });
     var catSel = '<select class="stask-cat ie-sel" onchange="updateDefaultTask(\'' + type + '\',' + i + ',\'cat\',this.value)">' + catOpts + '</select>';
