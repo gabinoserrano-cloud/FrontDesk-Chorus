@@ -1257,7 +1257,7 @@ function updateTaskField(moveId, taskId, field, value) {
 function renderMoves() {
   var t = today();
   var list = (state.moves || []).slice();
-  if (moveFilter === 'in') list = list.filter(function (m) { return m.type === 'in' && !m.archivedAt; });
+  if (moveFilter === 'in') list = list.filter(function (m) { return m.type === 'in' && !m.archivedAt && m.date >= t; });
   else if (moveFilter === 'out') list = list.filter(function (m) { return m.type === 'out' && !m.archivedAt; });
   else if (moveFilter === 'today') list = list.filter(function (m) { return m.date === t && !m.archivedAt; });
   else if (moveFilter === 'postmovein') {
