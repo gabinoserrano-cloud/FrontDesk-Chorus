@@ -285,7 +285,7 @@
   .stask-row{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border2)}
   .stask-row:last-child{border-bottom:none}
   .stask-row:hover{background:var(--surface2)}
-  .stask-text{flex:1;font-size:13px}
+  .stask-text{flex:1;font-size:13px;color:var(--text)}
   .stask-cat{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;flex-shrink:0}
   .stask-arrows{display:flex;flex-direction:column;gap:1px;flex-shrink:0}
   .stask-arrow{background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px;padding:1px 3px;line-height:1;border-radius:3px}
@@ -840,27 +840,16 @@ async function pushCloud() {
   catch (e) { setSyncStatus('error', 'Offline - local only'); }
   isSyncing = false;
 }
-function sanitizeCustomTasks() {
-  var validTask = function(t) { return t && typeof t.text === 'string' && t.text.trim().length > 0 && typeof t.cat === 'string'; };
-  if (!Array.isArray(state.customInTasks) || !state.customInTasks.length || !state.customInTasks.every(validTask)) {
-    state.customInTasks = DEFAULT_IN_TASKS.map(function(t) { return { text: t.text, cat: t.cat }; });
-  }
-  if (!Array.isArray(state.customOutTasks) || !state.customOutTasks.length || !state.customOutTasks.every(validTask)) {
-    state.customOutTasks = DEFAULT_OUT_TASKS.map(function(t) { return { text: t.text, cat: t.cat }; });
-  }
-}
-
 async function pullCloud() {
   setSyncStatus('syncing', 'Loading...');
   try {
     var row = await supaGet();
     if (row && row.data && Object.keys(row.data).length > 0) {
       state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [] }, row.data);
-      sanitizeCustomTasks();
       saveLocal();
-    } else { loadLocal(); sanitizeCustomTasks(); await supaPush(state); }
+    } else { loadLocal(); await supaPush(state); }
     setSyncStatus('synced', 'Synced');
-  } catch (e) { loadLocal(); sanitizeCustomTasks(); setSyncStatus('error', 'Offline - local data'); }
+  } catch (e) { loadLocal(); setSyncStatus('error', 'Offline - local data'); }
 }
 setInterval(async function () {
   if (isSyncing) return;
@@ -870,7 +859,6 @@ setInterval(async function () {
       var ts = new Date(row.updated_at).getTime();
       if (lastSyncTs && ts > lastSyncTs + 2000) {
         state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [] }, row.data);
-        sanitizeCustomTasks();
         saveLocal(); lastSyncTs = ts;
         renderSection(curSec); updateBadges();
         setSyncStatus('synced', 'Updated'); setTimeout(function () { setSyncStatus('synced', 'Synced'); }, 2000);
@@ -2781,7 +2769,7 @@ function renderTaskList(type) {
     });
     var catSel = '<select class="stask-cat ie-sel" onchange="updateDefaultTask(\'' + type + '\',' + i + ',\'cat\',this.value)">' + catOpts + '</select>';
     var safeVal = t.text.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-    var textInput = '<input type="text" class="stask-text" value="' + safeVal + '" onblur="updateDefaultTask(\'' + type + '\',' + i + ',\'text\',this.value)" style="border:none;background:transparent;font-size:13px;flex:1;outline:none;padding:2px 4px;border-radius:4px">';
+    var textInput = '<input type="text" class="stask-text" value="' + safeVal + '" onblur="updateDefaultTask(\'' + type + '\',' + i + ',\'text\',this.value)" style="border:none;background:transparent;color:var(--text);outline:none;padding:2px 4px;border-radius:4px">';
     html += '<div class="stask-row"><div class="stask-arrows">' + upBtn + dnBtn + '</div>' + textInput + catSel + rmBtn + '</div>';
   });
   el2.innerHTML = html;
