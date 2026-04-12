@@ -840,16 +840,27 @@ async function pushCloud() {
   catch (e) { setSyncStatus('error', 'Offline - local only'); }
   isSyncing = false;
 }
+function sanitizeCustomTasks() {
+  var validTask = function(t) { return t && typeof t.text === 'string' && t.text.trim().length > 0 && typeof t.cat === 'string'; };
+  if (!Array.isArray(state.customInTasks) || !state.customInTasks.length || !state.customInTasks.every(validTask)) {
+    state.customInTasks = DEFAULT_IN_TASKS.map(function(t) { return { text: t.text, cat: t.cat }; });
+  }
+  if (!Array.isArray(state.customOutTasks) || !state.customOutTasks.length || !state.customOutTasks.every(validTask)) {
+    state.customOutTasks = DEFAULT_OUT_TASKS.map(function(t) { return { text: t.text, cat: t.cat }; });
+  }
+}
+
 async function pullCloud() {
   setSyncStatus('syncing', 'Loading...');
   try {
     var row = await supaGet();
     if (row && row.data && Object.keys(row.data).length > 0) {
       state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [] }, row.data);
+      sanitizeCustomTasks();
       saveLocal();
-    } else { loadLocal(); await supaPush(state); }
+    } else { loadLocal(); sanitizeCustomTasks(); await supaPush(state); }
     setSyncStatus('synced', 'Synced');
-  } catch (e) { loadLocal(); setSyncStatus('error', 'Offline - local data'); }
+  } catch (e) { loadLocal(); sanitizeCustomTasks(); setSyncStatus('error', 'Offline - local data'); }
 }
 setInterval(async function () {
   if (isSyncing) return;
@@ -859,6 +870,7 @@ setInterval(async function () {
       var ts = new Date(row.updated_at).getTime();
       if (lastSyncTs && ts > lastSyncTs + 2000) {
         state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [] }, row.data);
+        sanitizeCustomTasks();
         saveLocal(); lastSyncTs = ts;
         renderSection(curSec); updateBadges();
         setSyncStatus('synced', 'Updated'); setTimeout(function () { setSyncStatus('synced', 'Synced'); }, 2000);
