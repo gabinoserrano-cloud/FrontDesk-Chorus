@@ -1206,8 +1206,14 @@ function saveMove() {
 }
 function filterMoves(f, item) { moveFilter = f; document.querySelectorAll('#moves-tabs .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderMoves(); }
 
-function buildCL(m) {
+function buildCL(m, filterCat) {
   var tasks = m.tasks || [];
+  // In Move In tab: hide Post Move-In tasks. In Post Move-In tab: show only Post Move-In tasks.
+  if (filterCat === 'in') {
+    tasks = tasks.filter(function (t) { return t.cat !== 'Post Move-In'; });
+  } else if (filterCat === 'postmovein') {
+    tasks = tasks.filter(function (t) { return t.cat === 'Post Move-In'; });
+  }
   var done = tasks.filter(function (t) { return t.done; }).length;
   var html = '<div class="cl-hdr"><span class="cl-title">' + m.resident + ' - Unit ' + m.unit + '</span><span class="cl-prog-txt">' + done + '/' + tasks.length + ' tasks</span>';
   html += '<div class="ml-auto flex gap-4"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();resetCL(\'' + m.id + '\')">Reset</button>';
@@ -1322,7 +1328,7 @@ function renderMoves() {
         rows += archBtn;
         rows += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="event.stopPropagation();deleteMove(\'' + m.id + '\')">x</button>';
         rows += '</div></td></tr>';
-        rows += '<tr class="move-cl-row ' + (isOpen ? 'open' : '') + '" id="cl-' + m.id + '"><td colspan="8"><div class="cl-inner">' + buildCL(m) + '</div></td></tr>';
+        rows += '<tr class="move-cl-row ' + (isOpen ? 'open' : '') + '" id="cl-' + m.id + '"><td colspan="8"><div class="cl-inner">' + buildCL(m, moveFilter) + '</div></td></tr>';
       });
       tbody.innerHTML = rows;
     }
@@ -1359,7 +1365,7 @@ function renderMoves() {
         html += '<div class="prog-wrap" style="margin-top:5px"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div>';
         html += '<div class="text-xs text-3 mono" style="margin-top:2px">' + dn + '/' + tot + ' tasks</div></div>';
         html += '<span style="color:var(--text3);font-size:18px;flex-shrink:0">' + (isOpen ? '&#9650;' : '&#9660;') + '</span></div>';
-        html += '<div class="mc-cl">' + buildCL(m) + '</div>';
+        html += '<div class="mc-cl">' + buildCL(m, moveFilter) + '</div>';
         html += '<div class="mc-actions"><button class="btn btn-secondary btn-xs" onclick="openEditMove(\'' + m.id + '\')" title="Edit">&#9998; Edit</button>' + archBtn + '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteMove(\'' + m.id + '\')">Delete</button><button class="btn btn-secondary btn-xs ml-auto" onclick="openAddTask(\'' + m.id + '\')">+ Task</button></div>';
         html += '</div>';
       });
@@ -1376,8 +1382,8 @@ function toggleTask(moveId, taskId, checked) {
   var m = (state.moves || []).find(function (x) { return x.id === moveId; }); if (!m) return;
   var t = (m.tasks || []).find(function (x) { return x.id === taskId; }); if (!t) return;
   t.done = checked; scheduleSave();
-  var ci = document.querySelector('#cl-' + moveId + ' .cl-inner'); if (ci) ci.innerHTML = buildCL(m);
-  var mci = document.querySelector('#mc-' + moveId + ' .mc-cl'); if (mci) mci.innerHTML = buildCL(m);
+  var ci = document.querySelector('#cl-' + moveId + ' .cl-inner'); if (ci) ci.innerHTML = buildCL(m, moveFilter);
+  var mci = document.querySelector('#mc-' + moveId + ' .mc-cl'); if (mci) mci.innerHTML = buildCL(m, moveFilter);
   updateBadges(); renderDash();
 }
 function deleteTask(moveId, taskId) {
