@@ -285,8 +285,9 @@
   .stask-row{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border2)}
   .stask-row:last-child{border-bottom:none}
   .stask-row:hover{background:var(--surface2)}
-  .stask-text{flex:1;font-size:13px;color:var(--text)}
-  .stask-cat{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;flex-shrink:0}
+  .stask-text{flex:1;font-size:13px;color:var(--text);min-width:0;border:1px solid transparent;border-radius:4px;padding:3px 6px;background:transparent;outline:none;font-family:inherit}
+  .stask-text:focus{border-color:var(--primary);background:var(--surface2)}
+  .stask-cat{font-size:11px;color:var(--text2);flex-shrink:0;width:120px}
   .stask-arrows{display:flex;flex-direction:column;gap:1px;flex-shrink:0}
   .stask-arrow{background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px;padding:1px 3px;line-height:1;border-radius:3px}
   .stask-arrow:hover{background:var(--bg);color:var(--text)}
@@ -2762,14 +2763,14 @@ function renderTaskList(type) {
   tasks.forEach(function (t, i) {
     var upBtn = '<button class="stask-arrow" onclick="moveTask(\'' + type + '\',' + i + ',-1)" title="Move up">&#9650;</button>';
     var dnBtn = '<button class="stask-arrow" onclick="moveTask(\'' + type + '\',' + i + ',1)" title="Move down">&#9660;</button>';
-    var rmBtn = '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="removeDefaultTask(\'' + type + '\',' + i + ')">x</button>';
+    var rmBtn = '<button style="color:var(--red);flex-shrink:0;background:none;border:none;cursor:pointer;font-size:16px;padding:4px 8px;line-height:1;border-radius:4px" onclick="removeDefaultTask(\'' + type + '\',' + i + ')">&#x2715;</button>';
     var catOpts = '';
     ['Move In', 'Move Out', 'Keys & Access', 'Elevator', 'Post Move-In', 'General'].forEach(function (cat) {
       catOpts += '<option value="' + cat + '" ' + (t.cat === cat ? 'selected' : '') + '>' + cat + '</option>';
     });
     var catSel = '<select class="stask-cat ie-sel" onchange="updateDefaultTask(\'' + type + '\',' + i + ',\'cat\',this.value)">' + catOpts + '</select>';
     var safeVal = t.text.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-    var textInput = '<input type="text" class="stask-text" value="' + safeVal + '" onblur="updateDefaultTask(\'' + type + '\',' + i + ',\'text\',this.value)" style="border:none;background:transparent;color:var(--text);outline:none;padding:2px 4px;border-radius:4px">';
+    var textInput = '<input type="text" class="stask-text" value="' + safeVal + '" onblur="updateDefaultTask(\'' + type + '\',' + i + ',\'text\',this.value)" style="">';
     html += '<div class="stask-row"><div class="stask-arrows">' + upBtn + dnBtn + '</div>' + textInput + catSel + rmBtn + '</div>';
   });
   el2.innerHTML = html;
@@ -2795,7 +2796,6 @@ function addDefaultTask(type) {
 }
 
 function removeDefaultTask(type, idx) {
-  if (!confirm('Remove this default task?')) return;
   ensureCustomTasks(type);
   var list = type === 'in' ? state.customInTasks : state.customOutTasks;
   list.splice(idx, 1);
