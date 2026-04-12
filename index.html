@@ -1257,14 +1257,20 @@ function updateTaskField(moveId, taskId, field, value) {
 function renderMoves() {
   var t = today();
   var list = (state.moves || []).slice();
-  if (moveFilter === 'in') list = list.filter(function (m) { return m.type === 'in' && !m.archivedAt && m.date >= t; });
+  if (moveFilter === 'in') list = list.filter(function (m) {
+    if (m.type !== 'in' || m.archivedAt) return false;
+    var nonPost = (m.tasks || []).filter(function (tk) { return tk.cat !== 'Post Move-In'; });
+    return !nonPost.length || nonPost.some(function (tk) { return !tk.done; });
+  });
   else if (moveFilter === 'out') list = list.filter(function (m) { return m.type === 'out' && !m.archivedAt; });
   else if (moveFilter === 'today') list = list.filter(function (m) { return m.date === t && !m.archivedAt; });
   else if (moveFilter === 'postmovein') {
-    // Moved-in residents (lease start in past) with at least one incomplete Post Move-In task
     list = list.filter(function (m) {
-      return m.type === 'in' && !m.archivedAt && m.date <= t &&
-        (m.tasks || []).some(function (tk) { return tk.cat === 'Post Move-In' && !tk.done; });
+      if (m.type !== 'in' || m.archivedAt) return false;
+      var nonPost = (m.tasks || []).filter(function (tk) { return tk.cat !== 'Post Move-In'; });
+      var allNonPostDone = nonPost.length > 0 && nonPost.every(function (tk) { return tk.done; });
+      var hasIncompletePost = (m.tasks || []).some(function (tk) { return tk.cat === 'Post Move-In' && !tk.done; });
+      return allNonPostDone && hasIncompletePost;
     });
   }
   else if (moveFilter === 'archive') list = list.filter(function (m) { return !!m.archivedAt; });
