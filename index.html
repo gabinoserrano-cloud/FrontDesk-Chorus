@@ -1322,7 +1322,7 @@ function renderMoves() {
           }
         }
         rows += '<td><span class="mono font-600">' + m.unit + '</span></td>';
-        rows += '<td><div class="font-600">' + m.resident + '</div>' + (m.date === t ? '<div class="text-xs" style="color:var(--accent)">Lease starts today</div>' : '') + '</td>';
+        rows += '<td><div class="font-600">' + m.resident + '</div>' + (m.date === t && m.type === 'in' ? '<div class="text-xs" style="color:var(--accent)">Lease starts today</div>' : '') + '</td>';
         rows += '<td class="mono text-sm">' + fmtShort(m.date) + '</td>';
         rows += '<td><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'Move In' : 'Move Out') + '</span></td>';
         rows += '<td>' + apptBadge + '</td>';
@@ -1366,7 +1366,7 @@ function renderMoves() {
             ? '<div class="appt-badge conflict" style="margin-top:4px;display:inline-flex">&#9888; Elevator conflict</div>'
             : '<div class="appt-badge has-appt" style="margin-top:4px;display:inline-flex">Appt: ' + fmtShort(m.apptDate) + (m.apptTime ? ' ' + fmtTime(m.apptTime) : '') + '</div>';
         }
-        html += '<div class="mc-sub">Unit ' + m.unit + ' - Lease: ' + fmtShort(m.date) + (m.date === t ? ' (today)' : '') + '</div>';
+        html += '<div class="mc-sub">Unit ' + m.unit + ' - Lease: ' + fmtShort(m.date) + (m.date === t && m.type === 'in' ? ' (today)' : '') + '</div>';
         html += mcApptLine;
         html += '<div class="prog-wrap" style="margin-top:5px"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div>';
         html += '<div class="text-xs text-3 mono" style="margin-top:2px">' + dn + '/' + tot + ' tasks</div></div>';
