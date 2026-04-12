@@ -285,7 +285,8 @@
   .stask-row{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border2)}
   .stask-row:last-child{border-bottom:none}
   .stask-row:hover{background:var(--surface2)}
-  .stask-text{flex:1;font-size:13px}
+  .stask-text{flex:1;font-size:13px;color:var(--text)}
+  .stask-text:focus{background:var(--surface2);outline:2px solid var(--primary);border-radius:4px}
   .stask-cat{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;flex-shrink:0}
   .stask-arrows{display:flex;flex-direction:column;gap:1px;flex-shrink:0}
   .stask-arrow{background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px;padding:1px 3px;line-height:1;border-radius:3px}
@@ -592,8 +593,8 @@
           <div><strong>Chorus SF Front Desk Hub</strong></div>
           <div>30 Otis St &middot; Managed by Align Real Estate</div>
           <div style="margin-top:8px">Front Desk: (415) 707-3030 &middot; Hours 9am&ndash;6pm</div>
-          <div>Valet: chorus@unitedsfparking.com</div>
-          <div>WiFi Support: roversupport@baiconnect.com &middot; 1-844-691-7687</div>
+          <div>Valet: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b8dbd0d7cacdcbf8cdd6d1ccdddccbdec8d9cad3d1d6df96dbd7d5">[email&#160;protected]</a></div>
+          <div>WiFi Support: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="9ceef3eaf9eeefe9ececf3eee8dcfefdf5fff3f2f2f9ffe8b2fff3f1">[email&#160;protected]</a> &middot; 1-844-691-7687</div>
         </div>
       </div>
     </div>
@@ -740,7 +741,7 @@
 </div>
 <div id="toast"></div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ─── SUPABASE CONFIG ───
 var SUPA_URL = 'https://adovwmwpvwomljggscge.supabase.co';
 var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkb3Z3bXdwdndvbWxqZ2dzY2dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNzkxNjcsImV4cCI6MjA5MDg1NTE2N30.dZgl3jEL1FbBSe_gM3LN9Tc3wGGmsf_Bq6YaKJf4dyk';
@@ -2768,7 +2769,7 @@ function renderTaskList(type) {
     });
     var catSel = '<select class="stask-cat ie-sel" onchange="updateDefaultTask(\'' + type + '\',' + i + ',\'cat\',this.value)">' + catOpts + '</select>';
     var safeVal = t.text.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-    var textInput = '<input type="text" class="stask-text" value="' + safeVal + '" onblur="updateDefaultTask(\'' + type + '\',' + i + ',\'text\',this.value)" style="border:none;background:transparent;font-size:13px;flex:1;outline:none;padding:2px 4px;border-radius:4px">';
+    var textInput = '<input type="text" class="stask-text" value="' + safeVal + '" onblur="updateDefaultTask(\'' + type + '\',' + i + ',\'text\',this.value)" style="border:none;background:transparent;color:var(--text);outline:none;padding:2px 4px;border-radius:4px;width:100%">';
     html += '<div class="stask-row"><div class="stask-arrows">' + upBtn + dnBtn + '</div>' + textInput + catSel + rmBtn + '</div>';
   });
   el2.innerHTML = html;
@@ -2822,13 +2823,4 @@ function moveTask(type, idx, dir) {
 // ─── INIT ───
 async function init() {
   if (localStorage.getItem('chorus-sc') === '1') document.body.classList.add('sc');
-  var chip = g('today-chip'); if (chip) chip.textContent = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
-  var pdDate = g('pd-date'); if (pdDate) pdDate.value = today();
-  await pullCloud();
-  lastSyncTs = Date.now();
-  renderDash(); updateBadges();
-}
-document.addEventListener('DOMContentLoaded', init);
-</script>
-</body>
-</html>
+  var chip = g('today-chip'); if (chip) chip.textContent = new Date().t
