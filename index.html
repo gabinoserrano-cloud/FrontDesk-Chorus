@@ -2681,8 +2681,9 @@ function renderMonthCal() {
 
 
 // ─── SETTINGS ───
-function getCustomInTasks() { return state.customInTasks && state.customInTasks.length ? state.customInTasks : DEFAULT_IN_TASKS.slice(); }
-function getCustomOutTasks() { return state.customOutTasks && state.customOutTasks.length ? state.customOutTasks : DEFAULT_OUT_TASKS.slice(); }
+function isValidTaskList(list) { return Array.isArray(list) && list.length > 0 && list.every(function(t){ return t && typeof t.text === 'string' && t.text.length > 0; }); }
+function getCustomInTasks() { return isValidTaskList(state.customInTasks) ? state.customInTasks : DEFAULT_IN_TASKS.slice(); }
+function getCustomOutTasks() { return isValidTaskList(state.customOutTasks) ? state.customOutTasks : DEFAULT_OUT_TASKS.slice(); }
 
 function renderSettings() {
   renderTaskList('in');
@@ -2776,9 +2777,9 @@ function renderTaskList(type) {
 
 function ensureCustomTasks(type) {
   if (type === 'in') {
-    if (!state.customInTasks || !state.customInTasks.length) state.customInTasks = DEFAULT_IN_TASKS.map(function(t){ return {text:t.text,cat:t.cat}; });
+    if (!isValidTaskList(state.customInTasks)) state.customInTasks = DEFAULT_IN_TASKS.map(function(t){ return {text:t.text,cat:t.cat}; });
   } else {
-    if (!state.customOutTasks || !state.customOutTasks.length) state.customOutTasks = DEFAULT_OUT_TASKS.map(function(t){ return {text:t.text,cat:t.cat}; });
+    if (!isValidTaskList(state.customOutTasks)) state.customOutTasks = DEFAULT_OUT_TASKS.map(function(t){ return {text:t.text,cat:t.cat}; });
   }
 }
 
