@@ -1289,7 +1289,13 @@ function renderMoves() {
     var nonPost = (m.tasks || []).filter(function (tk) { return tk.cat !== 'Post Move-In'; });
     return !nonPost.length || nonPost.some(function (tk) { return !tk.done; });
   });
-  else if (moveFilter === 'out') list = list.filter(function (m) { return m.type === 'out' && !m.archivedAt; });
+  else if (moveFilter === 'out') list = list.filter(function (m) {
+    if (m.type !== 'out' || m.archivedAt) return false;
+    var tasks = m.tasks || [];
+    // Exclude units where all tasks are done — those belong in Turnover tab
+    if (tasks.length > 0 && tasks.every(function (tk) { return tk.done; })) return false;
+    return true;
+  });
   else if (moveFilter === 'today') list = list.filter(function (m) { return m.date === t && !m.archivedAt; });
   else if (moveFilter === 'postmovein') {
     list = list.filter(function (m) {
@@ -1305,15 +1311,10 @@ function renderMoves() {
       if (m.type !== 'out' || m.archivedAt) return false;
       var tasks = m.tasks || [];
       if (!tasks.length) return false;
-      var allDone = tasks.every(function (tk) { return tk.done; });
-      var keysReturned = tasks.some(function (tk) {
-        return tk.done && (tk.text || '').toLowerCase().replace(/[^a-z0-9]/g,'').indexOf('keyreturn') !== -1;
-      });
-      // Must have all tasks done; if a "keys returned" task exists it must be checked
-      var hasKeyTask = tasks.some(function (tk) {
-        return (tk.text || '').toLowerCase().replace(/[^a-z0-9]/g,'').indexOf('keyreturn') !== -1;
-      });
-      return allDone || (hasKeyTask && keysReturned);
+      // All tasks must be done
+      if (!tasks.every(function (tk) { return tk.done; })) return false;
+      // If any key-return task exists, it must also be checked (already covered by allDone above)
+      return true;
     });
   }
   else if (moveFilter === 'archive') list = list.filter(function (m) { return !!m.archivedAt; });
