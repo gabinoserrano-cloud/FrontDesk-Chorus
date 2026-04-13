@@ -86,7 +86,7 @@
   /* STAT GRID */
   .stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:14px}
   @media(max-width:500px){.stat-grid{grid-template-columns:repeat(2,1fr);gap:8px}}
-  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow)}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow)}.stat-clickable{cursor:pointer;transition:box-shadow .15s,transform .1s;user-select:none}.stat-clickable:hover{box-shadow:0 4px 14px rgba(0,0,0,.10);transform:translateY(-1px)}.stat-clickable:active{transform:translateY(0);box-shadow:var(--shadow)}
   .stat-num{font-size:26px;font-weight:600;line-height:1;font-family:'DM Mono',monospace;letter-spacing:-1px}
   .stat-lbl{font-size:11px;color:var(--text2);margin-top:4px}
   .stat-card.accent{background:var(--accent);border-color:var(--accent)}.stat-card.accent .stat-num,.stat-card.accent .stat-lbl{color:#fff}
@@ -409,6 +409,7 @@
         <div class="sub-tab" onclick="filterMoves('out',this)">Move Outs</div>
         <div class="sub-tab" onclick="filterMoves('today',this)">Today</div>
         <div class="sub-tab" onclick="filterMoves('postmovein',this)">Post Move-In</div>
+        <div class="sub-tab" onclick="filterMoves('turnover',this)">&#128738; Turnover</div>
         <div class="sub-tab" onclick="filterMoves('archive',this)">Archive</div>
       </div>
       <div class="card moves-tbl-wrap">
@@ -1001,13 +1002,21 @@ function renderDash() {
   var hour = new Date().getHours();
   var greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   var html = '<div style="margin-bottom:14px"><div style="font-size:18px;font-weight:600;letter-spacing:-.3px">' + greeting + ', Gabino.</div><div style="font-size:12px;color:var(--text3);margin-top:2px;font-family:var(--mono)">' + new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) + ' &nbsp;&middot;&nbsp; Front Desk</div></div>';
+  // Turnover ready count: move-outs with all tasks done
+  var turnoverReady = active.filter(function (m) {
+    if (m.type !== 'out') return false;
+    var tasks = m.tasks || [];
+    return tasks.length > 0 && tasks.every(function (tk) { return tk.done; });
+  });
   html += '<div class="stat-grid">';
-  html += '<div class="stat-card"><div class="stat-num">' + todayM.length + '</div><div class="stat-lbl">Moves Today</div></div>';
-  html += '<div class="stat-card"><div class="stat-num">' + weekM.length + '</div><div class="stat-lbl">Next 7 Days</div></div>';
-  html += '<div class="stat-card ' + (openMt.length > 0 ? 'red' : '') + '"><div class="stat-num">' + openMt.length + '</div><div class="stat-lbl">Open Maintenance</div></div>';
-  html += '<div class="stat-card ' + (issuedK.length > 0 ? 'accent' : '') + '"><div class="stat-num">' + issuedK.length + '</div><div class="stat-lbl">Keys Out</div></div>';
-  html += '<div class="stat-card"><div class="stat-num">' + pendTd.length + '</div><div class="stat-lbl">Pending To-Dos</div></div>';
-  html += '<div class="stat-card"><div class="stat-num">' + unclLAF.length + '</div><div class="stat-lbl">Lost &amp; Found</div></div></div>';
+  html += '<div class="stat-card stat-clickable" onclick="navToMoves(\'today\')"><div class="stat-num">' + todayM.length + '</div><div class="stat-lbl">Moves Today</div></div>';
+  html += '<div class="stat-card stat-clickable" onclick="navToMoves(\'all\')"><div class="stat-num">' + weekM.length + '</div><div class="stat-lbl">Next 7 Days</div></div>';
+  html += '<div class="stat-card stat-clickable ' + (openMt.length > 0 ? 'red' : '') + '" onclick="navToSec(\'maintenance\')"><div class="stat-num">' + openMt.length + '</div><div class="stat-lbl">Open Maintenance</div></div>';
+  html += '<div class="stat-card stat-clickable ' + (issuedK.length > 0 ? 'accent' : '') + '" onclick="navToSec(\'keys\')"><div class="stat-num">' + issuedK.length + '</div><div class="stat-lbl">Keys Out</div></div>';
+  html += '<div class="stat-card stat-clickable" onclick="navToSec(\'todos\')"><div class="stat-num">' + pendTd.length + '</div><div class="stat-lbl">Pending To-Dos</div></div>';
+  html += '<div class="stat-card stat-clickable" onclick="navToSec(\'laf\')"><div class="stat-num">' + unclLAF.length + '</div><div class="stat-lbl">Lost &amp; Found</div></div>';
+  html += '<div class="stat-card stat-clickable ' + (turnoverReady.length > 0 ? 'accent' : '') + '" onclick="navToMoves(\'turnover\')"><div class="stat-num">' + turnoverReady.length + '</div><div class="stat-lbl">&#128738; Ready to Turn</div></div>';
+  html += '</div>';
   if (tights.length) {
     html += '<div class="tight-alert"><div class="ta-title">Tight Turnovers - ' + tights.length + ' unit' + (tights.length > 1 ? 's' : '') + ' need attention</div>';
     tights.forEach(function (tt) { html += '<div class="tight-row">Unit ' + tt.unit + ': <strong>' + tt.outRes + '</strong> out ' + fmtShort(tt.outDate) + ' &rarr; <strong>' + tt.inRes + '</strong> in ' + fmtShort(tt.inDate) + ' <span class="pill pill-' + (tt.gap <= 2 ? 'high' : 'medium') + '">' + tt.gap + 'd gap</span></div>'; });
@@ -1041,6 +1050,15 @@ function renderDash() {
   if (!pendTd.length) html += '<div class="text-3 text-sm">All clear</div>';
   else pendTd.slice(0, 5).forEach(function (t2) { html += '<div class="flex items-center gap-8" style="padding:3px 0;border-bottom:1px solid var(--border2)">' + (t2.priority === 'urgent' ? '<span style="color:var(--red);font-size:12px">!</span>' : '<span style="color:var(--text3)">&#183;</span>') + '<span class="text-sm" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + t2.text + '</span></div>'; });
   html += '</div></div></div>';
+  // Turnover Ready widget
+  if (turnoverReady.length) {
+    html += '<div class="card" style="margin-top:14px"><div class="card-hdr"><span class="card-title">&#128738; Ready for Turnover</span><span class="card-count">' + turnoverReady.length + ' unit' + (turnoverReady.length > 1 ? 's' : '') + '</span><button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="navToMoves(\'turnover\')">View all &rarr;</button></div><div class="card-body" style="padding:8px 14px">';
+    turnoverReady.forEach(function (m) {
+      var tasksTotal = (m.tasks || []).length;
+      html += '<div class="flex items-center gap-8" style="padding:5px 0;border-bottom:1px solid var(--border2);cursor:pointer" onclick="navToMoves(\'turnover\')"><span class="pill pill-out" style="font-size:10px">OUT</span><span class="mono font-600 text-sm">Unit ' + m.unit + '</span><span class="text-sm" style="flex:1">' + m.resident + '</span><span class="text-xs text-3 mono">Out: ' + fmtShort(m.date) + '</span><span class="pill pill-resolved" style="font-size:10px;margin-left:6px">' + tasksTotal + '/' + tasksTotal + ' done</span></div>';
+    });
+    html += '</div></div>';
+  }
   g('dash-body').innerHTML = html;
 }
 function dashSearch(q) {
@@ -1055,6 +1073,15 @@ function dashSearch(q) {
   res.innerHTML = html; res.style.display = '';
 }
 function navToSearch(sec) { g('dash-results').style.display = 'none'; g('dash-search-input').value = ''; var item = document.querySelector('.nav-item[data-sec="' + sec + '"]'); if (item) nav(item); }
+function navToMoves(filter) {
+  var item = document.querySelector('.nav-item[data-sec="moves"]');
+  if (!item) return;
+  nav(item);
+  setTimeout(function () {
+    var tab = document.querySelector('#moves-tabs .sub-tab[onclick*=\'"' + filter + '"\'\']');
+    if (tab) { moveFilter = filter; document.querySelectorAll('#moves-tabs .sub-tab').forEach(function (t) { t.classList.remove('active'); }); tab.classList.add('active'); renderMoves(); }
+  }, 80);
+}
 document.addEventListener('click', function (e) { if (!e.target.closest('.search-wrap')) { var r = g('dash-results'); if (r) r.style.display = 'none'; } });
 
 // ─── MOVES ───
@@ -1273,6 +1300,22 @@ function renderMoves() {
       return allNonPostDone && hasIncompletePost;
     });
   }
+  else if (moveFilter === 'turnover') {
+    list = list.filter(function (m) {
+      if (m.type !== 'out' || m.archivedAt) return false;
+      var tasks = m.tasks || [];
+      if (!tasks.length) return false;
+      var allDone = tasks.every(function (tk) { return tk.done; });
+      var keysReturned = tasks.some(function (tk) {
+        return tk.done && (tk.text || '').toLowerCase().replace(/[^a-z0-9]/g,'').indexOf('keyreturn') !== -1;
+      });
+      // Must have all tasks done; if a "keys returned" task exists it must be checked
+      var hasKeyTask = tasks.some(function (tk) {
+        return (tk.text || '').toLowerCase().replace(/[^a-z0-9]/g,'').indexOf('keyreturn') !== -1;
+      });
+      return allDone || (hasKeyTask && keysReturned);
+    });
+  }
   else if (moveFilter === 'archive') list = list.filter(function (m) { return !!m.archivedAt; });
   else list = list.filter(function (m) { return !m.archivedAt; });
   list.sort(function (a, b) { return a.date.localeCompare(b.date); });
@@ -1280,6 +1323,7 @@ function renderMoves() {
   var cardTitle = g('moves-card-title');
   if (cardTitle) {
     if (moveFilter === 'postmovein') cardTitle.textContent = 'Post Move-In Follow-Up';
+    else if (moveFilter === 'turnover') cardTitle.textContent = 'Ready for Turnover';
     else cardTitle.textContent = 'Scheduled Moves';
   }
   // Post move-in info banner
