@@ -456,7 +456,6 @@
     <div class="section" id="section-walkthrough">
       <div class="sub-tabs" id="patrol-tabs">
         <div class="sub-tab active" onclick="patrolTab('log',this)">Patrol Log</div>
-        <div class="sub-tab" onclick="patrolTab('inspection',this)">Inspection</div>
         <div class="sub-tab" onclick="patrolTab('checkpoints',this)">Checkpoints</div>
       </div>
       <div id="patrol-body"></div>
@@ -632,12 +631,25 @@
       </div>
     </div>
     <div class="section" id="section-calendar">
-      <div class="flex gap-8 items-center mb-12" style="flex-wrap:wrap">
+      <div class="flex gap-8 items-center mb-8" style="flex-wrap:wrap">
         <button class="btn btn-secondary btn-sm" onclick="calNav(-1)">&#8249;</button>
         <button class="btn btn-secondary btn-sm" onclick="calNav(0)">Today</button>
         <button class="btn btn-secondary btn-sm" onclick="calNav(1)">&#8250;</button>
         <span style="font-size:13px;font-weight:600;margin-left:4px" id="cal-title"></span>
-        <button class="btn btn-secondary btn-sm ml-auto" onclick="toggleCalView()" id="cal-toggle">Monthly</button>
+        <div class="flex gap-4 ml-auto">
+          <button class="btn btn-secondary btn-sm" onclick="setCalView('week')" id="cal-btn-week">Week</button>
+          <button class="btn btn-secondary btn-sm" onclick="setCalView('month')" id="cal-btn-month">Month</button>
+          <button class="btn btn-secondary btn-sm" onclick="setCalView('agenda')" id="cal-btn-agenda">Agenda</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px">
+        <span style="font-size:11px;color:var(--text3);margin-right:2px">Key:</span>
+        <span class="cal-chip cal-chip-in" style="pointer-events:none;cursor:default;font-size:10px">Move In</span>
+        <span class="cal-chip cal-chip-out" style="pointer-events:none;cursor:default;font-size:10px">Move Out</span>
+        <span class="cal-chip cal-chip-task" style="pointer-events:none;cursor:default;font-size:10px">Task</span>
+        <span class="cal-chip cal-chip-todo" style="pointer-events:none;cursor:default;font-size:10px">To-Do</span>
+        <span class="cal-chip cal-chip-amenity" style="pointer-events:none;cursor:default;font-size:10px">Booking</span>
+        <span class="cal-chip" style="pointer-events:none;cursor:default;font-size:10px;background:var(--purple-light);color:var(--purple)">Tour</span>
       </div>
       <div id="cal-body"></div>
     </div>
@@ -1268,9 +1280,19 @@ function saveMove() {
   var m = { id: uid(), unit: unit, resident: resident, date: date, type: moveType, total: total, notes: notes, apptDate: apptDate, apptTime: apptTime, tasks: tasks, archivedAt: null, createdAt: Date.now() };
   if (!state.moves) state.moves = [];
   state.moves.push(m);
+  if (moveType === 'in') {
+    if (!state.todos) state.todos = [];
+    var followUpDate = '';
+    try {
+      var d = new Date(date + 'T12:00:00'); d.setDate(d.getDate() + 7);
+      followUpDate = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    } catch(e) {}
+    state.todos.push({ id: uid(), text: 'Welcome call \u2014 ' + resident + ', Unit ' + unit, dueDate: date, priority: 'normal', done: false, createdAt: Date.now() });
+    state.todos.push({ id: uid(), text: 'Follow-up call \u2014 ' + resident + ', Unit ' + unit, dueDate: followUpDate, priority: 'normal', done: false, createdAt: Date.now() });
+  }
   scheduleSave(); closeModal('modal-move'); openMoveId = m.id; renderMoves(); updateBadges(); renderDash();
   ['mv-unit', 'mv-resident', 'mv-total', 'mv-notes'].forEach(function (id) { g(id).value = ''; });
-  toast('Move added');
+  toast('Move added \u2014 welcome & follow-up call todos created');
 }
 function filterMoves(f, item) { moveFilter = f; document.querySelectorAll('#moves-tabs .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderMoves(); }
 
@@ -1803,7 +1825,6 @@ function timeAgo(ts) {
 }
 
 function renderWT() {
-  if (patrolFilter === 'inspection') { renderInspection(); return; }
   if (patrolFilter === 'checkpoints') { renderCheckpoints(); return; }
   renderPatrolLog();
 }
@@ -1897,7 +1918,7 @@ function renderCheckpoints() {
   var baseUrl = 'https://gabinoserrano-cloud.github.io/FrontDesk-Chorus/';
   var html = '<div class="flex items-center gap-8 mb-12">';
   html += '<button class="btn btn-primary btn-sm" id="add-cp-btn">+ Add Checkpoint</button>';
-  if (checkpoints.length) html += '<button class="btn btn-secondary btn-sm" id="print-qr-btn">Print QR Sheet</button>';
+  if (checkpoints.length) html += '<button class="btn btn-secondary btn-sm" id="print-qr-btn">Print QR Codes...</button>';
   html += '</div>';
   if (!checkpoints.length) {
     html += '<div class="card"><div class="card-body"><p class="text-3 text-sm" style="text-align:center;padding:20px">No checkpoints yet.<br>Add locations and print QR codes for staff to scan during patrols.</p></div></div>';
@@ -1928,7 +1949,7 @@ function renderCheckpoints() {
   var addBtn = g('add-cp-btn');
   if (addBtn) addBtn.addEventListener('click', openAddCheckpoint);
   var printBtn = g('print-qr-btn');
-  if (printBtn) printBtn.addEventListener('click', printQRSheet);
+  if (printBtn) printBtn.addEventListener('click', openQRPrintSelector);
   checkpoints.forEach(function(cp) {
     var editBtn = g('edit-cp-' + cp.id);
     if (editBtn) editBtn.addEventListener('click', function() { openEditCheckpoint(cp.id); });
@@ -2088,13 +2109,15 @@ function openManualScan() {
   });
 }
 
-function printQRSheet() {
+function printQRSheet(selectedIds) {
   var checkpoints = (state.checkpoints || []);
   if (!checkpoints.length) { toast('No checkpoints to print'); return; }
+  var toPrint = selectedIds && selectedIds.length ? checkpoints.filter(function(cp) { return selectedIds.indexOf(cp.id) !== -1; }) : checkpoints;
+  if (!toPrint.length) { toast('No checkpoints selected'); return; }
   var baseUrl = 'https://gabinoserrano-cloud.github.io/FrontDesk-Chorus/';
   var win = window.open('', '_blank');
   var cards = '';
-  checkpoints.forEach(function(cp) {
+  toPrint.forEach(function(cp) {
     var scanUrl = baseUrl + '?scan=' + cp.id;
     var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=6&data=' + encodeURIComponent(scanUrl);
     cards += '<div class="qr-card">'
@@ -2117,6 +2140,55 @@ function printQRSheet() {
     + '</body></html>');
   win.document.close();
   setTimeout(function() { win.print(); }, 700);
+}
+
+function openQRPrintSelector() {
+  var checkpoints = (state.checkpoints || []);
+  if (!checkpoints.length) { toast('No checkpoints defined yet'); return; }
+  var existing = g('modal-qr-select');
+  if (!existing) {
+    var ov = document.createElement('div');
+    ov.className = 'modal-ov'; ov.id = 'modal-qr-select';
+    ov.innerHTML = '<div class="modal">'
+      + '<div class="modal-hdr"><span class="modal-title">Select Checkpoints to Print</span><button class="modal-close" onclick="closeModal(\'modal-qr-select\')">&#x2715;</button></div>'
+      + '<div class="modal-bdy" id="qr-select-bdy"></div>'
+      + '<div class="modal-ftr">'
+      + '<button class="btn btn-secondary" onclick="closeModal(\'modal-qr-select\')">Cancel</button>'
+      + '<button class="btn btn-secondary btn-sm" id="qr-sel-all-btn">Select All</button>'
+      + '<button class="btn btn-primary" id="qr-print-btn">Print Selected</button>'
+      + '</div>'
+      + '</div>';
+    document.body.appendChild(ov);
+  }
+  var bdy = g('qr-select-bdy');
+  var rows = '';
+  checkpoints.forEach(function(cp) {
+    rows += '<label style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border2);cursor:pointer">'
+      + '<input type="checkbox" class="qr-cp-chk" value="' + cp.id + '" checked style="width:15px;height:15px;flex-shrink:0">'
+      + '<span style="font-size:13px"><strong>' + cp.name + '</strong>' + (cp.location ? ' <span style="color:var(--text3)">· ' + cp.location + '</span>' : '') + '</span>'
+      + '</label>';
+  });
+  bdy.innerHTML = rows;
+  openModal('modal-qr-select');
+  var selAllBtn = g('qr-sel-all-btn');
+  var fresh = selAllBtn.cloneNode(true);
+  selAllBtn.parentNode.replaceChild(fresh, selAllBtn);
+  g('qr-sel-all-btn').addEventListener('click', function() {
+    var chks = document.querySelectorAll('.qr-cp-chk');
+    var allChecked = Array.prototype.every.call(chks, function(c) { return c.checked; });
+    chks.forEach(function(c) { c.checked = !allChecked; });
+    g('qr-sel-all-btn').textContent = allChecked ? 'Select All' : 'Deselect All';
+  });
+  var printBtn = g('qr-print-btn');
+  var freshP = printBtn.cloneNode(true);
+  printBtn.parentNode.replaceChild(freshP, printBtn);
+  g('qr-print-btn').addEventListener('click', function() {
+    var selected = [];
+    document.querySelectorAll('.qr-cp-chk:checked').forEach(function(c) { selected.push(c.value); });
+    if (!selected.length) { toast('Select at least one checkpoint'); return; }
+    closeModal('modal-qr-select');
+    printQRSheet(selected);
+  });
 }
 
 function showScanOverlay(checkpointId) {
@@ -2737,7 +2809,7 @@ function openEditTodo(id) {
 
 // ─── CALENDAR ───
 var calMode = 'week', calOffset = 0;
-function toggleCalView() { calMode = calMode === 'week' ? 'month' : 'week'; g('cal-toggle').textContent = calMode === 'week' ? 'Monthly' : 'Weekly'; calOffset = 0; renderCalendar(); }
+function setCalView(mode) { calMode = mode; calOffset = 0; renderCalendar(); }
 function calNav(dir) { if (dir === 0) calOffset = 0; else calOffset += dir; renderCalendar(); }
 
 // ─── IMPORT CENTER ───────────────────────────────────────────────────────────
@@ -3041,30 +3113,37 @@ function openCalPop(dateStr, evt) {
     items.push({ type: tr.type === 'sgt' ? 'SGT Tour' : 'Guided Tour', typeClass: 'pill-resolved', main: tr.name, sub: (tr.unit ? 'Unit ' + tr.unit : '') + (tr.time ? ' · ' + tr.time : ''), sec: 'tours' });
   });
 
-  if (!items.length) return; // nothing to show
-
   var fmtted = new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   g('cal-pop-title').textContent = fmtted;
 
-  // Build a unique set of destination sections for "Go to" links
   var secs = {};
   items.forEach(function (item) { secs[item.sec] = true; });
   var secList = Object.keys(secs);
 
   var html = '';
-  items.forEach(function (item) {
-    html += '<div class="cal-pop-item">';
-    html += '<div class="pop-type"><span class="pill ' + item.typeClass + '" style="font-size:10px;padding:1px 6px">' + item.type + '</span></div>';
-    html += '<div class="pop-main">' + item.main + '</div>';
-    if (item.sub) html += '<div class="pop-sub">' + item.sub + '</div>';
-    html += '</div>';
-  });
+  if (!items.length) {
+    html += '<div style="color:var(--text3);font-size:13px;padding:4px 0 8px">No events this day.</div>';
+  } else {
+    items.forEach(function (item) {
+      html += '<div class="cal-pop-item">';
+      html += '<div class="pop-type"><span class="pill ' + item.typeClass + '" style="font-size:10px;padding:1px 6px">' + item.type + '</span></div>';
+      html += '<div class="pop-main">' + item.main + '</div>';
+      if (item.sub) html += '<div class="pop-sub">' + item.sub + '</div>';
+      html += '</div>';
+    });
+    secList.forEach(function (sec) {
+      var label = { moves: 'Open Move Ins / Outs', todos: 'Open To-Do List', amenities: 'Open Amenity Bookings', tours: 'Open Tour Log' }[sec] || sec;
+      html += '<div class="cal-pop-goto" onclick="closeCalPop();navToSec(\'' + sec + '\')">' + label + ' &rarr;</div>';
+    });
+  }
 
-  // Go-to buttons
-  secList.forEach(function (sec) {
-    var label = { moves: 'Open Move Ins / Outs', todos: 'Open To-Do List', amenities: 'Open Amenity Bookings', tours: 'Open Tour Log' }[sec] || sec;
-    html += '<div class="cal-pop-goto" onclick="closeCalPop();navToSec(\'' + sec + '\')">' + label + ' &rarr;</div>';
-  });
+  html += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">';
+  html += '<div style="font-size:11px;color:var(--text3);margin-bottom:6px">Quick add:</div>';
+  html += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
+  html += '<button class="btn btn-secondary btn-xs" onclick="openCalQuickTodo(\'' + dateStr + '\')">+ To-Do</button>';
+  html += '<button class="btn btn-secondary btn-xs" onclick="closeCalPop();openAddAmenityForDate(\'' + dateStr + '\')">+ Booking</button>';
+  html += '<button class="btn btn-secondary btn-xs" onclick="closeCalPop();openAddTourForDate(\'' + dateStr + '\')">+ Tour</button>';
+  html += '</div></div>';
 
   g('cal-pop-body').innerHTML = html;
 
@@ -3082,47 +3161,57 @@ function navToSec(sec) {
   if (item) nav(item);
 }
 
-function getChips(dateStr, unit, viewMode) {
-  var chips = '';
-  // Move in/out
-  // Show chip on apptDate if set, otherwise lease start date
-  (state.moves || []).filter(function (m) { var chipDate = m.apptDate || m.date; return chipDate === dateStr && !m.archivedAt && (!unit || m.unit === unit); }).forEach(function (m) {
+function getChips(dateStr, unit, viewMode, maxShow) {
+  var items = [];
+  // Appt-date chip (or lease date when no appt set)
+  (state.moves || []).filter(function (m) { var cd = m.apptDate || m.date; return cd === dateStr && !m.archivedAt && (!unit || m.unit === unit); }).forEach(function (m) {
     var cls = m.type === 'in' ? 'cal-chip-in' : 'cal-chip-out';
-    var typeLabel = m.type === 'in' ? 'IN' : 'OUT';
-    // Week view: row already shows unit, so show resident first name
-    // Month view: show unit number (more scannable at a glance)
-    var label = viewMode === 'month'
-      ? typeLabel + ' ' + m.unit
-      : typeLabel + ' ' + m.resident.split(' ')[0];
-    chips += '<div class="cal-chip ' + cls + '" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + m.resident + ' · Unit ' + m.unit + '">' + label + '</div>';
+    var lbl = (m.type === 'in' ? 'IN' : 'OUT') + ' ' + (viewMode === 'month' ? m.unit : m.resident.split(' ')[0]);
+    items.push('<div class="cal-chip ' + cls + '" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + m.resident + ' \u00b7 Unit ' + m.unit + '">' + lbl + '</div>');
+  });
+  // Dashed lease-date chip when apptDate differs from date
+  (state.moves || []).filter(function (m) { return m.apptDate && m.date && m.apptDate !== m.date && m.date === dateStr && !m.archivedAt && (!unit || m.unit === unit); }).forEach(function (m) {
+    var cls = m.type === 'in' ? 'cal-chip-in' : 'cal-chip-out';
+    var lbl = (m.type === 'in' ? 'IN' : 'OUT') + ' ' + (viewMode === 'month' ? m.unit : m.resident.split(' ')[0]);
+    items.push('<div class="cal-chip ' + cls + '" style="border-style:dashed;opacity:0.75" onclick="openCalPop(\'' + dateStr + '\',event)" title="Lease ' + (m.type === 'in' ? 'start' : 'end') + ': ' + m.resident + ' \u00b7 Unit ' + m.unit + '">' + lbl + '</div>');
   });
   // Task due dates
   (state.moves || []).filter(function (m) { return !m.archivedAt; }).forEach(function (m) {
     (m.tasks || []).filter(function (t) { return t.dueDate === dateStr && !t.done && (!unit || m.unit === unit); }).forEach(function (t) {
-      chips += '<div class="cal-chip cal-chip-task" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + t.text + ' · Unit ' + m.unit + '">' + t.text.slice(0, 18) + '</div>';
+      items.push('<div class="cal-chip cal-chip-task" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + t.text + ' \u00b7 Unit ' + m.unit + '">' + t.text.slice(0, 18) + '</div>');
     });
   });
-  // General — todos, amenities, tours (shown in month view or General row in week view)
+  // General (todos, amenities, tours) — month view or week General row
   if (!unit) {
     (state.todos || []).filter(function (t) { return t.dueDate === dateStr && !t.done; }).forEach(function (t) {
-      chips += '<div class="cal-chip cal-chip-todo" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + t.text + '">' + t.text.slice(0, 18) + '</div>';
+      items.push('<div class="cal-chip cal-chip-todo" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + t.text + '">' + t.text.slice(0, 18) + '</div>');
     });
     (state.amenities || []).filter(function (a) { return a.date === dateStr; }).forEach(function (a) {
-      // Show unit number in month, space name in week general row
-      var amLabel = viewMode === 'month'
-        ? a.space.split(' ')[0] + ' ' + a.unit
-        : a.space.split(' ')[0] + ' \u00b7 ' + a.resident.split(' ')[0];
-      chips += '<div class="cal-chip cal-chip-amenity" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + a.space + ' · Unit ' + a.unit + '">' + amLabel + '</div>';
+      var amLbl = viewMode === 'month' ? a.space.split(' ')[0] + ' ' + a.unit : a.space.split(' ')[0] + ' \u00b7 ' + a.resident.split(' ')[0];
+      items.push('<div class="cal-chip cal-chip-amenity" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + a.space + ' \u00b7 Unit ' + a.unit + '">' + amLbl + '</div>');
     });
     (state.tours || []).filter(function (tr) { return tr.date === dateStr; }).forEach(function (tr) {
-      var tourLabel = viewMode === 'month' ? 'Tour ' + (tr.unit || tr.name.split(' ')[0]) : 'Tour: ' + tr.name.split(' ')[0];
-      chips += '<div class="cal-chip" style="background:var(--purple-light);color:var(--purple);cursor:pointer" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + tr.name + (tr.unit ? ' · Unit ' + tr.unit : '') + '">' + tourLabel + '</div>';
+      var tourLbl = viewMode === 'month' ? 'Tour ' + (tr.unit || tr.name.split(' ')[0]) : 'Tour: ' + tr.name.split(' ')[0];
+      items.push('<div class="cal-chip" style="background:var(--purple-light);color:var(--purple);cursor:pointer" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + tr.name + (tr.unit ? ' \u00b7 Unit ' + tr.unit : '') + '">' + tourLbl + '</div>');
     });
   }
-  return chips;
+  if (maxShow && items.length > maxShow) {
+    var extra = items.length - maxShow;
+    return items.slice(0, maxShow).join('') + '<div class="cal-chip" style="background:var(--bg2);color:var(--text2);cursor:pointer;font-size:10px" onclick="openCalPop(\'' + dateStr + '\',event)">+' + extra + ' more</div>';
+  }
+  return items.join('');
 }
 
-function renderCalendar() { if (calMode === 'week') renderWeekCal(); else renderMonthCal(); }
+function renderCalendar() {
+  ['week','month','agenda'].forEach(function(m) {
+    var btn = g('cal-btn-' + m); if (!btn) return;
+    if (m === calMode) { btn.classList.remove('btn-secondary'); btn.classList.add('btn-primary'); }
+    else { btn.classList.remove('btn-primary'); btn.classList.add('btn-secondary'); }
+  });
+  if (calMode === 'week') renderWeekCal();
+  else if (calMode === 'month') renderMonthCal();
+  else renderAgendaCal();
+}
 function renderWeekCal() {
   var ws = new Date(); ws.setHours(0, 0, 0, 0); ws.setDate(ws.getDate() - ws.getDay() + calOffset * 7);
   var days = []; for (var i = 0; i < 7; i++) { var d = new Date(ws); d.setDate(d.getDate() + i); days.push(d); }
@@ -3161,12 +3250,80 @@ function renderMonthCal() {
   var totalCells = Math.ceil((firstDay + daysInM) / 7) * 7, day = 1;
   for (var i = 0; i < totalCells; i++) {
     if (i < firstDay || day > daysInM) { html += '<div class="cal-month-day other-month"></div>'; }
-    else { var ds = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0'); html += '<div class="cal-month-day ' + (ds === todayStr ? 'today' : '') + '"><div class="cal-day-num">' + day + '</div>' + getChips(ds, null, 'month') + '</div>'; day++; }
+    else { var ds = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0'); html += '<div class="cal-month-day ' + (ds === todayStr ? 'today' : '') + '" style="cursor:pointer" onclick="openCalPop(\'' + ds + '\',event)"><div class="cal-day-num">' + day + '</div>' + getChips(ds, null, 'month', 3) + '</div>'; day++; }
   }
   html += '</div>';
   g('cal-body').innerHTML = html;
 }
 
+
+function renderAgendaCal() {
+  var now = new Date(); now.setDate(1); now.setMonth(now.getMonth() + calOffset);
+  var year = now.getFullYear(), month = now.getMonth();
+  var daysInM = new Date(year, month + 1, 0).getDate();
+  var todayStr = today();
+  g('cal-title').textContent = 'Agenda \u2014 ' + now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  var html = '<div style="display:flex;gap:6px;align-items:center;margin-bottom:14px">'
+    + '<span style="font-size:12px;color:var(--text3)">Quick add:</span>'
+    + '<button class="btn btn-secondary btn-xs" onclick="openCalQuickTodo(\'\')">+ To-Do</button>'
+    + '<button class="btn btn-secondary btn-xs" onclick="openAddAmenityForDate(\'\')">+ Booking</button>'
+    + '<button class="btn btn-secondary btn-xs" onclick="openAddTourForDate(\'\')">+ Tour</button>'
+    + '</div>';
+  var hasAny = false;
+  for (var day = 1; day <= daysInM; day++) {
+    var ds = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+    var dayItems = [];
+    (state.moves || []).filter(function (m) { var cd = m.apptDate || m.date; return cd === ds && !m.archivedAt; }).forEach(function (m) {
+      dayItems.push({ tag: m.type === 'in' ? 'IN' : 'OUT', tagCls: m.type === 'in' ? 'cal-chip-in' : 'cal-chip-out', tagStyle: '', text: (m.type === 'in' ? 'Move In' : 'Move Out') + ' \u2014 ' + m.resident + ', Unit ' + m.unit, sec: 'moves' });
+    });
+    (state.moves || []).filter(function (m) { return m.apptDate && m.date && m.apptDate !== m.date && m.date === ds && !m.archivedAt; }).forEach(function (m) {
+      dayItems.push({ tag: m.type === 'in' ? 'IN' : 'OUT', tagCls: m.type === 'in' ? 'cal-chip-in' : 'cal-chip-out', tagStyle: 'border-style:dashed;opacity:0.8', text: 'Lease ' + (m.type === 'in' ? 'Start' : 'End') + ' \u2014 ' + m.resident + ', Unit ' + m.unit, sec: 'moves' });
+    });
+    (state.moves || []).filter(function (m) { return !m.archivedAt; }).forEach(function (m) {
+      (m.tasks || []).filter(function (t) { return t.dueDate === ds && !t.done; }).forEach(function (t) {
+        dayItems.push({ tag: 'TASK', tagCls: 'cal-chip-task', tagStyle: '', text: t.text + ' \u2014 Unit ' + m.unit, sec: 'moves' });
+      });
+    });
+    (state.todos || []).filter(function (t) { return t.dueDate === ds && !t.done; }).forEach(function (t) {
+      dayItems.push({ tag: 'TODO', tagCls: 'cal-chip-todo', tagStyle: '', text: t.text, sec: 'todos' });
+    });
+    (state.amenities || []).filter(function (a) { return a.date === ds; }).forEach(function (a) {
+      dayItems.push({ tag: 'APT', tagCls: 'cal-chip-amenity', tagStyle: '', text: a.space + ' \u2014 ' + a.resident + ', Unit ' + a.unit + (a.start ? ' at ' + a.start : ''), sec: 'amenities' });
+    });
+    (state.tours || []).filter(function (tr) { return tr.date === ds; }).forEach(function (tr) {
+      dayItems.push({ tag: 'TOUR', tagCls: '', tagStyle: 'background:var(--purple-light);color:var(--purple)', text: (tr.type === 'sgt' ? 'SGT' : 'Guided') + ' Tour \u2014 ' + tr.name + (tr.unit ? ', Unit ' + tr.unit : '') + (tr.time ? ' at ' + tr.time : ''), sec: 'tours' });
+    });
+    if (!dayItems.length) continue;
+    hasAny = true;
+    var isToday = ds === todayStr;
+    var dayFmt = new Date(ds + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    html += '<div style="margin-bottom:16px">';
+    html += '<div style="font-size:11px;font-weight:700;color:' + (isToday ? 'var(--accent)' : 'var(--text3)') + ';text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:flex;align-items:center;gap:6px">';
+    if (isToday) html += '<span style="background:var(--accent);color:#fff;border-radius:4px;padding:1px 7px;font-size:10px">TODAY</span>';
+    html += dayFmt + '</div>';
+    dayItems.forEach(function (item) {
+      html += '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:4px;cursor:pointer" onclick="navToSec(\'' + item.sec + '\')">';
+      html += '<span class="cal-chip ' + item.tagCls + '" style="flex-shrink:0;' + item.tagStyle + '">' + item.tag + '</span>';
+      html += '<span style="font-size:13px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + item.text + '</span>';
+      html += '<span style="color:var(--text3);font-size:16px;flex-shrink:0">&rsaquo;</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+  if (!hasAny) html += '<div style="color:var(--text3);font-size:13px;padding:20px 0;text-align:center">No events this month.</div>';
+  g('cal-body').innerHTML = html;
+}
+
+function openCalQuickTodo(dateStr) {
+  closeCalPop();
+  navToSec('todos');
+  setTimeout(function () {
+    var dateEl = g('todo-date'); if (dateEl && dateStr) dateEl.value = dateStr;
+    var inp = g('todo-input'); if (inp) inp.focus();
+  }, 80);
+}
+function openAddAmenityForDate(dateStr) { openAddAmenity(); if (dateStr) g('am-date').value = dateStr; }
+function openAddTourForDate(dateStr) { openAddTour(); if (dateStr) g('tr-date').value = dateStr; }
 
 // ─── SETTINGS ───
 function isValidTaskList(list) { return Array.isArray(list) && list.length > 0 && list.every(function(t){ return t && typeof t.text === 'string' && t.text.length > 0; }); }
