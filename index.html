@@ -1266,6 +1266,7 @@ function buildCL(m, filterCat) {
   html += '<div class="ml-auto flex gap-4"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();resetCL(\'' + m.id + '\')">Reset</button>';
   html += '<button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();openAddTask(\'' + m.id + '\')">+ Task</button></div></div>';
   if (!tasks.length) { html += '<div class="text-3 text-sm" style="padding:8px 0">No tasks yet.</div>'; return html; }
+  var allDone = tasks.length > 0 && done === tasks.length;
   tasks.forEach(function (t) {
     html += '<div class="cl-item" onclick="event.stopPropagation()">';
     html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTask(\'' + m.id + '\',\'' + t.id + '\',this.checked)">';
@@ -1282,6 +1283,22 @@ function buildCL(m, filterCat) {
     html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);padding:1px 5px;flex-shrink:0" onclick="deleteTask(\'' + m.id + '\',\'' + t.id + '\')">x</button>';
     html += '</div>';
   });
+  if (allDone) {
+    var incompletePost = (m.tasks || []).some(function (tk) { return tk.cat === 'Post Move-In' && !tk.done; });
+    if (filterCat === 'in' && incompletePost) {
+      html += '<div style="margin-top:10px;padding:10px 12px;background:var(--accent-light);border-radius:var(--radius);border:1px solid #BCD4ED;display:flex;align-items:center;gap:10px" onclick="event.stopPropagation()">'
+        + '<span style="font-size:15px">&#10003;</span>'
+        + '<span style="color:var(--accent);font-weight:600;font-size:13px">Main tasks done!</span>'
+        + '<span style="color:var(--text2);font-size:12px;flex:1">Switch to the <strong>Post Move-In</strong> tab to continue.</span>'
+        + '</div>';
+    } else {
+      html += '<div style="margin-top:10px;padding:10px 12px;background:var(--green-light);border-radius:var(--radius);border:1px solid #A8D48A;display:flex;align-items:center;gap:10px" onclick="event.stopPropagation()">'
+        + '<span style="font-size:15px">&#10003;</span>'
+        + '<span style="color:var(--green);font-weight:600;font-size:13px">All tasks done!</span>'
+        + '<button class="btn btn-sm" style="background:var(--green);color:#fff;border:none;margin-left:auto;flex-shrink:0" onclick="event.stopPropagation();archiveMove(\'' + m.id + '\')">Archive this move</button>'
+        + '</div>';
+    }
+  }
   return html;
 }
 
@@ -1305,10 +1322,15 @@ function renderMoves() {
   var t = today();
   var list = (state.moves || []).slice();
   if (moveFilter === 'in') list = list.filter(function (m) {
-    return m.type === 'in' && !m.archivedAt;
+    if (m.type !== 'in' || m.archivedAt) return false;
+    var nonPost = (m.tasks || []).filter(function (tk) { return tk.cat !== 'Post Move-In'; });
+    return !nonPost.length || nonPost.some(function (tk) { return !tk.done; });
   });
   else if (moveFilter === 'out') list = list.filter(function (m) {
-    return m.type === 'out' && !m.archivedAt;
+    if (m.type !== 'out' || m.archivedAt) return false;
+    var tasks = m.tasks || [];
+    if (tasks.length > 0 && tasks.every(function (tk) { return tk.done; })) return false;
+    return true;
   });
   else if (moveFilter === 'today') list = list.filter(function (m) { return m.date === t && !m.archivedAt; });
   else if (moveFilter === 'postmovein') {
