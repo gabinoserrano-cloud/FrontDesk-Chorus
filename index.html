@@ -354,27 +354,27 @@
   <div class="nav-group">
     <div class="nav-label">Home</div>
     <div class="nav-item active" data-sec="dashboard" onclick="nav(this)"><span class="icon">&#127968;</span><span class="nav-txt">Dashboard</span></div>
+    <div class="nav-item" data-sec="calendar" onclick="nav(this)"><span class="icon">&#128197;</span><span class="nav-txt">Calendar</span></div>
   </div>
   <div class="nav-group">
     <div class="nav-label">Operations</div>
     <div class="nav-item" data-sec="moves" onclick="nav(this)"><span class="icon">&#128666;</span><span class="nav-txt">Move Ins / Outs</span><span class="badge" id="badge-moves"></span></div>
     <div class="nav-item" data-sec="vacant" onclick="nav(this)"><span class="icon">&#127968;</span><span class="nav-txt">Vacant Units</span><span class="badge" id="badge-vacant"></span></div>
+    <div class="nav-item" data-sec="walkthrough" onclick="nav(this)"><span class="icon">&#128737;</span><span class="nav-txt">Security Patrols</span></div>
     <div class="nav-item" data-sec="maintenance" onclick="nav(this)"><span class="icon">&#128295;</span><span class="nav-txt">Maintenance</span><span class="badge" id="badge-maint"></span></div>
   </div>
   <div class="nav-group">
     <div class="nav-label">Resident Services</div>
     <div class="nav-item" data-sec="guests" onclick="nav(this)"><span class="icon">&#128101;</span><span class="nav-txt">Guests &amp; Visitors</span><span class="badge" id="badge-guests"></span></div>
     <div class="nav-item" data-sec="keys" onclick="nav(this)"><span class="icon">&#128273;</span><span class="nav-txt">Key Tracker</span><span class="badge" id="badge-keys"></span></div>
+    <div class="nav-item" data-sec="amenities" onclick="nav(this)"><span class="icon">&#127881;</span><span class="nav-txt">Amenity Bookings</span><span class="badge" id="badge-amenities"></span></div>
+    <div class="nav-item" data-sec="laf" onclick="nav(this)"><span class="icon">&#128269;</span><span class="nav-txt">Lost &amp; Found</span><span class="badge" id="badge-laf"></span></div>
+    <div class="nav-item" data-sec="tours" onclick="nav(this)"><span class="icon">&#127969;</span><span class="nav-txt">Tour Log</span><span class="badge" id="badge-tours"></span></div>
   </div>
   <div class="nav-group">
     <div class="nav-label">Shift</div>
-    <div class="nav-item" data-sec="amenities" onclick="nav(this)"><span class="icon">&#127881;</span><span class="nav-txt">Amenity Bookings</span><span class="badge" id="badge-amenities"></span></div>
-    <div class="nav-item" data-sec="tours" onclick="nav(this)"><span class="icon">&#127969;</span><span class="nav-txt">Tour Log</span><span class="badge" id="badge-tours"></span></div>
-    <div class="nav-item" data-sec="walkthrough" onclick="nav(this)"><span class="icon">&#128737;</span><span class="nav-txt">Security Patrols</span></div>
-    <div class="nav-item" data-sec="todos" onclick="nav(this)"><span class="icon">&#9989;</span><span class="nav-txt">To-Do List</span><span class="badge" id="badge-todos"></span></div>
-    <div class="nav-item" data-sec="laf" onclick="nav(this)"><span class="icon">&#128269;</span><span class="nav-txt">Lost &amp; Found</span><span class="badge" id="badge-laf"></span></div>
     <div class="nav-item" data-sec="passdown" onclick="nav(this)"><span class="icon">&#128203;</span><span class="nav-txt">Daily Passdown</span></div>
-    <div class="nav-item" data-sec="calendar" onclick="nav(this)"><span class="icon">&#128197;</span><span class="nav-txt">Calendar</span></div>
+    <div class="nav-item" data-sec="todos" onclick="nav(this)"><span class="icon">&#9989;</span><span class="nav-txt">To-Do List</span><span class="badge" id="badge-todos"></span></div>
   </div>
   <div class="nav-group">
     <div class="nav-label">Management</div>
@@ -595,6 +595,24 @@
         <div id="settings-wt-floors" style="padding:0"></div>
       </div>
       <div class="card mb-12">
+        <div class="card-hdr"><span class="card-title">&#128065; Visible Sections</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Choose which sections appear in the sidebar. Sections you hide still keep their data — just uncheck to bring them back.</p>
+          <div id="settings-nav-visibility" style="display:grid;grid-template-columns:1fr 1fr;gap:2px"></div>
+        </div>
+      </div>
+      <div class="card mb-12">
+        <div class="card-hdr"><span class="card-title">&#128230; Lost &amp; Found — Disposal Reminder</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Flag unclaimed items as pending disposal after this many days. Items past the threshold show an amber warning in the L&amp;F log.</p>
+          <div class="flex gap-8 items-center">
+            <input type="number" id="laf-expiry-days" min="1" max="365" style="width:80px" placeholder="30">
+            <span style="font-size:13px;color:var(--text2)">days</span>
+            <button class="btn btn-primary btn-sm" onclick="saveLAFSettings()">Save</button>
+          </div>
+        </div>
+      </div>
+      <div class="card mb-12">
         <div class="card-hdr"><span class="card-title">&#128737; Security Patrol Alert</span></div>
         <div class="card-body">
           <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Show a dashboard alert when a checkpoint hasn't been scanned within this many hours.</p>
@@ -726,6 +744,19 @@
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-key')">Cancel</button><button class="btn btn-primary" onclick="saveKey()">Save</button></div>
 </div></div>
 
+<div class="modal-ov" id="modal-todo"><div class="modal">
+  <div class="modal-hdr"><span class="modal-title" id="modal-todo-title">Edit To-Do</span><button class="modal-close" onclick="closeModal('modal-todo')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <div class="fg"><label>Task</label><input id="td-text" type="text" placeholder="What needs to be done?"></div>
+    <div class="fg"><label>For / Note <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="td-note" type="text" placeholder="e.g. Unit 802, follow-up on maintenance request..."></div>
+    <div class="fr">
+      <div class="fg"><label>Due Date</label><input id="td-date" type="date"></div>
+      <div class="fg"><label>Priority</label><select id="td-priority"><option value="normal">Normal</option><option value="urgent">Urgent</option></select></div>
+    </div>
+  </div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-todo')">Cancel</button><button class="btn btn-primary" id="modal-todo-savebtn" onclick="saveTodoModal()">Save</button></div>
+</div></div>
+
 <div class="modal-ov" id="modal-amenity"><div class="modal">
   <div class="modal-hdr"><span class="modal-title" id="modal-amenity-title">Add Amenity Booking</span><button class="modal-close" onclick="closeModal('modal-amenity')">&#x2715;</button></div>
   <div class="modal-bdy">
@@ -817,7 +848,7 @@ function setSyncStatus(cls, msg) {
 }
 
 // ─── STATE ───
-var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 } };
+var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'] };
 var teamUnlocked = false;
 
 var DEFAULT_IN_TASKS = [
@@ -932,7 +963,7 @@ function processImport() {
 }
 function resetData() {
   if (!confirm('Reset ALL data? Cannot be undone.')) return;
-  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 } };
+  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'] };
   scheduleSave(); renderAll(); toast('Data reset');
 }
 
@@ -948,7 +979,7 @@ function today() {
 function fmtShort(d) { if (!d) return '-'; return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
 function toast(msg) { var e = g('toast'); e.textContent = msg; e.classList.add('show'); setTimeout(function () { e.classList.remove('show'); }, 2500); }
 function g(id) { return document.getElementById(id); }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 } }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'] }; }
 
 // ─── SIDEBAR ───
 function toggleSidebar() { document.body.classList.toggle('sc'); localStorage.setItem('chorus-sc', document.body.classList.contains('sc') ? '1' : '0'); }
@@ -2443,21 +2474,53 @@ function renderTodos() {
     return b.createdAt - a.createdAt;
   });
   var pending = sorted.filter(function (t) { return !t.done; }).length;
-  var cnt = g('todos-count'); if (cnt) cnt.textContent = pending + ' pending';
+  // Collect move checklist tasks that have a due date and aren't done
+  var clTasks = [];
+  (state.moves || []).filter(function (m) { return !m.archivedAt; }).forEach(function (m) {
+    (m.tasks || []).filter(function (t) { return t.dueDate && !t.done; }).forEach(function (t) {
+      clTasks.push({ task: t, move: m });
+    });
+  });
+  clTasks.sort(function (a, b) { return a.task.dueDate.localeCompare(b.task.dueDate); });
+  var totalPending = pending + clTasks.length;
+  var cnt = g('todos-count'); if (cnt) cnt.textContent = totalPending + ' pending';
   var list = g('todos-list'); if (!list) return;
-  if (!sorted.length) { list.innerHTML = '<div class="text-3 text-sm" style="padding:18px 16px">No to-dos yet.</div>'; return; }
+  if (!sorted.length && !clTasks.length) { list.innerHTML = '<div class="text-3 text-sm" style="padding:18px 16px">No to-dos yet.</div>'; setBadge('badge-todos', 0); setMBadge('mb-todos', 0); return; }
   var html = '';
   sorted.forEach(function (t) {
     var urgIcon = (t.priority === 'urgent' && !t.done) ? '<span style="color:var(--red)">! </span>' : '';
     var due = t.dueDate ? '<span class="todo-due">Due: ' + fmtShort(t.dueDate) + '</span>' : '';
     html += '<div class="todo-item ' + (t.done ? 'done' : '') + '">';
     html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTodo(\'' + t.id + '\',this.checked)">';
-    html += '<div style="flex:1;min-width:0"><div class="todo-text ' + (t.done ? 'strk' : '') + '">' + urgIcon + t.text + '</div>';
-    html += '<div class="todo-meta">' + due + '<span class="text-xs text-3">' + new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span></div></div>';
-    html += '<button class="btn btn-ghost btn-xs" onclick="openEditTodo(\'' + t.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteTodo(\'' + t.id + '\')">x</button></div>';
+    html += '<div style="flex:1;min-width:0">';
+    html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + urgIcon + t.text + '</div>';
+    if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + t.note + '</div>';
+    html += '<div class="todo-meta">' + due + '<span class="text-xs text-3">' + new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span></div>';
+    html += '</div>';
+    html += '<button class="btn btn-ghost btn-xs" onclick="openEditTodo(\'' + t.id + '\')" title="Edit">&#9998;</button>';
+    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteTodo(\'' + t.id + '\')">x</button>';
+    html += '</div>';
   });
+  if (clTasks.length) {
+    html += '<div style="padding:10px 14px 6px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px'
+      + (sorted.length ? ';border-top:1px solid var(--border);margin-top:4px' : '') + '">'
+      + 'From Move Checklists</div>';
+    clTasks.forEach(function (entry) {
+      var t = entry.task, m = entry.move;
+      var due = '<span class="todo-due">Due: ' + fmtShort(t.dueDate) + '</span>';
+      html += '<div class="todo-item">';
+      html += '<span style="width:16px;height:16px;border:1.5px solid var(--border);border-radius:3px;flex-shrink:0;display:inline-block"></span>';
+      html += '<div style="flex:1;min-width:0">';
+      html += '<div class="todo-text">' + t.text + '</div>';
+      html += '<div class="todo-meta">' + due + '<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:4px;padding:1px 5px">'
+        + 'Unit ' + m.unit + ' \u00b7 ' + m.resident.split(' ')[0] + '</span></div>';
+      html += '</div>';
+      html += '<button class="btn btn-ghost btn-xs" onclick="openEditMove(\'' + m.id + '\')" title="Open move">&#8599;</button>';
+      html += '</div>';
+    });
+  }
   list.innerHTML = html;
-  setBadge('badge-todos', pending); setMBadge('mb-todos', pending);
+  setBadge('badge-todos', totalPending); setMBadge('mb-todos', totalPending);
 }
 function toggleTodo(id, checked) { var t = (state.todos || []).find(function (x) { return x.id === id; }); if (t) { t.done = checked; t.completedAt = checked ? Date.now() : null; scheduleSave(); renderTodos(); updateBadges(); renderDash(); } }
 function deleteTodo(id) { state.todos = (state.todos || []).filter(function (t) { return t.id !== id; }); scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Removed'); }
@@ -2484,13 +2547,18 @@ function renderLAF() {
   else if (lafFilter === 'claimed') list = list.filter(function (i) { return !!i.claimedAt; });
   list.sort(function (a, b) { return b.loggedAt - a.loggedAt; });
   var tbody = g('laf-tbody'), cnt = g('laf-count');
+  var expiryDays = (state.lafSettings && state.lafSettings.expiryDays) || 30;
   if (cnt) cnt.textContent = list.length + ' items';
   if (!list.length) { tbody.innerHTML = '<tr><td colspan="7" class="tbl-empty">No items logged.</td></tr>'; return; }
   var html = '';
   list.forEach(function (i) {
     var days = Math.floor((Date.now() - i.loggedAt) / 86400000);
-    var statusCell = i.claimedAt ? new Date(i.claimedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '<button class="btn btn-secondary btn-xs" onclick="claimLAF(\'' + i.id + '\')">Mark Claimed</button>' + (days >= 30 ? ' <span style="color:var(--amber)">!</span>' : '');
-    html += '<tr ' + (i.claimedAt ? 'style="opacity:0.6"' : '') + '>';
+    var overdue = !i.claimedAt && days >= expiryDays;
+    var statusCell = i.claimedAt
+      ? '<span style="color:var(--green);font-size:12px">&#10003; ' + new Date(i.claimedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span>'
+      : '<button class="btn btn-secondary btn-xs" onclick="claimLAF(\'' + i.id + '\')">Mark Claimed</button>';
+    if (overdue) statusCell += ' <span style="background:var(--amber-light);color:var(--amber);font-size:10px;border-radius:4px;padding:1px 6px;margin-left:4px">Disposal ' + days + 'd</span>';
+    html += '<tr ' + (i.claimedAt ? 'style="opacity:0.55"' : (overdue ? 'style="background:var(--amber-light)"' : '')) + '>';
     html += '<td class="mono text-sm">' + fmtShort(i.date) + '</td><td class="text-sm">' + (i.location || '-') + '</td><td class="font-600">' + i.desc + '</td>';
     html += '<td class="text-sm text-2">' + i.condition + '</td><td class="text-sm">' + (i.foundBy || '-') + '</td>';
     html += '<td class="text-sm">' + statusCell + '</td><td><button class="btn btn-ghost btn-xs" onclick="openEditLAF(\'' + i.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteLAF(\'' + i.id + '\')">x</button></td></tr>';
@@ -2798,13 +2866,40 @@ function openEditLAF(id) {
 }
 
 // ─── TODO INLINE EDIT ───
+var editingTodoId = null;
+function openAddTodoModal(dateStr) {
+  editingTodoId = null;
+  g('modal-todo-title').textContent = 'Add To-Do';
+  g('modal-todo-savebtn').textContent = 'Add';
+  g('td-text').value = ''; g('td-note').value = '';
+  g('td-date').value = dateStr || ''; g('td-priority').value = 'normal';
+  openModal('modal-todo');
+}
 function openEditTodo(id) {
-  var t = (state.todos||[]).find(function(x){return x.id===id;}); if(!t) return;
-  var newText = prompt('Edit to-do:', t.text); if(newText===null) return;
-  var trimmed = newText.trim(); if(!trimmed) return;
-  t.text = trimmed;
-  // Also allow changing due date
-  scheduleSave(); renderTodos(); renderDash(); toast('Updated');
+  var t = (state.todos || []).find(function (x) { return x.id === id; }); if (!t) return;
+  editingTodoId = id;
+  g('modal-todo-title').textContent = 'Edit To-Do';
+  g('modal-todo-savebtn').textContent = 'Save Changes';
+  g('td-text').value = t.text || ''; g('td-note').value = t.note || '';
+  g('td-date').value = t.dueDate || ''; g('td-priority').value = t.priority || 'normal';
+  openModal('modal-todo');
+}
+function saveTodoModal() {
+  var text = g('td-text').value.trim(); if (!text) { toast('Enter a task first'); return; }
+  var note = g('td-note').value.trim() || null;
+  var dueDate = g('td-date').value || null;
+  var priority = g('td-priority').value;
+  if (editingTodoId) {
+    var t = (state.todos || []).find(function (x) { return x.id === editingTodoId; });
+    if (t) { t.text = text; t.note = note; t.dueDate = dueDate; t.priority = priority; }
+  } else {
+    if (!state.todos) state.todos = [];
+    state.todos.push({ id: uid(), text: text, note: note, priority: priority, dueDate: dueDate, done: false, createdAt: Date.now() });
+  }
+  var wasEditing = !!editingTodoId;
+  closeModal('modal-todo'); editingTodoId = null;
+  scheduleSave(); renderTodos(); updateBadges(); renderDash();
+  toast(wasEditing ? 'Updated' : 'Added');
 }
 
 // ─── CALENDAR ───
@@ -3316,11 +3411,7 @@ function renderAgendaCal() {
 
 function openCalQuickTodo(dateStr) {
   closeCalPop();
-  navToSec('todos');
-  setTimeout(function () {
-    var dateEl = g('todo-date'); if (dateEl && dateStr) dateEl.value = dateStr;
-    var inp = g('todo-input'); if (inp) inp.focus();
-  }, 80);
+  openAddTodoModal(dateStr);
 }
 function openAddAmenityForDate(dateStr) { openAddAmenity(); if (dateStr) g('am-date').value = dateStr; }
 function openAddTourForDate(dateStr) { openAddTour(); if (dateStr) g('tr-date').value = dateStr; }
@@ -3518,13 +3609,79 @@ function openTeamEntryModal() {
   });
 }
 
+var TOGGLEABLE_SECTIONS = [
+  { id: 'moves', label: 'Move Ins / Outs' },
+  { id: 'vacant', label: 'Vacant Units' },
+  { id: 'walkthrough', label: 'Security Patrols' },
+  { id: 'maintenance', label: 'Maintenance' },
+  { id: 'guests', label: 'Guests & Visitors' },
+  { id: 'keys', label: 'Key Tracker' },
+  { id: 'amenities', label: 'Amenity Bookings' },
+  { id: 'laf', label: 'Lost & Found' },
+  { id: 'tours', label: 'Tour Log' },
+  { id: 'passdown', label: 'Daily Passdown' },
+  { id: 'todos', label: 'To-Do List' },
+  { id: 'team', label: 'Team Tracker' },
+  { id: 'calendar', label: 'Calendar' },
+  { id: 'import', label: 'Import Center' }
+];
+
+function renderNavVisibility() {
+  var hidden = state.hiddenSections || [];
+  TOGGLEABLE_SECTIONS.forEach(function (s) {
+    var el = document.querySelector('.nav-item[data-sec="' + s.id + '"]');
+    if (el) el.style.display = hidden.indexOf(s.id) !== -1 ? 'none' : '';
+  });
+  document.querySelectorAll('.nav-group').forEach(function (group) {
+    var items = group.querySelectorAll('.nav-item[data-sec]');
+    var anyVisible = Array.prototype.some.call(items, function (el) { return el.style.display !== 'none'; });
+    var label = group.querySelector('.nav-label');
+    if (label) label.style.display = anyVisible ? '' : 'none';
+  });
+}
+
+function toggleNavSection(sec, visible) {
+  if (!state.hiddenSections) state.hiddenSections = [];
+  if (visible) {
+    state.hiddenSections = state.hiddenSections.filter(function (s) { return s !== sec; });
+  } else {
+    if (state.hiddenSections.indexOf(sec) === -1) state.hiddenSections.push(sec);
+  }
+  scheduleSave(); renderNavVisibility();
+}
+
+function renderNavVisibilitySettings() {
+  var el = g('settings-nav-visibility'); if (!el) return;
+  var hidden = state.hiddenSections || [];
+  var html = '';
+  TOGGLEABLE_SECTIONS.forEach(function (s) {
+    var checked = hidden.indexOf(s.id) === -1;
+    html += '<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;font-size:13px;border-radius:6px;transition:background .1s" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">'
+      + '<input type="checkbox" ' + (checked ? 'checked' : '') + ' onchange="toggleNavSection(\'' + s.id + '\',this.checked)">'
+      + s.label + '</label>';
+  });
+  el.innerHTML = html;
+}
+
 function renderSettings() {
   renderTaskList('in');
   renderTaskList('out');
   renderSettingsWTFloors();
   renderTeamStaff();
+  renderNavVisibilitySettings();
   var ph = g('patrol-alert-hours');
   if (ph) ph.value = (state.patrolSettings && state.patrolSettings.alertHours) || 4;
+  var lx = g('laf-expiry-days');
+  if (lx) lx.value = (state.lafSettings && state.lafSettings.expiryDays) || 30;
+}
+
+function saveLAFSettings() {
+  var lx = g('laf-expiry-days');
+  var val = lx ? parseInt(lx.value) : 30;
+  if (!val || val < 1) { toast('Enter a valid number of days'); return; }
+  if (!state.lafSettings) state.lafSettings = {};
+  state.lafSettings.expiryDays = val;
+  scheduleSave(); renderLAF(); toast('Disposal reminder saved');
 }
 
 function savePatrolAlertHours() {
@@ -3719,7 +3876,7 @@ async function init() {
   try { var params = new URLSearchParams(window.location.search); pendingScanId = params.get('scan'); } catch(e) {}
   await pullCloud();
   lastSyncTs = Date.now();
-  renderDash(); updateBadges();
+  renderNavVisibility(); renderDash(); updateBadges();
   if (pendingScanId) showScanOverlay(pendingScanId);
 }
 document.addEventListener('DOMContentLoaded', init);
