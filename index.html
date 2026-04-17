@@ -377,6 +377,10 @@
     <div class="nav-item" data-sec="calendar" onclick="nav(this)"><span class="icon">&#128197;</span><span class="nav-txt">Calendar</span></div>
   </div>
   <div class="nav-group">
+    <div class="nav-label">Management</div>
+    <div class="nav-item" data-sec="team" onclick="nav(this)"><span class="icon">&#128100;</span><span class="nav-txt">Team Tracker</span><span style="font-size:9px;background:var(--accent);color:#fff;border-radius:3px;padding:1px 4px;margin-left:4px;font-weight:600;letter-spacing:.3px">LEAD</span></div>
+  </div>
+  <div class="nav-group">
     <div class="nav-label">System</div>
     <div class="nav-item" data-sec="import" onclick="nav(this)"><span class="icon">&#8679;</span><span class="nav-txt">Import Center</span></div>
     <div class="nav-item" data-sec="settings" onclick="nav(this)"><span class="icon">&#9881;</span><span class="nav-txt">Settings</span></div>
@@ -561,6 +565,7 @@
         </div>
       </div>
     </div>
+    <div class="section" id="section-team"><div id="team-body"></div></div>
     <div class="section" id="section-settings">
       <div class="two-col">
         <div>
@@ -587,6 +592,20 @@
           <button class="btn btn-primary btn-sm ml-auto" onclick="openAddWTFloor()">+ Add Floor</button>
         </div>
         <div id="settings-wt-floors" style="padding:0"></div>
+      </div>
+      <div class="card mb-12">
+        <div class="card-hdr"><span class="card-title">&#128100; Team Tracker — Staff</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddStaff()">+ Add Staff</button></div>
+        <div class="card-body" style="padding:8px 0" id="settings-team-staff"></div>
+      </div>
+      <div class="card mb-12">
+        <div class="card-hdr"><span class="card-title">&#128274; Team Tracker PIN</span></div>
+        <div class="card-body" id="settings-team-pin">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">To change the PIN you must enter the current PIN first.</p>
+          <div class="fg"><label>Current PIN</label><input type="password" id="pin-current" maxlength="8" inputmode="numeric" placeholder="Current PIN"></div>
+          <div class="fg"><label>New PIN</label><input type="password" id="pin-new" maxlength="8" inputmode="numeric" placeholder="New PIN (4-8 digits)"></div>
+          <div class="fg"><label>Confirm New PIN</label><input type="password" id="pin-confirm" maxlength="8" inputmode="numeric" placeholder="Repeat new PIN"></div>
+          <button class="btn btn-primary btn-sm" onclick="changeTeamPin()">Update PIN</button>
+        </div>
       </div>
       <div class="card">
         <div class="card-hdr"><span class="card-title">About</span></div>
@@ -771,7 +790,8 @@ function setSyncStatus(cls, msg) {
 }
 
 // ─── STATE ───
-var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [] };
+var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '' };
+var teamUnlocked = false;
 
 var DEFAULT_IN_TASKS = [
   { text: 'Confirm move-in date and time window', cat: 'Move In' },
@@ -831,7 +851,7 @@ function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(stat
 function loadLocal() {
   try {
     var raw = localStorage.getItem(LOCAL_KEY);
-    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [] }, JSON.parse(raw));
+    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '' }, JSON.parse(raw));
   } catch (e) {}
 }
 function scheduleSave() { saveLocal(); clearTimeout(syncTO); syncTO = setTimeout(pushCloud, 800); }
@@ -847,7 +867,7 @@ async function pullCloud() {
   try {
     var row = await supaGet();
     if (row && row.data && Object.keys(row.data).length > 0) {
-      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [] }, row.data);
+      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '' }, row.data);
       saveLocal();
     } else { loadLocal(); await supaPush(state); }
     setSyncStatus('synced', 'Synced');
@@ -860,7 +880,7 @@ setInterval(async function () {
     if (row && row.updated_at) {
       var ts = new Date(row.updated_at).getTime();
       if (lastSyncTs && ts > lastSyncTs + 2000) {
-        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [] }, row.data);
+        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '' }, row.data);
         saveLocal(); lastSyncTs = ts;
         renderSection(curSec); updateBadges();
         setSyncStatus('synced', 'Updated'); setTimeout(function () { setSyncStatus('synced', 'Synced'); }, 2000);
@@ -878,14 +898,14 @@ function processImport() {
   var file = g('import-file').files[0]; if (!file) { toast('Choose a file first'); return; }
   var reader = new FileReader();
   reader.onload = function (e) {
-    try { state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [] }, JSON.parse(e.target.result)); scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported'); }
+    try { state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '' }, JSON.parse(e.target.result)); scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported'); }
     catch (err) { toast('Invalid file'); }
   };
   reader.readAsText(file);
 }
 function resetData() {
   if (!confirm('Reset ALL data? Cannot be undone.')) return;
-  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [] };
+  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '' };
   scheduleSave(); renderAll(); toast('Data reset');
 }
 
@@ -901,7 +921,7 @@ function today() {
 function fmtShort(d) { if (!d) return '-'; return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
 function toast(msg) { var e = g('toast'); e.textContent = msg; e.classList.add('show'); setTimeout(function () { e.classList.remove('show'); }, 2500); }
 function g(id) { return document.getElementById(id); }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [] }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '' }; }
 
 // ─── SIDEBAR ───
 function toggleSidebar() { document.body.classList.toggle('sc'); localStorage.setItem('chorus-sc', document.body.classList.contains('sc') ? '1' : '0'); }
@@ -945,7 +965,7 @@ function mobNav(item) {
   curSec = sec; renderSection(sec);
 }
 function renderSection(sec) {
-  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter };
+  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam };
   if (map[sec]) map[sec]();
 }
 function renderAll() { renderSection(curSec); updateBadges(); }
@@ -1285,16 +1305,10 @@ function renderMoves() {
   var t = today();
   var list = (state.moves || []).slice();
   if (moveFilter === 'in') list = list.filter(function (m) {
-    if (m.type !== 'in' || m.archivedAt) return false;
-    var nonPost = (m.tasks || []).filter(function (tk) { return tk.cat !== 'Post Move-In'; });
-    return !nonPost.length || nonPost.some(function (tk) { return !tk.done; });
+    return m.type === 'in' && !m.archivedAt;
   });
   else if (moveFilter === 'out') list = list.filter(function (m) {
-    if (m.type !== 'out' || m.archivedAt) return false;
-    var tasks = m.tasks || [];
-    // Exclude units where all tasks are done — those belong in Turnover tab
-    if (tasks.length > 0 && tasks.every(function (tk) { return tk.done; })) return false;
-    return true;
+    return m.type === 'out' && !m.archivedAt;
   });
   else if (moveFilter === 'today') list = list.filter(function (m) { return m.date === t && !m.archivedAt; });
   else if (moveFilter === 'postmovein') {
@@ -2743,10 +2757,245 @@ function isValidTaskList(list) { return Array.isArray(list) && list.length > 0 &
 function getCustomInTasks() { return isValidTaskList(state.customInTasks) ? state.customInTasks : DEFAULT_IN_TASKS.slice(); }
 function getCustomOutTasks() { return isValidTaskList(state.customOutTasks) ? state.customOutTasks : DEFAULT_OUT_TASKS.slice(); }
 
+function renderTeam() {
+  var el = g('team-body'); if (!el) return;
+  var pin = state.teampin || '';
+  if (!pin) {
+    el.innerHTML = '<div class="card" style="max-width:380px;margin:40px auto">'
+      + '<div class="card-hdr"><span class="card-title">&#128100; Team Tracker Setup</span></div>'
+      + '<div class="card-body">'
+      + '<p style="font-size:13px;color:var(--text2);margin-bottom:14px">Create a PIN to protect this section. You\'ll need it each time you open Team Tracker.</p>'
+      + '<div class="fg"><label>New PIN (4-8 digits)</label><input type="password" id="team-pin-new" maxlength="8" inputmode="numeric" placeholder="e.g. 1234"></div>'
+      + '<div class="fg"><label>Confirm PIN</label><input type="password" id="team-pin-confirm" maxlength="8" inputmode="numeric" placeholder="Repeat PIN"></div>'
+      + '</div>'
+      + '<div class="modal-ftr"><button class="btn btn-primary" id="team-setup-btn">Set PIN &amp; Unlock</button></div>'
+      + '</div>';
+    g('team-setup-btn').addEventListener('click', function () {
+      var np = g('team-pin-new').value.trim();
+      var cp = g('team-pin-confirm').value.trim();
+      if (!np || np.length < 4) { toast('PIN must be at least 4 digits'); return; }
+      if (np !== cp) { toast('PINs do not match'); return; }
+      state.teampin = np; teamUnlocked = true; scheduleSave(); renderTeam();
+    });
+    return;
+  }
+  if (!teamUnlocked) {
+    el.innerHTML = '<div class="card" style="max-width:340px;margin:40px auto">'
+      + '<div class="card-hdr"><span class="card-title">&#128274; Team Tracker</span></div>'
+      + '<div class="card-body">'
+      + '<p style="font-size:13px;color:var(--text2);margin-bottom:14px">Enter your PIN to access this section.</p>'
+      + '<div class="fg"><label>PIN</label><input type="password" id="team-pin-input" maxlength="8" inputmode="numeric" placeholder="Enter PIN"></div>'
+      + '</div>'
+      + '<div class="modal-ftr"><button class="btn btn-primary" id="team-unlock-btn">Unlock</button></div>'
+      + '</div>';
+    var inp = g('team-pin-input');
+    g('team-unlock-btn').addEventListener('click', function () {
+      if (inp.value === state.teampin) { teamUnlocked = true; renderTeam(); }
+      else { toast('Incorrect PIN'); inp.value = ''; inp.focus(); }
+    });
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') g('team-unlock-btn').click(); });
+    return;
+  }
+  var logs = (state.teamlog || []).slice().sort(function (a, b) { return b.createdAt - a.createdAt; });
+  var staff = (state.teamstaff || []);
+  var filterStaff = window._teamFilterStaff || '';
+  var filtered = filterStaff ? logs.filter(function (e) { return e.staffName === filterStaff; }) : logs;
+  var typeColors = { 'Late': 'var(--amber)', 'No-show': 'var(--red)', 'Issue / Concern': 'var(--red)', 'Positive / Recognition': 'var(--green)', 'General Note': 'var(--accent)' };
+  var typePills = { 'Late': 'pill-pending', 'No-show': 'pill-out', 'Issue / Concern': 'pill-out', 'Positive / Recognition': 'pill-resolved', 'General Note': 'pill-in' };
+  var html = '<div class="flex items-center gap-8 mb-12" style="flex-wrap:wrap">'
+    + '<span style="font-size:16px;font-weight:600">&#128100; Team Tracker</span>'
+    + '<button class="btn btn-primary btn-sm ml-auto" id="team-add-btn">+ Log Entry</button>'
+    + '<button class="btn btn-ghost btn-sm" id="team-lock-btn" title="Lock">&#128274; Lock</button>'
+    + '</div>';
+  // Staff summary cards
+  if (staff.length) {
+    html += '<div class="flex gap-8 mb-12" style="flex-wrap:wrap">';
+    staff.forEach(function (name) {
+      var sLogs = logs.filter(function (e) { return e.staffName === name; });
+      var late = sLogs.filter(function (e) { return e.type === 'Late' || e.type === 'No-show'; }).length;
+      var pos = sLogs.filter(function (e) { return e.type === 'Positive / Recognition'; }).length;
+      var iss = sLogs.filter(function (e) { return e.type === 'Issue / Concern'; }).length;
+      var isActive = filterStaff === name;
+      html += '<div class="card" style="min-width:140px;flex:1;cursor:pointer;border:2px solid ' + (isActive ? 'var(--accent)' : 'transparent') + '" id="team-staff-' + encodeURIComponent(name) + '">'
+        + '<div class="card-body" style="padding:10px 12px">'
+        + '<div class="font-600 text-sm" style="margin-bottom:6px">' + name + '</div>'
+        + '<div class="flex gap-6" style="font-size:11px">'
+        + (late ? '<span style="color:var(--red)">&#9888; ' + late + ' incident' + (late > 1 ? 's' : '') + '</span>' : '')
+        + (iss ? '<span style="color:var(--amber)">&#9675; ' + iss + ' issue' + (iss > 1 ? 's' : '') + '</span>' : '')
+        + (pos ? '<span style="color:var(--green)">&#9733; ' + pos + ' recognition' + (pos > 1 ? 's' : '') + '</span>' : '')
+        + (!late && !iss && !pos ? '<span style="color:var(--text3)">No entries</span>' : '')
+        + '</div>'
+        + '</div>'
+        + '</div>';
+    });
+    html += '</div>';
+  }
+  // Filter bar
+  html += '<div class="flex gap-8 items-center mb-10">';
+  html += '<span class="text-sm text-2">Filter:</span>';
+  html += '<button class="sub-tab' + (!filterStaff ? ' active' : '') + '" id="team-filter-all">All Staff</button>';
+  staff.forEach(function (name) {
+    html += '<button class="sub-tab' + (filterStaff === name ? ' active' : '') + '" id="team-filter-' + encodeURIComponent(name) + '">' + name + '</button>';
+  });
+  html += '</div>';
+  // Log table
+  html += '<div class="card"><div class="card-hdr"><span class="card-title">Activity Log</span><span class="card-count">' + filtered.length + ' entries</span></div>';
+  if (!filtered.length) {
+    html += '<div class="card-body"><p class="text-3 text-sm" style="text-align:center;padding:16px">No entries yet.' + (filterStaff ? ' Try clearing the filter.' : '') + '</p></div>';
+  } else {
+    html += '<div class="card-body" style="padding:0">';
+    filtered.forEach(function (entry) {
+      var pillClass = typePills[entry.type] || 'pill-in';
+      var dateStr = entry.date + (entry.time ? ' at ' + fmtTime(entry.time) : '');
+      html += '<div class="flex items-center gap-8" style="padding:10px 14px;border-bottom:1px solid var(--border2)">'
+        + '<div style="flex:1">'
+        + '<div class="flex gap-6 items-center" style="margin-bottom:3px">'
+        + '<span class="font-600 text-sm">' + entry.staffName + '</span>'
+        + '<span class="pill ' + pillClass + '" style="font-size:10px">' + entry.type + '</span>'
+        + (entry.minutesLate ? '<span class="mono text-xs" style="color:var(--amber)">+' + entry.minutesLate + ' min late</span>' : '')
+        + '</div>'
+        + (entry.note ? '<div class="text-sm text-2">' + entry.note + '</div>' : '')
+        + '<div class="text-xs text-3 mono" style="margin-top:2px">' + dateStr + '</div>'
+        + '</div>'
+        + '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" id="team-del-' + entry.id + '">&#x2715;</button>'
+        + '</div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+  // Wire staff card clicks
+  staff.forEach(function (name) {
+    var card = g('team-staff-' + encodeURIComponent(name));
+    if (card) card.addEventListener('click', function () {
+      window._teamFilterStaff = (window._teamFilterStaff === name) ? '' : name;
+      renderTeam();
+    });
+  });
+  // Wire filter buttons
+  var allBtn = g('team-filter-all');
+  if (allBtn) allBtn.addEventListener('click', function () { window._teamFilterStaff = ''; renderTeam(); });
+  staff.forEach(function (name) {
+    var fb = g('team-filter-' + encodeURIComponent(name));
+    if (fb) fb.addEventListener('click', function () { window._teamFilterStaff = name; renderTeam(); });
+  });
+  // Wire delete buttons
+  filtered.forEach(function (entry) {
+    var db = g('team-del-' + entry.id);
+    if (db) db.addEventListener('click', function () {
+      if (!confirm('Delete this entry?')) return;
+      state.teamlog = (state.teamlog || []).filter(function (e) { return e.id !== entry.id; });
+      scheduleSave(); renderTeam();
+    });
+  });
+  g('team-lock-btn').addEventListener('click', function () { teamUnlocked = false; window._teamFilterStaff = ''; renderTeam(); });
+  g('team-add-btn').addEventListener('click', openTeamEntryModal);
+}
+
+function openTeamEntryModal() {
+  var staff = (state.teamstaff || []);
+  var staffOpts = staff.length
+    ? staff.map(function (s) { return '<option value="' + s + '">' + s + '</option>'; }).join('')
+    : '<option value="">— No staff configured —</option>';
+  var modal = g('modal-team-entry');
+  if (!modal) {
+    var ov = document.createElement('div');
+    ov.className = 'modal-ov'; ov.id = 'modal-team-entry';
+    ov.innerHTML = '<div class="modal">'
+      + '<div class="modal-hdr"><span class="modal-title">Log Team Entry</span><button class="modal-close" onclick="closeModal(\'modal-team-entry\')">&#x2715;</button></div>'
+      + '<div class="modal-bdy" id="team-entry-bdy"></div>'
+      + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-team-entry\')">Cancel</button><button class="btn btn-primary" id="team-entry-save-btn">Save Entry</button></div>'
+      + '</div>';
+    document.body.appendChild(ov);
+  }
+  var bdy = g('team-entry-bdy');
+  bdy.innerHTML = '<div class="fg"><label>Staff Member</label>'
+    + (staff.length
+      ? '<select id="te-staff">' + staffOpts + '</select>'
+      : '<input type="text" id="te-staff" placeholder="Enter name (add staff in Settings)">')
+    + '</div>'
+    + '<div class="fg"><label>Entry Type</label><select id="te-type">'
+    + '<option>Late</option><option>No-show</option><option>Issue / Concern</option><option>Positive / Recognition</option><option>General Note</option>'
+    + '</select></div>'
+    + '<div class="fg" id="te-late-wrap" style="display:none"><label>Minutes Late</label><input type="number" id="te-minutes" min="1" max="480" placeholder="e.g. 15"></div>'
+    + '<div class="fr"><div class="fg"><label>Date</label><input type="date" id="te-date" value="' + today() + '"></div>'
+    + '<div class="fg"><label>Time (optional)</label><input type="time" id="te-time"></div></div>'
+    + '<div class="fg"><label>Note</label><textarea id="te-note" rows="2" placeholder="Details..."></textarea></div>';
+  openModal('modal-team-entry');
+  var typeEl = g('te-type');
+  var lateWrap = g('te-late-wrap');
+  typeEl.addEventListener('change', function () {
+    lateWrap.style.display = typeEl.value === 'Late' ? '' : 'none';
+  });
+  g('team-entry-save-btn').addEventListener('click', function () {
+    var staffVal = g('te-staff') ? (g('te-staff').value || '').trim() : '';
+    if (!staffVal) { toast('Select a staff member'); return; }
+    var type = g('te-type').value;
+    var date = g('te-date').value;
+    if (!date) { toast('Date required'); return; }
+    var entry = {
+      id: uid(), staffName: staffVal, type: type,
+      minutesLate: (type === 'Late' && g('te-minutes').value) ? parseInt(g('te-minutes').value) : null,
+      date: date, time: g('te-time').value || '',
+      note: g('te-note').value.trim(), createdAt: Date.now()
+    };
+    if (!state.teamlog) state.teamlog = [];
+    state.teamlog.push(entry);
+    scheduleSave(); closeModal('modal-team-entry'); renderTeam(); toast('Entry logged');
+  });
+}
+
 function renderSettings() {
   renderTaskList('in');
   renderTaskList('out');
   renderSettingsWTFloors();
+  renderTeamStaff();
+}
+
+function renderTeamStaff() {
+  var el = g('settings-team-staff'); if (!el) return;
+  var staff = (state.teamstaff || []);
+  if (!staff.length) { el.innerHTML = '<div class="text-3 text-sm" style="padding:10px 14px">No staff members added yet.</div>'; return; }
+  var html = '';
+  staff.forEach(function (name, i) {
+    html += '<div class="stask-row flex items-center gap-8" style="padding:8px 14px;border-bottom:1px solid var(--border2)">'
+      + '<span class="text-sm" style="flex:1">' + name + '</span>'
+      + '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="removeStaff(' + i + ')">Remove</button>'
+      + '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function openAddStaff() {
+  var name = prompt('Staff member name:');
+  if (!name || !name.trim()) return;
+  name = name.trim();
+  if (!state.teamstaff) state.teamstaff = [];
+  if (state.teamstaff.indexOf(name) !== -1) { toast('Already in list'); return; }
+  state.teamstaff.push(name);
+  scheduleSave(); renderTeamStaff(); toast('Staff added');
+}
+
+function removeStaff(i) {
+  if (!confirm('Remove this staff member?')) return;
+  state.teamstaff.splice(i, 1);
+  scheduleSave(); renderTeamStaff(); toast('Removed');
+}
+
+function changeTeamPin() {
+  var cur = (g('pin-current') ? g('pin-current').value : '');
+  var np = (g('pin-new') ? g('pin-new').value.trim() : '');
+  var cp = (g('pin-confirm') ? g('pin-confirm').value.trim() : '');
+  if (!state.teampin) { toast('No PIN set — use Team Tracker to create one'); return; }
+  if (cur !== state.teampin) { toast('Current PIN is incorrect'); return; }
+  if (!np || np.length < 4) { toast('New PIN must be at least 4 digits'); return; }
+  if (np !== cp) { toast('New PINs do not match'); return; }
+  state.teampin = np;
+  scheduleSave();
+  if (g('pin-current')) g('pin-current').value = '';
+  if (g('pin-new')) g('pin-new').value = '';
+  if (g('pin-confirm')) g('pin-confirm').value = '';
+  toast('PIN updated');
 }
 
 function renderSettingsWTFloors() {
