@@ -370,7 +370,7 @@
     <div class="nav-label">Shift</div>
     <div class="nav-item" data-sec="amenities" onclick="nav(this)"><span class="icon">&#127881;</span><span class="nav-txt">Amenity Bookings</span><span class="badge" id="badge-amenities"></span></div>
     <div class="nav-item" data-sec="tours" onclick="nav(this)"><span class="icon">&#127969;</span><span class="nav-txt">Tour Log</span><span class="badge" id="badge-tours"></span></div>
-    <div class="nav-item" data-sec="walkthrough" onclick="nav(this)"><span class="icon">&#128694;</span><span class="nav-txt">Walkthrough</span></div>
+    <div class="nav-item" data-sec="walkthrough" onclick="nav(this)"><span class="icon">&#128737;</span><span class="nav-txt">Security Patrols</span></div>
     <div class="nav-item" data-sec="todos" onclick="nav(this)"><span class="icon">&#9989;</span><span class="nav-txt">To-Do List</span><span class="badge" id="badge-todos"></span></div>
     <div class="nav-item" data-sec="laf" onclick="nav(this)"><span class="icon">&#128269;</span><span class="nav-txt">Lost &amp; Found</span><span class="badge" id="badge-laf"></span></div>
     <div class="nav-item" data-sec="passdown" onclick="nav(this)"><span class="icon">&#128203;</span><span class="nav-txt">Daily Passdown</span></div>
@@ -454,10 +454,12 @@
       <div class="card"><div class="card-hdr"><span class="card-title">Tour Log</span><span class="card-count" id="tours-count">0 tours</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddTour()">+ Log Tour</button></div><div class="tbl-wrap"><table><thead><tr><th>Prospect</th><th>Unit(s)</th><th>Date</th><th>Type</th><th>Notes</th><th></th></tr></thead><tbody id="tours-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-walkthrough">
-      <div class="stat-grid" id="wt-stats"></div>
-      <div class="card mb-12"><div class="card-hdr"><span class="card-title">Flagged Issues</span><span class="card-count" id="wt-flag-count">0</span><button class="btn btn-secondary btn-sm ml-auto" onclick="openModal('modal-flag')">Flag Issue</button></div><div class="card-body" id="wt-flags-body"><div class="text-3 text-sm">No issues flagged.</div></div></div>
-      <div id="wt-floors"></div>
-      <div class="mt-12"><button class="btn btn-secondary btn-sm" onclick="resetWT()">Reset Walkthrough</button></div>
+      <div class="sub-tabs" id="patrol-tabs">
+        <div class="sub-tab active" onclick="patrolTab('log',this)">Patrol Log</div>
+        <div class="sub-tab" onclick="patrolTab('inspection',this)">Inspection</div>
+        <div class="sub-tab" onclick="patrolTab('checkpoints',this)">Checkpoints</div>
+      </div>
+      <div id="patrol-body"></div>
     </div>
     <div class="section" id="section-todos">
       <div class="card mb-12"><div class="card-body">
@@ -592,6 +594,17 @@
           <button class="btn btn-primary btn-sm ml-auto" onclick="openAddWTFloor()">+ Add Floor</button>
         </div>
         <div id="settings-wt-floors" style="padding:0"></div>
+      </div>
+      <div class="card mb-12">
+        <div class="card-hdr"><span class="card-title">&#128737; Security Patrol Alert</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Show a dashboard alert when a checkpoint hasn't been scanned within this many hours.</p>
+          <div class="flex gap-8 items-center">
+            <input type="number" id="patrol-alert-hours" min="1" max="72" style="width:80px" placeholder="4">
+            <span style="font-size:13px;color:var(--text2)">hours</span>
+            <button class="btn btn-primary btn-sm" onclick="savePatrolAlertHours()">Save</button>
+          </div>
+        </div>
       </div>
       <div class="card mb-12">
         <div class="card-hdr"><span class="card-title">&#128100; Team Tracker — Staff</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddStaff()">+ Add Staff</button></div>
@@ -752,6 +765,8 @@
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-import')">Cancel</button><button class="btn btn-primary" onclick="processImport()">Import</button></div>
 </div></div>
 
+<div id="scan-overlay" style="display:none;position:fixed;inset:0;background:var(--surface);z-index:9999;flex-direction:column;align-items:center;justify-content:center;padding:24px"></div>
+
 <div id="cal-popover">
   <div class="cal-pop-hdr">
     <span class="cal-pop-title" id="cal-pop-title">Events</span>
@@ -790,7 +805,7 @@ function setSyncStatus(cls, msg) {
 }
 
 // ─── STATE ───
-var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '' };
+var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 } };
 var teamUnlocked = false;
 
 var DEFAULT_IN_TASKS = [
@@ -851,7 +866,7 @@ function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(stat
 function loadLocal() {
   try {
     var raw = localStorage.getItem(LOCAL_KEY);
-    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '' }, JSON.parse(raw));
+    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 } }, JSON.parse(raw));
   } catch (e) {}
 }
 function scheduleSave() { saveLocal(); clearTimeout(syncTO); syncTO = setTimeout(pushCloud, 800); }
@@ -867,7 +882,7 @@ async function pullCloud() {
   try {
     var row = await supaGet();
     if (row && row.data && Object.keys(row.data).length > 0) {
-      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '' }, row.data);
+      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 } }, row.data);
       saveLocal();
     } else { loadLocal(); await supaPush(state); }
     setSyncStatus('synced', 'Synced');
@@ -880,7 +895,7 @@ setInterval(async function () {
     if (row && row.updated_at) {
       var ts = new Date(row.updated_at).getTime();
       if (lastSyncTs && ts > lastSyncTs + 2000) {
-        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '' }, row.data);
+        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 } }, row.data);
         saveLocal(); lastSyncTs = ts;
         renderSection(curSec); updateBadges();
         setSyncStatus('synced', 'Updated'); setTimeout(function () { setSyncStatus('synced', 'Synced'); }, 2000);
@@ -898,14 +913,14 @@ function processImport() {
   var file = g('import-file').files[0]; if (!file) { toast('Choose a file first'); return; }
   var reader = new FileReader();
   reader.onload = function (e) {
-    try { state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '' }, JSON.parse(e.target.result)); scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported'); }
+    try { state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 } }, JSON.parse(e.target.result)); scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported'); }
     catch (err) { toast('Invalid file'); }
   };
   reader.readAsText(file);
 }
 function resetData() {
   if (!confirm('Reset ALL data? Cannot be undone.')) return;
-  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '' };
+  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 } };
   scheduleSave(); renderAll(); toast('Data reset');
 }
 
@@ -921,7 +936,7 @@ function today() {
 function fmtShort(d) { if (!d) return '-'; return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
 function toast(msg) { var e = g('toast'); e.textContent = msg; e.classList.add('show'); setTimeout(function () { e.classList.remove('show'); }, 2500); }
 function g(id) { return document.getElementById(id); }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '' }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 } }; }
 
 // ─── SIDEBAR ───
 function toggleSidebar() { document.body.classList.toggle('sc'); localStorage.setItem('chorus-sc', document.body.classList.contains('sc') ? '1' : '0'); }
@@ -929,7 +944,8 @@ function openMobSidebar() { g('sidebar').classList.add('mob-open'); g('sb-ov').s
 function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov').style.display = 'none'; }
 
 // ─── NAV ───
-var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Building Walkthrough', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center' };
+var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center' };
+var patrolFilter = 'log';
 var SEC_ACTIONS = {
   moves: '<button class="btn btn-primary btn-sm" onclick="openModal(\'modal-move\')">+ Add Move</button>',
   maintenance: '<button class="btn btn-primary btn-sm" onclick="openAddMaint()">+ Log Issue</button>',
@@ -1036,6 +1052,11 @@ function renderDash() {
   html += '<div class="stat-card stat-clickable" onclick="navToSec(\'todos\')"><div class="stat-num">' + pendTd.length + '</div><div class="stat-lbl">Pending To-Dos</div></div>';
   html += '<div class="stat-card stat-clickable" onclick="navToSec(\'laf\')"><div class="stat-num">' + unclLAF.length + '</div><div class="stat-lbl">Lost &amp; Found</div></div>';
   html += '<div class="stat-card stat-clickable ' + (turnoverReady.length > 0 ? 'accent' : '') + '" onclick="navToMoves(\'turnover\')"><div class="stat-num">' + turnoverReady.length + '</div><div class="stat-lbl">&#128738; Ready to Turn</div></div>';
+  var checkpoints = (state.checkpoints || []);
+  var scans = (state.scans || []);
+  var alertHours = (state.patrolSettings && state.patrolSettings.alertHours) || 4;
+  var patrolOverdue = checkpoints.filter(function(cp) { var last = scans.filter(function(s) { return s.checkpointId === cp.id; }).sort(function(a,b) { return b.timestamp - a.timestamp; })[0]; return !last || (Date.now() - last.timestamp) > alertHours * 3600000; }).length;
+  if (checkpoints.length) html += '<div class="stat-card stat-clickable ' + (patrolOverdue > 0 ? 'red' : 'green') + '" onclick="navToSec(\'walkthrough\')"><div class="stat-num">' + patrolOverdue + '</div><div class="stat-lbl">&#128737; Patrol Overdue</div></div>';
   html += '</div>';
   if (tights.length) {
     html += '<div class="tight-alert"><div class="ta-title">Tight Turnovers - ' + tights.length + ' unit' + (tights.length > 1 ? 's' : '') + ' need attention</div>';
@@ -1764,49 +1785,422 @@ function getWTFloors() {
   return WT_FLOORS.map(function(f) { return { label: f.label, items: f.items.slice() }; });
 }
 
+function patrolTab(name, el) {
+  patrolFilter = name;
+  document.querySelectorAll('#patrol-tabs .sub-tab').forEach(function(t) { t.classList.remove('active'); });
+  if (el) el.classList.add('active');
+  renderWT();
+}
+
+function timeAgo(ts) {
+  var diff = Date.now() - ts;
+  var mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  var hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  return Math.floor(hrs / 24) + 'd ago';
+}
+
 function renderWT() {
+  if (patrolFilter === 'inspection') { renderInspection(); return; }
+  if (patrolFilter === 'checkpoints') { renderCheckpoints(); return; }
+  renderPatrolLog();
+}
+
+function renderPatrolLog() {
+  var body = g('patrol-body'); if (!body) return;
+  var scans = (state.scans || []).slice().sort(function(a,b) { return b.timestamp - a.timestamp; });
+  var checkpoints = (state.checkpoints || []);
+  var now = Date.now();
+  var alertHours = (state.patrolSettings && state.patrolSettings.alertHours) || 4;
+  var overdueList = checkpoints.filter(function(cp) {
+    var last = scans.find(function(s) { return s.checkpointId === cp.id; });
+    return !last || (now - last.timestamp) > alertHours * 3600000;
+  });
+  var html = '';
+  if (checkpoints.length && overdueList.length) {
+    html += '<div style="background:var(--red-light);border:1px solid #EDBBBB;border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;color:var(--red);font-size:13px;font-weight:500">';
+    html += '&#9888; ' + overdueList.length + ' checkpoint' + (overdueList.length > 1 ? 's' : '') + ' not scanned in the last ' + alertHours + 'h: ';
+    html += overdueList.map(function(cp) { return cp.name; }).join(', ');
+    html += '</div>';
+  }
+  html += '<div class="flex items-center gap-8 mb-12">';
+  html += '<button class="btn btn-primary btn-sm" id="manual-scan-btn">+ Manual Log</button>';
+  html += '<button class="btn btn-ghost btn-sm ml-auto" onclick="openModal(\'modal-flag\')">Flag Issue</button>';
+  html += '</div>';
+  if (!scans.length) {
+    html += '<div class="card"><div class="card-body"><p class="text-3 text-sm" style="text-align:center;padding:20px">No patrol scans yet.<br>Staff scan QR codes at each checkpoint, or use Manual Log.</p></div></div>';
+  } else {
+    var grouped = {};
+    scans.forEach(function(s) {
+      var d = new Date(s.timestamp);
+      var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(s);
+    });
+    Object.keys(grouped).sort().reverse().forEach(function(dateKey) {
+      var dayScan = grouped[dateKey];
+      var d = new Date(dateKey + 'T12:00:00');
+      var dayLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      html += '<div class="card mb-12">';
+      html += '<div class="card-hdr"><span class="card-title">' + dayLabel + '</span><span class="card-count">' + dayScan.length + ' scan' + (dayScan.length === 1 ? '' : 's') + '</span></div>';
+      html += '<div class="card-body" style="padding:0">';
+      dayScan.forEach(function(s) {
+        var cp = checkpoints.find(function(c) { return c.id === s.checkpointId; });
+        var cpName = s.checkpointName || (cp ? cp.name : 'Unknown');
+        var cpLoc = cp ? cp.location : '';
+        var scanTime = new Date(s.timestamp);
+        var timeStr = scanTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        html += '<div class="flex items-center gap-8" style="padding:9px 14px;border-bottom:1px solid var(--border2)">';
+        html += '<div style="flex:1"><span class="font-600 text-sm">' + cpName + '</span>';
+        if (cpLoc) html += ' <span class="text-xs text-3">· ' + cpLoc + '</span>';
+        html += '<div class="text-xs text-3 mono" style="margin-top:2px">' + timeStr + ' &nbsp;·&nbsp; ' + (s.staffName || 'Unknown') + (s.manual ? ' &nbsp;<em>manual</em>' : '') + '</div></div>';
+        html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" id="scan-del-' + s.id + '">&#x2715;</button>';
+        html += '</div>';
+      });
+      html += '</div></div>';
+    });
+  }
+  var activeFlags = (state.flags || []).filter(function(f) { return !f.resolved; });
+  if (activeFlags.length) {
+    html += '<div class="card mb-12"><div class="card-hdr"><span class="card-title">Flagged Issues</span><span class="card-count">' + activeFlags.length + '</span></div><div class="card-body" style="padding:0">';
+    activeFlags.forEach(function(f) {
+      html += '<div class="flex items-center gap-8" style="padding:9px 14px;border-bottom:1px solid var(--border2)">';
+      html += '<div style="flex:1"><span class="font-600 text-sm">' + f.location + '</span><span class="pill pill-' + f.priority + '" style="font-size:10px;margin-left:6px">' + f.priority + '</span>';
+      html += '<div class="text-sm text-2">' + f.desc + '</div></div>';
+      html += '<button class="btn btn-green btn-xs" onclick="resolveFlag(\'' + f.id + '\')">Resolve</button>';
+      html += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteFlag(\'' + f.id + '\')">x</button>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  }
+  body.innerHTML = html;
+  var msBtn = g('manual-scan-btn');
+  if (msBtn) msBtn.addEventListener('click', openManualScan);
+  scans.forEach(function(s) {
+    var btn = g('scan-del-' + s.id);
+    if (btn) btn.addEventListener('click', function() {
+      if (!confirm('Remove this scan entry?')) return;
+      state.scans = (state.scans || []).filter(function(x) { return x.id !== s.id; });
+      scheduleSave(); renderWT();
+    });
+  });
+}
+
+function renderCheckpoints() {
+  var body = g('patrol-body'); if (!body) return;
+  var checkpoints = (state.checkpoints || []);
+  var scans = (state.scans || []);
+  var now = Date.now();
+  var alertHours = (state.patrolSettings && state.patrolSettings.alertHours) || 4;
+  var baseUrl = 'https://gabinoserrano-cloud.github.io/FrontDesk-Chorus/';
+  var html = '<div class="flex items-center gap-8 mb-12">';
+  html += '<button class="btn btn-primary btn-sm" id="add-cp-btn">+ Add Checkpoint</button>';
+  if (checkpoints.length) html += '<button class="btn btn-secondary btn-sm" id="print-qr-btn">Print QR Sheet</button>';
+  html += '</div>';
+  if (!checkpoints.length) {
+    html += '<div class="card"><div class="card-body"><p class="text-3 text-sm" style="text-align:center;padding:20px">No checkpoints yet.<br>Add locations and print QR codes for staff to scan during patrols.</p></div></div>';
+  } else {
+    html += '<div class="card"><div class="card-hdr"><span class="card-title">Checkpoints</span><span class="card-count">' + checkpoints.length + '</span></div><div class="card-body" style="padding:0">';
+    checkpoints.forEach(function(cp) {
+      var cpScans = scans.filter(function(s) { return s.checkpointId === cp.id; }).sort(function(a,b) { return b.timestamp - a.timestamp; });
+      var lastScan = cpScans[0] || null;
+      var overdue = !lastScan || (now - lastScan.timestamp) > alertHours * 3600000;
+      var lastStr = lastScan ? (timeAgo(lastScan.timestamp) + ' by ' + (lastScan.staffName || 'Unknown')) : 'Never scanned';
+      var scanUrl = baseUrl + '?scan=' + cp.id;
+      var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=4&data=' + encodeURIComponent(scanUrl);
+      html += '<div style="padding:12px 14px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:12px">';
+      html += '<img src="' + qrUrl + '" style="width:56px;height:56px;border-radius:4px;flex-shrink:0" alt="QR">';
+      html += '<div style="flex:1;min-width:0">';
+      html += '<div class="font-600 text-sm">' + cp.name + '</div>';
+      if (cp.location) html += '<div class="text-xs text-2">' + cp.location + '</div>';
+      html += '<div class="text-xs mono" style="margin-top:3px;color:' + (overdue ? 'var(--red)' : 'var(--green)') + '">' + (overdue ? '&#9888; ' : '&#10003; ') + lastStr + '</div>';
+      html += '</div>';
+      html += '<div class="flex gap-4" style="flex-shrink:0">';
+      html += '<button class="btn btn-ghost btn-xs" id="edit-cp-' + cp.id + '" title="Edit">&#9998;</button>';
+      html += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" id="del-cp-' + cp.id + '" title="Delete">&#x2715;</button>';
+      html += '</div></div>';
+    });
+    html += '</div></div>';
+  }
+  body.innerHTML = html;
+  var addBtn = g('add-cp-btn');
+  if (addBtn) addBtn.addEventListener('click', openAddCheckpoint);
+  var printBtn = g('print-qr-btn');
+  if (printBtn) printBtn.addEventListener('click', printQRSheet);
+  checkpoints.forEach(function(cp) {
+    var editBtn = g('edit-cp-' + cp.id);
+    if (editBtn) editBtn.addEventListener('click', function() { openEditCheckpoint(cp.id); });
+    var delBtn = g('del-cp-' + cp.id);
+    if (delBtn) delBtn.addEventListener('click', function() {
+      if (!confirm('Delete "' + cp.name + '"? Scan history for this checkpoint will also be removed.')) return;
+      state.checkpoints = (state.checkpoints || []).filter(function(c) { return c.id !== cp.id; });
+      state.scans = (state.scans || []).filter(function(s) { return s.checkpointId !== cp.id; });
+      scheduleSave(); renderWT(); toast('Checkpoint removed');
+    });
+  });
+}
+
+function renderInspection() {
+  var body = g('patrol-body'); if (!body) return;
   var wt = state.walkthrough || {}, floors = getWTFloors();
   var checked = 0, total = 0;
-  floors.forEach(function (f) { total += f.items.length; f.items.forEach(function (item, i) { if (wt[f.label + '_' + i]) checked++; }); });
-  var activeFlags = (state.flags || []).filter(function (f) { return !f.resolved; });
-  g('wt-stats').innerHTML = '<div class="stat-card green"><div class="stat-num">' + checked + '</div><div class="stat-lbl">Completed</div></div><div class="stat-card ' + (total - checked > 0 ? 'red' : '') + '"><div class="stat-num">' + (total - checked) + '</div><div class="stat-lbl">Remaining</div></div><div class="stat-card ' + (activeFlags.length > 0 ? 'red' : '') + '"><div class="stat-num">' + activeFlags.length + '</div><div class="stat-lbl">Flagged</div></div><div class="stat-card"><div class="stat-num">' + total + '</div><div class="stat-lbl">Total Items</div></div>';
-  var fc = g('wt-flag-count'); if (fc) fc.textContent = activeFlags.length;
+  floors.forEach(function(f) { total += f.items.length; f.items.forEach(function(item, i) { if (wt[f.label + '_' + i]) checked++; }); });
+  var activeFlags = (state.flags || []).filter(function(f) { return !f.resolved; });
+  var html = '<div class="stat-grid" id="wt-stats">'
+    + '<div class="stat-card green"><div class="stat-num">' + checked + '</div><div class="stat-lbl">Completed</div></div>'
+    + '<div class="stat-card ' + (total - checked > 0 ? 'red' : '') + '"><div class="stat-num">' + (total - checked) + '</div><div class="stat-lbl">Remaining</div></div>'
+    + '<div class="stat-card ' + (activeFlags.length > 0 ? 'red' : '') + '"><div class="stat-num">' + activeFlags.length + '</div><div class="stat-lbl">Flagged</div></div>'
+    + '<div class="stat-card"><div class="stat-num">' + total + '</div><div class="stat-lbl">Total Items</div></div>'
+    + '</div>';
+  html += '<div class="card mb-12"><div class="card-hdr"><span class="card-title">Flagged Issues</span><span class="card-count" id="wt-flag-count">' + activeFlags.length + '</span><button class="btn btn-secondary btn-sm ml-auto" onclick="openModal(\'modal-flag\')">Flag Issue</button></div><div class="card-body" id="wt-flags-body"></div></div>';
+  html += '<div id="wt-floors"></div>';
+  html += '<div style="margin-top:8px;display:flex;gap:8px"><button class="btn btn-secondary btn-sm" onclick="resetWT()">Reset Inspection</button><button class="btn btn-primary btn-sm" onclick="openAddWTFloor()">+ Add Floor</button></div>';
+  body.innerHTML = html;
   var fb = g('wt-flags-body');
   if (!activeFlags.length) { fb.innerHTML = '<div class="text-3 text-sm">No issues flagged</div>'; }
   else {
     var fhtml = '';
-    activeFlags.forEach(function (f) { fhtml += '<div class="flagged-item"><div class="flex items-center gap-8"><span class="font-600">' + f.location + '</span><span class="pill pill-' + f.priority + '">' + f.priority + '</span><button class="btn btn-green btn-xs ml-auto" onclick="resolveFlag(\'' + f.id + '\')">Resolve</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteFlag(\'' + f.id + '\')">x</button></div><div class="text-sm text-2 mt-8">' + f.desc + '</div></div>'; });
+    activeFlags.forEach(function(f) {
+      fhtml += '<div class="flagged-item"><div class="flex items-center gap-8"><span class="font-600">' + f.location + '</span><span class="pill pill-' + f.priority + '">' + f.priority + '</span><button class="btn btn-green btn-xs ml-auto" onclick="resolveFlag(\'' + f.id + '\')">Resolve</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteFlag(\'' + f.id + '\')">x</button></div><div class="text-sm text-2 mt-8">' + f.desc + '</div></div>';
+    });
     fb.innerHTML = fhtml;
   }
-  // Preserve which floors are currently open
-  var openFloors = {};
-  document.querySelectorAll('.wt-floor.open').forEach(function (el) {
-    var lbl = el.querySelector('.wt-fhdr span:first-child');
-    if (lbl) openFloors[lbl.textContent.trim()] = true;
-  });
   var floorsHtml = '';
-  floors.forEach(function (floor, fi) {
-    var dc = floor.items.filter(function (item, i) { return wt[floor.label + '_' + i]; }).length;
-    var isOpen = openFloors[floor.label] || false;
-    floorsHtml += '<div class="wt-floor' + (isOpen ? ' open' : '') + '">';
+  floors.forEach(function(floor, fi) {
+    var dc = floor.items.filter(function(item, i) { return wt[floor.label + '_' + i]; }).length;
+    floorsHtml += '<div class="wt-floor">';
     floorsHtml += '<div class="wt-fhdr" onclick="toggleWTFloor(this)">';
     floorsHtml += '<span>' + floor.label + '</span>';
     floorsHtml += '<div class="flex items-center gap-8"><span class="wt-fprog">' + dc + '/' + floor.items.length + '</span>';
-    floorsHtml += '<button class="btn btn-ghost btn-xs" style="font-size:11px" onclick="event.stopPropagation();openEditWTFloor(' + fi + ')" title="Edit floor">&#9998;</button></div></div>';
+    floorsHtml += '<button class="btn btn-ghost btn-xs" style="font-size:11px" onclick="event.stopPropagation();openEditWTFloor(' + fi + ')" title="Edit">&#9998;</button></div></div>';
     floorsHtml += '<div class="wt-fbody">';
-    floor.items.forEach(function (item, i) {
+    floor.items.forEach(function(item, i) {
       var key = floor.label + '_' + i, done = !!wt[key];
-      floorsHtml += '<div class="wt-item">';
-      floorsHtml += '<input type="checkbox" ' + (done ? 'checked' : '') + ' onchange="toggleWTItem(\'' + key + '\',this.checked)">';
-      floorsHtml += '<span class="wt-item-text ' + (done ? 'done-text' : '') + '">' + item + '</span>';
-      floorsHtml += '</div>';
+      floorsHtml += '<div class="wt-item"><input type="checkbox" ' + (done ? 'checked' : '') + ' onchange="toggleWTItem(\'' + key + '\',this.checked)"><span class="wt-item-text ' + (done ? 'done-text' : '') + '">' + item + '</span></div>';
     });
     floorsHtml += '</div></div>';
   });
-  // Add new floor button at bottom
   floorsHtml += '<div style="margin-top:8px"><button class="btn btn-secondary btn-sm" onclick="openAddWTFloor()">+ Add Floor / Area</button></div>';
   g('wt-floors').innerHTML = floorsHtml;
 }
+
+function openAddCheckpoint() {
+  var existing = g('modal-add-cp');
+  if (!existing) {
+    var ov = document.createElement('div');
+    ov.className = 'modal-ov'; ov.id = 'modal-add-cp';
+    ov.innerHTML = '<div class="modal">'
+      + '<div class="modal-hdr"><span class="modal-title" id="add-cp-title">Add Checkpoint</span><button class="modal-close" onclick="closeModal(\'modal-add-cp\')">&#x2715;</button></div>'
+      + '<div class="modal-bdy">'
+      + '<div class="fg"><label>Checkpoint Name</label><input type="text" id="cp-name" placeholder="e.g. Main Lobby, Pool Deck, Rooftop"></div>'
+      + '<div class="fg"><label>Location / Floor</label><input type="text" id="cp-location" placeholder="e.g. 1st Floor, 28th Floor"></div>'
+      + '</div>'
+      + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-add-cp\')">Cancel</button><button class="btn btn-primary" id="cp-save-btn">Add Checkpoint</button></div>'
+      + '</div>';
+    document.body.appendChild(ov);
+  }
+  var titleEl = g('add-cp-title'); if (titleEl) titleEl.textContent = 'Add Checkpoint';
+  if (g('cp-name')) g('cp-name').value = '';
+  if (g('cp-location')) g('cp-location').value = '';
+  openModal('modal-add-cp');
+  var saveBtn = g('cp-save-btn');
+  var fresh = saveBtn.cloneNode(true);
+  saveBtn.parentNode.replaceChild(fresh, saveBtn);
+  g('cp-save-btn').addEventListener('click', function() {
+    var name = (g('cp-name') ? g('cp-name').value.trim() : '');
+    var location = (g('cp-location') ? g('cp-location').value.trim() : '');
+    if (!name) { toast('Enter a checkpoint name'); return; }
+    if (!state.checkpoints) state.checkpoints = [];
+    state.checkpoints.push({ id: uid(), name: name, location: location, createdAt: Date.now() });
+    scheduleSave(); closeModal('modal-add-cp'); renderWT(); toast('Checkpoint added');
+  });
+}
+
+function openEditCheckpoint(cpId) {
+  var cp = (state.checkpoints || []).find(function(c) { return c.id === cpId; }); if (!cp) return;
+  if (!g('modal-add-cp')) openAddCheckpoint();
+  closeModal('modal-add-cp');
+  setTimeout(function() {
+    var titleEl = g('add-cp-title'); if (titleEl) titleEl.textContent = 'Edit Checkpoint';
+    if (g('cp-name')) g('cp-name').value = cp.name;
+    if (g('cp-location')) g('cp-location').value = cp.location || '';
+    openModal('modal-add-cp');
+    var saveBtn = g('cp-save-btn');
+    var fresh = saveBtn.cloneNode(true);
+    saveBtn.parentNode.replaceChild(fresh, saveBtn);
+    g('cp-save-btn').addEventListener('click', function() {
+      var name = (g('cp-name') ? g('cp-name').value.trim() : '');
+      var location = (g('cp-location') ? g('cp-location').value.trim() : '');
+      if (!name) { toast('Enter a checkpoint name'); return; }
+      cp.name = name; cp.location = location;
+      scheduleSave(); closeModal('modal-add-cp'); renderWT(); toast('Checkpoint updated');
+    });
+  }, 50);
+}
+
+function logScan(checkpointId, staffName, manual) {
+  var cp = (state.checkpoints || []).find(function(c) { return c.id === checkpointId; });
+  if (!cp) { toast('Checkpoint not found'); return; }
+  if (!state.scans) state.scans = [];
+  state.scans.push({ id: uid(), checkpointId: checkpointId, checkpointName: cp.name, staffName: staffName, timestamp: Date.now(), manual: !!manual });
+  localStorage.setItem('chorus-patrol-name', staffName);
+  scheduleSave(); renderDash();
+  if (patrolFilter === 'log' && g('patrol-body')) renderWT();
+}
+
+function openManualScan() {
+  var checkpoints = (state.checkpoints || []);
+  if (!checkpoints.length) { toast('No checkpoints defined. Add some in the Checkpoints tab first.'); return; }
+  var staff = (state.teamstaff || []);
+  var remembered = localStorage.getItem('chorus-patrol-name') || '';
+  var existing = g('modal-manual-scan');
+  if (!existing) {
+    var ov = document.createElement('div');
+    ov.className = 'modal-ov'; ov.id = 'modal-manual-scan';
+    ov.innerHTML = '<div class="modal">'
+      + '<div class="modal-hdr"><span class="modal-title">Manual Patrol Log</span><button class="modal-close" onclick="closeModal(\'modal-manual-scan\')">&#x2715;</button></div>'
+      + '<div class="modal-bdy" id="manual-scan-bdy"></div>'
+      + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-manual-scan\')">Cancel</button><button class="btn btn-primary" id="manual-scan-save">Log Entry</button></div>'
+      + '</div>';
+    document.body.appendChild(ov);
+  }
+  var cpOpts = checkpoints.map(function(cp) { return '<option value="' + cp.id + '">' + cp.name + (cp.location ? ' \u2014 ' + cp.location : '') + '</option>'; }).join('');
+  var staffHtml = staff.length
+    ? ('<select id="ms-staff">' + staff.map(function(s) { return '<option value="' + s + '"' + (s === remembered ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select>')
+    : ('<input type="text" id="ms-staff" placeholder="Your name" value="' + remembered + '">');
+  var bdy = g('manual-scan-bdy');
+  bdy.innerHTML = '<div class="fg"><label>Checkpoint</label><select id="ms-checkpoint">' + cpOpts + '</select></div>'
+    + '<div class="fg"><label>Staff Name</label>' + staffHtml + '</div>';
+  openModal('modal-manual-scan');
+  var saveBtn = g('manual-scan-save');
+  var fresh = saveBtn.cloneNode(true);
+  saveBtn.parentNode.replaceChild(fresh, saveBtn);
+  g('manual-scan-save').addEventListener('click', function() {
+    var cpId = (g('ms-checkpoint') ? g('ms-checkpoint').value : '');
+    var staffName = (g('ms-staff') ? g('ms-staff').value.trim() : '');
+    if (!cpId) { toast('Select a checkpoint'); return; }
+    if (!staffName) { toast('Enter your name'); return; }
+    logScan(cpId, staffName, true);
+    closeModal('modal-manual-scan');
+    toast('Patrol entry logged');
+  });
+}
+
+function printQRSheet() {
+  var checkpoints = (state.checkpoints || []);
+  if (!checkpoints.length) { toast('No checkpoints to print'); return; }
+  var baseUrl = 'https://gabinoserrano-cloud.github.io/FrontDesk-Chorus/';
+  var win = window.open('', '_blank');
+  var cards = '';
+  checkpoints.forEach(function(cp) {
+    var scanUrl = baseUrl + '?scan=' + cp.id;
+    var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=6&data=' + encodeURIComponent(scanUrl);
+    cards += '<div class="qr-card">'
+      + '<img src="' + qrUrl + '" width="110" height="110" alt="QR">'
+      + '<div class="qr-label">' + cp.name + '</div>'
+      + (cp.location ? '<div class="qr-sub">' + cp.location + '</div>' : '')
+      + '</div>';
+  });
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>30 Otis \u2014 Patrol Checkpoints</title>'
+    + '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Georgia,serif;padding:24px;background:#fff;color:#111}'
+    + '.hdr{font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:#aaa;margin-bottom:20px}'
+    + '.grid{display:flex;flex-wrap:wrap;gap:16px}'
+    + '.qr-card{width:150px;text-align:center;padding:14px 10px;border:1px solid #e0ddd4;border-radius:6px;break-inside:avoid}'
+    + '.qr-label{font-size:11px;font-weight:600;margin-top:10px;line-height:1.4;color:#222}'
+    + '.qr-sub{font-size:10px;color:#999;margin-top:3px}'
+    + '@media print{body{padding:12px}.grid{gap:10px}}</style>'
+    + '</head><body>'
+    + '<div class="hdr">30 Otis St \u2014 Staff Checkpoint Reference \u2014 Confidential</div>'
+    + '<div class="grid">' + cards + '</div>'
+    + '</body></html>');
+  win.document.close();
+  setTimeout(function() { win.print(); }, 700);
+}
+
+function showScanOverlay(checkpointId) {
+  var overlay = g('scan-overlay'); if (!overlay) return;
+  var cp = (state.checkpoints || []).find(function(c) { return c.id === checkpointId; });
+  var cpName = cp ? cp.name : 'Checkpoint';
+  var cpLoc = cp ? (cp.location || '') : '';
+  var staff = (state.teamstaff || []);
+  var remembered = localStorage.getItem('chorus-patrol-name') || '';
+  var hdr = '<div style="font-size:22px;margin-bottom:10px">&#128737;</div>'
+    + '<div style="font-size:10px;letter-spacing:1px;color:var(--text3);text-transform:uppercase;margin-bottom:6px">30 Otis \u2014 Staff Check-in</div>'
+    + '<div style="font-size:20px;font-weight:600;margin-bottom:3px">' + cpName + '</div>'
+    + (cpLoc ? '<div style="font-size:13px;color:var(--text2);margin-bottom:18px">' + cpLoc + '</div>' : '<div style="margin-bottom:18px"></div>');
+  var content = '';
+  if (remembered && (staff.length === 0 || staff.indexOf(remembered) !== -1)) {
+    content = hdr
+      + '<div style="background:var(--accent-light);border-radius:var(--radius);padding:12px 16px;margin-bottom:18px;font-size:14px;color:var(--accent)">'
+      + 'Logging as <strong>' + remembered + '</strong>'
+      + '<br><span id="not-you-lnk" style="font-size:12px;color:var(--text3);text-decoration:underline;cursor:pointer">Not you?</span>'
+      + '</div>'
+      + '<button id="confirm-scan-btn" class="btn btn-primary" style="width:100%;justify-content:center;font-size:16px;padding:14px 0">Confirm Check-in</button>'
+      + '<div style="margin-top:14px"><span style="font-size:12px;color:var(--text3);cursor:pointer" id="scan-close-lnk">Not staff? Close</span></div>';
+  } else {
+    var listHtml = '';
+    if (staff.length) {
+      staff.forEach(function(s) {
+        listHtml += '<button class="btn btn-secondary staff-pick-btn" data-name="' + s + '" style="width:100%;justify-content:center;margin-bottom:8px;font-size:15px">' + s + '</button>';
+      });
+    } else {
+      listHtml = '<input type="text" id="staff-name-free" placeholder="Your name..." style="width:100%;font-size:15px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);text-align:center;margin-bottom:10px">'
+        + '<button id="free-confirm-btn" class="btn btn-primary" style="width:100%;justify-content:center;font-size:15px;padding:12px 0">Check In</button>';
+    }
+    content = hdr
+      + '<div style="font-size:13px;color:var(--text2);margin-bottom:12px">Select your name:</div>'
+      + '<div id="scan-staff-list">' + listHtml + '</div>'
+      + '<div style="margin-top:14px"><span style="font-size:12px;color:var(--text3);cursor:pointer" id="scan-close-lnk">Not staff? Close</span></div>';
+  }
+  overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">' + content + '</div>';
+  overlay.style.display = 'flex';
+  var closeBtn = g('scan-close-lnk');
+  if (closeBtn) closeBtn.addEventListener('click', function() {
+    overlay.style.display = 'none';
+    if (window.history && window.history.replaceState) window.history.replaceState({}, '', window.location.pathname);
+  });
+  var notYou = g('not-you-lnk');
+  if (notYou) notYou.addEventListener('click', function() {
+    localStorage.removeItem('chorus-patrol-name');
+    showScanOverlay(checkpointId);
+  });
+  var confirmBtn = g('confirm-scan-btn');
+  if (confirmBtn) confirmBtn.addEventListener('click', function() {
+    logScan(checkpointId, remembered, false);
+    showScanSuccess(cpName);
+  });
+  document.querySelectorAll('.staff-pick-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      logScan(checkpointId, btn.getAttribute('data-name'), false);
+      showScanSuccess(cpName);
+    });
+  });
+  var freeConfirm = g('free-confirm-btn');
+  if (freeConfirm) freeConfirm.addEventListener('click', function() {
+    var inp = g('staff-name-free');
+    var name = inp ? inp.value.trim() : '';
+    if (!name) { toast('Enter your name'); return; }
+    logScan(checkpointId, name, false);
+    showScanSuccess(cpName);
+  });
+}
+
+function showScanSuccess(cpName) {
+  var overlay = g('scan-overlay'); if (!overlay) return;
+  overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
+    + '<div style="font-size:60px;color:var(--green);margin-bottom:16px">&#10003;</div>'
+    + '<div style="font-size:22px;font-weight:600;color:var(--green);margin-bottom:8px">Checked in!</div>'
+    + '<div style="font-size:15px;color:var(--text2)">' + cpName + '</div>'
+    + '<div style="margin-top:20px;font-size:12px;color:var(--text3)">Closing automatically...</div>'
+    + '</div>';
+  setTimeout(function() {
+    overlay.style.display = 'none';
+    if (window.history && window.history.replaceState) window.history.replaceState({}, '', window.location.pathname);
+  }, 2200);
+}
+
 function toggleWTItem(key, checked) {
   if (!state.walkthrough) state.walkthrough = {};
   state.walkthrough[key] = checked;
@@ -2972,6 +3366,17 @@ function renderSettings() {
   renderTaskList('out');
   renderSettingsWTFloors();
   renderTeamStaff();
+  var ph = g('patrol-alert-hours');
+  if (ph) ph.value = (state.patrolSettings && state.patrolSettings.alertHours) || 4;
+}
+
+function savePatrolAlertHours() {
+  var ph = g('patrol-alert-hours');
+  var val = ph ? parseInt(ph.value) : 4;
+  if (!val || val < 1) { toast('Enter a valid number of hours'); return; }
+  if (!state.patrolSettings) state.patrolSettings = {};
+  state.patrolSettings.alertHours = val;
+  scheduleSave(); renderDash(); toast('Alert threshold saved');
 }
 
 function renderTeamStaff() {
@@ -3153,9 +3558,12 @@ async function init() {
   if (localStorage.getItem('chorus-sc') === '1') document.body.classList.add('sc');
   var chip = g('today-chip'); if (chip) chip.textContent = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
   var pdDate = g('pd-date'); if (pdDate) pdDate.value = today();
+  var pendingScanId = null;
+  try { var params = new URLSearchParams(window.location.search); pendingScanId = params.get('scan'); } catch(e) {}
   await pullCloud();
   lastSyncTs = Date.now();
   renderDash(); updateBadges();
+  if (pendingScanId) showScanOverlay(pendingScanId);
 }
 document.addEventListener('DOMContentLoaded', init);
 </script>
