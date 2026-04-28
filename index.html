@@ -414,6 +414,7 @@
         <div class="sub-tab" onclick="filterMoves('today',this)">Today</div>
         <div class="sub-tab" onclick="filterMoves('postmovein',this)">Post Move-In</div>
         <div class="sub-tab" onclick="filterMoves('turnover',this)">&#128738; Turnover</div>
+        <div class="sub-tab" onclick="filterMoves('needs-appt',this)">&#128197; Needs Appt <span class="badge" id="badge-needs-appt" style="background:var(--amber)"></span></div>
         <div class="sub-tab" onclick="filterMoves('archive',this)">Archive</div>
       </div>
       <div class="card moves-tbl-wrap">
@@ -445,7 +446,7 @@
       <div class="card"><div class="card-hdr"><span class="card-title">Key Log</span><span class="card-count" id="keys-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddKey()">+ Log Key</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Name</th><th>Type</th><th>Fob</th><th>Status</th><th>Expiry</th><th></th></tr></thead><tbody id="keys-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-amenities">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterAmenities('all',this)">All</div><div class="sub-tab" onclick="filterAmenities('today',this)">Today</div><div class="sub-tab" onclick="filterAmenities('upcoming',this)">Upcoming</div><div class="sub-tab" onclick="filterAmenities('event',this)">Events</div></div>
+      <div class="sub-tabs"><div class="sub-tab active" onclick="filterAmenities('all',this)">All</div><div class="sub-tab" onclick="filterAmenities('today',this)">Today</div><div class="sub-tab" onclick="filterAmenities('upcoming',this)">Upcoming</div><div class="sub-tab" onclick="filterAmenities('event',this)">Events</div><div class="sub-tab" onclick="filterAmenities('past',this)">Past</div></div>
       <div class="card"><div class="card-hdr"><span class="card-title">Amenity Bookings</span><span class="card-count" id="amenities-count">0 bookings</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddAmenity()">+ Add Booking</button></div><div class="tbl-wrap"><table><thead><tr><th>Resident</th><th>Unit</th><th>Amenity</th><th>Date</th><th>Time</th><th>Type</th><th>Notes</th><th></th></tr></thead><tbody id="amenities-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-tours">
@@ -637,6 +638,13 @@
           <button class="btn btn-primary btn-sm" onclick="changeTeamPin()">Update PIN</button>
         </div>
       </div>
+      <div class="card mb-12">
+        <div class="card-hdr"><span class="card-title">&#128100; Personal PIN — Passdown &amp; To-Dos</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Lock your Daily Passdown and To-Do List behind a personal PIN so teammates cannot view them.</p>
+          <div id="priv-pin-settings-body"></div>
+        </div>
+      </div>
       <div class="card">
         <div class="card-hdr"><span class="card-title">About</span></div>
         <div class="card-body" style="font-size:13px;color:var(--text2);line-height:1.8">
@@ -694,7 +702,7 @@
     </div>
     <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px 13px;margin-bottom:12px">
       <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px" id="mv-label-appt-hdr">Move-In Appointment <span style="font-weight:400;color:var(--text3)">(confirm when booked)</span></div>
-      <div class="fr"><div class="fg" style="margin-bottom:0"><label>Appointment Date</label><input id="mv-appt-date" type="date"></div><div class="fg" style="margin-bottom:0"><label>Start Time</label><select id="mv-appt-time"><option value="">— No appointment yet —</option></select></div></div>
+      <div class="fr"><div class="fg" style="margin-bottom:0"><label>Appointment Date</label><input id="mv-appt-date" type="date" data-no-autofill></div><div class="fg" style="margin-bottom:0"><label>Start Time</label><select id="mv-appt-time"><option value="">— No appointment yet —</option></select></div></div>
       <div style="margin-top:8px;font-size:11.5px;color:var(--text2)" id="mv-conflict-msg"></div>
     </div>
     <div class="fg"><label>Notes</label><textarea id="mv-notes" rows="2"></textarea></div>
@@ -848,8 +856,9 @@ function setSyncStatus(cls, msg) {
 }
 
 // ─── STATE ───
-var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'] };
+var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'] };
 var teamUnlocked = false;
+var privateUnlocked = false;
 
 var DEFAULT_IN_TASKS = [
   { text: 'Confirm move-in date and time window', cat: 'Move In' },
@@ -979,7 +988,7 @@ function today() {
 function fmtShort(d) { if (!d) return '-'; return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
 function toast(msg) { var e = g('toast'); e.textContent = msg; e.classList.add('show'); setTimeout(function () { e.classList.remove('show'); }, 2500); }
 function g(id) { return document.getElementById(id); }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'] }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'] }; }
 
 // ─── SIDEBAR ───
 function toggleSidebar() { document.body.classList.toggle('sc'); localStorage.setItem('chorus-sc', document.body.classList.contains('sc') ? '1' : '0'); }
@@ -998,7 +1007,9 @@ var SEC_ACTIONS = {
   tours: '<button class="btn btn-primary btn-sm" onclick="openAddTour()">+ Log Tour</button>',
   walkthrough: '<button class="btn btn-secondary btn-sm" onclick="openModal(\'modal-flag\')">Flag Issue</button>',
   laf: '<button class="btn btn-primary btn-sm" onclick="openAddLAF()">+ Log Item</button>',
-  vacant: '<button class="btn btn-primary btn-sm" onclick="addUnitPrompt()">+ Add Unit</button>'
+  vacant: '<button class="btn btn-primary btn-sm" onclick="addUnitPrompt()">+ Add Unit</button>',
+  passdown: '<button class="btn btn-ghost btn-sm" onclick="lockPrivate()" id="priv-lock-btn" style="display:none">&#128274; Lock</button>',
+  todos: '<button class="btn btn-ghost btn-sm" onclick="lockPrivate()" id="priv-lock-btn" style="display:none">&#128274; Lock</button>'
 };
 var curSec = 'dashboard';
 function nav(item) {
@@ -1032,7 +1043,7 @@ function renderAll() { renderSection(curSec); updateBadges(); }
 // ─── MODAL ───
 function openModal(id) {
   g(id).classList.add('open');
-  g(id).querySelectorAll('input[type=date]').forEach(function (f) { if (!f.value) f.value = today(); });
+  g(id).querySelectorAll('input[type=date]').forEach(function (f) { if (!f.value && !f.dataset.noAutofill) f.value = today(); });
 }
 function closeModal(id) { g(id).classList.remove('open'); }
 document.addEventListener('click', function (e) { if (e.target.classList.contains('modal-ov')) e.target.classList.remove('open'); });
@@ -1049,6 +1060,8 @@ function updateBadges() {
   var tdN = (state.todos || []).filter(function (t) { return !t.done; }).length;
   var lN = (state.laf || []).filter(function (i) { return !i.claimedAt; }).length;
   var vN = (state.units || []).filter(function (u) { return u.status === 'vacant'; }).length;
+  var naN = (state.moves || []).filter(function (m) { return m.type === 'in' && !m.archivedAt && !m.apptDate && m.date >= today(); }).length;
+  setBadge('badge-needs-appt', naN);
   setBadge('badge-moves', mN); setBadge('badge-vacant', vN); setBadge('badge-maint', mtN);
   setBadge('badge-guests', gN); setBadge('badge-keys', kN); setBadge('badge-amenities', aN);
   setBadge('badge-tours', trN); setBadge('badge-todos', tdN); setBadge('badge-laf', lN);
@@ -1427,6 +1440,7 @@ function renderMoves() {
       return true;
     });
   }
+  else if (moveFilter === 'needs-appt') list = list.filter(function (m) { return m.type === 'in' && !m.archivedAt && !m.apptDate && m.date >= t; });
   else if (moveFilter === 'archive') list = list.filter(function (m) { return !!m.archivedAt; });
   else list = list.filter(function (m) { return !m.archivedAt; });
   list.sort(function (a, b) { return a.date.localeCompare(b.date); });
@@ -1435,6 +1449,7 @@ function renderMoves() {
   if (cardTitle) {
     if (moveFilter === 'postmovein') cardTitle.textContent = 'Post Move-In Follow-Up';
     else if (moveFilter === 'turnover') cardTitle.textContent = 'Ready for Turnover';
+    else if (moveFilter === 'needs-appt') cardTitle.textContent = 'Move-Ins Needing Appointment';
     else cardTitle.textContent = 'Scheduled Moves';
   }
   // Post move-in info banner
@@ -1775,6 +1790,7 @@ function renderAmenities() {
   if (amenityFilter === 'today') list = list.filter(function (a) { return a.date === t; });
   else if (amenityFilter === 'upcoming') list = list.filter(function (a) { return a.date >= t; });
   else if (amenityFilter === 'event') list = list.filter(function (a) { return a.type === 'event'; });
+  else if (amenityFilter === 'past') list = list.filter(function (a) { return a.date < t; });
   list.sort(function (a, b) { return a.date.localeCompare(b.date) || (a.start || '').localeCompare(b.start || ''); });
   var tbody = g('amenities-tbody'), cnt = g('amenities-count');
   if (cnt) cnt.textContent = list.length + ' bookings';
@@ -2227,6 +2243,43 @@ function showScanOverlay(checkpointId) {
   var cp = (state.checkpoints || []).find(function(c) { return c.id === checkpointId; });
   var cpName = cp ? cp.name : 'Checkpoint';
   var cpLoc = cp ? (cp.location || '') : '';
+
+  // Require team PIN before logging a scan
+  var pin = state.teampin || '';
+  if (pin && !window._patrolPinVerified) {
+    overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
+      + '<div style="font-size:28px;margin-bottom:10px">&#128274;</div>'
+      + '<div style="font-size:20px;font-weight:600;margin-bottom:4px">' + cpName + '</div>'
+      + (cpLoc ? '<div style="font-size:13px;color:var(--text2);margin-bottom:16px">' + cpLoc + '</div>' : '<div style="margin-bottom:16px"></div>')
+      + '<div style="font-size:13px;color:var(--text2);margin-bottom:12px">Enter staff PIN to log this patrol checkpoint.</div>'
+      + '<input type="password" id="patrol-pin-inp" maxlength="8" inputmode="numeric" placeholder="PIN" style="width:100%;font-size:16px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);text-align:center;margin-bottom:12px">'
+      + '<button id="patrol-pin-btn" class="btn btn-primary" style="width:100%;justify-content:center;font-size:15px;padding:12px 0">Continue</button>'
+      + '<div style="margin-top:16px"><span style="font-size:12px;color:var(--text3);cursor:pointer" id="scan-not-staff-lnk">Not staff? Close</span></div>'
+      + '</div>';
+    overlay.style.display = 'flex';
+    var notStaffBtn = g('scan-not-staff-lnk');
+    if (notStaffBtn) notStaffBtn.addEventListener('click', function() {
+      overlay.style.display = 'none';
+      if (window.history && window.history.replaceState) window.history.replaceState({}, '', window.location.pathname);
+    });
+    var pinInp = g('patrol-pin-inp');
+    var pinBtn = g('patrol-pin-btn');
+    function tryPin() {
+      if (pinInp.value === pin) {
+        window._patrolPinVerified = true;
+        showScanOverlay(checkpointId);
+      } else {
+        toast('Incorrect PIN');
+        pinInp.value = '';
+        pinInp.focus();
+      }
+    }
+    if (pinBtn) pinBtn.addEventListener('click', tryPin);
+    if (pinInp) { pinInp.focus(); pinInp.addEventListener('keydown', function(e) { if (e.key === 'Enter') tryPin(); }); }
+    return;
+  }
+  window._patrolPinVerified = false; // reset for next scan session
+
   var staff = (state.teamstaff || []);
   var remembered = localStorage.getItem('chorus-patrol-name') || '';
   var hdr = '<div style="font-size:22px;margin-bottom:10px">&#128737;</div>'
@@ -2463,7 +2516,54 @@ function addTodo() {
   input.value = ''; g('todo-date').value = ''; g('todo-priority').value = 'normal';
   scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Added');
 }
+function renderPrivateLock(sectionId, onUnlock) {
+  var sec = g('section-' + sectionId); if (!sec) return;
+  var pin = state.privatePin || '';
+  var lockId = 'priv-lock-' + sectionId;
+
+  if (privateUnlocked) {
+    var lb = g('priv-lock-btn'); if (lb) lb.style.display = '';
+    onUnlock(); return;
+  }
+
+  // Remove any stale lock overlay
+  var stale = g(lockId); if (stale) stale.parentNode.removeChild(stale);
+
+  // Hide existing section children so the lock screen sits cleanly
+  var kids = Array.from(sec.children);
+  kids.forEach(function(c) { c.style.display = 'none'; });
+
+  var ld = document.createElement('div');
+  ld.id = lockId;
+  sec.appendChild(ld);
+
+  function unlock() {
+    var el = g(lockId); if (el) el.parentNode.removeChild(el);
+    kids.forEach(function(c) { c.style.display = ''; });
+    privateUnlocked = true;
+    var lb = g('priv-lock-btn'); if (lb) lb.style.display = '';
+    onUnlock();
+  }
+
+  ld.innerHTML = '<div class="card" style="max-width:340px;margin:40px auto">'
+    + '<div class="card-hdr"><span class="card-title">&#128274; Private Section</span></div>'
+    + '<div class="card-body">'
+    + '<p style="font-size:13px;color:var(--text2);margin-bottom:14px">Enter your personal PIN to access this section.</p>'
+    + '<div class="fg"><label>PIN</label><input type="password" id="priv-pin-input" maxlength="8" inputmode="numeric" placeholder="Enter PIN"></div>'
+    + '</div>'
+    + '<div class="modal-ftr"><button class="btn btn-primary" id="priv-unlock-btn">Unlock</button></div>'
+    + '</div>';
+  var inp = g('priv-pin-input');
+  g('priv-unlock-btn').addEventListener('click', function() {
+    if (inp.value === state.privatePin) { unlock(); }
+    else { toast('Incorrect PIN'); inp.value = ''; inp.focus(); }
+  });
+  inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') g('priv-unlock-btn').click(); });
+  inp.focus();
+}
+
 function renderTodos() {
+  if (state.privatePin && !privateUnlocked) { renderPrivateLock('todos', renderTodos); return; }
   var todos = state.todos || [];
   var sorted = todos.slice().sort(function (a, b) {
     if (a.done !== b.done) return a.done ? 1 : -1;
@@ -2570,7 +2670,10 @@ function claimLAF(id) { var item = (state.laf || []).find(function (x) { return 
 function deleteLAF(id) { if (!confirm('Remove?')) return; state.laf = (state.laf || []).filter(function (i) { return i.id !== id; }); scheduleSave(); renderLAF(); updateBadges(); toast('Removed'); }
 
 // ─── PASSDOWN ───
-function renderPassdown() { g('pd-date').value = today(); renderPassdownHistory(); }
+function renderPassdown() {
+  if (state.privatePin && !privateUnlocked) { renderPrivateLock('passdown', renderPassdown); return; }
+  g('pd-date').value = today(); renderPassdownHistory();
+}
 function autoGeneratePassdown() {
   var t = today(), moves = state.moves || [];
   var d2 = new Date(); d2.setDate(d2.getDate() + 1); var tmrw = d2.toISOString().split('T')[0];
@@ -3521,7 +3624,10 @@ function renderTeam() {
         + (entry.note ? '<div class="text-sm text-2">' + entry.note + '</div>' : '')
         + '<div class="text-xs text-3 mono" style="margin-top:2px">' + dateStr + '</div>'
         + '</div>'
-        + '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" id="team-del-' + entry.id + '">&#x2715;</button>'
+        + '<div class="flex gap-4 flex-shrink-0">'
+        + '<button class="btn btn-ghost btn-xs" id="team-edit-' + entry.id + '" title="Edit">&#9998;</button>'
+        + '<button class="btn btn-ghost btn-xs" style="color:var(--red)" id="team-del-' + entry.id + '">&#x2715;</button>'
+        + '</div>'
         + '</div>';
     });
     html += '</div>';
@@ -3543,8 +3649,10 @@ function renderTeam() {
     var fb = g('team-filter-' + encodeURIComponent(name));
     if (fb) fb.addEventListener('click', function () { window._teamFilterStaff = name; renderTeam(); });
   });
-  // Wire delete buttons
+  // Wire edit + delete buttons
   filtered.forEach(function (entry) {
+    var eb = g('team-edit-' + entry.id);
+    if (eb) eb.addEventListener('click', function () { openTeamEntryModal(entry); });
     var db = g('team-del-' + entry.id);
     if (db) db.addEventListener('click', function () {
       if (!confirm('Delete this entry?')) return;
@@ -3556,7 +3664,30 @@ function renderTeam() {
   g('team-add-btn').addEventListener('click', openTeamEntryModal);
 }
 
-function openTeamEntryModal() {
+var editingTeamEntryId = null;
+function saveTeamEntry() {
+  var staffVal = g('te-staff') ? (g('te-staff').value || '').trim() : '';
+  if (!staffVal) { toast('Select a staff member'); return; }
+  var type = g('te-type') ? g('te-type').value : '';
+  var date = g('te-date') ? g('te-date').value : '';
+  if (!date) { toast('Date required'); return; }
+  var minutesLate = (type === 'Late' && g('te-minutes') && g('te-minutes').value) ? parseInt(g('te-minutes').value) : null;
+  var time = g('te-time') ? (g('te-time').value || '') : '';
+  var note = g('te-note') ? g('te-note').value.trim() : '';
+  if (editingTeamEntryId) {
+    var ex = (state.teamlog || []).find(function (e) { return e.id === editingTeamEntryId; });
+    if (ex) { ex.staffName = staffVal; ex.type = type; ex.minutesLate = minutesLate; ex.date = date; ex.time = time; ex.note = note; ex.updatedAt = Date.now(); }
+    toast('Entry updated');
+  } else {
+    if (!state.teamlog) state.teamlog = [];
+    state.teamlog.push({ id: uid(), staffName: staffVal, type: type, minutesLate: minutesLate, date: date, time: time, note: note, createdAt: Date.now() });
+    toast('Entry logged');
+  }
+  editingTeamEntryId = null;
+  scheduleSave(); closeModal('modal-team-entry'); renderTeam();
+}
+function openTeamEntryModal(entry) {
+  editingTeamEntryId = entry ? entry.id : null;
   var staff = (state.teamstaff || []);
   var staffOpts = staff.length
     ? staff.map(function (s) { return '<option value="' + s + '">' + s + '</option>'; }).join('')
@@ -3566,12 +3697,16 @@ function openTeamEntryModal() {
     var ov = document.createElement('div');
     ov.className = 'modal-ov'; ov.id = 'modal-team-entry';
     ov.innerHTML = '<div class="modal">'
-      + '<div class="modal-hdr"><span class="modal-title">Log Team Entry</span><button class="modal-close" onclick="closeModal(\'modal-team-entry\')">&#x2715;</button></div>'
+      + '<div class="modal-hdr"><span class="modal-title" id="team-entry-modal-title">Log Team Entry</span><button class="modal-close" onclick="closeModal(\'modal-team-entry\')">&#x2715;</button></div>'
       + '<div class="modal-bdy" id="team-entry-bdy"></div>'
-      + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-team-entry\')">Cancel</button><button class="btn btn-primary" id="team-entry-save-btn">Save Entry</button></div>'
+      + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-team-entry\')">Cancel</button><button class="btn btn-primary" id="team-entry-save-btn" onclick="saveTeamEntry()">Save Entry</button></div>'
       + '</div>';
     document.body.appendChild(ov);
   }
+  var titleEl = g('team-entry-modal-title');
+  if (titleEl) titleEl.textContent = entry ? 'Edit Entry' : 'Log Team Entry';
+  var saveBtnEl = g('team-entry-save-btn');
+  if (saveBtnEl) saveBtnEl.textContent = entry ? 'Save Changes' : 'Save Entry';
   var bdy = g('team-entry-bdy');
   bdy.innerHTML = '<div class="fg"><label>Staff Member</label>'
     + (staff.length
@@ -3584,29 +3719,20 @@ function openTeamEntryModal() {
     + '<div class="fg" id="te-late-wrap" style="display:none"><label>Minutes Late</label><input type="number" id="te-minutes" min="1" max="480" placeholder="e.g. 15"></div>'
     + '<div class="fr"><div class="fg"><label>Date</label><input type="date" id="te-date" value="' + today() + '"></div>'
     + '<div class="fg"><label>Time (optional)</label><input type="time" id="te-time"></div></div>'
-    + '<div class="fg"><label>Note</label><textarea id="te-note" rows="2" placeholder="Details..."></textarea></div>';
+    + '<div class="fg"><label>Note / Details</label><textarea id="te-note" rows="3" placeholder="Add context, follow-up notes, outcome..."></textarea></div>';
+  if (entry) {
+    if (staff.length) { var se = g('te-staff'); if (se) { for (var i = 0; i < se.options.length; i++) { if (se.options[i].value === entry.staffName) { se.selectedIndex = i; break; } } } }
+    else { var st = g('te-staff'); if (st) st.value = entry.staffName || ''; }
+    var te = g('te-type'); if (te) { for (var j = 0; j < te.options.length; j++) { if (te.options[j].value === entry.type) { te.selectedIndex = j; break; } } }
+    if (entry.minutesLate) { var me = g('te-minutes'); if (me) me.value = entry.minutesLate; }
+    var de = g('te-date'); if (de) de.value = entry.date || today();
+    var tie = g('te-time'); if (tie) tie.value = entry.time || '';
+    var ne = g('te-note'); if (ne) ne.value = entry.note || '';
+    var lw = g('te-late-wrap'); if (lw) lw.style.display = entry.type === 'Late' ? '' : 'none';
+  }
   openModal('modal-team-entry');
-  var typeEl = g('te-type');
-  var lateWrap = g('te-late-wrap');
-  typeEl.addEventListener('change', function () {
-    lateWrap.style.display = typeEl.value === 'Late' ? '' : 'none';
-  });
-  g('team-entry-save-btn').addEventListener('click', function () {
-    var staffVal = g('te-staff') ? (g('te-staff').value || '').trim() : '';
-    if (!staffVal) { toast('Select a staff member'); return; }
-    var type = g('te-type').value;
-    var date = g('te-date').value;
-    if (!date) { toast('Date required'); return; }
-    var entry = {
-      id: uid(), staffName: staffVal, type: type,
-      minutesLate: (type === 'Late' && g('te-minutes').value) ? parseInt(g('te-minutes').value) : null,
-      date: date, time: g('te-time').value || '',
-      note: g('te-note').value.trim(), createdAt: Date.now()
-    };
-    if (!state.teamlog) state.teamlog = [];
-    state.teamlog.push(entry);
-    scheduleSave(); closeModal('modal-team-entry'); renderTeam(); toast('Entry logged');
-  });
+  var typeEl = g('te-type'), lateWrap = g('te-late-wrap');
+  if (typeEl) typeEl.addEventListener('change', function () { lateWrap.style.display = typeEl.value === 'Late' ? '' : 'none'; });
 }
 
 var TOGGLEABLE_SECTIONS = [
@@ -3669,10 +3795,59 @@ function renderSettings() {
   renderSettingsWTFloors();
   renderTeamStaff();
   renderNavVisibilitySettings();
+  renderPrivatePinSettings();
   var ph = g('patrol-alert-hours');
   if (ph) ph.value = (state.patrolSettings && state.patrolSettings.alertHours) || 4;
   var lx = g('laf-expiry-days');
   if (lx) lx.value = (state.lafSettings && state.lafSettings.expiryDays) || 30;
+}
+
+function renderPrivatePinSettings() {
+  var el = g('priv-pin-settings-body'); if (!el) return;
+  var pin = state.privatePin || '';
+  if (!pin) {
+    el.innerHTML = '<div class="fg"><label>New PIN (4-8 digits)</label><input type="password" id="priv-s-new" maxlength="8" inputmode="numeric" placeholder="e.g. 5678"></div>'
+      + '<div class="fg"><label>Confirm PIN</label><input type="password" id="priv-s-confirm" maxlength="8" inputmode="numeric" placeholder="Repeat PIN"></div>'
+      + '<button class="btn btn-primary btn-sm" onclick="setPrivatePin()">Set Personal PIN</button>';
+  } else {
+    el.innerHTML = '<p style="font-size:13px;color:var(--green);margin-bottom:10px">&#10003; Personal PIN is active. Passdown and To-Dos are locked.</p>'
+      + '<div class="fg"><label>Current PIN</label><input type="password" id="priv-s-cur" maxlength="8" inputmode="numeric" placeholder="Current PIN"></div>'
+      + '<div class="fg"><label>New PIN (leave blank to remove)</label><input type="password" id="priv-s-new" maxlength="8" inputmode="numeric" placeholder="New PIN or blank to remove"></div>'
+      + '<div class="fg"><label>Confirm New PIN</label><input type="password" id="priv-s-confirm" maxlength="8" inputmode="numeric" placeholder="Repeat"></div>'
+      + '<button class="btn btn-primary btn-sm" onclick="changePrivatePin()">Update PIN</button>'
+      + '<button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="removePrivatePin()">Remove PIN</button>';
+  }
+}
+
+function setPrivatePin() {
+  var np = (g('priv-s-new') ? g('priv-s-new').value.trim() : '');
+  var cp = (g('priv-s-confirm') ? g('priv-s-confirm').value.trim() : '');
+  if (!np || np.length < 4) { toast('PIN must be at least 4 digits'); return; }
+  if (np !== cp) { toast('PINs do not match'); return; }
+  state.privatePin = np; privateUnlocked = true; scheduleSave(); renderPrivatePinSettings(); toast('Personal PIN set');
+}
+
+function changePrivatePin() {
+  var cur = (g('priv-s-cur') ? g('priv-s-cur').value : '');
+  var np = (g('priv-s-new') ? g('priv-s-new').value.trim() : '');
+  var cp = (g('priv-s-confirm') ? g('priv-s-confirm').value.trim() : '');
+  if (cur !== state.privatePin) { toast('Current PIN is incorrect'); return; }
+  if (!np || np.length < 4) { toast('New PIN must be at least 4 digits'); return; }
+  if (np !== cp) { toast('PINs do not match'); return; }
+  state.privatePin = np; scheduleSave(); renderPrivatePinSettings(); toast('Personal PIN updated');
+}
+
+function removePrivatePin() {
+  var cur = (g('priv-s-cur') ? g('priv-s-cur').value : '');
+  if (cur !== state.privatePin) { toast('Current PIN is incorrect'); return; }
+  if (!confirm('Remove personal PIN? Passdown and To-Dos will be visible to everyone.')) return;
+  state.privatePin = ''; privateUnlocked = false; scheduleSave(); renderPrivatePinSettings(); toast('Personal PIN removed');
+}
+
+function lockPrivate() {
+  privateUnlocked = false;
+  var lb = g('priv-lock-btn'); if (lb) lb.style.display = 'none';
+  renderSection(curSec);
 }
 
 function saveLAFSettings() {
