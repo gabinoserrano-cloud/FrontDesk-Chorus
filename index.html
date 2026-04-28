@@ -339,6 +339,26 @@
   .cal-pop-goto{display:block;margin-top:10px;font-size:12px;color:var(--accent);cursor:pointer;text-align:center;padding:6px;border:1px solid var(--accent-light);border-radius:6px;background:var(--accent-light)}
   .cal-pop-goto:hover{background:var(--accent);color:#fff}
   .cal-chip{cursor:pointer}.cal-chip:hover{opacity:.8}
+
+  /* LOGIN OVERLAY */
+  #login-overlay{position:fixed;inset:0;background:var(--bg);z-index:9000;display:none;align-items:center;justify-content:center;flex-direction:column}
+  .login-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px 28px;width:100%;max-width:380px;box-shadow:var(--shadow-md)}
+  .login-logo{font-size:18px;font-weight:600;margin-bottom:4px}
+  .login-sub{font-size:13px;color:var(--text2);margin-bottom:24px}
+  .acct-btn{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--text);text-align:left;transition:all .12s;margin-bottom:8px}
+  .acct-btn:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+  .acct-avatar{width:36px;height:36px;border-radius:50%;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;flex-shrink:0;letter-spacing:-.5px}
+  .acct-role-tag{font-size:11px;color:var(--text3);margin-top:1px}
+  .pin-dots{display:flex;gap:10px;justify-content:center;margin:16px 0 4px}
+  .pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);background:transparent;transition:all .1s}
+  .pin-dot.filled{background:var(--accent);border-color:var(--accent)}
+  .pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+  .pin-key{padding:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);cursor:pointer;font-size:18px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text);transition:all .1s;text-align:center;line-height:1}
+  .pin-key:hover{background:var(--accent-light);color:var(--accent)}
+  .pin-key:active{transform:scale(.94)}
+  .user-info-bar{font-size:11px;color:var(--text3);padding:2px 8px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body.sc .user-info-bar{display:none}
+  .by-tag{font-size:10px;color:var(--text3);background:var(--bg);border-radius:3px;padding:1px 5px;white-space:nowrap;margin-left:4px;display:inline-block}
 </style>
 </head>
 <body>
@@ -386,6 +406,10 @@
     <div class="nav-item" data-sec="settings" onclick="nav(this)"><span class="icon">&#9881;</span><span class="nav-txt">Settings</span></div>
   </div>
   <div class="sb-footer">
+    <div id="user-info-line" style="display:none">
+      <div class="user-info-bar" id="user-info-name"></div>
+      <button class="footer-btn" style="color:var(--accent)" onclick="doLogout()"><span>&#128682;</span><span>Log Out</span></button>
+    </div>
     <div class="save-status" id="save-status"><span class="sync-dot" id="sync-dot"></span><span id="sync-label">Loading...</span></div>
     <button class="footer-btn" onclick="exportData()"><span>&#128190;</span><span>Export Backup</span></button>
     <button class="footer-btn" onclick="importData()"><span>&#8593;</span><span>Import Backup</span></button>
@@ -419,7 +443,7 @@
       </div>
       <div class="card moves-tbl-wrap">
         <div class="card-hdr"><span class="card-title" id="moves-card-title">Scheduled Moves</span><span class="card-count" id="moves-count">0 entries</span>
-          <div class="ml-auto flex gap-8"><button class="btn btn-secondary btn-sm" onclick="generatePassdownFromMoves()">Passdown</button><button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button></div>
+          <div class="ml-auto flex gap-8" id="moves-admin-actions"><button class="btn btn-secondary btn-sm" onclick="generatePassdownFromMoves()">Passdown</button><button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button></div>
         </div>
         <div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident</th><th>Lease Start</th><th>Type</th><th>Appt</th><th>Total</th><th>Notes</th><th></th></tr></thead><tbody id="moves-tbody"></tbody></table></div>
       </div>
@@ -462,6 +486,7 @@
       <div id="patrol-body"></div>
     </div>
     <div class="section" id="section-todos">
+      <div id="todos-user-switcher" style="display:none;margin-bottom:10px;padding:6px 10px;background:var(--accent-light);border:1px solid var(--border);border-radius:var(--radius);align-items:center;gap:6px"></div>
       <div class="card mb-12"><div class="card-body">
         <div class="flex gap-8 items-center" style="flex-wrap:wrap">
           <input type="text" id="todo-input" placeholder="Add a to-do..." style="flex:1;min-width:160px" onkeydown="if(event.key==='Enter')addTodo()">
@@ -471,7 +496,7 @@
           <button class="btn btn-ghost btn-sm" onclick="clearDoneTodos()">Clear done</button>
         </div>
       </div></div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Shift To-Do List</span><span class="card-count" id="todos-count">0 pending</span></div><div id="todos-list"></div></div>
+      <div class="card"><div class="card-hdr"><span class="card-title" id="todos-section-title">To-Do List</span><span class="card-count" id="todos-count">0 pending</span></div><div id="todos-list"></div></div>
     </div>
     <div class="section" id="section-laf">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterLAF('all',this)">All</div><div class="sub-tab" onclick="filterLAF('unclaimed',this)">Unclaimed</div><div class="sub-tab" onclick="filterLAF('claimed',this)">Claimed</div></div>
@@ -569,6 +594,10 @@
     </div>
     <div class="section" id="section-team"><div id="team-body"></div></div>
     <div class="section" id="section-settings">
+      <div id="settings-accounts-card" style="display:none" class="card mb-12">
+        <div class="card-hdr"><span class="card-title">&#128100; Team Accounts</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddAccount()">+ Add Member</button></div>
+        <div id="settings-accounts" style="padding:0"></div>
+      </div>
       <div class="two-col">
         <div>
           <div class="card mb-12">
@@ -636,6 +665,13 @@
           <div class="fg"><label>New PIN</label><input type="password" id="pin-new" maxlength="8" inputmode="numeric" placeholder="New PIN (4-8 digits)"></div>
           <div class="fg"><label>Confirm New PIN</label><input type="password" id="pin-confirm" maxlength="8" inputmode="numeric" placeholder="Repeat new PIN"></div>
           <button class="btn btn-primary btn-sm" onclick="changeTeamPin()">Update PIN</button>
+        </div>
+      </div>
+      <div class="card mb-12">
+        <div class="card-hdr"><span class="card-title">&#128737; Security Patrol QR PIN</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Staff must enter this PIN before a QR checkpoint scan is logged. Keep it separate from the Team Tracker PIN.</p>
+          <div id="patrol-pin-settings-body"></div>
         </div>
       </div>
       <div class="card mb-12">
@@ -816,6 +852,14 @@
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-import')">Cancel</button><button class="btn btn-primary" onclick="processImport()">Import</button></div>
 </div></div>
 
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">&#127968; Chorus Front Desk</div>
+    <div class="login-sub" id="login-sub">Select your account to continue</div>
+    <div id="login-body"></div>
+  </div>
+</div>
+
 <div id="scan-overlay" style="display:none;position:fixed;inset:0;background:var(--surface);z-index:9999;flex-direction:column;align-items:center;justify-content:center;padding:24px"></div>
 
 <div id="cal-popover">
@@ -856,9 +900,14 @@ function setSyncStatus(cls, msg) {
 }
 
 // ─── STATE ───
-var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'] };
+var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], accounts: [], userTodos: {}, userPassdowns: {} };
 var teamUnlocked = false;
 var privateUnlocked = false;
+var currentUser = null;
+var loginPinEntry = '';
+var loginSelectedAccount = null;
+var todosViewingId = null;
+var STAFF_HIDDEN = ['team', 'import', 'settings'];
 
 var DEFAULT_IN_TASKS = [
   { text: 'Confirm move-in date and time window', cat: 'Move In' },
@@ -918,7 +967,7 @@ function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(stat
 function loadLocal() {
   try {
     var raw = localStorage.getItem(LOCAL_KEY);
-    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 } }, JSON.parse(raw));
+    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {} }, JSON.parse(raw));
   } catch (e) {}
 }
 function scheduleSave() { saveLocal(); clearTimeout(syncTO); syncTO = setTimeout(pushCloud, 800); }
@@ -934,7 +983,7 @@ async function pullCloud() {
   try {
     var row = await supaGet();
     if (row && row.data && Object.keys(row.data).length > 0) {
-      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 } }, row.data);
+      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {} }, row.data);
       saveLocal();
     } else { loadLocal(); await supaPush(state); }
     setSyncStatus('synced', 'Synced');
@@ -947,7 +996,7 @@ setInterval(async function () {
     if (row && row.updated_at) {
       var ts = new Date(row.updated_at).getTime();
       if (lastSyncTs && ts > lastSyncTs + 2000) {
-        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 } }, row.data);
+        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {} }, row.data);
         saveLocal(); lastSyncTs = ts;
         renderSection(curSec); updateBadges();
         setSyncStatus('synced', 'Updated'); setTimeout(function () { setSyncStatus('synced', 'Synced'); }, 2000);
@@ -965,14 +1014,14 @@ function processImport() {
   var file = g('import-file').files[0]; if (!file) { toast('Choose a file first'); return; }
   var reader = new FileReader();
   reader.onload = function (e) {
-    try { state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 } }, JSON.parse(e.target.result)); scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported'); }
+    try { state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {} }, JSON.parse(e.target.result)); scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported'); }
     catch (err) { toast('Invalid file'); }
   };
   reader.readAsText(file);
 }
 function resetData() {
   if (!confirm('Reset ALL data? Cannot be undone.')) return;
-  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'] };
+  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], accounts: [], userTodos: {}, userPassdowns: {} };
   scheduleSave(); renderAll(); toast('Data reset');
 }
 
@@ -988,7 +1037,7 @@ function today() {
 function fmtShort(d) { if (!d) return '-'; return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
 function toast(msg) { var e = g('toast'); e.textContent = msg; e.classList.add('show'); setTimeout(function () { e.classList.remove('show'); }, 2500); }
 function g(id) { return document.getElementById(id); }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'] }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], accounts: [], userTodos: {}, userPassdowns: {} }; }
 
 // ─── SIDEBAR ───
 function toggleSidebar() { document.body.classList.toggle('sc'); localStorage.setItem('chorus-sc', document.body.classList.contains('sc') ? '1' : '0'); }
@@ -1012,18 +1061,28 @@ var SEC_ACTIONS = {
   todos: '<button class="btn btn-ghost btn-sm" onclick="lockPrivate()" id="priv-lock-btn" style="display:none">&#128274; Lock</button>'
 };
 var curSec = 'dashboard';
+function getSecActions(sec) {
+  var isStaff = currentUser && currentUser.role === 'staff';
+  if (isStaff && (sec === 'moves')) return '';
+  return SEC_ACTIONS[sec] || '';
+}
 function nav(item) {
   var sec = item.dataset.sec;
+  if (currentUser && currentUser.role === 'staff' && STAFF_HIDDEN.indexOf(sec) !== -1) {
+    var dash = document.querySelector('.nav-item[data-sec="dashboard"]');
+    if (dash) nav(dash); return;
+  }
   document.querySelectorAll('.nav-item').forEach(function (n) { n.classList.remove('active'); });
   item.classList.add('active');
   document.querySelectorAll('.section').forEach(function (s) { s.classList.remove('active'); });
   g('section-' + sec).classList.add('active');
   g('hdr-title').textContent = SEC_TITLES[sec] || sec;
-  g('hdr-actions').innerHTML = SEC_ACTIONS[sec] || '';
+  g('hdr-actions').innerHTML = getSecActions(sec);
   curSec = sec; renderSection(sec); closeMobSidebar();
 }
 function mobNav(item) {
   var sec = item.dataset.sec;
+  if (currentUser && currentUser.role === 'staff' && STAFF_HIDDEN.indexOf(sec) !== -1) return;
   document.querySelectorAll('.mn-item').forEach(function (n) { n.classList.remove('active'); });
   item.classList.add('active');
   var si = document.querySelector('.nav-item[data-sec="' + sec + '"]');
@@ -1031,7 +1090,7 @@ function mobNav(item) {
   document.querySelectorAll('.section').forEach(function (s) { s.classList.remove('active'); });
   g('section-' + sec).classList.add('active');
   g('hdr-title').textContent = SEC_TITLES[sec] || sec;
-  g('hdr-actions').innerHTML = SEC_ACTIONS[sec] || '';
+  g('hdr-actions').innerHTML = getSecActions(sec);
   curSec = sec; renderSection(sec);
 }
 function renderSection(sec) {
@@ -1057,10 +1116,10 @@ function updateBadges() {
   var kN = (state.keys || []).filter(function (k) { return k.status === 'issued'; }).length;
   var aN = (state.amenities || []).filter(function (a) { return a.date >= today(); }).length;
   var trN = (state.tours || []).filter(function (t) { return t.date === today(); }).length;
-  var tdN = (state.todos || []).filter(function (t) { return !t.done; }).length;
+  var tdN = getCurrentTodos().filter(function (t) { return !t.done; }).length;
   var lN = (state.laf || []).filter(function (i) { return !i.claimedAt; }).length;
   var vN = (state.units || []).filter(function (u) { return u.status === 'vacant'; }).length;
-  var naN = (state.moves || []).filter(function (m) { return m.type === 'in' && !m.archivedAt && !m.apptDate && m.date >= today(); }).length;
+  var naN = (state.moves || []).filter(function (m) { return !m.archivedAt && !m.apptDate && m.date >= today(); }).length;
   setBadge('badge-needs-appt', naN);
   setBadge('badge-moves', mN); setBadge('badge-vacant', vN); setBadge('badge-maint', mtN);
   setBadge('badge-guests', gN); setBadge('badge-keys', kN); setBadge('badge-amenities', aN);
@@ -1082,7 +1141,7 @@ function renderDash() {
   var weekM = active.filter(function (m) { return m.date >= t && m.date <= wEnd; });
   var openMt = (state.maintenance || []).filter(function (m) { return m.status !== 'resolved'; });
   var issuedK = (state.keys || []).filter(function (k) { return k.status === 'issued'; });
-  var pendTd = (state.todos || []).filter(function (t2) { return !t2.done; });
+  var pendTd = getCurrentTodos().filter(function (t2) { return !t2.done; });
   var unclLAF = (state.laf || []).filter(function (i) { return !i.claimedAt; });
   var outs = active.filter(function (m) { return m.type === 'out'; });
   var ins = active.filter(function (m) { return m.type === 'in'; });
@@ -1325,14 +1384,14 @@ function saveMove() {
   if (!state.moves) state.moves = [];
   state.moves.push(m);
   if (moveType === 'in') {
-    if (!state.todos) state.todos = [];
     var followUpDate = '';
     try {
       var d = new Date(date + 'T12:00:00'); d.setDate(d.getDate() + 7);
       followUpDate = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
     } catch(e) {}
-    state.todos.push({ id: uid(), text: 'Welcome call \u2014 ' + resident + ', Unit ' + unit, dueDate: date, priority: 'normal', done: false, createdAt: Date.now() });
-    state.todos.push({ id: uid(), text: 'Follow-up call \u2014 ' + resident + ', Unit ' + unit, dueDate: followUpDate, priority: 'normal', done: false, createdAt: Date.now() });
+    var myTodos = getCurrentTodos();
+    myTodos.push({ id: uid(), text: 'Welcome call \u2014 ' + resident + ', Unit ' + unit, dueDate: date, priority: 'normal', done: false, createdAt: Date.now() });
+    myTodos.push({ id: uid(), text: 'Follow-up call \u2014 ' + resident + ', Unit ' + unit, dueDate: followUpDate, priority: 'normal', done: false, createdAt: Date.now() });
   }
   scheduleSave(); closeModal('modal-move'); openMoveId = m.id; renderMoves(); updateBadges(); renderDash();
   ['mv-unit', 'mv-resident', 'mv-total', 'mv-notes'].forEach(function (id) { g(id).value = ''; });
@@ -1407,6 +1466,8 @@ function updateTaskField(moveId, taskId, field, value) {
 
 function renderMoves() {
   var t = today();
+  var maa = g('moves-admin-actions');
+  if (maa) maa.style.display = (currentUser && currentUser.role === 'staff') ? 'none' : '';
   var list = (state.moves || []).slice();
   if (moveFilter === 'in') list = list.filter(function (m) {
     if (m.type !== 'in' || m.archivedAt) return false;
@@ -1440,7 +1501,7 @@ function renderMoves() {
       return true;
     });
   }
-  else if (moveFilter === 'needs-appt') list = list.filter(function (m) { return m.type === 'in' && !m.archivedAt && !m.apptDate && m.date >= t; });
+  else if (moveFilter === 'needs-appt') list = list.filter(function (m) { return !m.archivedAt && !m.apptDate && m.date >= t; });
   else if (moveFilter === 'archive') list = list.filter(function (m) { return !!m.archivedAt; });
   else list = list.filter(function (m) { return !m.archivedAt; });
   list.sort(function (a, b) { return a.date.localeCompare(b.date); });
@@ -1478,7 +1539,8 @@ function renderMoves() {
         var pct = tot ? Math.round(dn / tot * 100) : 0;
         var bc = pct < 30 ? 'var(--red)' : pct < 70 ? 'var(--amber)' : 'var(--green)';
         var isOpen = m.id === openMoveId;
-        var archBtn = !m.archivedAt ? '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();archiveMove(\'' + m.id + '\')">Archive</button>' : '';
+        var isStaffUser = currentUser && currentUser.role === 'staff';
+        var archBtn = (!m.archivedAt && !isStaffUser) ? '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();archiveMove(\'' + m.id + '\')">Archive</button>' : '';
         rows += '<tr class="move-row ' + (isOpen ? 'sel ' : '') + (m.archivedAt ? 'archive-row' : '') + '" onclick="toggleCL(\'' + m.id + '\')">';
         var apptBadge = '';
         if (!m.apptDate) {
@@ -1500,9 +1562,9 @@ function renderMoves() {
         rows += '<td class="text-sm text-2" style="max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (m.notes || '-') + '</td>';
         rows += '<td><div class="flex gap-4" style="justify-content:flex-end;align-items:center">';
         rows += pct === 100 ? '<span class="pill pill-resolved" style="font-size:10px">Done</span>' : '<div style="width:40px"><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div><div class="text-xs text-3 mono" style="text-align:right;margin-top:2px">' + dn + '/' + tot + '</div></div>';
-        rows += '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openEditMove(\'' + m.id + '\')" title="Edit">&#9998;</button>';
+        if (!isStaffUser) rows += '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openEditMove(\'' + m.id + '\')" title="Edit">&#9998;</button>';
         rows += archBtn;
-        rows += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="event.stopPropagation();deleteMove(\'' + m.id + '\')">x</button>';
+        if (!isStaffUser) rows += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="event.stopPropagation();deleteMove(\'' + m.id + '\')">x</button>';
         rows += '</div></td></tr>';
         rows += '<tr class="move-cl-row ' + (isOpen ? 'open' : '') + '" id="cl-' + m.id + '"><td colspan="8"><div class="cl-inner">' + buildCL(m, moveFilter) + '</div></td></tr>';
       });
@@ -1659,7 +1721,7 @@ function saveMaint() {
     m.unit=unit; m.issue=issue; m.desc=g('mt-desc').value.trim(); m.priority=g('mt-priority').value; m.status=g('mt-status').value; m.reporter=g('mt-reporter').value.trim();
     editingMaintId=null; scheduleSave(); closeModal('modal-maint'); renderMaint(); updateBadges(); renderDash(); toast('Issue updated'); return;
   }
-  var m = { id: uid(), unit: unit, issue: issue, desc: g('mt-desc').value.trim(), priority: g('mt-priority').value, status: g('mt-status').value, reporter: g('mt-reporter').value.trim(), createdAt: Date.now() };
+  var m = { id: uid(), unit: unit, issue: issue, desc: g('mt-desc').value.trim(), priority: g('mt-priority').value, status: g('mt-status').value, reporter: g('mt-reporter').value.trim(), addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
   if (!state.maintenance) state.maintenance = [];
   state.maintenance.push(m); scheduleSave(); closeModal('modal-maint'); renderMaint(); updateBadges(); renderDash();
   ['mt-unit', 'mt-issue', 'mt-desc', 'mt-reporter'].forEach(function (id) { g(id).value = ''; }); toast('Issue logged');
@@ -1679,7 +1741,8 @@ function renderMaint() {
   var html = '';
   list.forEach(function (m) {
     var desc = m.desc ? '<div class="text-xs text-2" style="margin-top:2px">' + m.desc + '</div>' : '';
-    html += '<tr><td class="mono font-600">' + m.unit + '</td><td><div class="font-600">' + m.issue + '</div>' + desc + '</td>';
+    var mtBy = m.addedBy ? '<span class="by-tag">by ' + m.addedBy + '</span>' : '';
+    html += '<tr><td class="mono font-600">' + m.unit + '</td><td><div class="font-600">' + m.issue + mtBy + '</div>' + desc + '</td>';
     html += '<td><span class="pill pill-' + m.priority + '">' + m.priority + '</span></td>';
     html += '<td><select class="ie-sel" onchange="updateMaintStatus(\'' + m.id + '\',this.value)"><option value="open" ' + (m.status === 'open' ? 'selected' : '') + '>Open</option><option value="in-progress" ' + (m.status === 'in-progress' ? 'selected' : '') + '>In Progress</option><option value="resolved" ' + (m.status === 'resolved' ? 'selected' : '') + '>Resolved</option></select></td>';
     html += '<td class="text-xs text-3">' + new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</td>';
@@ -1702,7 +1765,7 @@ function saveGuest() {
     gst.name=name; gst.unit=unit; gst.host=g('gs-host').value.trim(); gst.type=g('gs-type').value; gst.status=g('gs-status').value; gst.notes=g('gs-notes').value.trim();
     editingGuestId=null; scheduleSave(); closeModal('modal-guest'); renderGuests(); updateBadges(); toast('Guest updated'); return;
   }
-  var gst = { id: uid(), name: name, unit: unit, host: g('gs-host').value.trim(), type: g('gs-type').value, status: g('gs-status').value, notes: g('gs-notes').value.trim(), checkIn: Date.now(), checkOut: null, createdAt: Date.now() };
+  var gst = { id: uid(), name: name, unit: unit, host: g('gs-host').value.trim(), type: g('gs-type').value, status: g('gs-status').value, notes: g('gs-notes').value.trim(), checkIn: Date.now(), checkOut: null, addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
   if (!state.guests) state.guests = [];
   state.guests.push(gst); scheduleSave(); closeModal('modal-guest'); renderGuests(); updateBadges();
   ['gs-name', 'gs-unit', 'gs-host', 'gs-notes'].forEach(function (id) { g(id).value = ''; }); toast('Guest logged');
@@ -1720,7 +1783,8 @@ function renderGuests() {
   if (!list.length) { tbody.innerHTML = '<tr><td colspan="6" class="tbl-empty">No guests logged.</td></tr>'; return; }
   var html = '';
   list.forEach(function (gst) {
-    html += '<tr><td class="font-600">' + gst.name + '</td><td class="mono">' + gst.unit + '</td><td class="text-sm text-2">' + (gst.host || '-') + '</td><td class="text-sm">' + gst.type + '</td>';
+    var gstBy = gst.addedBy ? '<span class="by-tag">by ' + gst.addedBy + '</span>' : '';
+    html += '<tr><td class="font-600">' + gst.name + gstBy + '</td><td class="mono">' + gst.unit + '</td><td class="text-sm text-2">' + (gst.host || '-') + '</td><td class="text-sm">' + gst.type + '</td>';
     html += '<td><select class="ie-sel" onchange="updateGuestStatus(\'' + gst.id + '\',this.value)"><option value="pending" ' + (gst.status === 'pending' ? 'selected' : '') + '>Pending</option><option value="in" ' + (gst.status === 'in' ? 'selected' : '') + '>Checked In</option><option value="out" ' + (gst.status === 'out' ? 'selected' : '') + '>Checked Out</option></select></td>';
     html += '<td><button class="btn btn-ghost btn-xs" onclick="openEditGuest(\'' + gst.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteGuest(\'' + gst.id + '\')">x</button></td></tr>';
   });
@@ -1741,7 +1805,7 @@ function saveKey() {
     k.unit=unit; k.name=name; k.type=g('ky-type').value; k.fob=g('ky-fob').value.trim(); k.status=g('ky-status').value; k.expiry=g('ky-expiry').value||null; k.notes=g('ky-notes').value.trim();
     editingKeyId=null; scheduleSave(); closeModal('modal-key'); renderKeys(); updateBadges(); renderDash(); toast('Key updated'); return;
   }
-  var k = { id: uid(), unit: unit, name: name, type: g('ky-type').value, fob: g('ky-fob').value.trim(), status: g('ky-status').value, expiry: g('ky-expiry').value || null, notes: g('ky-notes').value.trim(), issuedAt: Date.now(), returnedAt: null, createdAt: Date.now() };
+  var k = { id: uid(), unit: unit, name: name, type: g('ky-type').value, fob: g('ky-fob').value.trim(), status: g('ky-status').value, expiry: g('ky-expiry').value || null, notes: g('ky-notes').value.trim(), issuedAt: Date.now(), returnedAt: null, addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
   if (!state.keys) state.keys = [];
   state.keys.push(k); scheduleSave(); closeModal('modal-key'); renderKeys(); updateBadges(); renderDash();
   ['ky-unit', 'ky-name', 'ky-fob', 'ky-notes'].forEach(function (id) { g(id).value = ''; }); g('ky-expiry').value = ''; toast('Key logged');
@@ -1759,7 +1823,8 @@ function renderKeys() {
   if (!list.length) { tbody.innerHTML = '<tr><td colspan="7" class="tbl-empty">No keys logged.</td></tr>'; return; }
   var html = '';
   list.forEach(function (k) {
-    html += '<tr><td class="mono font-600">' + k.unit + '</td><td>' + k.name + '</td><td class="text-sm">' + k.type + '</td><td class="mono text-sm">' + (k.fob || '-') + '</td>';
+    var kyBy = k.addedBy ? '<span class="by-tag">by ' + k.addedBy + '</span>' : '';
+    html += '<tr><td class="mono font-600">' + k.unit + '</td><td>' + k.name + kyBy + '</td><td class="text-sm">' + k.type + '</td><td class="mono text-sm">' + (k.fob || '-') + '</td>';
     html += '<td><select class="ie-sel" onchange="updateKeyStatus(\'' + k.id + '\',this.value)"><option value="issued" ' + (k.status === 'issued' ? 'selected' : '') + '>Issued</option><option value="returned" ' + (k.status === 'returned' ? 'selected' : '') + '>Returned</option></select></td>';
     html += '<td class="mono text-xs text-2">' + (k.expiry ? fmtShort(k.expiry) : '-') + '</td><td><button class="btn btn-ghost btn-xs" onclick="openEditKey(\'' + k.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteKey(\'' + k.id + '\')">x</button></td></tr>';
   });
@@ -1780,7 +1845,7 @@ function saveAmenity() {
     a.resident=resident; a.unit=unit; a.space=g('am-space').value; a.date=date; a.start=g('am-start').value; a.end=g('am-end').value; a.type=g('am-type').value; a.fee=g('am-fee').value.trim(); a.notes=g('am-notes').value.trim();
     editingAmenityId=null; scheduleSave(); closeModal('modal-amenity'); renderAmenities(); updateBadges(); renderCalendar(); toast('Booking updated'); return;
   }
-  var a = { id: uid(), resident: resident, unit: unit, space: g('am-space').value, date: date, start: g('am-start').value, end: g('am-end').value, type: g('am-type').value, fee: g('am-fee').value.trim(), notes: g('am-notes').value.trim(), createdAt: Date.now() };
+  var a = { id: uid(), resident: resident, unit: unit, space: g('am-space').value, date: date, start: g('am-start').value, end: g('am-end').value, type: g('am-type').value, fee: g('am-fee').value.trim(), notes: g('am-notes').value.trim(), addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
   if (!state.amenities) state.amenities = [];
   state.amenities.push(a); scheduleSave(); closeModal('modal-amenity'); renderAmenities(); updateBadges();
   ['am-resident', 'am-unit', 'am-fee', 'am-notes'].forEach(function (id) { g(id).value = ''; }); toast('Booking added');
@@ -1789,8 +1854,9 @@ function renderAmenities() {
   var list = (state.amenities || []).slice(), t = today();
   if (amenityFilter === 'today') list = list.filter(function (a) { return a.date === t; });
   else if (amenityFilter === 'upcoming') list = list.filter(function (a) { return a.date >= t; });
-  else if (amenityFilter === 'event') list = list.filter(function (a) { return a.type === 'event'; });
+  else if (amenityFilter === 'event') list = list.filter(function (a) { return a.type === 'event' && a.date >= t; });
   else if (amenityFilter === 'past') list = list.filter(function (a) { return a.date < t; });
+  else list = list.filter(function (a) { return a.date >= t; }); // "all" = today + future only
   list.sort(function (a, b) { return a.date.localeCompare(b.date) || (a.start || '').localeCompare(b.start || ''); });
   var tbody = g('amenities-tbody'), cnt = g('amenities-count');
   if (cnt) cnt.textContent = list.length + ' bookings';
@@ -1799,7 +1865,8 @@ function renderAmenities() {
   list.forEach(function (a) {
     var style = a.date === t ? ' style="background:var(--accent-light)"' : '';
     var time = a.start ? (a.start + (a.end ? ' - ' + a.end : '')) : '-';
-    html += '<tr' + style + '><td class="font-600">' + a.resident + '</td><td class="mono">' + a.unit + '</td><td class="text-sm">' + a.space + '</td><td class="mono text-sm">' + fmtShort(a.date) + '</td><td class="text-sm">' + time + '</td>';
+    var amBy = a.addedBy ? '<span class="by-tag">by ' + a.addedBy + '</span>' : '';
+    html += '<tr' + style + '><td class="font-600">' + a.resident + amBy + '</td><td class="mono">' + a.unit + '</td><td class="text-sm">' + a.space + '</td><td class="mono text-sm">' + fmtShort(a.date) + '</td><td class="text-sm">' + time + '</td>';
     html += '<td><span class="pill ' + (a.type === 'event' ? 'pill-event' : 'pill-reservation') + '">' + (a.type === 'event' ? 'Event' : 'Reservation') + '</span></td>';
     html += '<td class="text-sm text-2">' + (a.notes || '-') + '</td><td><button class="btn btn-ghost btn-xs" onclick="openEditAmenity(\'' + a.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteAmenity(\'' + a.id + '\')">x</button></td></tr>';
   });
@@ -1819,7 +1886,7 @@ function saveTour() {
     tr.name=name; tr.unit=g('tr-unit').value.trim(); tr.type=g('tr-type').value; tr.date=date; tr.time=g('tr-time').value; tr.contact=g('tr-contact').value.trim(); tr.notes=g('tr-notes').value.trim();
     editingTourId=null; scheduleSave(); closeModal('modal-tour'); renderTours(); updateBadges(); toast('Tour updated'); return;
   }
-  var tr = { id: uid(), name: name, unit: g('tr-unit').value.trim(), type: g('tr-type').value, date: date, time: g('tr-time').value, contact: g('tr-contact').value.trim(), notes: g('tr-notes').value.trim(), createdAt: Date.now() };
+  var tr = { id: uid(), name: name, unit: g('tr-unit').value.trim(), type: g('tr-type').value, date: date, time: g('tr-time').value, contact: g('tr-contact').value.trim(), notes: g('tr-notes').value.trim(), addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
   if (!state.tours) state.tours = [];
   state.tours.push(tr); scheduleSave(); closeModal('modal-tour'); renderTours(); updateBadges();
   ['tr-name', 'tr-unit', 'tr-contact', 'tr-notes'].forEach(function (id) { g(id).value = ''; }); g('tr-time').value = ''; toast('Tour logged');
@@ -1837,7 +1904,8 @@ function renderTours() {
   if (!list.length) { tbody.innerHTML = '<tr><td colspan="6" class="tbl-empty">No tours logged.</td></tr>'; return; }
   var html = '';
   list.forEach(function (tr) {
-    html += '<tr><td class="font-600">' + tr.name + '</td><td class="mono text-sm">' + (tr.unit || '-') + '</td><td class="mono text-sm">' + fmtShort(tr.date) + '</td>';
+    var trBy = tr.addedBy ? '<span class="by-tag">by ' + tr.addedBy + '</span>' : '';
+    html += '<tr><td class="font-600">' + tr.name + trBy + '</td><td class="mono text-sm">' + (tr.unit || '-') + '</td><td class="mono text-sm">' + fmtShort(tr.date) + '</td>';
     html += '<td><span class="pill ' + (tr.type === 'sgt' ? 'pill-reservation' : 'pill-event') + '">' + (tr.type === 'sgt' ? 'SGT' : 'Guided') + '</span></td>';
     html += '<td class="text-sm text-2">' + (tr.notes || '-') + '</td><td><button class="btn btn-ghost btn-xs" onclick="openEditTour(\'' + tr.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteTour(\'' + tr.id + '\')">x</button></td></tr>';
   });
@@ -2244,8 +2312,8 @@ function showScanOverlay(checkpointId) {
   var cpName = cp ? cp.name : 'Checkpoint';
   var cpLoc = cp ? (cp.location || '') : '';
 
-  // Require team PIN before logging a scan
-  var pin = state.teampin || '';
+  // Require patrol PIN before logging a scan (separate from Team Tracker PIN)
+  var pin = state.patrolPin || '';
   if (pin && !window._patrolPinVerified) {
     overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
       + '<div style="font-size:28px;margin-bottom:10px">&#128274;</div>'
@@ -2314,8 +2382,17 @@ function showScanOverlay(checkpointId) {
   overlay.style.display = 'flex';
   var closeBtn = g('scan-close-lnk');
   if (closeBtn) closeBtn.addEventListener('click', function() {
-    overlay.style.display = 'none';
-    if (window.history && window.history.replaceState) window.history.replaceState({}, '', window.location.pathname);
+    if (window._openedViaScan) {
+      // Opened via QR — never expose the dashboard to non-staff
+      overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
+        + '<div style="font-size:48px;margin-bottom:16px">&#128274;</div>'
+        + '<div style="font-size:20px;font-weight:600;margin-bottom:8px">Staff Access Only</div>'
+        + '<div style="font-size:14px;color:var(--text2)">This dashboard is restricted to authorized staff. If you are staff, please scan a checkpoint QR code.</div>'
+        + '</div>';
+    } else {
+      overlay.style.display = 'none';
+      if (window.history && window.history.replaceState) window.history.replaceState({}, '', window.location.pathname);
+    }
   });
   var notYou = g('not-you-lnk');
   if (notYou) notYou.addEventListener('click', function() {
@@ -2354,6 +2431,14 @@ function showScanSuccess(cpName) {
   setTimeout(function() {
     overlay.style.display = 'none';
     if (window.history && window.history.replaceState) window.history.replaceState({}, '', window.location.pathname);
+    if (window._openedViaScan) {
+      // Restore the dashboard for verified staff
+      g('sidebar').style.display = '';
+      g('main').style.display = '';
+      if (g('mob-nav')) g('mob-nav').style.display = '';
+      renderNavVisibility(); renderDash(); updateBadges();
+      window._openedViaScan = false;
+    }
   }, 2200);
 }
 
@@ -2509,10 +2594,24 @@ function resolveFlag(id) { var f = (state.flags || []).find(function (x) { retur
 function deleteFlag(id) { if (!confirm('Remove?')) return; state.flags = (state.flags || []).filter(function (f) { return f.id !== id; }); scheduleSave(); renderWT(); toast('Removed'); }
 
 // ─── TO-DO ───
+function getCurrentTodos() {
+  var vid = (currentUser && currentUser.role === 'admin' && todosViewingId) ? todosViewingId : (currentUser ? currentUser.id : null);
+  if (!vid) return state.todos || [];
+  if (!state.userTodos) state.userTodos = {};
+  if (!state.userTodos[vid]) state.userTodos[vid] = [];
+  return state.userTodos[vid];
+}
+function setCurrentTodos(arr) {
+  if (!currentUser) { state.todos = arr; return; }
+  var vid = (currentUser.role === 'admin' && todosViewingId) ? todosViewingId : currentUser.id;
+  if (!state.userTodos) state.userTodos = {};
+  state.userTodos[vid] = arr;
+}
 function addTodo() {
   var input = g('todo-input'), text = input.value.trim(); if (!text) { toast('Enter a to-do first'); return; }
-  if (!state.todos) state.todos = [];
-  state.todos.push({ id: uid(), text: text, priority: g('todo-priority').value, dueDate: g('todo-date').value || null, done: false, createdAt: Date.now() });
+  if (currentUser && currentUser.role === 'admin' && todosViewingId && todosViewingId !== currentUser.id) { toast('Switch to your own list to add tasks'); return; }
+  var todos = getCurrentTodos();
+  todos.push({ id: uid(), text: text, priority: g('todo-priority').value, dueDate: g('todo-date').value || null, done: false, createdAt: Date.now() });
   input.value = ''; g('todo-date').value = ''; g('todo-priority').value = 'normal';
   scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Added');
 }
@@ -2563,8 +2662,31 @@ function renderPrivateLock(sectionId, onUnlock) {
 }
 
 function renderTodos() {
-  if (state.privatePin && !privateUnlocked) { renderPrivateLock('todos', renderTodos); return; }
-  var todos = state.todos || [];
+  if (!currentUser && state.privatePin && !privateUnlocked) { renderPrivateLock('todos', renderTodos); return; }
+  // Admin user-switcher
+  var switcherEl = g('todos-user-switcher');
+  if (switcherEl) {
+    if (currentUser && currentUser.role === 'admin' && (state.accounts||[]).length > 1) {
+      var opts = '<option value="">My List</option>';
+      (state.accounts||[]).forEach(function(a) {
+        if (a.id !== currentUser.id) opts += '<option value="' + a.id + '"' + (todosViewingId===a.id?' selected':'') + '>' + a.name + '</option>';
+      });
+      switcherEl.innerHTML = '<label style="font-size:12px;color:var(--text2);margin-right:6px">Viewing:</label>'
+        + '<select style="font-size:12px;border:1px solid var(--border);border-radius:5px;padding:3px 6px;background:var(--surface)" onchange="todosViewingId=this.value||null;renderTodos()">' + opts + '</select>';
+      switcherEl.style.display = 'flex';
+    } else {
+      switcherEl.style.display = 'none';
+    }
+  }
+  var isViewingOther = currentUser && currentUser.role === 'admin' && todosViewingId && todosViewingId !== currentUser.id;
+  var viewingName = '';
+  if (isViewingOther) {
+    var va = (state.accounts||[]).find(function(a){return a.id===todosViewingId;});
+    viewingName = va ? va.name + '\'s ' : '';
+  }
+  var titleEl = g('todos-section-title');
+  if (titleEl) titleEl.textContent = viewingName + 'To-Do List';
+  var todos = getCurrentTodos();
   var sorted = todos.slice().sort(function (a, b) {
     if (a.done !== b.done) return a.done ? 1 : -1;
     if (a.priority === 'urgent' && b.priority !== 'urgent') return -1;
@@ -2622,9 +2744,9 @@ function renderTodos() {
   list.innerHTML = html;
   setBadge('badge-todos', totalPending); setMBadge('mb-todos', totalPending);
 }
-function toggleTodo(id, checked) { var t = (state.todos || []).find(function (x) { return x.id === id; }); if (t) { t.done = checked; t.completedAt = checked ? Date.now() : null; scheduleSave(); renderTodos(); updateBadges(); renderDash(); } }
-function deleteTodo(id) { state.todos = (state.todos || []).filter(function (t) { return t.id !== id; }); scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Removed'); }
-function clearDoneTodos() { if (!confirm('Clear completed to-dos?')) return; state.todos = (state.todos || []).filter(function (t) { return !t.done; }); scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Cleared'); }
+function toggleTodo(id, checked) { var todos = getCurrentTodos(); var t = todos.find(function (x) { return x.id === id; }); if (t) { t.done = checked; t.completedAt = checked ? Date.now() : null; scheduleSave(); renderTodos(); updateBadges(); renderDash(); } }
+function deleteTodo(id) { setCurrentTodos(getCurrentTodos().filter(function (t) { return t.id !== id; })); scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Removed'); }
+function clearDoneTodos() { if (!confirm('Clear completed to-dos?')) return; setCurrentTodos(getCurrentTodos().filter(function (t) { return !t.done; })); scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Cleared'); }
 
 // ─── LOST & FOUND ───
 var lafFilter = 'all';
@@ -2636,7 +2758,7 @@ function saveLAF() {
     item.date=g('lf-date').value||today(); item.time=g('lf-time').value||''; item.foundBy=g('lf-foundby').value.trim(); item.location=g('lf-location').value.trim(); item.condition=g('lf-condition').value; item.desc=desc; item.notes=g('lf-notes').value.trim();
     editingLAFId=null; scheduleSave(); closeModal('modal-laf'); renderLAF(); updateBadges(); toast('Item updated'); return;
   }
-  var item = { id: uid(), date: g('lf-date').value || today(), time: g('lf-time').value || '', foundBy: g('lf-foundby').value.trim(), location: g('lf-location').value.trim(), condition: g('lf-condition').value, desc: desc, notes: g('lf-notes').value.trim(), claimedAt: null, claimedBy: '', claimedUnit: '', loggedAt: Date.now() };
+  var item = { id: uid(), date: g('lf-date').value || today(), time: g('lf-time').value || '', foundBy: g('lf-foundby').value.trim(), location: g('lf-location').value.trim(), condition: g('lf-condition').value, desc: desc, notes: g('lf-notes').value.trim(), claimedAt: null, claimedBy: '', claimedUnit: '', addedBy: currentUser ? currentUser.name : '', loggedAt: Date.now() };
   if (!state.laf) state.laf = [];
   state.laf.push(item); scheduleSave(); closeModal('modal-laf'); renderLAF(); updateBadges();
   ['lf-foundby', 'lf-location', 'lf-desc', 'lf-notes', 'lf-time'].forEach(function (id) { g(id).value = ''; }); toast('Item logged');
@@ -2659,7 +2781,8 @@ function renderLAF() {
       : '<button class="btn btn-secondary btn-xs" onclick="claimLAF(\'' + i.id + '\')">Mark Claimed</button>';
     if (overdue) statusCell += ' <span style="background:var(--amber-light);color:var(--amber);font-size:10px;border-radius:4px;padding:1px 6px;margin-left:4px">Disposal ' + days + 'd</span>';
     html += '<tr ' + (i.claimedAt ? 'style="opacity:0.55"' : (overdue ? 'style="background:var(--amber-light)"' : '')) + '>';
-    html += '<td class="mono text-sm">' + fmtShort(i.date) + '</td><td class="text-sm">' + (i.location || '-') + '</td><td class="font-600">' + i.desc + '</td>';
+    var lafBy = i.addedBy ? '<span class="by-tag">by ' + i.addedBy + '</span>' : '';
+    html += '<td class="mono text-sm">' + fmtShort(i.date) + '</td><td class="text-sm">' + (i.location || '-') + '</td><td class="font-600">' + i.desc + lafBy + '</td>';
     html += '<td class="text-sm text-2">' + i.condition + '</td><td class="text-sm">' + (i.foundBy || '-') + '</td>';
     html += '<td class="text-sm">' + statusCell + '</td><td><button class="btn btn-ghost btn-xs" onclick="openEditLAF(\'' + i.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteLAF(\'' + i.id + '\')">x</button></td></tr>';
   });
@@ -2671,7 +2794,7 @@ function deleteLAF(id) { if (!confirm('Remove?')) return; state.laf = (state.laf
 
 // ─── PASSDOWN ───
 function renderPassdown() {
-  if (state.privatePin && !privateUnlocked) { renderPrivateLock('passdown', renderPassdown); return; }
+  if (!currentUser && state.privatePin && !privateUnlocked) { renderPrivateLock('passdown', renderPassdown); return; }
   g('pd-date').value = today(); renderPassdownHistory();
 }
 function autoGeneratePassdown() {
@@ -2812,14 +2935,18 @@ function autoGeneratePassdown() {
   if (flagSection) pd += flagSection;
   if (postSection) pd += postSection;
   if (notes) pd += '\n\uD83D\uDCDD Shift Notes\n' + notes + '\n';
-  pd += '\n-\nGabino S.M. | Front Desk Lead | Chorus - SF | gserrano@alignrealestate.com';
+  var sigName = currentUser ? currentUser.name : 'Gabino S.M.';
+  var sigRole = (currentUser && currentUser.role === 'admin') ? 'Front Desk Lead' : 'Front Desk';
+  pd += '\n-\n' + sigName + ' | ' + sigRole + ' | Chorus - SF';
   g('pd-preview').textContent = pd; toast('Passdown generated');
 }
 function savePassdown() {
   var preview = g('pd-preview').textContent;
   if (!preview || preview.includes('will appear here')) { toast('Generate passdown first'); return; }
-  if (!state.passdowns) state.passdowns = [];
-  state.passdowns.unshift({ id: uid(), date: g('pd-date').value || today(), shift: g('pd-shift').value, text: preview, createdAt: Date.now() });
+  var uid2 = currentUser ? currentUser.id : '__legacy__';
+  if (!state.userPassdowns) state.userPassdowns = {};
+  if (!state.userPassdowns[uid2]) state.userPassdowns[uid2] = [];
+  state.userPassdowns[uid2].unshift({ id: uid(), date: g('pd-date').value || today(), shift: g('pd-shift').value, text: preview, createdAt: Date.now() });
   scheduleSave(); renderPassdownHistory(); toast('Saved');
 }
 function copyPassdown() {
@@ -2828,15 +2955,52 @@ function copyPassdown() {
   if (navigator.share) navigator.share({ text: preview }).catch(function () {});
   else navigator.clipboard.writeText(preview).then(function () { toast('Copied'); }).catch(function () { toast('Copy failed'); });
 }
+function getAllPassdowns(limitHours) {
+  var all = [], upd = state.userPassdowns || {}, accounts = state.accounts || [];
+  Object.keys(upd).forEach(function(uid2) {
+    var acct = accounts.find(function(a){return a.id===uid2;});
+    var name = acct ? acct.name : (uid2==='__legacy__'?'':null);
+    (upd[uid2]||[]).forEach(function(p) { all.push(Object.assign({}, p, { authorName: name, authorId: uid2 })); });
+  });
+  // Also include legacy flat passdowns
+  (state.passdowns||[]).forEach(function(p) { all.push(Object.assign({}, p, { authorName: null, authorId: null })); });
+  if (limitHours) {
+    var cutoff = Date.now() - limitHours * 3600000;
+    all = all.filter(function(p){ return p.createdAt >= cutoff; });
+  }
+  return all.sort(function(a,b){ return b.createdAt - a.createdAt; });
+}
 function renderPassdownHistory() {
-  var histEl = g('pd-history'), pds = state.passdowns || [];
-  if (!pds.length) { histEl.innerHTML = '<div class="text-3 text-sm">No passdowns saved yet.</div>'; return; }
+  var histEl = g('pd-history'); if (!histEl) return;
+  var isAdmin = !currentUser || currentUser.role === 'admin';
+  var pds = getAllPassdowns(isAdmin ? null : 48);
+  if (!pds.length) { histEl.innerHTML = '<div class="text-3 text-sm">' + (isAdmin ? 'No passdowns saved yet.' : 'No passdowns in the last 48 hours.') + '</div>'; return; }
   var html = '';
-  pds.forEach(function (p) { html += '<div class="phi"><div class="phi-hdr" onclick="this.parentElement.classList.toggle(\'open\')"><span class="font-600">' + fmtShort(p.date) + ' - ' + p.shift + '</span><div class="flex gap-4"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();copyPD(\'' + p.id + '\')">Copy</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="event.stopPropagation();deletePD(\'' + p.id + '\')">x</button></div></div><div class="phi-body">' + p.text + '</div></div>'; });
+  pds.forEach(function (p) {
+    var canDelete = isAdmin || (currentUser && p.authorId === currentUser.id);
+    var authorBadge = p.authorName ? '<span class="by-tag" style="margin-left:6px">by ' + p.authorName + '</span>' : '';
+    html += '<div class="phi"><div class="phi-hdr" onclick="this.parentElement.classList.toggle(\'open\')">'
+      + '<span class="font-600">' + fmtShort(p.date) + ' - ' + p.shift + '</span>' + authorBadge
+      + '<div class="flex gap-4" style="margin-left:auto">'
+      + '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();copyPD(\'' + p.id + '\')">Copy</button>'
+      + (canDelete ? '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="event.stopPropagation();deletePD(\'' + p.id + '\',\'' + (p.authorId||'') + '\')">x</button>' : '')
+      + '</div></div><div class="phi-body">' + p.text + '</div></div>';
+  });
   histEl.innerHTML = html;
 }
-function copyPD(id) { var p = (state.passdowns || []).find(function (x) { return x.id === id; }); if (!p) return; navigator.clipboard.writeText(p.text).then(function () { toast('Copied'); }).catch(function () { toast('Copy failed'); }); }
-function deletePD(id) { if (!confirm('Delete passdown?')) return; state.passdowns = (state.passdowns || []).filter(function (p) { return p.id !== id; }); scheduleSave(); renderPassdownHistory(); toast('Deleted'); }
+function copyPD(id) {
+  var all = getAllPassdowns(); var p = all.find(function(x){return x.id===id;}); if (!p) return;
+  navigator.clipboard.writeText(p.text).then(function(){toast('Copied');}).catch(function(){toast('Copy failed');});
+}
+function deletePD(id, authorId) {
+  if (!confirm('Delete passdown?')) return;
+  if (authorId && state.userPassdowns && state.userPassdowns[authorId]) {
+    state.userPassdowns[authorId] = state.userPassdowns[authorId].filter(function(p){return p.id!==id;});
+  } else {
+    state.passdowns = (state.passdowns||[]).filter(function(p){return p.id!==id;});
+  }
+  scheduleSave(); renderPassdownHistory(); toast('Deleted');
+}
 
 
 // ─── GENERIC EDIT HELPERS ───
@@ -2979,7 +3143,7 @@ function openAddTodoModal(dateStr) {
   openModal('modal-todo');
 }
 function openEditTodo(id) {
-  var t = (state.todos || []).find(function (x) { return x.id === id; }); if (!t) return;
+  var t = getCurrentTodos().find(function (x) { return x.id === id; }); if (!t) return;
   editingTodoId = id;
   g('modal-todo-title').textContent = 'Edit To-Do';
   g('modal-todo-savebtn').textContent = 'Save Changes';
@@ -2993,11 +3157,11 @@ function saveTodoModal() {
   var dueDate = g('td-date').value || null;
   var priority = g('td-priority').value;
   if (editingTodoId) {
-    var t = (state.todos || []).find(function (x) { return x.id === editingTodoId; });
+    var t = getCurrentTodos().find(function (x) { return x.id === editingTodoId; });
     if (t) { t.text = text; t.note = note; t.dueDate = dueDate; t.priority = priority; }
   } else {
-    if (!state.todos) state.todos = [];
-    state.todos.push({ id: uid(), text: text, note: note, priority: priority, dueDate: dueDate, done: false, createdAt: Date.now() });
+    var todos = getCurrentTodos();
+    todos.push({ id: uid(), text: text, note: note, priority: priority, dueDate: dueDate, done: false, createdAt: Date.now() });
   }
   var wasEditing = !!editingTodoId;
   closeModal('modal-todo'); editingTodoId = null;
@@ -3299,7 +3463,7 @@ function openCalPop(dateStr, evt) {
     });
   });
   // To-dos
-  (state.todos || []).filter(function (t) { return t.dueDate === dateStr && !t.done; }).forEach(function (t) {
+  getCurrentTodos().filter(function (t) { return t.dueDate === dateStr && !t.done; }).forEach(function (t) {
     items.push({ type: 'To-Do', typeClass: 'pill-medium', main: t.text, sub: t.priority === 'urgent' ? 'Urgent' : '', sec: 'todos' });
   });
   // Amenity bookings
@@ -3381,7 +3545,7 @@ function getChips(dateStr, unit, viewMode, maxShow) {
   });
   // General (todos, amenities, tours) — month view or week General row
   if (!unit) {
-    (state.todos || []).filter(function (t) { return t.dueDate === dateStr && !t.done; }).forEach(function (t) {
+    getCurrentTodos().filter(function (t) { return t.dueDate === dateStr && !t.done; }).forEach(function (t) {
       items.push('<div class="cal-chip cal-chip-todo" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + t.text + '">' + t.text.slice(0, 18) + '</div>');
     });
     (state.amenities || []).filter(function (a) { return a.date === dateStr; }).forEach(function (a) {
@@ -3423,7 +3587,7 @@ function renderWeekCal() {
   html += '</tr></thead><tbody>';
   if (!units.length) html += '<tr><td colspan="8" class="tbl-empty">No moves scheduled.</td></tr>';
   else units.forEach(function (unit) { html += '<tr><td class="unit-lbl">' + unit + '</td>'; days.forEach(function (d) { var ds = d.toISOString().split('T')[0]; html += '<td class="' + (ds === todayStr ? 'today-col' : '') + '">' + getChips(ds, unit, 'week') + '</td>'; }); html += '</tr>'; });
-  var hasTodos = (state.todos || []).some(function (t) { return t.dueDate; });
+  var hasTodos = getCurrentTodos().some(function (t) { return t.dueDate; });
   var hasAmenities = (state.amenities || []).length > 0;
   var hasTaskDates = (state.moves || []).some(function (m) { return (m.tasks || []).some(function (t) { return t.dueDate; }); });
   var hasTours = (state.tours || []).length > 0;
@@ -3482,7 +3646,7 @@ function renderAgendaCal() {
         dayItems.push({ tag: 'TASK', tagCls: 'cal-chip-task', tagStyle: '', text: t.text + ' \u2014 Unit ' + m.unit, sec: 'moves' });
       });
     });
-    (state.todos || []).filter(function (t) { return t.dueDate === ds && !t.done; }).forEach(function (t) {
+    getCurrentTodos().filter(function (t) { return t.dueDate === ds && !t.done; }).forEach(function (t) {
       dayItems.push({ tag: 'TODO', tagCls: 'cal-chip-todo', tagStyle: '', text: t.text, sec: 'todos' });
     });
     (state.amenities || []).filter(function (a) { return a.date === ds; }).forEach(function (a) {
@@ -3754,9 +3918,13 @@ var TOGGLEABLE_SECTIONS = [
 
 function renderNavVisibility() {
   var hidden = state.hiddenSections || [];
+  var isStaff = currentUser && currentUser.role === 'staff';
   TOGGLEABLE_SECTIONS.forEach(function (s) {
     var el = document.querySelector('.nav-item[data-sec="' + s.id + '"]');
-    if (el) el.style.display = hidden.indexOf(s.id) !== -1 ? 'none' : '';
+    if (el) {
+      var staffBlocked = isStaff && STAFF_HIDDEN.indexOf(s.id) !== -1;
+      el.style.display = (hidden.indexOf(s.id) !== -1 || staffBlocked) ? 'none' : '';
+    }
   });
   document.querySelectorAll('.nav-group').forEach(function (group) {
     var items = group.querySelectorAll('.nav-item[data-sec]');
@@ -3790,12 +3958,17 @@ function renderNavVisibilitySettings() {
 }
 
 function renderSettings() {
+  var isAdmin = !currentUser || currentUser.role === 'admin';
+  var acctCard = g('settings-accounts-card');
+  if (acctCard) acctCard.style.display = isAdmin ? '' : 'none';
+  if (isAdmin) renderTeamAccounts();
   renderTaskList('in');
   renderTaskList('out');
   renderSettingsWTFloors();
   renderTeamStaff();
   renderNavVisibilitySettings();
   renderPrivatePinSettings();
+  renderPatrolPinSettings();
   var ph = g('patrol-alert-hours');
   if (ph) ph.value = (state.patrolSettings && state.patrolSettings.alertHours) || 4;
   var lx = g('laf-expiry-days');
@@ -3842,6 +4015,45 @@ function removePrivatePin() {
   if (cur !== state.privatePin) { toast('Current PIN is incorrect'); return; }
   if (!confirm('Remove personal PIN? Passdown and To-Dos will be visible to everyone.')) return;
   state.privatePin = ''; privateUnlocked = false; scheduleSave(); renderPrivatePinSettings(); toast('Personal PIN removed');
+}
+
+function renderPatrolPinSettings() {
+  var el = g('patrol-pin-settings-body'); if (!el) return;
+  var pin = state.patrolPin || '';
+  if (!pin) {
+    el.innerHTML = '<div class="fg"><label>New PIN (4-8 digits)</label><input type="password" id="pp-new" maxlength="8" inputmode="numeric" placeholder="e.g. 9012"></div>'
+      + '<div class="fg"><label>Confirm PIN</label><input type="password" id="pp-confirm" maxlength="8" inputmode="numeric" placeholder="Repeat PIN"></div>'
+      + '<button class="btn btn-primary btn-sm" onclick="setPatrolPin()">Set Patrol PIN</button>';
+  } else {
+    el.innerHTML = '<p style="font-size:13px;color:var(--green);margin-bottom:10px">&#10003; Patrol QR PIN is active.</p>'
+      + '<div class="fg"><label>Current PIN</label><input type="password" id="pp-cur" maxlength="8" inputmode="numeric" placeholder="Current PIN"></div>'
+      + '<div class="fg"><label>New PIN (leave blank to remove)</label><input type="password" id="pp-new" maxlength="8" inputmode="numeric" placeholder="New PIN"></div>'
+      + '<div class="fg"><label>Confirm New PIN</label><input type="password" id="pp-confirm" maxlength="8" inputmode="numeric" placeholder="Repeat"></div>'
+      + '<button class="btn btn-primary btn-sm" onclick="changePatrolPin()">Update PIN</button>'
+      + ' <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="removePatrolPin()">Remove PIN</button>';
+  }
+}
+function setPatrolPin() {
+  var np = (g('pp-new') ? g('pp-new').value.trim() : '');
+  var cp = (g('pp-confirm') ? g('pp-confirm').value.trim() : '');
+  if (!np || np.length < 4) { toast('PIN must be at least 4 digits'); return; }
+  if (np !== cp) { toast('PINs do not match'); return; }
+  state.patrolPin = np; scheduleSave(); renderPatrolPinSettings(); toast('Patrol PIN set');
+}
+function changePatrolPin() {
+  var cur = (g('pp-cur') ? g('pp-cur').value : '');
+  var np = (g('pp-new') ? g('pp-new').value.trim() : '');
+  var cp = (g('pp-confirm') ? g('pp-confirm').value.trim() : '');
+  if (cur !== state.patrolPin) { toast('Current PIN is incorrect'); return; }
+  if (!np || np.length < 4) { toast('New PIN must be at least 4 digits'); return; }
+  if (np !== cp) { toast('PINs do not match'); return; }
+  state.patrolPin = np; scheduleSave(); renderPatrolPinSettings(); toast('Patrol PIN updated');
+}
+function removePatrolPin() {
+  var cur = (g('pp-cur') ? g('pp-cur').value : '');
+  if (cur !== state.patrolPin) { toast('Current PIN is incorrect'); return; }
+  if (!confirm('Remove patrol PIN? Anyone scanning a QR code will be able to log a scan.')) return;
+  state.patrolPin = ''; scheduleSave(); renderPatrolPinSettings(); toast('Patrol PIN removed');
 }
 
 function lockPrivate() {
@@ -4042,6 +4254,192 @@ function moveTask(type, idx, dir) {
   scheduleSave(); renderTaskList(type);
 }
 
+// ─── LOGIN ───
+function showLogin() {
+  var ov = g('login-overlay'); if (!ov) return;
+  ov.style.display = 'flex';
+  var sidebar = g('sidebar-wrap'), main = g('main'), mn = g('mob-nav');
+  if (sidebar) sidebar.style.visibility = 'hidden';
+  if (main) main.style.visibility = 'hidden';
+  if (mn) mn.style.visibility = 'hidden';
+  renderLoginScreen();
+}
+function hideLogin() {
+  var ov = g('login-overlay'); if (ov) ov.style.display = 'none';
+  var sidebar = g('sidebar-wrap'), main = g('main'), mn = g('mob-nav');
+  if (sidebar) sidebar.style.visibility = '';
+  if (main) main.style.visibility = '';
+  if (mn) mn.style.visibility = '';
+}
+function renderLoginScreen() {
+  loginPinEntry = ''; loginSelectedAccount = null;
+  var accounts = state.accounts || [];
+  var sub = g('login-sub'), body = g('login-body');
+  sub.textContent = 'Select your account to continue';
+  if (!accounts.length) {
+    body.innerHTML = '<p style="color:var(--text2);font-size:13px;margin-bottom:16px">No accounts set up yet. Create the admin account to get started.</p>'
+      + '<button class="btn btn-primary" style="width:100%" onclick="showFirstTimeSetup()">Set Up Admin Account</button>';
+    return;
+  }
+  var html = '';
+  accounts.forEach(function(a) {
+    var initials = a.name.split(/\s+/).map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
+    html += '<button class="acct-btn" onclick="selectAccount(\'' + a.id + '\')">'
+      + '<div class="acct-avatar">' + initials + '</div>'
+      + '<div><div>' + a.name + '</div><div class="acct-role-tag">' + (a.role==='admin'?'&#128737; Admin':'Staff') + '</div></div>'
+      + '</button>';
+  });
+  g('login-body').innerHTML = html;
+}
+function selectAccount(id) {
+  loginSelectedAccount = (state.accounts||[]).find(function(a){return a.id===id;}); if (!loginSelectedAccount) return;
+  loginPinEntry = '';
+  g('login-sub').textContent = 'PIN for ' + loginSelectedAccount.name;
+  renderPinPad(false);
+}
+function renderPinPad(shake) {
+  var dots = '';
+  for (var i=0;i<4;i++) dots += '<div class="pin-dot' + (i<loginPinEntry.length?' filled':'') + '"></div>';
+  var keys = [1,2,3,4,5,6,7,8,9,'⌫',0,'✓'];
+  var pad = keys.map(function(k){
+    return '<button class="pin-key" onclick="pinKey(\'' + k + '\')">' + k + '</button>';
+  }).join('');
+  g('login-body').innerHTML = '<div class="pin-dots" id="pin-dots">' + dots + '</div>'
+    + '<div id="pin-error" style="text-align:center;font-size:12px;color:var(--red);min-height:18px">' + (shake ? 'Incorrect PIN' : '') + '</div>'
+    + '<div class="pin-pad">' + pad + '</div>'
+    + '<button class="btn btn-ghost btn-sm" style="width:100%;margin-top:10px" onclick="renderLoginScreen()">&#8592; Back</button>';
+}
+function pinKey(k) {
+  var bk = '⌫', ch = '✓';
+  if (k === bk || k === String.fromCharCode(9003)) { loginPinEntry = loginPinEntry.slice(0,-1); renderPinPad(false); return; }
+  if (k === ch || k === String.fromCharCode(10003)) { submitPin(); return; }
+  if (loginPinEntry.length >= 8) return;
+  loginPinEntry += k;
+  renderPinPad(false);
+  if (loginPinEntry.length >= 4 && loginSelectedAccount && loginPinEntry === loginSelectedAccount.pin) { submitPin(); }
+}
+function submitPin() {
+  var acct = loginSelectedAccount; if (!acct) return;
+  if (loginPinEntry === acct.pin) {
+    currentUser = { id: acct.id, name: acct.name, role: acct.role };
+    hideLogin();
+    updateSidebarForRole();
+    renderNavVisibility();
+    curSec = 'dashboard';
+    document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+    var si = document.querySelector('.nav-item[data-sec="dashboard"]'); if (si) si.classList.add('active');
+    document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
+    var ds = g('section-dashboard'); if (ds) ds.classList.add('active');
+    g('hdr-title').textContent = 'Dashboard';
+    g('hdr-actions').innerHTML = '';
+    renderDash(); updateBadges();
+    toast('Welcome, ' + currentUser.name + '!');
+  } else {
+    loginPinEntry = '';
+    renderPinPad(true);
+    setTimeout(function(){ var e=g('pin-error'); if(e)e.textContent=''; }, 2000);
+  }
+}
+function doLogout() {
+  currentUser = null; privateUnlocked = false; teamUnlocked = false; todosViewingId = null;
+  updateSidebarForRole();
+  showLogin();
+}
+function updateSidebarForRole() {
+  var isStaff = currentUser && currentUser.role === 'staff';
+  var uil = g('user-info-line'), uin = g('user-info-name');
+  if (uil) uil.style.display = currentUser ? '' : 'none';
+  if (uin && currentUser) uin.textContent = '👤 ' + currentUser.name;
+}
+
+// ─── FIRST-TIME SETUP ───
+function showFirstTimeSetup() {
+  g('login-sub').textContent = 'Create your admin account';
+  g('login-body').innerHTML = '<div class="fg"><label>Your Name</label><input type="text" id="setup-name" value="Gabino — Lead" placeholder="Your name" style="width:100%"></div>'
+    + '<div class="fg"><label>PIN (4–8 digits)</label><input type="password" id="setup-pin" maxlength="8" inputmode="numeric" placeholder="e.g. 1234" style="width:100%"></div>'
+    + '<div class="fg"><label>Confirm PIN</label><input type="password" id="setup-pin2" maxlength="8" inputmode="numeric" placeholder="Repeat PIN" style="width:100%"></div>'
+    + '<button class="btn btn-primary" style="width:100%" onclick="saveAdminSetup()">Create Account &amp; Log In</button>'
+    + '<button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px" onclick="renderLoginScreen()">&#8592; Back</button>';
+}
+function saveAdminSetup() {
+  var name = g('setup-name').value.trim();
+  var pin = g('setup-pin').value.trim();
+  var pin2 = g('setup-pin2').value.trim();
+  if (!name) { toast('Enter your name'); return; }
+  if (!pin || pin.length < 4) { toast('PIN must be at least 4 digits'); return; }
+  if (pin !== pin2) { toast('PINs do not match'); return; }
+  if (!state.accounts) state.accounts = [];
+  var adminId = uid();
+  state.accounts.push({ id: adminId, name: name, role: 'admin', pin: pin, createdAt: Date.now() });
+  if (!state.userTodos) state.userTodos = {};
+  if (!state.userPassdowns) state.userPassdowns = {};
+  if (state.todos && state.todos.length) { state.userTodos[adminId] = state.todos.slice(); state.todos = []; }
+  if (state.passdowns && state.passdowns.length) { state.userPassdowns[adminId] = state.passdowns.slice(); state.passdowns = []; }
+  scheduleSave();
+  loginSelectedAccount = state.accounts[0];
+  loginPinEntry = pin;
+  submitPin();
+}
+
+// ─── ACCOUNT MANAGEMENT ───
+function renderTeamAccounts() {
+  var el = g('settings-accounts'); if (!el) return;
+  var accounts = state.accounts || [];
+  if (!accounts.length) { el.innerHTML = '<div class="text-3 text-sm" style="padding:10px 14px">No accounts yet.</div>'; return; }
+  var html = '';
+  accounts.forEach(function(a) {
+    var initials = a.name.split(/\s+/).map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border2)">'
+      + '<div class="acct-avatar" style="width:32px;height:32px;font-size:12px">' + initials + '</div>'
+      + '<div style="flex:1"><div class="font-600 text-sm">' + a.name + '</div>'
+      + '<div style="font-size:11px;color:var(--text3)">' + (a.role==='admin'?'Admin':'Staff') + '</div></div>'
+      + (a.id !== currentUser.id ? '<button class="btn btn-ghost btn-xs" onclick="resetAccountPin(\'' + a.id + '\')">Reset PIN</button>' : '')
+      + (a.id !== currentUser.id ? '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteAccount(\'' + a.id + '\')">x</button>' : '<span style="font-size:11px;color:var(--text3)">(you)</span>')
+      + '</div>';
+  });
+  el.innerHTML = html;
+}
+function openAddAccount() {
+  var bdy = '<div class="fg"><label>Name</label><input type="text" id="na-name" placeholder="e.g. Maria" style="width:100%"></div>'
+    + '<div class="fg"><label>Role</label><select id="na-role" style="width:100%"><option value="staff">Staff</option><option value="admin">Admin</option></select></div>'
+    + '<div class="fg"><label>PIN (4–8 digits)</label><input type="password" id="na-pin" maxlength="8" inputmode="numeric" placeholder="e.g. 5678" style="width:100%"></div>'
+    + '<div class="fg"><label>Confirm PIN</label><input type="password" id="na-pin2" maxlength="8" inputmode="numeric" placeholder="Repeat PIN" style="width:100%"></div>';
+  var ov = g('modal-add-account');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.className = 'modal-ov'; ov.id = 'modal-add-account';
+    ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Add Team Member</span><button class="modal-close" onclick="closeModal(\'modal-add-account\')">&#x2715;</button></div>'
+      + '<div class="modal-bdy" id="add-account-bdy"></div>'
+      + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-add-account\')">Cancel</button><button class="btn btn-primary" onclick="saveNewAccount()">Add Account</button></div></div>';
+    document.body.appendChild(ov);
+  }
+  g('add-account-bdy').innerHTML = bdy;
+  openModal('modal-add-account');
+}
+function saveNewAccount() {
+  var name = g('na-name').value.trim(), role = g('na-role').value;
+  var pin = g('na-pin').value.trim(), pin2 = g('na-pin2').value.trim();
+  if (!name) { toast('Enter a name'); return; }
+  if (!pin || pin.length < 4) { toast('PIN must be at least 4 digits'); return; }
+  if (pin !== pin2) { toast('PINs do not match'); return; }
+  if (!state.accounts) state.accounts = [];
+  state.accounts.push({ id: uid(), name: name, role: role, pin: pin, createdAt: Date.now() });
+  scheduleSave(); closeModal('modal-add-account'); renderTeamAccounts(); toast('Account added');
+}
+function resetAccountPin(id) {
+  var acct = (state.accounts||[]).find(function(a){return a.id===id;}); if (!acct) return;
+  var np = prompt('New PIN for ' + acct.name + ' (4-8 digits):'); if (np === null) return;
+  np = np.trim();
+  if (!np || np.length < 4) { toast('PIN must be at least 4 digits'); return; }
+  acct.pin = np; scheduleSave(); toast('PIN reset for ' + acct.name);
+}
+function deleteAccount(id) {
+  var acct = (state.accounts||[]).find(function(a){return a.id===id;}); if (!acct) return;
+  if (!confirm('Remove account for ' + acct.name + '? Their data will be kept.')) return;
+  state.accounts = state.accounts.filter(function(a){return a.id!==id;});
+  scheduleSave(); renderTeamAccounts(); toast('Account removed');
+}
+
 // ─── INIT ───
 async function init() {
   if (localStorage.getItem('chorus-sc') === '1') document.body.classList.add('sc');
@@ -4051,8 +4449,17 @@ async function init() {
   try { var params = new URLSearchParams(window.location.search); pendingScanId = params.get('scan'); } catch(e) {}
   await pullCloud();
   lastSyncTs = Date.now();
-  renderNavVisibility(); renderDash(); updateBadges();
-  if (pendingScanId) showScanOverlay(pendingScanId);
+  if (pendingScanId) {
+    // Page opened via QR code — hide the dashboard entirely until after the scan
+    window._openedViaScan = true;
+    g('sidebar').style.display = 'none';
+    g('main').style.display = 'none';
+    if (g('mob-nav')) g('mob-nav').style.display = 'none';
+    showScanOverlay(pendingScanId);
+  } else {
+    window._openedViaScan = false;
+    showLogin();
+  }
 }
 document.addEventListener('DOMContentLoaded', init);
 </script>
