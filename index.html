@@ -594,10 +594,61 @@
     </div>
     <div class="section" id="section-team"><div id="team-body"></div></div>
     <div class="section" id="section-settings">
+
+      <!-- ── Accounts & Access ── -->
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:4px 2px 8px">Accounts &amp; Access</div>
       <div id="settings-accounts-card" style="display:none" class="card mb-12">
         <div class="card-hdr"><span class="card-title">&#128100; Team Accounts</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddAccount()">+ Add Member</button></div>
         <div id="settings-accounts" style="padding:0"></div>
       </div>
+      <div class="card mb-12">
+        <div class="card-hdr"><span class="card-title">&#128274; Personal PIN — Passdown &amp; To-Dos</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Lock your Daily Passdown and To-Do List behind a personal PIN so teammates cannot view them.</p>
+          <div id="priv-pin-settings-body"></div>
+        </div>
+      </div>
+
+      <!-- ── Team Tracker ── -->
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:12px 2px 8px;border-top:1px solid var(--border2);margin-top:4px">Team Tracker</div>
+      <div class="card mb-12">
+        <div class="card-hdr"><span class="card-title">&#128100; Staff List</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddStaff()">+ Add Staff</button></div>
+        <div class="card-body" style="padding:8px 0" id="settings-team-staff"></div>
+      </div>
+      <div class="card mb-12">
+        <div class="card-hdr"><span class="card-title">&#128274; Team Tracker PIN</span></div>
+        <div class="card-body" id="settings-team-pin">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">To change the PIN you must enter the current PIN first.</p>
+          <div class="fg"><label>Current PIN</label><input type="password" id="pin-current" maxlength="8" inputmode="numeric" placeholder="Current PIN"></div>
+          <div class="fg"><label>New PIN</label><input type="password" id="pin-new" maxlength="8" inputmode="numeric" placeholder="New PIN (4-8 digits)"></div>
+          <div class="fg"><label>Confirm New PIN</label><input type="password" id="pin-confirm" maxlength="8" inputmode="numeric" placeholder="Repeat new PIN"></div>
+          <button class="btn btn-primary btn-sm" onclick="changeTeamPin()">Update PIN</button>
+        </div>
+      </div>
+
+      <!-- ── Security Patrols ── -->
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:12px 2px 8px;border-top:1px solid var(--border2);margin-top:4px">Security Patrols</div>
+      <div class="card mb-12">
+        <div class="card-hdr"><span class="card-title">&#128737; Patrol Alert Threshold</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Show a dashboard alert when a checkpoint hasn't been scanned within this many hours.</p>
+          <div class="flex gap-8 items-center">
+            <input type="number" id="patrol-alert-hours" min="1" max="72" style="width:80px" placeholder="4">
+            <span style="font-size:13px;color:var(--text2)">hours</span>
+            <button class="btn btn-primary btn-sm" onclick="savePatrolAlertHours()">Save</button>
+          </div>
+        </div>
+      </div>
+      <div class="card mb-12">
+        <div class="card-hdr"><span class="card-title">&#128737; QR Checkpoint PIN</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Staff must enter this PIN before a QR checkpoint scan is logged. Keep it separate from the Team Tracker PIN.</p>
+          <div id="patrol-pin-settings-body"></div>
+        </div>
+      </div>
+
+      <!-- ── Moves ── -->
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:12px 2px 8px;border-top:1px solid var(--border2);margin-top:4px">Moves</div>
       <div class="two-col">
         <div>
           <div class="card mb-12">
@@ -618,6 +669,9 @@
           </div>
         </div>
       </div>
+
+      <!-- ── Property ── -->
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:12px 2px 8px;border-top:1px solid var(--border2);margin-top:4px">Property</div>
       <div class="card mb-12">
         <div class="card-hdr"><span class="card-title">Walkthrough Floors &amp; Areas</span>
           <button class="btn btn-primary btn-sm ml-auto" onclick="openAddWTFloor()">+ Add Floor</button>
@@ -642,47 +696,10 @@
           </div>
         </div>
       </div>
-      <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">&#128737; Security Patrol Alert</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Show a dashboard alert when a checkpoint hasn't been scanned within this many hours.</p>
-          <div class="flex gap-8 items-center">
-            <input type="number" id="patrol-alert-hours" min="1" max="72" style="width:80px" placeholder="4">
-            <span style="font-size:13px;color:var(--text2)">hours</span>
-            <button class="btn btn-primary btn-sm" onclick="savePatrolAlertHours()">Save</button>
-          </div>
-        </div>
-      </div>
-      <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">&#128100; Team Tracker — Staff</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddStaff()">+ Add Staff</button></div>
-        <div class="card-body" style="padding:8px 0" id="settings-team-staff"></div>
-      </div>
-      <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">&#128274; Team Tracker PIN</span></div>
-        <div class="card-body" id="settings-team-pin">
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">To change the PIN you must enter the current PIN first.</p>
-          <div class="fg"><label>Current PIN</label><input type="password" id="pin-current" maxlength="8" inputmode="numeric" placeholder="Current PIN"></div>
-          <div class="fg"><label>New PIN</label><input type="password" id="pin-new" maxlength="8" inputmode="numeric" placeholder="New PIN (4-8 digits)"></div>
-          <div class="fg"><label>Confirm New PIN</label><input type="password" id="pin-confirm" maxlength="8" inputmode="numeric" placeholder="Repeat new PIN"></div>
-          <button class="btn btn-primary btn-sm" onclick="changeTeamPin()">Update PIN</button>
-        </div>
-      </div>
-      <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">&#128737; Security Patrol QR PIN</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Staff must enter this PIN before a QR checkpoint scan is logged. Keep it separate from the Team Tracker PIN.</p>
-          <div id="patrol-pin-settings-body"></div>
-        </div>
-      </div>
-      <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">&#128100; Personal PIN — Passdown &amp; To-Dos</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Lock your Daily Passdown and To-Do List behind a personal PIN so teammates cannot view them.</p>
-          <div id="priv-pin-settings-body"></div>
-        </div>
-      </div>
+
+      <!-- ── About ── -->
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:12px 2px 8px;border-top:1px solid var(--border2);margin-top:4px">About</div>
       <div class="card">
-        <div class="card-hdr"><span class="card-title">About</span></div>
         <div class="card-body" style="font-size:13px;color:var(--text2);line-height:1.8">
           <div><strong>Chorus SF Front Desk Hub</strong></div>
           <div>30 Otis St &middot; Managed by Align Real Estate</div>
@@ -708,10 +725,13 @@
         <span style="font-size:11px;color:var(--text3);margin-right:2px">Key:</span>
         <span class="cal-chip cal-chip-in" style="pointer-events:none;cursor:default;font-size:10px">Move In</span>
         <span class="cal-chip cal-chip-out" style="pointer-events:none;cursor:default;font-size:10px">Move Out</span>
+        <span class="cal-chip cal-chip-in" style="pointer-events:none;cursor:default;font-size:10px;border-style:dashed;opacity:0.75">Lease Start</span>
+        <span class="cal-chip cal-chip-out" style="pointer-events:none;cursor:default;font-size:10px;border-style:dashed;opacity:0.75">Lease End</span>
         <span class="cal-chip cal-chip-task" style="pointer-events:none;cursor:default;font-size:10px">Task</span>
         <span class="cal-chip cal-chip-todo" style="pointer-events:none;cursor:default;font-size:10px">To-Do</span>
         <span class="cal-chip cal-chip-amenity" style="pointer-events:none;cursor:default;font-size:10px">Booking</span>
         <span class="cal-chip" style="pointer-events:none;cursor:default;font-size:10px;background:var(--purple-light);color:var(--purple)">Tour</span>
+        <span style="font-size:10px;color:var(--text3);margin-left:2px">&#8212; Dashed = lease date differs from appointment</span>
       </div>
       <div id="cal-body"></div>
     </div>
@@ -1048,7 +1068,7 @@ function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov
 var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center' };
 var patrolFilter = 'log';
 var SEC_ACTIONS = {
-  moves: '<button class="btn btn-primary btn-sm" onclick="openModal(\'modal-move\')">+ Add Move</button>',
+  moves: '<button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
   maintenance: '<button class="btn btn-primary btn-sm" onclick="openAddMaint()">+ Log Issue</button>',
   guests: '<button class="btn btn-primary btn-sm" onclick="openAddGuest()">+ Log Guest</button>',
   keys: '<button class="btn btn-primary btn-sm" onclick="openAddKey()">+ Log Key</button>',
@@ -1575,9 +1595,9 @@ function renderMoves() {
   var cardsEl = g('moves-cards');
   if (cardsEl) {
     if (!list.length) {
-      cardsEl.innerHTML = '<div class="text-3 text-sm" style="text-align:center;padding:24px">No moves.</div><div class="flex" style="justify-content:center"><button class="btn btn-primary" onclick="openModal(\'modal-move\')">+ Add Move</button></div>';
+      cardsEl.innerHTML = '<div class="text-3 text-sm" style="text-align:center;padding:24px">No moves.</div><div class="flex" style="justify-content:center"><button class="btn btn-primary" onclick="openAddMove()">+ Add Move</button></div>';
     } else {
-      var html = '<div class="flex gap-8 mb-12"><button class="btn btn-primary" style="flex:1;justify-content:center" onclick="openModal(\'modal-move\')">+ Add Move</button><button class="btn btn-secondary" onclick="generatePassdownFromMoves()">Passdown</button></div>';
+      var html = '<div class="flex gap-8 mb-12"><button class="btn btn-primary" style="flex:1;justify-content:center" onclick="openAddMove()">+ Add Move</button><button class="btn btn-secondary" onclick="generatePassdownFromMoves()">Passdown</button></div>';
       list.forEach(function (m) {
         var dn = (m.tasks || []).filter(function (t2) { return t2.done; }).length;
         var tot = (m.tasks || []).length;
@@ -2401,13 +2421,11 @@ function showScanOverlay(checkpointId) {
   });
   var confirmBtn = g('confirm-scan-btn');
   if (confirmBtn) confirmBtn.addEventListener('click', function() {
-    logScan(checkpointId, remembered, false);
-    showScanSuccess(cpName);
+    showScanPinPrompt(checkpointId, remembered, cpName);
   });
   document.querySelectorAll('.staff-pick-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      logScan(checkpointId, btn.getAttribute('data-name'), false);
-      showScanSuccess(cpName);
+      showScanPinPrompt(checkpointId, btn.getAttribute('data-name'), cpName);
     });
   });
   var freeConfirm = g('free-confirm-btn');
@@ -2415,31 +2433,67 @@ function showScanOverlay(checkpointId) {
     var inp = g('staff-name-free');
     var name = inp ? inp.value.trim() : '';
     if (!name) { toast('Enter your name'); return; }
-    logScan(checkpointId, name, false);
-    showScanSuccess(cpName);
+    showScanPinPrompt(checkpointId, name, cpName);
   });
 }
 
 function showScanSuccess(cpName) {
   var overlay = g('scan-overlay'); if (!overlay) return;
+  var closeMsg = window._openedViaScan
+    ? '<div style="margin-top:20px;font-size:13px;color:var(--text2)">You may close this tab.</div>'
+    : '<div style="margin-top:20px;font-size:12px;color:var(--text3)">Closing automatically...</div>';
   overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
     + '<div style="font-size:60px;color:var(--green);margin-bottom:16px">&#10003;</div>'
     + '<div style="font-size:22px;font-weight:600;color:var(--green);margin-bottom:8px">Checked in!</div>'
     + '<div style="font-size:15px;color:var(--text2)">' + cpName + '</div>'
-    + '<div style="margin-top:20px;font-size:12px;color:var(--text3)">Closing automatically...</div>'
+    + closeMsg
     + '</div>';
-  setTimeout(function() {
-    overlay.style.display = 'none';
+  if (window._openedViaScan) {
+    // QR scan session — never expose the dashboard. Stay on this screen.
     if (window.history && window.history.replaceState) window.history.replaceState({}, '', window.location.pathname);
-    if (window._openedViaScan) {
-      // Restore the dashboard for verified staff
-      g('sidebar').style.display = '';
-      g('main').style.display = '';
-      if (g('mob-nav')) g('mob-nav').style.display = '';
-      renderNavVisibility(); renderDash(); updateBadges();
-      window._openedViaScan = false;
+    window._openedViaScan = false;
+  } else {
+    setTimeout(function() {
+      overlay.style.display = 'none';
+      if (window.history && window.history.replaceState) window.history.replaceState({}, '', window.location.pathname);
+    }, 2200);
+  }
+}
+
+function showScanPinPrompt(checkpointId, staffName, cpName) {
+  var overlay = g('scan-overlay'); if (!overlay) return;
+  var acct = (state.accounts || []).find(function(a) { return a.name === staffName; });
+  overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
+    + '<div style="font-size:22px;font-weight:600;margin-bottom:4px">' + cpName + '</div>'
+    + '<div style="font-size:13px;color:var(--accent);font-weight:500;margin-bottom:16px">Logging as <strong>' + staffName + '</strong></div>'
+    + '<div style="font-size:13px;color:var(--text2);margin-bottom:12px">Enter your PIN to confirm check-in.</div>'
+    + '<input type="password" id="scan-acct-pin" maxlength="8" inputmode="numeric" placeholder="PIN" style="width:100%;font-size:16px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);text-align:center;margin-bottom:12px">'
+    + '<button id="scan-acct-pin-btn" class="btn btn-primary" style="width:100%;justify-content:center;font-size:15px;padding:12px 0">Confirm Check-in</button>'
+    + '<div style="margin-top:14px"><span style="font-size:12px;color:var(--text3);cursor:pointer" id="scan-back-lnk">&#8592; Choose different name</span></div>'
+    + '</div>';
+  overlay.style.display = 'flex';
+  var inp = g('scan-acct-pin');
+  var btn = g('scan-acct-pin-btn');
+  var backLnk = g('scan-back-lnk');
+  function tryAcctPin() {
+    var entered = inp ? inp.value : '';
+    if (acct) {
+      if (entered === acct.pin) { logScan(checkpointId, staffName, false); showScanSuccess(cpName); }
+      else { toast('Incorrect PIN'); if (inp) { inp.value = ''; inp.focus(); } }
+    } else {
+      // No account found — require patrol PIN if set, else allow
+      var pp = state.patrolPin || '';
+      if (pp) {
+        if (entered === pp) { logScan(checkpointId, staffName, false); showScanSuccess(cpName); }
+        else { toast('Incorrect PIN'); if (inp) { inp.value = ''; inp.focus(); } }
+      } else {
+        logScan(checkpointId, staffName, false); showScanSuccess(cpName);
+      }
     }
-  }, 2200);
+  }
+  if (btn) btn.addEventListener('click', tryAcctPin);
+  if (inp) { inp.focus(); inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') tryAcctPin(); }); }
+  if (backLnk) backLnk.addEventListener('click', function() { showScanOverlay(checkpointId); });
 }
 
 function toggleWTItem(key, checked) {
@@ -4272,6 +4326,7 @@ function hideLogin() {
   if (mn) mn.style.visibility = '';
 }
 function renderLoginScreen() {
+  detachPinKeyboard();
   loginPinEntry = ''; loginSelectedAccount = null;
   var accounts = state.accounts || [];
   var sub = g('login-sub'), body = g('login-body');
@@ -4297,6 +4352,18 @@ function selectAccount(id) {
   g('login-sub').textContent = 'PIN for ' + loginSelectedAccount.name;
   renderPinPad(false);
 }
+function _pinKbHandler(e) {
+  if (e.key >= '0' && e.key <= '9') { e.preventDefault(); pinKey(e.key); }
+  else if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); pinKey('⌫'); }
+  else if (e.key === 'Enter') { e.preventDefault(); pinKey('✓'); }
+}
+function attachPinKeyboard() {
+  document.removeEventListener('keydown', _pinKbHandler);
+  document.addEventListener('keydown', _pinKbHandler);
+}
+function detachPinKeyboard() {
+  document.removeEventListener('keydown', _pinKbHandler);
+}
 function renderPinPad(shake) {
   var dots = '';
   for (var i=0;i<4;i++) dots += '<div class="pin-dot' + (i<loginPinEntry.length?' filled':'') + '"></div>';
@@ -4308,6 +4375,7 @@ function renderPinPad(shake) {
     + '<div id="pin-error" style="text-align:center;font-size:12px;color:var(--red);min-height:18px">' + (shake ? 'Incorrect PIN' : '') + '</div>'
     + '<div class="pin-pad">' + pad + '</div>'
     + '<button class="btn btn-ghost btn-sm" style="width:100%;margin-top:10px" onclick="renderLoginScreen()">&#8592; Back</button>';
+  attachPinKeyboard();
 }
 function pinKey(k) {
   var bk = '⌫', ch = '✓';
@@ -4321,6 +4389,7 @@ function pinKey(k) {
 function submitPin() {
   var acct = loginSelectedAccount; if (!acct) return;
   if (loginPinEntry === acct.pin) {
+    detachPinKeyboard();
     currentUser = { id: acct.id, name: acct.name, role: acct.role };
     hideLogin();
     updateSidebarForRole();
