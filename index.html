@@ -754,7 +754,7 @@
     <div class="fg"><label>Resident Name</label><input id="mv-resident" type="text"></div>
     <div style="background:var(--accent-light);border-radius:var(--radius);padding:10px 13px;margin-bottom:12px">
       <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Lease</div>
-      <div class="fr"><div class="fg" style="margin-bottom:0"><label id="mv-label-date">Lease Start Date</label><input id="mv-date" type="date"></div><div class="fg" style="margin-bottom:0"><label id="mv-label-total">Move-In Total ($)</label><input id="mv-total" type="text" placeholder="e.g. 4500"></div></div>
+      <div class="fr"><div class="fg" style="margin-bottom:0"><label id="mv-label-date">Lease Start Date</label><input id="mv-date" type="date" data-no-autofill></div><div class="fg" style="margin-bottom:0"><label id="mv-label-total">Move-In Total ($)</label><input id="mv-total" type="text" placeholder="e.g. 4500"></div></div>
     </div>
     <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px 13px;margin-bottom:12px">
       <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px" id="mv-label-appt-hdr">Move-In Appointment <span style="font-weight:400;color:var(--text3)">(confirm when booked)</span></div>
@@ -770,7 +770,7 @@
   <div class="modal-hdr"><span class="modal-title" id="modal-task-title">Add Task</span><button class="modal-close" onclick="closeModal('modal-task')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fg"><label>Task Description</label><input id="task-text" type="text" placeholder="e.g. Confirm move time with resident"></div>
-    <div class="fr"><div class="fg"><label>Category</label><select id="task-cat"><option>Move In</option><option>Move Out</option><option>Keys &amp; Access</option><option>Elevator</option><option>Post Move-In</option><option>General</option></select></div><div class="fg"><label>Due Date (optional)</label><input id="task-due" type="date"></div></div>
+    <div class="fr"><div class="fg"><label>Category</label><select id="task-cat"><option>Move In</option><option>Move Out</option><option>Keys &amp; Access</option><option>Elevator</option><option>Post Move-In</option><option>General</option></select></div><div class="fg"><label>Due Date (optional)</label><input id="task-due" type="date" data-no-autofill></div></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-task')">Cancel</button><button class="btn btn-primary" onclick="saveTask()">Add Task</button></div>
 </div></div>
@@ -814,7 +814,7 @@
     <div class="fg"><label>Task</label><input id="td-text" type="text" placeholder="What needs to be done?"></div>
     <div class="fg"><label>For / Note <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="td-note" type="text" placeholder="e.g. Unit 802, follow-up on maintenance request..."></div>
     <div class="fr">
-      <div class="fg"><label>Due Date</label><input id="td-date" type="date"></div>
+      <div class="fg"><label>Due Date</label><input id="td-date" type="date" data-no-autofill></div>
       <div class="fg"><label>Priority</label><select id="td-priority"><option value="normal">Normal</option><option value="urgent">Urgent</option></select></div>
     </div>
   </div>
@@ -1335,9 +1335,7 @@ function openAddMove() {
   editingMoveId = null;
   g('move-modal-title').textContent = 'Add Move';
   g('move-modal-save-btn').textContent = 'Save Move';
-  ['mv-unit', 'mv-resident', 'mv-total', 'mv-notes'].forEach(function (id) { g(id).value = ''; });
-  g('mv-date').value = today();
-  g('mv-appt-date').value = '';
+  ['mv-unit', 'mv-resident', 'mv-total', 'mv-notes', 'mv-date', 'mv-appt-date'].forEach(function (id) { g(id).value = ''; });
   g('mv-type').value = 'in';
   updateMoveModalLabels();
   buildTimeSlots();
@@ -4141,8 +4139,13 @@ function renderTeamStaff() {
   var html = '';
   staff.forEach(function (name, i) {
     html += '<div class="stask-row flex items-center gap-8" style="padding:8px 14px;border-bottom:1px solid var(--border2)">'
-      + '<span class="text-sm" style="flex:1">' + name + '</span>'
-      + '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="removeStaff(' + i + ')">Remove</button>'
+      + '<div style="display:flex;flex-direction:column;gap:1px;margin-right:2px">'
+      + '<button class="btn btn-ghost btn-xs" style="padding:1px 5px;font-size:10px;line-height:1" onclick="moveStaff(' + i + ',-1)" title="Move up" ' + (i===0?'disabled style="opacity:.3"':' ') + '>▲</button>'
+      + '<button class="btn btn-ghost btn-xs" style="padding:1px 5px;font-size:10px;line-height:1" onclick="moveStaff(' + i + ',1)" title="Move down" ' + (i===staff.length-1?'disabled style="opacity:.3"':' ') + '>▼</button>'
+      + '</div>'
+      + '<span class="text-sm" style="flex:1" id="staff-lbl-' + i + '">' + name + '</span>'
+      + '<button class="btn btn-ghost btn-xs" onclick="editStaff(' + i + ')" title="Rename">&#9998;</button>'
+      + '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="removeStaff(' + i + ')">&#x2715;</button>'
       + '</div>';
   });
   el.innerHTML = html;
@@ -4156,6 +4159,26 @@ function openAddStaff() {
   if (state.teamstaff.indexOf(name) !== -1) { toast('Already in list'); return; }
   state.teamstaff.push(name);
   scheduleSave(); renderTeamStaff(); toast('Staff added');
+}
+
+function editStaff(i) {
+  var staff = state.teamstaff || [];
+  var current = staff[i] || '';
+  var newName = prompt('Rename staff member:', current);
+  if (newName === null) return;
+  newName = newName.trim();
+  if (!newName) { toast('Name cannot be blank'); return; }
+  if (staff.indexOf(newName) !== -1 && newName !== current) { toast('Name already in list'); return; }
+  staff[i] = newName;
+  scheduleSave(); renderTeamStaff(); toast('Renamed');
+}
+
+function moveStaff(i, dir) {
+  var staff = state.teamstaff || [];
+  var j = i + dir;
+  if (j < 0 || j >= staff.length) return;
+  var tmp = staff[i]; staff[i] = staff[j]; staff[j] = tmp;
+  scheduleSave(); renderTeamStaff();
 }
 
 function removeStaff(i) {
@@ -4440,6 +4463,8 @@ function saveAdminSetup() {
   if (!state.accounts) state.accounts = [];
   var adminId = uid();
   state.accounts.push({ id: adminId, name: name, role: 'admin', pin: pin, createdAt: Date.now() });
+  if (!state.teamstaff) state.teamstaff = [];
+  if (state.teamstaff.indexOf(name) === -1) state.teamstaff.push(name);
   if (!state.userTodos) state.userTodos = {};
   if (!state.userPassdowns) state.userPassdowns = {};
   if (state.todos && state.todos.length) { state.userTodos[adminId] = state.todos.slice(); state.todos = []; }
@@ -4493,7 +4518,9 @@ function saveNewAccount() {
   if (pin !== pin2) { toast('PINs do not match'); return; }
   if (!state.accounts) state.accounts = [];
   state.accounts.push({ id: uid(), name: name, role: role, pin: pin, createdAt: Date.now() });
-  scheduleSave(); closeModal('modal-add-account'); renderTeamAccounts(); toast('Account added');
+  if (!state.teamstaff) state.teamstaff = [];
+  if (state.teamstaff.indexOf(name) === -1) state.teamstaff.push(name);
+  scheduleSave(); closeModal('modal-add-account'); renderTeamAccounts(); renderTeamStaff(); toast('Account added');
 }
 function resetAccountPin(id) {
   var acct = (state.accounts||[]).find(function(a){return a.id===id;}); if (!acct) return;
