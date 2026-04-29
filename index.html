@@ -601,11 +601,23 @@
         <div class="card-hdr"><span class="card-title">&#128100; Team Accounts</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddAccount()">+ Add Member</button></div>
         <div id="settings-accounts" style="padding:0"></div>
       </div>
+
       <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">&#128274; Personal PIN — Passdown &amp; To-Dos</span></div>
+        <div class="card-hdr"><span class="card-title">&#9201; Session Timeout</span></div>
         <div class="card-body">
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Lock your Daily Passdown and To-Do List behind a personal PIN so teammates cannot view them.</p>
-          <div id="priv-pin-settings-body"></div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Automatically log out after this much time with no activity. Helps keep the dashboard secure on shared devices.</p>
+          <div class="flex gap-8 items-center">
+            <select id="session-timeout-sel" style="width:160px">
+              <option value="0">Never</option>
+              <option value="5">5 minutes</option>
+              <option value="10">10 minutes</option>
+              <option value="15">15 minutes</option>
+              <option value="30">30 minutes</option>
+              <option value="60">1 hour</option>
+              <option value="120">2 hours</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="saveSessionTimeout()">Save</button>
+          </div>
         </div>
       </div>
 
@@ -922,12 +934,39 @@ function setSyncStatus(cls, msg) {
 // ─── STATE ───
 var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], accounts: [], userTodos: {}, userPassdowns: {} };
 var teamUnlocked = false;
-var privateUnlocked = false;
+
 var currentUser = null;
 var loginPinEntry = '';
 var loginSelectedAccount = null;
 var todosViewingId = null;
 var STAFF_HIDDEN = ['team', 'import', 'settings'];
+
+// ─── SESSION TIMEOUT ───
+var _lastActivity = Date.now();
+var _sessionTimer = null;
+function _resetActivity() { _lastActivity = Date.now(); }
+function startSessionTimer() {
+  stopSessionTimer();
+  var mins = (state.sessionTimeoutMins != null ? state.sessionTimeoutMins : 30);
+  if (!mins) return; // 0 = never
+  _lastActivity = Date.now();
+  _sessionTimer = setInterval(function() {
+    if (!currentUser) return;
+    var idle = (Date.now() - _lastActivity) / 60000;
+    if (idle >= mins) { doLogout(); toast('Logged out due to inactivity.'); }
+  }, 30000);
+}
+function stopSessionTimer() {
+  if (_sessionTimer) { clearInterval(_sessionTimer); _sessionTimer = null; }
+}
+function saveSessionTimeout() {
+  var sel = g('session-timeout-sel');
+  var val = sel ? parseInt(sel.value) : 30;
+  state.sessionTimeoutMins = isNaN(val) ? 30 : val;
+  scheduleSave();
+  if (currentUser) startSessionTimer();
+  toast('Session timeout saved');
+}
 
 var DEFAULT_IN_TASKS = [
   { text: 'Confirm move-in date and time window', cat: 'Move In' },
@@ -1077,8 +1116,8 @@ var SEC_ACTIONS = {
   walkthrough: '<button class="btn btn-secondary btn-sm" onclick="openModal(\'modal-flag\')">Flag Issue</button>',
   laf: '<button class="btn btn-primary btn-sm" onclick="openAddLAF()">+ Log Item</button>',
   vacant: '<button class="btn btn-primary btn-sm" onclick="addUnitPrompt()">+ Add Unit</button>',
-  passdown: '<button class="btn btn-ghost btn-sm" onclick="lockPrivate()" id="priv-lock-btn" style="display:none">&#128274; Lock</button>',
-  todos: '<button class="btn btn-ghost btn-sm" onclick="lockPrivate()" id="priv-lock-btn" style="display:none">&#128274; Lock</button>'
+  passdown: '',
+  todos: ''
 };
 var curSec = 'dashboard';
 function getSecActions(sec) {
@@ -1122,7 +1161,7 @@ function renderAll() { renderSection(curSec); updateBadges(); }
 // ─── MODAL ───
 function openModal(id) {
   g(id).classList.add('open');
-  g(id).querySelectorAll('input[type=date]').forEach(function (f) { if (!f.value && !f.dataset.noAutofill) f.value = today(); });
+  g(id).querySelectorAll('input[type=date]').forEach(function (f) { if (!f.value && !f.hasAttribute('data-no-autofill')) f.value = today(); });
 }
 function closeModal(id) { g(id).classList.remove('open'); }
 document.addEventListener('click', function (e) { if (e.target.classList.contains('modal-ov')) e.target.classList.remove('open'); });
@@ -2667,54 +2706,8 @@ function addTodo() {
   input.value = ''; g('todo-date').value = ''; g('todo-priority').value = 'normal';
   scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Added');
 }
-function renderPrivateLock(sectionId, onUnlock) {
-  var sec = g('section-' + sectionId); if (!sec) return;
-  var pin = state.privatePin || '';
-  var lockId = 'priv-lock-' + sectionId;
-
-  if (privateUnlocked) {
-    var lb = g('priv-lock-btn'); if (lb) lb.style.display = '';
-    onUnlock(); return;
-  }
-
-  // Remove any stale lock overlay
-  var stale = g(lockId); if (stale) stale.parentNode.removeChild(stale);
-
-  // Hide existing section children so the lock screen sits cleanly
-  var kids = Array.from(sec.children);
-  kids.forEach(function(c) { c.style.display = 'none'; });
-
-  var ld = document.createElement('div');
-  ld.id = lockId;
-  sec.appendChild(ld);
-
-  function unlock() {
-    var el = g(lockId); if (el) el.parentNode.removeChild(el);
-    kids.forEach(function(c) { c.style.display = ''; });
-    privateUnlocked = true;
-    var lb = g('priv-lock-btn'); if (lb) lb.style.display = '';
-    onUnlock();
-  }
-
-  ld.innerHTML = '<div class="card" style="max-width:340px;margin:40px auto">'
-    + '<div class="card-hdr"><span class="card-title">&#128274; Private Section</span></div>'
-    + '<div class="card-body">'
-    + '<p style="font-size:13px;color:var(--text2);margin-bottom:14px">Enter your personal PIN to access this section.</p>'
-    + '<div class="fg"><label>PIN</label><input type="password" id="priv-pin-input" maxlength="8" inputmode="numeric" placeholder="Enter PIN"></div>'
-    + '</div>'
-    + '<div class="modal-ftr"><button class="btn btn-primary" id="priv-unlock-btn">Unlock</button></div>'
-    + '</div>';
-  var inp = g('priv-pin-input');
-  g('priv-unlock-btn').addEventListener('click', function() {
-    if (inp.value === state.privatePin) { unlock(); }
-    else { toast('Incorrect PIN'); inp.value = ''; inp.focus(); }
-  });
-  inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') g('priv-unlock-btn').click(); });
-  inp.focus();
-}
 
 function renderTodos() {
-  if (!currentUser && state.privatePin && !privateUnlocked) { renderPrivateLock('todos', renderTodos); return; }
   // Admin user-switcher
   var switcherEl = g('todos-user-switcher');
   if (switcherEl) {
@@ -2846,7 +2839,6 @@ function deleteLAF(id) { if (!confirm('Remove?')) return; state.laf = (state.laf
 
 // ─── PASSDOWN ───
 function renderPassdown() {
-  if (!currentUser && state.privatePin && !privateUnlocked) { renderPrivateLock('passdown', renderPassdown); return; }
   g('pd-date').value = today(); renderPassdownHistory();
 }
 function autoGeneratePassdown() {
@@ -4019,55 +4011,19 @@ function renderSettings() {
   renderSettingsWTFloors();
   renderTeamStaff();
   renderNavVisibilitySettings();
-  renderPrivatePinSettings();
   renderPatrolPinSettings();
   var ph = g('patrol-alert-hours');
   if (ph) ph.value = (state.patrolSettings && state.patrolSettings.alertHours) || 4;
   var lx = g('laf-expiry-days');
   if (lx) lx.value = (state.lafSettings && state.lafSettings.expiryDays) || 30;
-}
-
-function renderPrivatePinSettings() {
-  var el = g('priv-pin-settings-body'); if (!el) return;
-  var pin = state.privatePin || '';
-  if (!pin) {
-    el.innerHTML = '<div class="fg"><label>New PIN (4-8 digits)</label><input type="password" id="priv-s-new" maxlength="8" inputmode="numeric" placeholder="e.g. 5678"></div>'
-      + '<div class="fg"><label>Confirm PIN</label><input type="password" id="priv-s-confirm" maxlength="8" inputmode="numeric" placeholder="Repeat PIN"></div>'
-      + '<button class="btn btn-primary btn-sm" onclick="setPrivatePin()">Set Personal PIN</button>';
-  } else {
-    el.innerHTML = '<p style="font-size:13px;color:var(--green);margin-bottom:10px">&#10003; Personal PIN is active. Passdown and To-Dos are locked.</p>'
-      + '<div class="fg"><label>Current PIN</label><input type="password" id="priv-s-cur" maxlength="8" inputmode="numeric" placeholder="Current PIN"></div>'
-      + '<div class="fg"><label>New PIN (leave blank to remove)</label><input type="password" id="priv-s-new" maxlength="8" inputmode="numeric" placeholder="New PIN or blank to remove"></div>'
-      + '<div class="fg"><label>Confirm New PIN</label><input type="password" id="priv-s-confirm" maxlength="8" inputmode="numeric" placeholder="Repeat"></div>'
-      + '<button class="btn btn-primary btn-sm" onclick="changePrivatePin()">Update PIN</button>'
-      + '<button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="removePrivatePin()">Remove PIN</button>';
+  var sto = g('session-timeout-sel');
+  if (sto) {
+    var saved = (state.sessionTimeoutMins != null ? state.sessionTimeoutMins : 30).toString();
+    var opt = sto.querySelector('option[value="' + saved + '"]');
+    if (opt) sto.value = saved; else sto.value = '30';
   }
 }
 
-function setPrivatePin() {
-  var np = (g('priv-s-new') ? g('priv-s-new').value.trim() : '');
-  var cp = (g('priv-s-confirm') ? g('priv-s-confirm').value.trim() : '');
-  if (!np || np.length < 4) { toast('PIN must be at least 4 digits'); return; }
-  if (np !== cp) { toast('PINs do not match'); return; }
-  state.privatePin = np; privateUnlocked = true; scheduleSave(); renderPrivatePinSettings(); toast('Personal PIN set');
-}
-
-function changePrivatePin() {
-  var cur = (g('priv-s-cur') ? g('priv-s-cur').value : '');
-  var np = (g('priv-s-new') ? g('priv-s-new').value.trim() : '');
-  var cp = (g('priv-s-confirm') ? g('priv-s-confirm').value.trim() : '');
-  if (cur !== state.privatePin) { toast('Current PIN is incorrect'); return; }
-  if (!np || np.length < 4) { toast('New PIN must be at least 4 digits'); return; }
-  if (np !== cp) { toast('PINs do not match'); return; }
-  state.privatePin = np; scheduleSave(); renderPrivatePinSettings(); toast('Personal PIN updated');
-}
-
-function removePrivatePin() {
-  var cur = (g('priv-s-cur') ? g('priv-s-cur').value : '');
-  if (cur !== state.privatePin) { toast('Current PIN is incorrect'); return; }
-  if (!confirm('Remove personal PIN? Passdown and To-Dos will be visible to everyone.')) return;
-  state.privatePin = ''; privateUnlocked = false; scheduleSave(); renderPrivatePinSettings(); toast('Personal PIN removed');
-}
 
 function renderPatrolPinSettings() {
   var el = g('patrol-pin-settings-body'); if (!el) return;
@@ -4108,11 +4064,6 @@ function removePatrolPin() {
   state.patrolPin = ''; scheduleSave(); renderPatrolPinSettings(); toast('Patrol PIN removed');
 }
 
-function lockPrivate() {
-  privateUnlocked = false;
-  var lb = g('priv-lock-btn'); if (lb) lb.style.display = 'none';
-  renderSection(curSec);
-}
 
 function saveLAFSettings() {
   var lx = g('laf-expiry-days');
@@ -4347,6 +4298,7 @@ function hideLogin() {
   if (sidebar) sidebar.style.visibility = '';
   if (main) main.style.visibility = '';
   if (mn) mn.style.visibility = '';
+  startSessionTimer();
 }
 function renderLoginScreen() {
   detachPinKeyboard();
@@ -4433,7 +4385,8 @@ function submitPin() {
   }
 }
 function doLogout() {
-  currentUser = null; privateUnlocked = false; teamUnlocked = false; todosViewingId = null;
+  stopSessionTimer();
+  currentUser = null; teamUnlocked = false; todosViewingId = null;
   updateSidebarForRole();
   showLogin();
 }
@@ -4481,17 +4434,70 @@ function renderTeamAccounts() {
   var accounts = state.accounts || [];
   if (!accounts.length) { el.innerHTML = '<div class="text-3 text-sm" style="padding:10px 14px">No accounts yet.</div>'; return; }
   var html = '';
-  accounts.forEach(function(a) {
+  accounts.forEach(function(a, i) {
     var initials = a.name.split(/\s+/).map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
-    html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border2)">'
+    var isMe = a.id === currentUser.id;
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">'
+      + '<div style="display:flex;flex-direction:column;gap:1px">'
+      + '<button class="btn btn-ghost btn-xs" style="padding:1px 4px;font-size:10px;line-height:1" onclick="moveAccount(' + i + ',-1)" ' + (i===0?'disabled style="opacity:.3"':'') + '>▲</button>'
+      + '<button class="btn btn-ghost btn-xs" style="padding:1px 4px;font-size:10px;line-height:1" onclick="moveAccount(' + i + ',1)" ' + (i===accounts.length-1?'disabled style="opacity:.3"':'') + '>▼</button>'
+      + '</div>'
       + '<div class="acct-avatar" style="width:32px;height:32px;font-size:12px">' + initials + '</div>'
       + '<div style="flex:1"><div class="font-600 text-sm">' + a.name + '</div>'
-      + '<div style="font-size:11px;color:var(--text3)">' + (a.role==='admin'?'Admin':'Staff') + '</div></div>'
-      + (a.id !== currentUser.id ? '<button class="btn btn-ghost btn-xs" onclick="resetAccountPin(\'' + a.id + '\')">Reset PIN</button>' : '')
-      + (a.id !== currentUser.id ? '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteAccount(\'' + a.id + '\')">x</button>' : '<span style="font-size:11px;color:var(--text3)">(you)</span>')
+      + '<div style="font-size:11px;color:var(--text3)">' + (a.role==='admin'?'&#128737; Admin':'Staff') + (isMe?' &nbsp;·&nbsp; <em>you</em>':'') + '</div></div>'
+      + '<button class="btn btn-ghost btn-xs" onclick="editAccount(\'' + a.id + '\')" title="Edit">&#9998;</button>'
+      + '<button class="btn btn-ghost btn-xs" onclick="resetAccountPin(\'' + a.id + '\')" title="Reset PIN">PIN</button>'
+      + (!isMe ? '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteAccount(\'' + a.id + '\')" title="Remove">&#x2715;</button>' : '')
       + '</div>';
   });
   el.innerHTML = html;
+}
+
+function moveAccount(i, dir) {
+  var accounts = state.accounts || [];
+  var j = i + dir;
+  if (j < 0 || j >= accounts.length) return;
+  var tmp = accounts[i]; accounts[i] = accounts[j]; accounts[j] = tmp;
+  scheduleSave(); renderTeamAccounts();
+}
+
+function editAccount(id) {
+  var acct = (state.accounts||[]).find(function(a){return a.id===id;}); if (!acct) return;
+  var isMe = acct.id === currentUser.id;
+  var bdy = '<div class="fg"><label>Name</label><input type="text" id="ea-name" value="' + acct.name + '" style="width:100%"></div>'
+    + '<div class="fg"><label>Role</label><select id="ea-role" style="width:100%"' + (isMe?' disabled title="Cannot change your own role"':'') + '><option value="staff"' + (acct.role==='staff'?' selected':'') + '>Staff</option><option value="admin"' + (acct.role==='admin'?' selected':'') + '>Admin</option></select></div>'
+    + (isMe ? '<p style="font-size:12px;color:var(--text3);margin-top:4px">You cannot change your own role.</p>' : '');
+  var ov = g('modal-edit-account');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.className = 'modal-ov'; ov.id = 'modal-edit-account';
+    ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Edit Account</span><button class="modal-close" onclick="closeModal(\'modal-edit-account\')">&#x2715;</button></div>'
+      + '<div class="modal-bdy" id="edit-account-bdy"></div>'
+      + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-edit-account\')">Cancel</button><button class="btn btn-primary" id="ea-save-btn">Save Changes</button></div></div>';
+    document.body.appendChild(ov);
+  }
+  g('edit-account-bdy').innerHTML = bdy;
+  g('ea-save-btn').onclick = function() { saveEditAccount(id); };
+  openModal('modal-edit-account');
+  var nameInp = g('ea-name'); if (nameInp) nameInp.focus();
+}
+
+function saveEditAccount(id) {
+  var acct = (state.accounts||[]).find(function(a){return a.id===id;}); if (!acct) return;
+  var newName = (g('ea-name') ? g('ea-name').value.trim() : '');
+  var newRole = (g('ea-role') ? g('ea-role').value : acct.role);
+  if (!newName) { toast('Name cannot be blank'); return; }
+  var oldName = acct.name;
+  acct.name = newName;
+  if (acct.id !== currentUser.id) acct.role = newRole;
+  // Sync name change to teamstaff
+  if (oldName !== newName) {
+    var idx = (state.teamstaff||[]).indexOf(oldName);
+    if (idx !== -1) { state.teamstaff[idx] = newName; renderTeamStaff(); }
+    if (currentUser.id === id) currentUser.name = newName;
+  }
+  scheduleSave(); closeModal('modal-edit-account'); renderTeamAccounts();
+  toast('Account updated');
 }
 function openAddAccount() {
   var bdy = '<div class="fg"><label>Name</label><input type="text" id="na-name" placeholder="e.g. Maria" style="width:100%"></div>'
@@ -4541,6 +4547,9 @@ async function init() {
   if (localStorage.getItem('chorus-sc') === '1') document.body.classList.add('sc');
   var chip = g('today-chip'); if (chip) chip.textContent = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
   var pdDate = g('pd-date'); if (pdDate) pdDate.value = today();
+  ['mousemove','mousedown','keydown','touchstart','scroll'].forEach(function(ev) {
+    document.addEventListener(ev, _resetActivity, { passive: true });
+  });
   var pendingScanId = null;
   try { var params = new URLSearchParams(window.location.search); pendingScanId = params.get('scan'); } catch(e) {}
   await pullCloud();
