@@ -225,6 +225,15 @@
   .phi-hdr{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:13px}
   .phi-body{display:none;border-top:1px solid var(--border2);padding:12px 14px;font-family:'DM Mono',monospace;font-size:12px;white-space:pre-wrap;line-height:1.7}
   .phi.open .phi-body{display:block}
+  .pd-auto-block{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px 13px;margin-bottom:8px;font-size:12px}
+  .pd-auto-hdr{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+  .pd-auto-row{margin-bottom:4px;line-height:1.5}
+  .pd-sec-block{border-top:1px solid var(--border);padding-top:12px;margin-top:12px}
+  .pd-sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .pd-sec-lbl{font-weight:600;font-size:13px}
+  .pd-item-card{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 32px 8px 10px;margin-bottom:6px;font-size:12px;position:relative;line-height:1.5}
+  .pd-item-del{position:absolute;top:6px;right:8px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:15px;padding:0;line-height:1}
+  .pd-item-del:hover{color:var(--red)}
 
   /* KEYS */
   .key-stat-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
@@ -256,10 +265,16 @@
   .todo-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:3px}.todo-due{font-size:11px;color:var(--accent);font-family:'DM Mono',monospace}
 
   /* UNITS */
-  .unit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+  .unit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
   @media(max-width:500px){.unit-grid{grid-template-columns:repeat(2,1fr)}}
   .unit-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow)}
   .unit-card.sgt-ready{border-left:3px solid var(--green)}.unit-num{font-family:'DM Mono',monospace;font-size:18px;font-weight:600}
+  .unit-detail-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+  .unit-det{font-size:11px;color:var(--text3);background:var(--bg);border-radius:4px;padding:2px 6px}
+  .pte-badge{font-size:11px;font-weight:600;border-radius:4px;padding:2px 7px;display:inline-block}
+  .pte-granted{background:var(--green-light);color:var(--green)}
+  .pte-denied{background:#fee2e2;color:#dc2626}
+  .pte-not-set{background:var(--bg);color:var(--text3)}
 
   /* TWO COL */
   .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -390,6 +405,8 @@
     <div class="nav-item" data-sec="amenities" onclick="nav(this)"><span class="icon">&#127881;</span><span class="nav-txt">Amenity Bookings</span><span class="badge" id="badge-amenities"></span></div>
     <div class="nav-item" data-sec="laf" onclick="nav(this)"><span class="icon">&#128269;</span><span class="nav-txt">Lost &amp; Found</span><span class="badge" id="badge-laf"></span></div>
     <div class="nav-item" data-sec="tours" onclick="nav(this)"><span class="icon">&#127969;</span><span class="nav-txt">Tour Log</span><span class="badge" id="badge-tours"></span></div>
+    <div class="nav-item" data-sec="concierge" onclick="nav(this)"><span class="icon">&#127917;</span><span class="nav-txt">Concierge Log</span><span class="badge" id="badge-concierge"></span></div>
+    <div class="nav-item" data-sec="residents" onclick="nav(this)"><span class="icon">&#128100;</span><span class="nav-txt">Resident Profiles</span></div>
   </div>
   <div class="nav-group">
     <div class="nav-label">Shift</div>
@@ -451,7 +468,8 @@
       <div class="card" id="tight-panel" style="display:none"><div class="card-hdr"><span class="card-title">Tight Turnovers</span></div><div class="card-body" id="tight-body"></div></div>
     </div>
     <div class="section" id="section-vacant">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterUnits('all',this)">All Units</div><div class="sub-tab" onclick="filterUnits('vacant',this)">Vacant</div><div class="sub-tab" onclick="filterUnits('sgt',this)">SGT Ready</div></div>
+      <div class="sub-tabs"><div class="sub-tab active" onclick="filterUnits('all',this)">All Units</div><div class="sub-tab" onclick="filterUnits('vacant',this)">Vacant</div><div class="sub-tab" onclick="filterUnits('sgt',this)">SGT Ready</div><div class="sub-tab" onclick="filterUnits('blueground',this)">&#127968; Blueground</div></div>
+      <div id="blueground-banner" style="display:none;margin-bottom:10px;padding:10px 14px;background:#eff6ff;border:1px solid #93c5fd;border-radius:var(--radius);font-size:13px;color:#1e40af"><strong>&#127968; Blueground Units</strong> — Managed by Blueground. Do not enter or send maintenance without Blueground coordination.</div>
       <div class="stat-grid" id="units-stats"></div><div class="unit-grid" id="units-grid"></div>
     </div>
     <div class="section" id="section-maintenance">
@@ -467,7 +485,7 @@
     <div class="section" id="section-keys">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('resident',this)">Resident</div><div class="sub-tab" onclick="filterKeys('joiner',this)">Joiner</div><div class="sub-tab" onclick="filterKeys('one-time',this)">One-Time</div><div class="sub-tab" onclick="filterKeys('issued',this)">Out Now</div></div>
       <div class="key-stat-row" id="keys-stats"></div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Key Log</span><span class="card-count" id="keys-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddKey()">+ Log Key</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Name</th><th>Type</th><th>Fob</th><th>Status</th><th>Expiry</th><th></th></tr></thead><tbody id="keys-tbody"></tbody></table></div></div>
+      <div class="card"><div class="card-hdr"><span class="card-title">Key Log</span><span class="card-count" id="keys-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddKey()">+ Log Key</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident / Guest</th><th>Type</th><th>Key #</th><th>Time Out</th><th>Status</th><th></th></tr></thead><tbody id="keys-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-amenities">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterAmenities('all',this)">All</div><div class="sub-tab" onclick="filterAmenities('today',this)">Today</div><div class="sub-tab" onclick="filterAmenities('upcoming',this)">Upcoming</div><div class="sub-tab" onclick="filterAmenities('event',this)">Events</div><div class="sub-tab" onclick="filterAmenities('past',this)">Past</div></div>
@@ -502,15 +520,41 @@
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterLAF('all',this)">All</div><div class="sub-tab" onclick="filterLAF('unclaimed',this)">Unclaimed</div><div class="sub-tab" onclick="filterLAF('claimed',this)">Claimed</div></div>
       <div class="card"><div class="card-hdr"><span class="card-title">Lost &amp; Found Log</span><span class="card-count" id="laf-count">0 items</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddLAF()">+ Log Item</button></div><div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Location</th><th>Description</th><th>Condition</th><th>Found By</th><th>Status</th><th></th></tr></thead><tbody id="laf-tbody"></tbody></table></div></div>
     </div>
+    <div class="section" id="section-concierge">
+      <div class="sub-tabs"><div class="sub-tab active" onclick="filterConcierge('all',this)">All</div><div class="sub-tab" onclick="filterConcierge('open',this)">Open</div><div class="sub-tab" onclick="filterConcierge('completed',this)">Completed</div></div>
+      <div class="stat-grid" id="concierge-stats"></div>
+      <div class="card"><div class="card-hdr"><span class="card-title">Concierge Request Log</span><span class="card-count" id="concierge-count">0 requests</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddConcierge()">+ Log Request</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident</th><th>Request Type</th><th>Details</th><th>Status</th><th>Handled By</th><th>Date</th><th></th></tr></thead><tbody id="concierge-tbody"></tbody></table></div></div>
+    </div>
+    <div class="section" id="section-residents">
+      <div class="sub-tabs"><div class="sub-tab active" onclick="filterResidents('all',this)">All Profiles</div><div class="sub-tab" onclick="filterResidents('pte-granted',this)">&#9989; PTE Granted</div><div class="sub-tab" onclick="filterResidents('pte-denied',this)">&#128683; PTE Denied</div><div class="sub-tab" onclick="filterResidents('pte-not-set',this)">PTE Not Set</div></div>
+      <div id="residents-pte-banner" style="display:none;margin-bottom:10px;padding:10px 14px;background:#fffbeb;border:1px solid #fcd34d;border-radius:var(--radius);font-size:13px;color:#92400e"><strong>&#128230; Package Team:</strong> This view shows PTE (Permission to Enter) status per unit. Always check before entering a unit for package delivery.</div>
+      <div class="stat-grid" id="residents-stats"></div>
+      <div class="card"><div class="card-hdr"><span class="card-title">Resident Profiles &amp; VIP Notes</span><span class="card-count" id="residents-count">0 profiles</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddResident()">+ Add Profile</button></div><div id="residents-grid" style="padding:12px 14px"></div></div>
+    </div>
     <div class="section" id="section-passdown">
       <div class="two-col">
         <div>
-          <div class="card mb-12"><div class="card-hdr"><span class="card-title">New Passdown Entry</span></div><div class="card-body">
-            <div class="fr mb-8"><div class="fg" style="margin-bottom:0"><label>Date</label><input type="date" id="pd-date"></div><div class="fg" style="margin-bottom:0"><label>Shift</label><select id="pd-shift"><option>Morning (7am-3pm)</option><option>Mid (11am-7pm)</option><option selected>Evening (3pm-11pm)</option><option>Overnight</option></select></div></div>
-            <div class="fg"><label>Shift Notes</label><textarea id="pd-notes" rows="4" placeholder="Notes from this shift..."></textarea></div>
-            <div class="flex gap-8" style="flex-wrap:wrap"><button class="btn btn-primary" onclick="autoGeneratePassdown()">Auto-generate</button><button class="btn btn-secondary" onclick="savePassdown()">Save</button><button class="btn btn-ghost" onclick="copyPassdown()">Copy</button></div>
-          </div></div>
-          <div class="card"><div class="card-hdr"><span class="card-title">Preview</span></div><div class="card-body" style="padding:10px 14px"><div class="pd-preview" id="pd-preview">Generated passdown will appear here...</div></div></div>
+          <div class="card mb-12">
+            <div class="card-hdr"><span class="card-title">Build Passdown</span></div>
+            <div class="card-body">
+              <div class="fr mb-8">
+                <div class="fg" style="margin-bottom:0"><label>Shift</label>
+                  <select id="pd-shift"><option value="AM">AM</option><option value="PM" selected>PM</option><option value="Overnight">Overnight</option></select>
+                </div>
+                <div class="fg" style="margin-bottom:0;display:none" id="pd-lookahead-wrap"><label>Look ahead</label>
+                  <select id="pd-lookahead" onchange="renderPdAutoBlocks(true)"><option value="1">Today + Tomorrow</option><option value="2">Today + 2 days</option></select>
+                </div>
+              </div>
+              <div id="pd-auto-blocks"></div>
+              <div id="pd-free-sections"></div>
+              <div class="flex gap-8 mt-12">
+                <button class="btn btn-primary" onclick="generatePassdown()">Generate</button>
+                <button class="btn btn-secondary" onclick="savePassdown()">Save</button>
+                <button class="btn btn-ghost" onclick="copyPassdown()">Copy</button>
+              </div>
+            </div>
+          </div>
+          <div class="card"><div class="card-hdr"><span class="card-title">Preview</span></div><div class="card-body" style="padding:10px 14px"><div class="pd-preview" id="pd-preview">Fill in the sections above and click Generate.</div></div></div>
         </div>
         <div><div class="card"><div class="card-hdr"><span class="card-title">Passdown History</span></div><div class="card-body" id="pd-history" style="padding:8px 12px"><div class="text-3 text-sm">No passdowns saved yet.</div></div></div></div>
       </div>
@@ -691,10 +735,17 @@
         <div id="settings-wt-floors" style="padding:0"></div>
       </div>
       <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">&#128065; Visible Sections</span></div>
+        <div class="card-hdr"><span class="card-title">&#128065; Visible Sections (Your View)</span></div>
         <div class="card-body">
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Choose which sections appear in the sidebar. Sections you hide still keep their data — just uncheck to bring them back.</p>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Choose which sections appear in your sidebar. Sections you hide still keep their data — just uncheck to bring them back.</p>
           <div id="settings-nav-visibility" style="display:grid;grid-template-columns:1fr 1fr;gap:2px"></div>
+        </div>
+      </div>
+      <div class="card mb-12" id="settings-staff-visibility-card">
+        <div class="card-hdr"><span class="card-title">&#128101; Team (Staff) Visible Sections</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Control which sections your staff team members can see when they log in. Team, Import, and Settings are always hidden from staff.</p>
+          <div id="settings-staff-nav-visibility" style="display:grid;grid-template-columns:1fr 1fr;gap:2px"></div>
         </div>
       </div>
       <div class="card mb-12">
@@ -812,12 +863,15 @@
 <div class="modal-ov" id="modal-key"><div class="modal">
   <div class="modal-hdr"><span class="modal-title" id="modal-key-title">Log Key / Access</span><button class="modal-close" onclick="closeModal('modal-key')">&#x2715;</button></div>
   <div class="modal-bdy">
-    <div class="fr"><div class="fg"><label>Unit #</label><input id="ky-unit" type="text"></div><div class="fg"><label>Name</label><input id="ky-name" type="text"></div></div>
-    <div class="fr"><div class="fg"><label>Key Type</label><select id="ky-type"><option value="resident">Resident Key Fob</option><option value="joiner">Joiner Key</option><option value="one-time">One-Time Key</option><option value="mobile">Mobile Key</option></select></div><div class="fg"><label>Fob # / ID</label><input id="ky-fob" type="text"></div></div>
-    <div class="fr"><div class="fg"><label>Status</label><select id="ky-status"><option value="issued">Issued</option><option value="returned">Returned</option></select></div><div class="fg"><label>Expiry (one-time)</label><input id="ky-expiry" type="date"></div></div>
-    <div class="fg"><label>Notes</label><textarea id="ky-notes" rows="2"></textarea></div>
+    <div class="fr"><div class="fg"><label>Unit #</label><input id="ky-unit" type="text"></div><div class="fg"><label>Resident Name</label><input id="ky-name" type="text" placeholder="Unit resident"></div></div>
+    <div class="fr"><div class="fg"><label>Key Type</label><select id="ky-type" onchange="keyTypeChange()"><option value="resident">Resident Key Fob</option><option value="joiner">Joiner Key</option><option value="one-time">One-Time Key</option><option value="mobile">Mobile Key</option></select></div><div class="fg"><label>Key # / Fob ID</label><input id="ky-fob" type="text"></div></div>
+    <div id="ky-onetime-fields" style="display:none">
+      <div class="fr"><div class="fg"><label>Guest / Visitor Name</label><input id="ky-guest" type="text" placeholder="Who has the key"></div><div class="fg"><label>Time Out</label><input id="ky-timeout" type="time"></div></div>
+    </div>
+    <div class="fr"><div class="fg"><label>Status</label><select id="ky-status"><option value="issued">Issued</option><option value="returned">Returned</option></select></div><div class="fg"><label>Expiry Date</label><input id="ky-expiry" type="date"></div></div>
+    <div class="fg"><label>Notes / Follow-Up</label><textarea id="ky-notes" rows="2" placeholder="e.g. Called resident at 3:15pm, awaiting return..."></textarea></div>
   </div>
-  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-key')">Cancel</button><button class="btn btn-primary" onclick="saveKey()">Save</button></div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-key')">Cancel</button><button class="btn btn-primary" id="modal-key-savebtn" onclick="saveKey()">Save</button></div>
 </div></div>
 
 <div class="modal-ov" id="modal-todo"><div class="modal">
@@ -878,6 +932,49 @@
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-laf')">Cancel</button><button class="btn btn-primary" onclick="saveLAF()">Log Item</button></div>
 </div></div>
 
+<div class="modal-ov" id="modal-unit"><div class="modal">
+  <div class="modal-hdr"><span class="modal-title" id="modal-unit-title">Add Unit</span><button class="modal-close" onclick="closeModal('modal-unit')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <div class="fr"><div class="fg"><label>Unit #</label><input id="un-unit" type="text" placeholder="e.g. 1204"></div><div class="fg"><label>Floor</label><input id="un-floor" type="text" placeholder="e.g. 12"></div></div>
+    <div class="fr"><div class="fg"><label>Bed / Bath</label><input id="un-bed" type="text" placeholder="e.g. 1BD/1BA"></div><div class="fg"><label>Sq Ft</label><input id="un-sqft" type="text" placeholder="e.g. 650"></div></div>
+    <div class="fr"><div class="fg"><label>Status</label><select id="un-status"><option value="vacant">Vacant</option><option value="occupied">Occupied</option></select></div><div class="fg"><label>Asking Rent</label><input id="un-rent" type="text" placeholder="e.g. $3,200/mo"></div></div>
+    <div class="fr"><div class="fg"><label>Available Date</label><input id="un-avail" type="date" data-no-autofill></div><div class="fg" style="display:flex;align-items:flex-end;padding-bottom:2px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="un-sgt"> SGT Ready</label></div></div>
+    <div style="padding:8px 10px;background:#eff6ff;border:1px solid #93c5fd;border-radius:6px;margin-bottom:4px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="un-blueground" onchange="bgToggle()"> <span><strong>Blueground Unit</strong></span></label>
+      <div id="un-bg-fields" style="display:none;margin-top:8px">
+        <div class="fr"><div class="fg"><label>Current Resident</label><input id="un-bg-resident" type="text" placeholder="Resident name"></div></div>
+        <div class="fr"><div class="fg"><label>Check-In</label><input id="un-bg-checkin" type="date" data-no-autofill></div><div class="fg"><label>Check-Out</label><input id="un-bg-checkout" type="date" data-no-autofill></div></div>
+      </div>
+    </div>
+    <div class="fg"><label>Notes</label><textarea id="un-notes" rows="2" placeholder="Additional details..."></textarea></div>
+  </div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-unit')">Cancel</button><button class="btn btn-primary" id="modal-unit-savebtn" onclick="saveUnit()">Add Unit</button></div>
+</div></div>
+
+<div class="modal-ov" id="modal-concierge"><div class="modal">
+  <div class="modal-hdr"><span class="modal-title" id="modal-concierge-title">Log Concierge Request</span><button class="modal-close" onclick="closeModal('modal-concierge')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <div class="fr"><div class="fg"><label>Unit #</label><input id="cr-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Resident Name</label><input id="cr-resident" type="text"></div></div>
+    <div class="fg"><label>Request Type</label><select id="cr-type"><option value="Restaurant Reservation">Restaurant Reservation</option><option value="Dry Cleaning">Dry Cleaning</option><option value="Taxi / Car Service">Taxi / Car Service</option><option value="Package Hold">Package Hold</option><option value="Maintenance Follow-Up">Maintenance Follow-Up</option><option value="Other">Other</option></select></div>
+    <div class="fg"><label>Details / Notes</label><textarea id="cr-notes" rows="3" placeholder="Describe the request..."></textarea></div>
+    <div class="fr"><div class="fg"><label>Status</label><select id="cr-status"><option value="open">Open</option><option value="completed">Completed</option></select></div><div class="fg"><label>Handled By</label><input id="cr-handled" type="text" placeholder="Staff name"></div></div>
+  </div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-concierge')">Cancel</button><button class="btn btn-primary" id="modal-concierge-savebtn" onclick="saveConcierge()">Log Request</button></div>
+</div></div>
+
+<div class="modal-ov" id="modal-resident"><div class="modal">
+  <div class="modal-hdr"><span class="modal-title" id="modal-resident-title">Add Resident Profile</span><button class="modal-close" onclick="closeModal('modal-resident')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <div class="fr"><div class="fg"><label>Unit #</label><input id="rp-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Resident Name</label><input id="rp-name" type="text"></div></div>
+    <div class="fr"><div class="fg"><label>Preferred Name / Nickname</label><input id="rp-preferred" type="text" placeholder="e.g. Mike"></div><div class="fg"><label>Phone (optional)</label><input id="rp-phone" type="text"></div></div>
+    <div class="fr"><div class="fg"><label>Birthday</label><input id="rp-birthday" type="date" data-no-autofill></div><div class="fg"><label>Lease Anniversary</label><input id="rp-anniversary" type="date" data-no-autofill></div></div>
+    <div class="fg"><label>Special Instructions</label><textarea id="rp-instructions" rows="2" placeholder='e.g. "Always call before buzzing", "Do not leave packages at door"'></textarea></div>
+    <div class="fg"><label>&#128230; PTE — Permission to Enter (Packages)</label><select id="rp-pte"><option value="not-set">Not Set</option><option value="granted">Granted — OK to enter for package delivery</option><option value="denied">Denied — Do NOT enter unit</option></select></div>
+    <div class="fg"><label>Additional Notes</label><textarea id="rp-notes" rows="2" placeholder="VIP notes, preferences, anything the team should know..."></textarea></div>
+  </div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-resident')">Cancel</button><button class="btn btn-primary" id="modal-resident-savebtn" onclick="saveResident()">Save Profile</button></div>
+</div></div>
+
 <div class="modal-ov" id="modal-import"><div class="modal">
   <div class="modal-hdr"><span class="modal-title">Import Backup</span><button class="modal-close" onclick="closeModal('modal-import')">&#x2715;</button></div>
   <div class="modal-bdy"><p style="font-size:13px;color:var(--text2);margin-bottom:12px">Upload a previously exported JSON backup. This will <strong>replace</strong> all current data.</p><div class="fg"><label>Select JSON File</label><input type="file" id="import-file" accept=".json"></div></div>
@@ -932,7 +1029,7 @@ function setSyncStatus(cls, msg) {
 }
 
 // ─── STATE ───
-var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], accounts: [], userTodos: {}, userPassdowns: {} };
+var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {} };
 var teamUnlocked = false;
 
 var currentUser = null;
@@ -1026,7 +1123,7 @@ function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(stat
 function loadLocal() {
   try {
     var raw = localStorage.getItem(LOCAL_KEY);
-    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {} }, JSON.parse(raw));
+    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [] }, JSON.parse(raw));
   } catch (e) {}
 }
 function scheduleSave() { saveLocal(); clearTimeout(syncTO); syncTO = setTimeout(pushCloud, 800); }
@@ -1042,7 +1139,7 @@ async function pullCloud() {
   try {
     var row = await supaGet();
     if (row && row.data && Object.keys(row.data).length > 0) {
-      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {} }, row.data);
+      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [] }, row.data);
       saveLocal();
     } else { loadLocal(); await supaPush(state); }
     setSyncStatus('synced', 'Synced');
@@ -1055,7 +1152,7 @@ setInterval(async function () {
     if (row && row.updated_at) {
       var ts = new Date(row.updated_at).getTime();
       if (lastSyncTs && ts > lastSyncTs + 2000) {
-        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {} }, row.data);
+        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [] }, row.data);
         saveLocal(); lastSyncTs = ts;
         renderSection(curSec); updateBadges();
         setSyncStatus('synced', 'Updated'); setTimeout(function () { setSyncStatus('synced', 'Synced'); }, 2000);
@@ -1073,14 +1170,14 @@ function processImport() {
   var file = g('import-file').files[0]; if (!file) { toast('Choose a file first'); return; }
   var reader = new FileReader();
   reader.onload = function (e) {
-    try { state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {} }, JSON.parse(e.target.result)); scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported'); }
+    try { state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [] }, JSON.parse(e.target.result)); scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported'); }
     catch (err) { toast('Invalid file'); }
   };
   reader.readAsText(file);
 }
 function resetData() {
   if (!confirm('Reset ALL data? Cannot be undone.')) return;
-  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], accounts: [], userTodos: {}, userPassdowns: {} };
+  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {} };
   scheduleSave(); renderAll(); toast('Data reset');
 }
 
@@ -1096,7 +1193,7 @@ function today() {
 function fmtShort(d) { if (!d) return '-'; return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
 function toast(msg) { var e = g('toast'); e.textContent = msg; e.classList.add('show'); setTimeout(function () { e.classList.remove('show'); }, 2500); }
 function g(id) { return document.getElementById(id); }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], accounts: [], userTodos: {}, userPassdowns: {} }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {} }; }
 
 // ─── SIDEBAR ───
 function toggleSidebar() { document.body.classList.toggle('sc'); localStorage.setItem('chorus-sc', document.body.classList.contains('sc') ? '1' : '0'); }
@@ -1104,7 +1201,7 @@ function openMobSidebar() { g('sidebar').classList.add('mob-open'); g('sb-ov').s
 function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov').style.display = 'none'; }
 
 // ─── NAV ───
-var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center' };
+var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Resident Profiles' };
 var patrolFilter = 'log';
 var SEC_ACTIONS = {
   moves: '<button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
@@ -1115,7 +1212,9 @@ var SEC_ACTIONS = {
   tours: '<button class="btn btn-primary btn-sm" onclick="openAddTour()">+ Log Tour</button>',
   walkthrough: '<button class="btn btn-secondary btn-sm" onclick="openModal(\'modal-flag\')">Flag Issue</button>',
   laf: '<button class="btn btn-primary btn-sm" onclick="openAddLAF()">+ Log Item</button>',
-  vacant: '<button class="btn btn-primary btn-sm" onclick="addUnitPrompt()">+ Add Unit</button>',
+  vacant: '<button class="btn btn-primary btn-sm" onclick="openAddUnit()">+ Add Unit</button>',
+  concierge: '<button class="btn btn-primary btn-sm" onclick="openAddConcierge()">+ Log Request</button>',
+  residents: '<button class="btn btn-primary btn-sm" onclick="openAddResident()">+ Add Profile</button>',
   passdown: '',
   todos: ''
 };
@@ -1127,7 +1226,8 @@ function getSecActions(sec) {
 }
 function nav(item) {
   var sec = item.dataset.sec;
-  if (currentUser && currentUser.role === 'staff' && STAFF_HIDDEN.indexOf(sec) !== -1) {
+  var staffBlocked = currentUser && currentUser.role === 'staff' && (STAFF_HIDDEN.indexOf(sec) !== -1 || (state.staffHiddenSections||[]).indexOf(sec) !== -1);
+  if (staffBlocked) {
     var dash = document.querySelector('.nav-item[data-sec="dashboard"]');
     if (dash) nav(dash); return;
   }
@@ -1141,7 +1241,7 @@ function nav(item) {
 }
 function mobNav(item) {
   var sec = item.dataset.sec;
-  if (currentUser && currentUser.role === 'staff' && STAFF_HIDDEN.indexOf(sec) !== -1) return;
+  if (currentUser && currentUser.role === 'staff' && (STAFF_HIDDEN.indexOf(sec) !== -1 || (state.staffHiddenSections||[]).indexOf(sec) !== -1)) return;
   document.querySelectorAll('.mn-item').forEach(function (n) { n.classList.remove('active'); });
   item.classList.add('active');
   var si = document.querySelector('.nav-item[data-sec="' + sec + '"]');
@@ -1153,7 +1253,7 @@ function mobNav(item) {
   curSec = sec; renderSection(sec);
 }
 function renderSection(sec) {
-  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam };
+  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents };
   if (map[sec]) map[sec]();
 }
 function renderAll() { renderSection(curSec); updateBadges(); }
@@ -1180,9 +1280,11 @@ function updateBadges() {
   var vN = (state.units || []).filter(function (u) { return u.status === 'vacant'; }).length;
   var naN = (state.moves || []).filter(function (m) { return !m.archivedAt && !m.apptDate && m.date >= today(); }).length;
   setBadge('badge-needs-appt', naN);
+  var crN = (state.concierge || []).filter(function (c) { return c.status === 'open'; }).length;
   setBadge('badge-moves', mN); setBadge('badge-vacant', vN); setBadge('badge-maint', mtN);
   setBadge('badge-guests', gN); setBadge('badge-keys', kN); setBadge('badge-amenities', aN);
   setBadge('badge-tours', trN); setBadge('badge-todos', tdN); setBadge('badge-laf', lN);
+  setBadge('badge-concierge', crN);
   setMBadge('mb-moves', mN); setMBadge('mb-todos', tdN); setMBadge('mb-keys', kN);
 }
 function setBadge(id, n) { var e = g(id); if (!e) return; e.textContent = n; e.classList.toggle('vis', n > 0); }
@@ -1211,7 +1313,8 @@ function renderDash() {
   });
   var hour = new Date().getHours();
   var greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  var html = '<div style="margin-bottom:14px"><div style="font-size:18px;font-weight:600;letter-spacing:-.3px">' + greeting + ', Gabino.</div><div style="font-size:12px;color:var(--text3);margin-top:2px;font-family:var(--mono)">' + new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) + ' &nbsp;&middot;&nbsp; Front Desk</div></div>';
+  var greetName = currentUser ? currentUser.name.split(' ')[0] : 'Gabino';
+  var html = '<div style="margin-bottom:14px"><div style="font-size:18px;font-weight:600;letter-spacing:-.3px">' + greeting + ', ' + greetName + '.</div><div style="font-size:12px;color:var(--text3);margin-top:2px;font-family:var(--mono)">' + new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) + ' &nbsp;&middot;&nbsp; Front Desk</div></div>';
   // Turnover ready count: move-outs with all tasks done
   var turnoverReady = active.filter(function (m) {
     if (m.type !== 'out') return false;
@@ -1733,39 +1836,173 @@ function renderTightTurnovers() {
 function generatePassdownFromMoves() { var item = document.querySelector('.nav-item[data-sec="passdown"]'); if (item) nav(item); setTimeout(autoGeneratePassdown, 100); }
 
 // ─── VACANT UNITS ───
-var unitFilter = 'all';
+var unitFilter = 'all', editingUnitId = null;
+function bgToggle() {
+  var isBG = g('un-blueground').checked;
+  var fields = g('un-bg-fields');
+  if (fields) fields.style.display = isBG ? '' : 'none';
+}
 function filterUnits(f, item) { unitFilter = f; document.querySelectorAll('#section-vacant .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderUnits(); }
-function addUnitPrompt() {
-  var unit = prompt('Unit # (e.g. 1204):'); if (!unit) return;
-  var vacant = confirm('Is this unit vacant?\nOK = Vacant   Cancel = Occupied');
-  var sgt = confirm('Mark as SGT ready?');
-  var bed = prompt('Bed/bath (e.g. 1BD/1BA, optional):');
-  var u = { id: uid(), unit: unit.trim(), status: vacant ? 'vacant' : 'occupied', sgt: sgt, floor: '', bed: bed || '', notes: '', createdAt: Date.now() };
+function openAddUnit() {
+  editingUnitId = null;
+  ['un-unit','un-floor','un-bed','un-sqft','un-rent','un-notes','un-avail','un-bg-resident','un-bg-checkin','un-bg-checkout'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  g('un-status').value = 'vacant';
+  g('un-sgt').checked = false;
+  g('un-blueground').checked = false;
+  var bgf = g('un-bg-fields'); if (bgf) bgf.style.display = 'none';
+  setModalMode('modal-unit-title','modal-unit-savebtn','Add Unit','Add Unit');
+  openModal('modal-unit');
+}
+function openEditUnit(id) {
+  var u = (state.units || []).find(function(x){ return x.id===id; }); if (!u) return;
+  editingUnitId = id;
+  g('un-unit').value = u.unit || '';
+  g('un-floor').value = u.floor || '';
+  g('un-bed').value = u.bed || '';
+  g('un-sqft').value = u.sqft || '';
+  g('un-rent').value = u.rent || '';
+  g('un-notes').value = u.notes || '';
+  g('un-avail').value = u.availDate || '';
+  g('un-status').value = u.status || 'vacant';
+  g('un-sgt').checked = !!u.sgt;
+  g('un-blueground').checked = !!u.blueground;
+  var bgf = g('un-bg-fields'); if (bgf) bgf.style.display = u.blueground ? '' : 'none';
+  g('un-bg-resident').value = u.bgResident || '';
+  g('un-bg-checkin').value = u.bgCheckin || '';
+  g('un-bg-checkout').value = u.bgCheckout || '';
+  setModalMode('modal-unit-title','modal-unit-savebtn','Edit Unit','Save Changes');
+  openModal('modal-unit');
+}
+function saveUnit() {
+  var unit = g('un-unit').value.trim(); if (!unit) { toast('Unit # is required'); return; }
+  var isBG = g('un-blueground').checked;
+  if (editingUnitId) {
+    var u = (state.units || []).find(function(x){ return x.id===editingUnitId; }); if (!u) return;
+    u.unit=unit; u.floor=g('un-floor').value.trim(); u.bed=g('un-bed').value.trim(); u.sqft=g('un-sqft').value.trim(); u.rent=g('un-rent').value.trim(); u.notes=g('un-notes').value.trim(); u.availDate=g('un-avail').value; u.status=g('un-status').value; u.sgt=g('un-sgt').checked; u.blueground=isBG;
+    u.bgResident=isBG ? g('un-bg-resident').value.trim() : ''; u.bgCheckin=isBG ? g('un-bg-checkin').value : ''; u.bgCheckout=isBG ? g('un-bg-checkout').value : '';
+    editingUnitId=null; scheduleSave(); closeModal('modal-unit'); renderUnits(); updateBadges(); toast('Unit updated'); return;
+  }
+  var newU = { id: uid(), unit: unit, floor: g('un-floor').value.trim(), bed: g('un-bed').value.trim(), sqft: g('un-sqft').value.trim(), rent: g('un-rent').value.trim(), notes: g('un-notes').value.trim(), availDate: g('un-avail').value, status: g('un-status').value, sgt: g('un-sgt').checked, blueground: isBG, bgResident: isBG ? g('un-bg-resident').value.trim() : '', bgCheckin: isBG ? g('un-bg-checkin').value : '', bgCheckout: isBG ? g('un-bg-checkout').value : '', createdAt: Date.now() };
   if (!state.units) state.units = [];
-  state.units.push(u); scheduleSave(); renderUnits(); updateBadges(); toast('Unit added');
+  state.units.push(newU); scheduleSave(); closeModal('modal-unit'); renderUnits(); updateBadges(); toast('Unit added');
 }
 function renderUnits() {
-  var list = (state.units || []).slice();
-  if (unitFilter === 'vacant') list = list.filter(function (u) { return u.status === 'vacant'; });
+  var all = state.units || [];
+  var list = all.slice();
+  if (unitFilter === 'vacant') list = list.filter(function (u) { return u.status === 'vacant' && !u.blueground; });
   else if (unitFilter === 'sgt') list = list.filter(function (u) { return u.sgt; });
+  else if (unitFilter === 'blueground') list = list.filter(function (u) { return u.blueground; });
   list.sort(function (a, b) { return parseInt(a.unit) - parseInt(b.unit); });
-  var vacant = (state.units || []).filter(function (u) { return u.status === 'vacant'; }).length;
-  var sgt = (state.units || []).filter(function (u) { return u.sgt; }).length;
-  var total = (state.units || []).length, occ = total ? Math.round((total - vacant) / total * 100) : 0;
-  g('units-stats').innerHTML = '<div class="stat-card"><div class="stat-num">' + vacant + '</div><div class="stat-lbl">Vacant Now</div></div><div class="stat-card green"><div class="stat-num">' + sgt + '</div><div class="stat-lbl">SGT Ready</div></div><div class="stat-card"><div class="stat-num">' + total + '</div><div class="stat-lbl">Total Units</div></div><div class="stat-card accent"><div class="stat-num">' + occ + '%</div><div class="stat-lbl">Occupancy</div></div>';
-  if (!list.length) { g('units-grid').innerHTML = '<div class="text-3 text-sm">No units in registry.</div>'; return; }
+  var vacant = all.filter(function (u) { return u.status === 'vacant' && !u.blueground; }).length;
+  var sgt = all.filter(function (u) { return u.sgt; }).length;
+  var bgCount = all.filter(function (u) { return u.blueground; }).length;
+  var total = all.length, occ = total ? Math.round((total - vacant) / total * 100) : 0;
+  var banner = g('blueground-banner');
+  if (banner) banner.style.display = unitFilter === 'blueground' ? '' : 'none';
+  g('units-stats').innerHTML = '<div class="stat-card"><div class="stat-num">' + vacant + '</div><div class="stat-lbl">Vacant Now</div></div><div class="stat-card green"><div class="stat-num">' + sgt + '</div><div class="stat-lbl">SGT Ready</div></div><div class="stat-card" style="border-left:3px solid #3b82f6"><div class="stat-num">' + bgCount + '</div><div class="stat-lbl">Blueground</div></div><div class="stat-card"><div class="stat-num">' + total + '</div><div class="stat-lbl">Total Units</div></div><div class="stat-card accent"><div class="stat-num">' + occ + '%</div><div class="stat-lbl">Occupancy</div></div>';
+  if (!list.length) { g('units-grid').innerHTML = '<div class="text-3 text-sm">' + (unitFilter === 'blueground' ? 'No Blueground units added yet. Use + Add Unit and check the Blueground box.' : 'No units match this filter.') + '</div>'; return; }
   var html = '';
   list.forEach(function (u) {
-    var sgtSpan = u.sgt ? '<span class="pill" style="background:var(--green-light);color:var(--green)">SGT</span>' : '';
-    html += '<div class="unit-card ' + (u.sgt ? 'sgt-ready' : '') + '"><div class="flex items-center gap-8 mb-8"><span class="unit-num">' + u.unit + '</span><span class="pill ' + (u.status === 'vacant' ? 'pill-open' : 'pill-resolved') + '">' + u.status + '</span>' + sgtSpan + '</div>';
-    html += '<div class="text-xs text-2">' + (u.bed || '') + (u.floor ? ' - Floor ' + u.floor : '') + '</div>';
-    html += '<div class="flex gap-4 mt-8"><button class="btn btn-ghost btn-xs" onclick="toggleSGT(\'' + u.id + '\')">' + (u.sgt ? 'Unmark SGT' : 'Mark SGT') + '</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteUnit(\'' + u.id + '\')">x</button></div></div>';
+    var isBG = !!u.blueground;
+    var borderStyle = isBG ? 'border-left:3px solid #3b82f6' : (u.sgt ? '' : '');
+    var sgtSpan = u.sgt ? '<span class="pill" style="background:var(--green-light);color:var(--green);font-size:10px">SGT</span>' : '';
+    var bgSpan = isBG ? '<span style="font-size:10px;font-weight:700;background:#dbeafe;color:#1d4ed8;border-radius:4px;padding:1px 6px">BLUEGROUND</span>' : '';
+    html += '<div class="unit-card ' + (u.sgt && !isBG ? 'sgt-ready' : '') + '" style="' + borderStyle + '">';
+    html += '<div class="flex items-center gap-6 mb-6" style="flex-wrap:wrap"><span class="unit-num">' + u.unit + '</span><span class="pill ' + (u.status === 'vacant' ? 'pill-open' : 'pill-resolved') + '" style="font-size:10px">' + u.status + '</span>' + sgtSpan + bgSpan + '</div>';
+    if (isBG) {
+      var bgLine = '';
+      if (u.bgResident) bgLine += '<span style="font-weight:600">' + u.bgResident + '</span>';
+      if (u.bgCheckin || u.bgCheckout) {
+        var ci = u.bgCheckin ? fmtShort(u.bgCheckin) : '?';
+        var co = u.bgCheckout ? fmtShort(u.bgCheckout) : '?';
+        bgLine += (bgLine ? ' &mdash; ' : '') + ci + ' &rarr; ' + co;
+      }
+      if (!bgLine) bgLine = 'Occupied';
+      html += '<div style="font-size:11px;color:#1d4ed8;margin-bottom:5px">' + bgLine + '</div>';
+    }
+    var details = [];
+    if (u.bed) details.push(u.bed);
+    if (u.floor) details.push('Fl ' + u.floor);
+    if (u.sqft) details.push(u.sqft + ' sqft');
+    if (details.length) html += '<div class="unit-detail-row">' + details.map(function(d){ return '<span class="unit-det">' + d + '</span>'; }).join('') + '</div>';
+    if (u.rent && !isBG) html += '<div style="font-size:12px;font-weight:600;color:var(--accent);margin-top:5px">' + u.rent + '</div>';
+    if (u.availDate && !isBG) html += '<div style="font-size:11px;color:var(--text3);margin-top:2px">Avail: ' + fmtShort(u.availDate) + '</div>';
+    if (u.notes) html += '<div style="font-size:11px;color:var(--text2);margin-top:4px;line-height:1.4">' + u.notes + '</div>';
+    html += '<div class="flex gap-4 mt-8"><button class="btn btn-ghost btn-xs" onclick="openEditUnit(\'' + u.id + '\')">&#9998; Edit</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteUnit(\'' + u.id + '\')">&#215;</button></div>';
+    html += '</div>';
   });
   g('units-grid').innerHTML = html;
   setBadge('badge-vacant', vacant);
 }
-function toggleSGT(id) { var u = (state.units || []).find(function (x) { return x.id === id; }); if (!u) return; u.sgt = !u.sgt; scheduleSave(); renderUnits(); toast(u.sgt ? 'Marked SGT ready' : 'SGT status removed'); }
 function deleteUnit(id) { if (!confirm('Remove this unit?')) return; state.units = (state.units || []).filter(function (u) { return u.id !== id; }); scheduleSave(); renderUnits(); updateBadges(); toast('Removed'); }
+
+// ─── CONCIERGE LOG ───
+var conciergeFilter = 'all', editingConciergeId = null;
+function filterConcierge(f, item) { conciergeFilter = f; document.querySelectorAll('#section-concierge .sub-tab').forEach(function(t){ t.classList.remove('active'); }); item.classList.add('active'); renderConcierge(); }
+function openAddConcierge() {
+  editingConciergeId = null;
+  ['cr-unit','cr-resident','cr-notes','cr-handled'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  g('cr-type').value = 'Restaurant Reservation';
+  g('cr-status').value = 'open';
+  if (currentUser) g('cr-handled').value = currentUser.name;
+  setModalMode('modal-concierge-title','modal-concierge-savebtn','Log Concierge Request','Log Request');
+  openModal('modal-concierge');
+}
+function openEditConcierge(id) {
+  var c = (state.concierge || []).find(function(x){ return x.id===id; }); if (!c) return;
+  editingConciergeId = id;
+  g('cr-unit').value = c.unit || '';
+  g('cr-resident').value = c.resident || '';
+  g('cr-type').value = c.type || 'Other';
+  g('cr-notes').value = c.notes || '';
+  g('cr-status').value = c.status || 'open';
+  g('cr-handled').value = c.handledBy || '';
+  setModalMode('modal-concierge-title','modal-concierge-savebtn','Edit Request','Save Changes');
+  openModal('modal-concierge');
+}
+function saveConcierge() {
+  var unit = g('cr-unit').value.trim(), resident = g('cr-resident').value.trim();
+  if (!unit || !resident) { toast('Unit and resident are required'); return; }
+  if (editingConciergeId) {
+    var c = (state.concierge || []).find(function(x){ return x.id===editingConciergeId; }); if (!c) return;
+    c.unit=unit; c.resident=resident; c.type=g('cr-type').value; c.notes=g('cr-notes').value.trim(); c.status=g('cr-status').value; c.handledBy=g('cr-handled').value.trim();
+    editingConciergeId=null; scheduleSave(); closeModal('modal-concierge'); renderConcierge(); updateBadges(); toast('Request updated'); return;
+  }
+  var entry = { id: uid(), unit: unit, resident: resident, type: g('cr-type').value, notes: g('cr-notes').value.trim(), status: g('cr-status').value, handledBy: g('cr-handled').value.trim(), addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
+  if (!state.concierge) state.concierge = [];
+  state.concierge.push(entry); scheduleSave(); closeModal('modal-concierge'); renderConcierge(); updateBadges(); toast('Request logged');
+}
+function updateConciergeStatus(id, val) { var c = (state.concierge || []).find(function(x){ return x.id===id; }); if (c) { c.status=val; scheduleSave(); renderConcierge(); updateBadges(); } }
+function deleteConcierge(id) { if (!confirm('Delete this request?')) return; state.concierge = (state.concierge || []).filter(function(c){ return c.id!==id; }); scheduleSave(); renderConcierge(); updateBadges(); toast('Deleted'); }
+function renderConcierge() {
+  var list = (state.concierge || []).slice();
+  if (conciergeFilter === 'open') list = list.filter(function(c){ return c.status==='open'; });
+  else if (conciergeFilter === 'completed') list = list.filter(function(c){ return c.status==='completed'; });
+  list.sort(function(a,b){ return b.createdAt - a.createdAt; });
+  var open = (state.concierge||[]).filter(function(c){ return c.status==='open'; }).length;
+  var done = (state.concierge||[]).filter(function(c){ return c.status==='completed'; }).length;
+  var total = (state.concierge||[]).length;
+  g('concierge-stats').innerHTML = '<div class="stat-card ' + (open>0?'accent':'') + '"><div class="stat-num">' + open + '</div><div class="stat-lbl">Open</div></div><div class="stat-card green"><div class="stat-num">' + done + '</div><div class="stat-lbl">Completed</div></div><div class="stat-card"><div class="stat-num">' + total + '</div><div class="stat-lbl">Total</div></div>';
+  var cnt = g('concierge-count'); if (cnt) cnt.textContent = list.length + ' requests';
+  var tbody = g('concierge-tbody');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="8" class="tbl-empty">No concierge requests logged.</td></tr>'; return; }
+  var html = '';
+  list.forEach(function(c) {
+    var byTag = c.addedBy ? '<span class="by-tag">by ' + c.addedBy + '</span>' : '';
+    html += '<tr>';
+    html += '<td class="mono font-600">' + c.unit + '</td>';
+    html += '<td>' + c.resident + byTag + '</td>';
+    html += '<td><span class="pill" style="background:var(--accent-light);color:var(--accent);font-size:10px">' + c.type + '</span></td>';
+    html += '<td style="max-width:200px;white-space:normal;font-size:12px;color:var(--text2)">' + (c.notes || '—') + '</td>';
+    html += '<td><select class="ie-sel" onchange="updateConciergeStatus(\'' + c.id + '\',this.value)"><option value="open"' + (c.status==='open'?' selected':'') + '>Open</option><option value="completed"' + (c.status==='completed'?' selected':'') + '>Completed</option></select></td>';
+    html += '<td class="text-xs text-2">' + (c.handledBy || '—') + '</td>';
+    html += '<td class="text-xs text-3">' + new Date(c.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) + '</td>';
+    html += '<td><button class="btn btn-ghost btn-xs" onclick="openEditConcierge(\'' + c.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteConcierge(\'' + c.id + '\')">&#215;</button></td>';
+    html += '</tr>';
+  });
+  tbody.innerHTML = html;
+  setBadge('badge-concierge', open);
+}
 
 // ─── MAINTENANCE ───
 var maintFilter = 'all';
@@ -1854,18 +2091,30 @@ function deleteGuest(id) { if (!confirm('Remove?')) return; state.guests = (stat
 // ─── KEYS ───
 var keyFilter = 'all';
 function filterKeys(f, item) { keyFilter = f; document.querySelectorAll('#section-keys .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderKeys(); }
+function keyTypeChange() {
+  var t = g('ky-type').value;
+  var wrap = g('ky-onetime-fields');
+  if (wrap) wrap.style.display = t === 'one-time' ? '' : 'none';
+}
 function saveKey() {
   var unit = g('ky-unit').value.trim(), name = g('ky-name').value.trim();
-  if (!unit || !name) { toast('Fill in unit and name'); return; }
+  if (!unit || !name) { toast('Fill in unit and resident name'); return; }
+  var type = g('ky-type').value;
+  var guest = g('ky-guest') ? g('ky-guest').value.trim() : '';
+  var timeout = g('ky-timeout') ? g('ky-timeout').value : '';
   if (editingKeyId) {
     var k = (state.keys||[]).find(function(x){return x.id===editingKeyId;}); if(!k) return;
-    k.unit=unit; k.name=name; k.type=g('ky-type').value; k.fob=g('ky-fob').value.trim(); k.status=g('ky-status').value; k.expiry=g('ky-expiry').value||null; k.notes=g('ky-notes').value.trim();
+    k.unit=unit; k.name=name; k.type=type; k.fob=g('ky-fob').value.trim(); k.status=g('ky-status').value; k.expiry=g('ky-expiry').value||null; k.notes=g('ky-notes').value.trim(); k.guest=guest; k.timeout=timeout;
+    if (k.status==='returned' && !k.returnedAt) k.returnedAt=Date.now();
     editingKeyId=null; scheduleSave(); closeModal('modal-key'); renderKeys(); updateBadges(); renderDash(); toast('Key updated'); return;
   }
-  var k = { id: uid(), unit: unit, name: name, type: g('ky-type').value, fob: g('ky-fob').value.trim(), status: g('ky-status').value, expiry: g('ky-expiry').value || null, notes: g('ky-notes').value.trim(), issuedAt: Date.now(), returnedAt: null, addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
+  var now = Date.now();
+  var issuedAt = now;
+  if (timeout) { var base = new Date(); var parts = timeout.split(':'); base.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0); issuedAt = base.getTime(); }
+  var k = { id: uid(), unit: unit, name: name, guest: guest, timeout: timeout, type: type, fob: g('ky-fob').value.trim(), status: g('ky-status').value, expiry: g('ky-expiry').value || null, notes: g('ky-notes').value.trim(), issuedAt: issuedAt, returnedAt: null, addedBy: currentUser ? currentUser.name : '', createdAt: now };
   if (!state.keys) state.keys = [];
   state.keys.push(k); scheduleSave(); closeModal('modal-key'); renderKeys(); updateBadges(); renderDash();
-  ['ky-unit', 'ky-name', 'ky-fob', 'ky-notes'].forEach(function (id) { g(id).value = ''; }); g('ky-expiry').value = ''; toast('Key logged');
+  ['ky-unit', 'ky-name', 'ky-fob', 'ky-notes', 'ky-guest', 'ky-timeout'].forEach(function (id) { var el=g(id); if(el) el.value=''; }); g('ky-expiry').value = ''; toast('Key logged');
 }
 function renderKeys() {
   var list = (state.keys || []).slice();
@@ -1877,13 +2126,32 @@ function renderKeys() {
   g('keys-stats').innerHTML = stats.map(function (s) { return '<div class="key-stat"><div class="key-stat-num">' + s.val + '</div><div class="key-stat-lbl">' + s.label + '</div></div>'; }).join('');
   var tbody = g('keys-tbody'), cnt = g('keys-count');
   if (cnt) cnt.textContent = list.length + ' entries';
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="7" class="tbl-empty">No keys logged.</td></tr>'; return; }
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="8" class="tbl-empty">No keys logged.</td></tr>'; return; }
+  var now = Date.now();
   var html = '';
   list.forEach(function (k) {
     var kyBy = k.addedBy ? '<span class="by-tag">by ' + k.addedBy + '</span>' : '';
-    html += '<tr><td class="mono font-600">' + k.unit + '</td><td>' + k.name + kyBy + '</td><td class="text-sm">' + k.type + '</td><td class="mono text-sm">' + (k.fob || '-') + '</td>';
+    var isOneTime = k.type === 'one-time';
+    var overdueMs = k.status === 'issued' && isOneTime && k.issuedAt ? now - k.issuedAt : 0;
+    var isOverdue = overdueMs >= 2 * 3600000;
+    var overdueHrs = overdueMs > 0 ? Math.floor(overdueMs / 3600000) : 0;
+    var overdueMin = overdueMs > 0 ? Math.floor((overdueMs % 3600000) / 60000) : 0;
+    var rowStyle = isOverdue ? ' style="background:#fef2f2"' : '';
+    var overdueTag = isOverdue ? '<span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + overdueHrs + 'h ' + overdueMin + 'm OUT</span>' : '';
+    var nameCell = k.name + (k.guest ? '<div style="font-size:11px;color:var(--text3)">Guest: ' + k.guest + '</div>' : '') + kyBy;
+    var timeOutCell = (isOneTime && k.timeout) ? '<span class="mono text-xs">' + k.timeout + '</span>' : (isOneTime && k.issuedAt ? '<span class="mono text-xs text-3">' + new Date(k.issuedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + '</span>' : '<span class="text-xs text-3">-</span>');
+    html += '<tr' + rowStyle + '>';
+    html += '<td class="mono font-600">' + k.unit + '</td>';
+    html += '<td>' + nameCell + '</td>';
+    html += '<td class="text-sm">' + k.type + overdueTag + '</td>';
+    html += '<td class="mono text-sm">' + (k.fob || '-') + '</td>';
+    html += '<td>' + timeOutCell + '</td>';
     html += '<td><select class="ie-sel" onchange="updateKeyStatus(\'' + k.id + '\',this.value)"><option value="issued" ' + (k.status === 'issued' ? 'selected' : '') + '>Issued</option><option value="returned" ' + (k.status === 'returned' ? 'selected' : '') + '>Returned</option></select></td>';
-    html += '<td class="mono text-xs text-2">' + (k.expiry ? fmtShort(k.expiry) : '-') + '</td><td><button class="btn btn-ghost btn-xs" onclick="openEditKey(\'' + k.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteKey(\'' + k.id + '\')">x</button></td></tr>';
+    html += '<td><button class="btn btn-ghost btn-xs" onclick="openEditKey(\'' + k.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteKey(\'' + k.id + '\')">x</button></td>';
+    html += '</tr>';
+    if (k.status === 'issued' && isOneTime && k.notes) {
+      html += '<tr' + rowStyle + '><td colspan="7" style="font-size:11px;color:var(--text2);padding:2px 12px 6px;font-style:italic">&#128221; ' + k.notes + '</td></tr>';
+    }
   });
   tbody.innerHTML = html;
   setBadge('badge-keys', allK.filter(function (k) { return k.status === 'issued'; }).length);
@@ -2837,24 +3105,358 @@ function renderLAF() {
 function claimLAF(id) { var item = (state.laf || []).find(function (x) { return x.id === id; }); if (!item) return; var by = prompt('Claimed by:'); if (by === null) return; var unit = prompt('Unit # (optional):') || ''; item.claimedBy = by.trim(); item.claimedUnit = unit.trim(); item.claimedAt = Date.now(); scheduleSave(); renderLAF(); updateBadges(); toast('Claimed'); }
 function deleteLAF(id) { if (!confirm('Remove?')) return; state.laf = (state.laf || []).filter(function (i) { return i.id !== id; }); scheduleSave(); renderLAF(); updateBadges(); toast('Removed'); }
 
-// ─── PASSDOWN ───
-function renderPassdown() {
-  g('pd-date').value = today(); renderPassdownHistory();
+// ─── RESIDENT PROFILES / VIP NOTES / PTE ───
+var residentsFilter = 'all', editingResidentId = null;
+function filterResidents(f, item) { residentsFilter = f; document.querySelectorAll('#section-residents .sub-tab').forEach(function(t){ t.classList.remove('active'); }); item.classList.add('active'); renderResidents(); }
+function openAddResident() {
+  editingResidentId = null;
+  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-birthday','rp-anniversary','rp-instructions','rp-notes'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  g('rp-pte').value = 'not-set';
+  setModalMode('modal-resident-title','modal-resident-savebtn','Add Resident Profile','Save Profile');
+  openModal('modal-resident');
 }
-function autoGeneratePassdown() {
+function openEditResident(id) {
+  var r = (state.residentProfiles || []).find(function(x){ return x.id===id; }); if (!r) return;
+  editingResidentId = id;
+  g('rp-unit').value = r.unit || '';
+  g('rp-name').value = r.residentName || '';
+  g('rp-preferred').value = r.preferredName || '';
+  g('rp-phone').value = r.phone || '';
+  g('rp-birthday').value = r.birthday || '';
+  g('rp-anniversary').value = r.anniversary || '';
+  g('rp-instructions').value = r.instructions || '';
+  g('rp-pte').value = r.pte || 'not-set';
+  g('rp-notes').value = r.notes || '';
+  setModalMode('modal-resident-title','modal-resident-savebtn','Edit Profile','Save Changes');
+  openModal('modal-resident');
+}
+function saveResident() {
+  var unit = g('rp-unit').value.trim(), name = g('rp-name').value.trim();
+  if (!unit || !name) { toast('Unit and resident name are required'); return; }
+  if (editingResidentId) {
+    var r = (state.residentProfiles || []).find(function(x){ return x.id===editingResidentId; }); if (!r) return;
+    r.unit=unit; r.residentName=name; r.preferredName=g('rp-preferred').value.trim(); r.phone=g('rp-phone').value.trim(); r.birthday=g('rp-birthday').value; r.anniversary=g('rp-anniversary').value; r.instructions=g('rp-instructions').value.trim(); r.pte=g('rp-pte').value; r.notes=g('rp-notes').value.trim();
+    editingResidentId=null; scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile updated'); return;
+  }
+  var entry = { id: uid(), unit: unit, residentName: name, preferredName: g('rp-preferred').value.trim(), phone: g('rp-phone').value.trim(), birthday: g('rp-birthday').value, anniversary: g('rp-anniversary').value, instructions: g('rp-instructions').value.trim(), pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), createdAt: Date.now() };
+  if (!state.residentProfiles) state.residentProfiles = [];
+  state.residentProfiles.push(entry); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile saved');
+}
+function deleteResident(id) { if (!confirm('Remove this profile?')) return; state.residentProfiles = (state.residentProfiles || []).filter(function(r){ return r.id!==id; }); scheduleSave(); renderResidents(); toast('Removed'); }
+function renderResidents() {
+  var list = (state.residentProfiles || []).slice();
+  if (residentsFilter === 'pte-granted') list = list.filter(function(r){ return r.pte==='granted'; });
+  else if (residentsFilter === 'pte-denied') list = list.filter(function(r){ return r.pte==='denied'; });
+  else if (residentsFilter === 'pte-not-set') list = list.filter(function(r){ return !r.pte || r.pte==='not-set'; });
+  list.sort(function(a,b){ return parseInt(a.unit)-parseInt(b.unit); });
+  var banner = g('residents-pte-banner');
+  if (banner) banner.style.display = (residentsFilter==='pte-granted'||residentsFilter==='pte-denied') ? '' : 'none';
+  var granted = (state.residentProfiles||[]).filter(function(r){ return r.pte==='granted'; }).length;
+  var denied = (state.residentProfiles||[]).filter(function(r){ return r.pte==='denied'; }).length;
+  var notset = (state.residentProfiles||[]).filter(function(r){ return !r.pte||r.pte==='not-set'; }).length;
+  g('residents-stats').innerHTML = '<div class="stat-card green"><div class="stat-num">' + granted + '</div><div class="stat-lbl">PTE Granted</div></div><div class="stat-card red"><div class="stat-num">' + denied + '</div><div class="stat-lbl">PTE Denied</div></div><div class="stat-card"><div class="stat-num">' + notset + '</div><div class="stat-lbl">PTE Not Set</div></div><div class="stat-card"><div class="stat-num">' + (state.residentProfiles||[]).length + '</div><div class="stat-lbl">Total Profiles</div></div>';
+  var cnt = g('residents-count'); if (cnt) cnt.textContent = list.length + ' profiles';
+  var grid = g('residents-grid');
+  if (!list.length) { grid.innerHTML = '<div class="text-3 text-sm">No profiles yet. Add a profile to track resident preferences, important dates, and PTE status.</div>'; return; }
+  var pteLabel = { granted: '&#9989; PTE Granted', denied: '&#128683; PTE Denied', 'not-set': 'PTE Not Set' };
+  var pteClass = { granted: 'pte-granted', denied: 'pte-denied', 'not-set': 'pte-not-set' };
+  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">';
+  list.forEach(function(r) {
+    var pte = r.pte || 'not-set';
+    html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)">';
+    html += '<div class="flex items-center gap-8 mb-8"><span class="unit-num" style="font-size:15px">Unit ' + r.unit + '</span><span class="pte-badge ' + pteClass[pte] + '">' + pteLabel[pte] + '</span></div>';
+    html += '<div style="font-weight:600;font-size:14px">' + r.residentName + (r.preferredName ? ' <span style="font-weight:400;color:var(--text3);font-size:12px">(' + r.preferredName + ')</span>' : '') + '</div>';
+    if (r.phone) html += '<div style="font-size:12px;color:var(--text3);margin-top:2px">&#128222; ' + r.phone + '</div>';
+    var dates = [];
+    if (r.birthday) dates.push('&#127874; Birthday: ' + fmtShort(r.birthday));
+    if (r.anniversary) dates.push('&#127981; Lease anniversary: ' + fmtShort(r.anniversary));
+    if (dates.length) html += '<div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.8">' + dates.join('<br>') + '</div>';
+    if (r.instructions) html += '<div style="font-size:12px;background:var(--bg);border-radius:5px;padding:6px 8px;margin-top:8px;color:var(--text2);line-height:1.5"><strong>Instructions:</strong> ' + r.instructions + '</div>';
+    if (r.notes) html += '<div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.4"><em>' + r.notes + '</em></div>';
+    html += '<div class="flex gap-4 mt-10"><button class="btn btn-ghost btn-xs" onclick="openEditResident(\'' + r.id + '\')">&#9998; Edit</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteResident(\'' + r.id + '\')">&#215;</button></div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  grid.innerHTML = html;
+}
+
+// ─── PASSDOWN ───
+var pdSections = { keysAccess: [], parking: [], residentMatters: [], shiftNotes: [] };
+var pdEditingSection = null;
+
+function renderPassdown() {
+  var isLead = currentUser && currentUser.role === 'admin';
+  var laWrap = g('pd-lookahead-wrap');
+  if (laWrap) laWrap.style.display = isLead ? '' : 'none';
+  renderPdAutoBlocks(isLead);
+  renderPdFreeSections(isLead);
+  renderPassdownHistory();
+}
+
+function pdGetLookahead() {
+  var el = g('pd-lookahead'); return el ? parseInt(el.value) : 1;
+}
+
+function renderPdAutoBlocks(isLead) {
+  var container = g('pd-auto-blocks'); if (!container) return;
+  var now = Date.now(), t = today();
+  var html = '';
+
+  // One-time keys still out
+  var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued'; });
+  html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🗝 One-Time Keys Still Out</div>';
+  if (!oneTimeOut.length) {
+    html += '<div style="color:var(--text3)">None currently out</div>';
+  } else {
+    oneTimeOut.forEach(function(k) {
+      var overdueMs = k.issuedAt ? now - k.issuedAt : 0;
+      var isOverdue = overdueMs >= 2*3600000;
+      html += '<div class="pd-auto-row"><strong>Unit ' + k.unit + ' – ' + k.name + '</strong>';
+      if (k.guest) html += ' / Guest: ' + k.guest;
+      if (k.timeout) html += ' / Out: ' + k.timeout;
+      if (k.fob) html += ' / Key #' + k.fob;
+      if (isOverdue) { var hrs=Math.floor(overdueMs/3600000), mins=Math.floor((overdueMs%3600000)/60000); html += ' <span style="color:var(--red);font-weight:600">⚠ ' + hrs + 'h ' + mins + 'm out</span>'; }
+      html += '</div>';
+    });
+  }
+  html += '</div>';
+
+  // Move-Ins / Move-Outs (lead only)
+  if (isLead) {
+    var la = pdGetLookahead();
+    var maxD = new Date(); maxD.setDate(maxD.getDate() + la);
+    var maxDate = maxD.toISOString().split('T')[0];
+    var tmrw = (function(){ var d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
+    function dayLblAuto(d) { if(d===t) return 'Today'; if(d===tmrw) return 'Tomorrow'; return fmtShort(d); }
+    var moves = state.moves||[];
+    var upIns  = moves.filter(function(m){ return m.type==='in'  && !m.archivedAt && m.date>=t && m.date<=maxDate; }).sort(function(a,b){ return a.date.localeCompare(b.date); });
+    var upOuts = moves.filter(function(m){ return m.type==='out' && !m.archivedAt && m.date>=t && m.date<=maxDate; }).sort(function(a,b){ return a.date.localeCompare(b.date); });
+
+    html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🚛 Move-Ins (' + upIns.length + ')</div>';
+    if (!upIns.length) html += '<div style="color:var(--text3)">None in this window</div>';
+    else upIns.forEach(function(m) {
+      html += '<div class="pd-auto-row"><strong>Unit ' + m.unit + ' – ' + m.resident + '</strong> | Lease: ' + dayLblAuto(m.date);
+      if (m.apptDate) { html += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) html += ' @ ' + fmtTime(m.apptTime); }
+      if (m.total) html += ' | Total: $' + m.total;
+      html += '</div>';
+    });
+    html += '</div>';
+
+    html += '<div class="pd-auto-block"><div class="pd-auto-hdr">📦 Move-Outs (' + upOuts.length + ')</div>';
+    if (!upOuts.length) html += '<div style="color:var(--text3)">None in this window</div>';
+    else upOuts.forEach(function(m) {
+      html += '<div class="pd-auto-row"><strong>Unit ' + m.unit + ' – ' + m.resident + '</strong> | Lease end: ' + dayLblAuto(m.date);
+      if (m.apptDate) { html += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) html += ' @ ' + fmtTime(m.apptTime); }
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Open concierge requests
+  var openC = (state.concierge||[]).filter(function(c){ return c.status==='open'; });
+  html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🎭 Open Concierge Requests</div>';
+  if (!openC.length) html += '<div style="color:var(--text3)">None open</div>';
+  else openC.forEach(function(c) {
+    html += '<div class="pd-auto-row"><strong>Unit ' + c.unit + ' – ' + c.resident + '</strong> / ' + c.type + (c.notes ? ': ' + c.notes : '') + '</div>';
+  });
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
+function renderPdFreeSections(isLead) {
+  var container = g('pd-free-sections'); if (!container) return;
+  var secs = isLead
+    ? [{ key:'keysAccess', emoji:'🔑', label:'Keys / Access' }, { key:'parking', emoji:'🅿️', label:'Parking' }, { key:'residentMatters', emoji:'👤', label:'Resident Matters' }]
+    : [{ key:'shiftNotes', emoji:'📝', label:'Shift Notes' }];
+  var html = '';
+  secs.forEach(function(s) {
+    html += '<div class="pd-sec-block"><div class="pd-sec-hdr"><span class="pd-sec-lbl">' + s.emoji + ' ' + s.label + '</span>'
+      + '<button class="btn btn-ghost btn-xs" onclick="openPdItem(\'' + s.key + '\')">+ Add Item</button></div>'
+      + '<div id="pd-items-' + s.key + '">' + renderPdItemsHtml(s.key) + '</div></div>';
+  });
+  if (isLead) {
+    html += '<div class="pd-sec-block"><div class="pd-sec-hdr"><span class="pd-sec-lbl">📢 Policy Reminders <span style="font-size:10px;font-weight:400;color:var(--text3)">(lead only)</span></span></div>'
+      + '<textarea id="pd-policy" rows="2" placeholder="e.g. Smoking policy reminder, package policy..." style="width:100%;font-size:12px"></textarea></div>';
+  }
+  container.innerHTML = html;
+}
+
+function renderPdItemsHtml(secKey) {
+  var items = pdSections[secKey] || [];
+  if (!items.length) return '<div style="color:var(--text3);font-size:12px;padding:2px 0">No items yet.</div>';
+  return items.map(function(item, idx) {
+    var hdr = [(item.unit ? 'Unit ' + item.unit : ''), item.resident].filter(Boolean).join(' – ');
+    return '<div class="pd-item-card">'
+      + (hdr ? '<div style="font-weight:600;margin-bottom:2px">' + hdr + '</div>' : '')
+      + '<div>' + item.desc + '</div>'
+      + '<div style="color:var(--text3);margin-top:2px"><em>Next Step:</em> ' + item.nextStep + '</div>'
+      + '<button class="pd-item-del" onclick="removePdItem(\'' + secKey + '\',' + idx + ')">×</button>'
+      + '</div>';
+  }).join('');
+}
+
+function refreshPdItems(secKey) {
+  var el = g('pd-items-' + secKey); if (el) el.innerHTML = renderPdItemsHtml(secKey);
+}
+
+function openPdItem(secKey) {
+  pdEditingSection = secKey;
+  var ov = g('modal-pd-item');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.className = 'modal-ov'; ov.id = 'modal-pd-item';
+    ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Add Item</span><button class="modal-close" onclick="closeModal(\'modal-pd-item\')">&#x2715;</button></div>'
+      + '<div class="modal-bdy">'
+      + '<div class="fr"><div class="fg"><label>Unit # <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input type="text" id="pdi-unit" placeholder="e.g. 619"></div><div class="fg"><label>Resident Name <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input type="text" id="pdi-resident"></div></div>'
+      + '<div class="fg"><label>Description</label><textarea id="pdi-desc" rows="2" placeholder="What happened / what is the situation?"></textarea></div>'
+      + '<div class="fg"><label>Next Step</label><input type="text" id="pdi-nextstep" placeholder="What needs to happen next?"></div>'
+      + '</div>'
+      + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-pd-item\')">Cancel</button><button class="btn btn-primary" onclick="savePdItem()">Add Item</button></div></div>';
+    document.body.appendChild(ov);
+  }
+  ['pdi-unit','pdi-resident','pdi-desc','pdi-nextstep'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  openModal('modal-pd-item');
+}
+
+function savePdItem() {
+  var desc = (g('pdi-desc').value||'').trim(), nextStep = (g('pdi-nextstep').value||'').trim();
+  if (!desc) { toast('Description is required'); return; }
+  if (!nextStep) { toast('Next Step is required'); return; }
+  if (!pdSections[pdEditingSection]) pdSections[pdEditingSection] = [];
+  pdSections[pdEditingSection].push({ unit: (g('pdi-unit').value||'').trim(), resident: (g('pdi-resident').value||'').trim(), desc: desc, nextStep: nextStep });
+  closeModal('modal-pd-item');
+  refreshPdItems(pdEditingSection);
+}
+
+function removePdItem(secKey, idx) {
+  if (pdSections[secKey]) { pdSections[secKey].splice(idx, 1); refreshPdItems(secKey); }
+}
+
+function generatePassdown() {
+  var isLead = currentUser && currentUser.role === 'admin';
+  var shift = g('pd-shift') ? g('pd-shift').value : 'AM';
+  var t = today();
+  var dateObj = new Date(t + 'T12:00:00');
+  var dateFmt = (dateObj.getMonth()+1) + '.' + dateObj.getDate() + '.' + dateObj.getFullYear();
+  var subject = dateFmt + ' ' + shift + ' Front Desk Passdown';
+  var greeting = shift === 'AM' ? 'Good morning' : shift === 'Overnight' ? 'Good evening' : 'Good afternoon';
+  var out = 'Subject: ' + subject + '\n\n';
+  out += greeting + ' team,\nHere is today\'s passdown with active items and updates from the Front Desk. Please review carefully and reach out if you have any questions.\n';
+
+  // Keys still out
+  var now = Date.now();
+  var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued'; });
+  if (oneTimeOut.length) {
+    out += '\n🗝 One-Time Keys Still Out\n';
+    oneTimeOut.forEach(function(k) {
+      var overdueMs = k.issuedAt ? now - k.issuedAt : 0;
+      var isOverdue = overdueMs >= 2*3600000;
+      out += 'Unit ' + k.unit + ' – ' + k.name + (k.guest ? ' / Guest: ' + k.guest : '') + '\n';
+      out += 'Key issued' + (k.timeout ? ' at ' + k.timeout : '') + (k.fob ? ' (Key #' + k.fob + ')' : '');
+      if (isOverdue) { var hrs=Math.floor(overdueMs/3600000), mins=Math.floor((overdueMs%3600000)/60000); out += ' — ⚠ OVERDUE ' + hrs + 'h ' + mins + 'm'; }
+      out += '\nNext Step: Follow up with ' + (k.guest||k.name) + ' to return key.' + (k.notes ? ' ' + k.notes : '') + '\n';
+    });
+  }
+
+  // Move-Ins / Move-Outs (lead only)
+  if (isLead) {
+    var la = pdGetLookahead();
+    var maxD = new Date(); maxD.setDate(maxD.getDate() + la);
+    var maxDate = maxD.toISOString().split('T')[0];
+    var tmrw = (function(){ var d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
+    function dayLbl(d) { if(d===t) return 'Today'; if(d===tmrw) return 'Tomorrow'; return fmtShort(d); }
+    var moves = state.moves||[];
+    var upIns  = moves.filter(function(m){ return m.type==='in'  && !m.archivedAt && m.date>=t && m.date<=maxDate; }).sort(function(a,b){ return a.date.localeCompare(b.date); });
+    var upOuts = moves.filter(function(m){ return m.type==='out' && !m.archivedAt && m.date>=t && m.date<=maxDate; }).sort(function(a,b){ return a.date.localeCompare(b.date); });
+    if (upIns.length) {
+      out += '\n🚛 Move-Ins\n';
+      upIns.forEach(function(m) {
+        out += 'Unit ' + m.unit + ' – ' + m.resident + '\n';
+        out += 'Lease: ' + dayLbl(m.date);
+        if (m.apptDate) { out += ' | Appt: ' + dayLbl(m.apptDate); if (m.apptTime) out += ' @ ' + fmtTime(m.apptTime); }
+        if (m.total) out += ' | Move-In Total: $' + m.total;
+        var pending = (m.tasks||[]).filter(function(tk){ return !tk.done; });
+        out += '\nNext Step: ' + (pending.length ? pending.length + ' task(s) still pending — review checklist.' : 'All tasks complete — ready for move-in.') + '\n';
+      });
+    }
+    if (upOuts.length) {
+      out += '\n📦 Move-Outs\n';
+      upOuts.forEach(function(m) {
+        out += 'Unit ' + m.unit + ' – ' + m.resident + '\n';
+        out += 'Lease end: ' + dayLbl(m.date);
+        if (m.apptDate) { out += ' | Appt: ' + dayLbl(m.apptDate); if (m.apptTime) out += ' @ ' + fmtTime(m.apptTime); }
+        out += '\nNext Step: Confirm key return and unit walk-through upon move-out.\n';
+      });
+    }
+  }
+
+  // Open concierge
+  var openC = (state.concierge||[]).filter(function(c){ return c.status==='open'; });
+  if (openC.length) {
+    out += '\n🎭 Open Concierge Requests\n';
+    openC.forEach(function(c) {
+      out += 'Unit ' + c.unit + ' – ' + c.resident + '\n' + c.type + (c.notes ? ': ' + c.notes : '') + '\nNext Step: Follow up and update status once resolved.\n';
+    });
+  }
+
+  // Free-entry sections
+  function writeSec(emoji, label, key) {
+    var items = pdSections[key]||[]; if (!items.length) return;
+    out += '\n' + emoji + ' ' + label + '\n';
+    items.forEach(function(item) {
+      var hdr = [(item.unit ? 'Unit ' + item.unit : ''), item.resident].filter(Boolean).join(' – ');
+      if (hdr) out += hdr + '\n';
+      out += item.desc + '\nNext Step: ' + item.nextStep + '\n';
+    });
+  }
+  if (isLead) {
+    writeSec('🔑', 'Keys / Access', 'keysAccess');
+    writeSec('🅿️', 'Parking', 'parking');
+    writeSec('👤', 'Resident Matters', 'residentMatters');
+    var policy = g('pd-policy') ? (g('pd-policy').value||'').trim() : '';
+    if (policy) out += '\n📢 Policy Reminder\n' + policy + '\n';
+  } else {
+    writeSec('📝', 'Shift Notes', 'shiftNotes');
+  }
+
+  // Sign-off
+  var acct = currentUser ? (state.accounts||[]).find(function(a){ return a.id===currentUser.id; }) : null;
+  var sigName = currentUser ? currentUser.name : 'Front Desk';
+  var sigTitle = (acct && acct.jobTitle) ? acct.jobTitle : (isLead ? 'Front Desk Lead | Chorus – SF' : 'Front Desk Associate | Chorus – SF');
+  var sigEmail = (acct && acct.workEmail) ? acct.workEmail : '';
+  out += '\nBest,\n' + sigName + '\n' + sigTitle + '\n' + (sigEmail ? sigEmail + '\n' : '');
+
+  g('pd-preview').textContent = out;
+  toast('Passdown generated');
+}
+
+function autoGeneratePassdown() { generatePassdown(); }
+function _legacyAutoGenerate() {
   var t = today(), moves = state.moves || [];
   var d2 = new Date(); d2.setDate(d2.getDate() + 1); var tmrw = d2.toISOString().split('T')[0];
   var d7 = new Date(); d7.setDate(d7.getDate() + 7); var wEnd = d7.toISOString().split('T')[0];
 
-  // KEYS / ACCESS
-  var issuedK = (state.keys || []).filter(function (k) { return k.status === 'issued'; });
-  var keysSection = '\n\uD83D\uDDDD Keys / Access\n';
-  if (!issuedK.length) keysSection += '- No keys currently out.\n';
-  else issuedK.forEach(function (k) {
-    keysSection += '- Unit ' + k.unit + ' - *' + k.name + '* (' + k.type + (k.fob ? ', fob #' + k.fob : '') + ')';
-    if (k.notes) keysSection += ' - ' + k.notes;
-    keysSection += '\n';
-  });
+  // KEYS / ACCESS \u2014 one-time keys only (these are the ones that need follow-up)
+  var now = Date.now();
+  var oneTimeOut = (state.keys || []).filter(function (k) { return k.type === 'one-time' && k.status === 'issued'; });
+  var keysSection = '\n\uD83D\uDDDD One-Time Keys Out\n';
+  if (!oneTimeOut.length) {
+    keysSection += '- No one-time keys currently out.\n';
+  } else {
+    oneTimeOut.forEach(function (k) {
+      var overdueMs = k.issuedAt ? now - k.issuedAt : 0;
+      var isOverdue = overdueMs >= 2 * 3600000;
+      var overdueHrs = Math.floor(overdueMs / 3600000);
+      var overdueMin = Math.floor((overdueMs % 3600000) / 60000);
+      keysSection += '- Key #' + (k.fob || '?') + ' | Unit ' + k.unit + ' - Resident: *' + k.name + '*';
+      if (k.guest) keysSection += ' | Guest: ' + k.guest;
+      if (k.timeout) keysSection += ' | Out since: ' + k.timeout;
+      if (isOverdue) keysSection += ' \u26A0\uFE0F OVERDUE ' + overdueHrs + 'h ' + overdueMin + 'm';
+      if (k.notes) keysSection += '\n  Follow-up: ' + k.notes;
+      keysSection += '\n';
+    });
+  }
 
   // MOVE-INS (next 7 days)
   var upIn = moves.filter(function (m) { return m.type === 'in' && !m.archivedAt && m.date >= t && m.date <= wEnd; }).sort(function (a, b) { return a.date.localeCompare(b.date); });
@@ -2978,24 +3580,38 @@ function autoGeneratePassdown() {
   if (lafSection) pd += lafSection;
   if (flagSection) pd += flagSection;
   if (postSection) pd += postSection;
+  // CONCIERGE (open requests)
+  var openConcierge = (state.concierge || []).filter(function(c){ return c.status === 'open'; });
+  var conciergeSection = '';
+  if (openConcierge.length) {
+    conciergeSection = '\n\uD83C\uDFAD Concierge Requests\n';
+    openConcierge.forEach(function(c) {
+      conciergeSection += '- Unit ' + c.unit + ' - *' + c.resident + '* - ' + c.type;
+      if (c.notes) conciergeSection += ': ' + c.notes;
+      if (c.handledBy) conciergeSection += ' (handled by ' + c.handledBy + ')';
+      conciergeSection += '\n';
+    });
+  }
+  if (conciergeSection) pd += conciergeSection;
   if (notes) pd += '\n\uD83D\uDCDD Shift Notes\n' + notes + '\n';
-  var sigName = currentUser ? currentUser.name : 'Gabino S.M.';
-  var sigRole = (currentUser && currentUser.role === 'admin') ? 'Front Desk Lead' : 'Front Desk';
-  pd += '\n-\n' + sigName + ' | ' + sigRole + ' | Chorus - SF';
-  g('pd-preview').textContent = pd; toast('Passdown generated');
+  var sigName2 = currentUser ? currentUser.name : 'Gabino S.M.';
+  var sigRole2 = (currentUser && currentUser.role === 'admin') ? 'Front Desk Lead' : 'Front Desk';
+  pd += '\n-\n' + sigName2 + ' | ' + sigRole2 + ' | Chorus - SF';
+  g('pd-preview').textContent = pd;
 }
 function savePassdown() {
   var preview = g('pd-preview').textContent;
-  if (!preview || preview.includes('will appear here')) { toast('Generate passdown first'); return; }
+  if (!preview || preview.includes('Fill in the sections')) { toast('Generate passdown first'); return; }
+  var shift = g('pd-shift') ? g('pd-shift').value : '';
   var uid2 = currentUser ? currentUser.id : '__legacy__';
   if (!state.userPassdowns) state.userPassdowns = {};
   if (!state.userPassdowns[uid2]) state.userPassdowns[uid2] = [];
-  state.userPassdowns[uid2].unshift({ id: uid(), date: g('pd-date').value || today(), shift: g('pd-shift').value, text: preview, createdAt: Date.now() });
+  state.userPassdowns[uid2].unshift({ id: uid(), date: today(), shift: shift, text: preview, createdAt: Date.now() });
   scheduleSave(); renderPassdownHistory(); toast('Saved');
 }
 function copyPassdown() {
   var preview = g('pd-preview').textContent;
-  if (!preview || preview.includes('will appear here')) { toast('Generate passdown first'); return; }
+  if (!preview || preview.includes('Fill in the sections')) { toast('Generate passdown first'); return; }
   if (navigator.share) navigator.share({ text: preview }).catch(function () {});
   else navigator.clipboard.writeText(preview).then(function () { toast('Copied'); }).catch(function () { toast('Copy failed'); });
 }
@@ -3097,8 +3713,9 @@ var editingKeyId = null;
 function openAddKey() {
   editingKeyId = null;
   setModalMode('modal-key-title','modal-key-savebtn','Log Key / Access','Save');
-  ['ky-unit','ky-name','ky-fob','ky-notes'].forEach(function(id){g(id).value='';});
+  ['ky-unit','ky-name','ky-fob','ky-notes','ky-guest','ky-timeout'].forEach(function(id){var el=g(id);if(el)el.value='';});
   g('ky-type').value='resident'; g('ky-status').value='issued'; g('ky-expiry').value='';
+  var wrap=g('ky-onetime-fields'); if(wrap) wrap.style.display='none';
   openModal('modal-key');
 }
 function openEditKey(id) {
@@ -3109,6 +3726,9 @@ function openEditKey(id) {
   g('ky-fob').value=k.fob||''; g('ky-notes').value=k.notes||'';
   g('ky-type').value=k.type||'resident'; g('ky-status').value=k.status||'issued';
   g('ky-expiry').value=k.expiry||'';
+  var gEl=g('ky-guest'); if(gEl) gEl.value=k.guest||'';
+  var tEl=g('ky-timeout'); if(tEl) tEl.value=k.timeout||'';
+  var wrap=g('ky-onetime-fields'); if(wrap) wrap.style.display=(k.type==='one-time'?'':'none');
   openModal('modal-key');
 }
 
@@ -3955,6 +4575,8 @@ var TOGGLEABLE_SECTIONS = [
   { id: 'tours', label: 'Tour Log' },
   { id: 'passdown', label: 'Daily Passdown' },
   { id: 'todos', label: 'To-Do List' },
+  { id: 'concierge', label: 'Concierge Log' },
+  { id: 'residents', label: 'Resident Profiles' },
   { id: 'team', label: 'Team Tracker' },
   { id: 'calendar', label: 'Calendar' },
   { id: 'import', label: 'Import Center' }
@@ -3962,11 +4584,12 @@ var TOGGLEABLE_SECTIONS = [
 
 function renderNavVisibility() {
   var hidden = state.hiddenSections || [];
+  var staffHidden = state.staffHiddenSections || [];
   var isStaff = currentUser && currentUser.role === 'staff';
   TOGGLEABLE_SECTIONS.forEach(function (s) {
     var el = document.querySelector('.nav-item[data-sec="' + s.id + '"]');
     if (el) {
-      var staffBlocked = isStaff && STAFF_HIDDEN.indexOf(s.id) !== -1;
+      var staffBlocked = isStaff && (STAFF_HIDDEN.indexOf(s.id) !== -1 || staffHidden.indexOf(s.id) !== -1);
       el.style.display = (hidden.indexOf(s.id) !== -1 || staffBlocked) ? 'none' : '';
     }
   });
@@ -4001,16 +4624,43 @@ function renderNavVisibilitySettings() {
   el.innerHTML = html;
 }
 
+function renderStaffNavVisibilitySettings() {
+  var el = g('settings-staff-nav-visibility'); if (!el) return;
+  var staffHidden = state.staffHiddenSections || [];
+  var html = '';
+  TOGGLEABLE_SECTIONS.forEach(function (s) {
+    if (STAFF_HIDDEN.indexOf(s.id) !== -1) return;
+    var checked = staffHidden.indexOf(s.id) === -1;
+    html += '<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;font-size:13px;border-radius:6px;transition:background .1s" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">'
+      + '<input type="checkbox" ' + (checked ? 'checked' : '') + ' onchange="toggleStaffNavSection(\'' + s.id + '\',this.checked)">'
+      + s.label + '</label>';
+  });
+  el.innerHTML = html;
+}
+
+function toggleStaffNavSection(sec, visible) {
+  if (!state.staffHiddenSections) state.staffHiddenSections = [];
+  if (visible) {
+    state.staffHiddenSections = state.staffHiddenSections.filter(function (s) { return s !== sec; });
+  } else {
+    if (state.staffHiddenSections.indexOf(sec) === -1) state.staffHiddenSections.push(sec);
+  }
+  scheduleSave(); renderNavVisibility();
+}
+
 function renderSettings() {
   var isAdmin = !currentUser || currentUser.role === 'admin';
   var acctCard = g('settings-accounts-card');
   if (acctCard) acctCard.style.display = isAdmin ? '' : 'none';
+  var staffVisCard = g('settings-staff-visibility-card');
+  if (staffVisCard) staffVisCard.style.display = isAdmin ? '' : 'none';
   if (isAdmin) renderTeamAccounts();
   renderTaskList('in');
   renderTaskList('out');
   renderSettingsWTFloors();
   renderTeamStaff();
   renderNavVisibilitySettings();
+  renderStaffNavVisibilitySettings();
   renderPatrolPinSettings();
   var ph = g('patrol-alert-hours');
   if (ph) ph.value = (state.patrolSettings && state.patrolSettings.alertHours) || 4;
@@ -4466,7 +5116,9 @@ function editAccount(id) {
   var isMe = acct.id === currentUser.id;
   var bdy = '<div class="fg"><label>Name</label><input type="text" id="ea-name" value="' + acct.name + '" style="width:100%"></div>'
     + '<div class="fg"><label>Role</label><select id="ea-role" style="width:100%"' + (isMe?' disabled title="Cannot change your own role"':'') + '><option value="staff"' + (acct.role==='staff'?' selected':'') + '>Staff</option><option value="admin"' + (acct.role==='admin'?' selected':'') + '>Admin</option></select></div>'
-    + (isMe ? '<p style="font-size:12px;color:var(--text3);margin-top:4px">You cannot change your own role.</p>' : '');
+    + (isMe ? '<p style="font-size:12px;color:var(--text3);margin-top:4px">You cannot change your own role.</p>' : '')
+    + '<div class="fg"><label>Job Title <span style="font-weight:400;color:var(--text3)">(sign-off)</span></label><input type="text" id="ea-title" value="' + (acct.jobTitle||'') + '" placeholder="e.g. Front Desk Associate | Chorus – SF" style="width:100%"></div>'
+    + '<div class="fg"><label>Work Email <span style="font-weight:400;color:var(--text3)">(sign-off)</span></label><input type="text" id="ea-email" value="' + (acct.workEmail||'') + '" placeholder="e.g. name@alignrealestate.com" style="width:100%"></div>';
   var ov = g('modal-edit-account');
   if (!ov) {
     ov = document.createElement('div');
@@ -4490,7 +5142,8 @@ function saveEditAccount(id) {
   var oldName = acct.name;
   acct.name = newName;
   if (acct.id !== currentUser.id) acct.role = newRole;
-  // Sync name change to teamstaff
+  acct.jobTitle = g('ea-title') ? g('ea-title').value.trim() : (acct.jobTitle||'');
+  acct.workEmail = g('ea-email') ? g('ea-email').value.trim() : (acct.workEmail||'');
   if (oldName !== newName) {
     var idx = (state.teamstaff||[]).indexOf(oldName);
     if (idx !== -1) { state.teamstaff[idx] = newName; renderTeamStaff(); }
