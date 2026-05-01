@@ -3184,6 +3184,7 @@ function renderResidents() {
 // ─── PASSDOWN ───
 var pdSections = { keysAccess: [], parking: [], residentMatters: [], shiftNotes: [] };
 var pdExcluded = {};
+var pdNotes = {};
 var pdEditingSection = null;
 
 function pdTimeToMins(t) {
@@ -3211,6 +3212,7 @@ function pdSaveDraft() {
   try {
     sessionStorage.setItem('pd_draft_sections', JSON.stringify(pdSections));
     sessionStorage.setItem('pd_draft_excluded', JSON.stringify(pdExcluded));
+    sessionStorage.setItem('pd_draft_notes', JSON.stringify(pdNotes));
     var pol = g('pd-policy'); if (pol) sessionStorage.setItem('pd_draft_policy', pol.value);
     var sh = g('pd-shift'); if (sh) sessionStorage.setItem('pd_draft_shift', sh.value);
     var la = g('pd-lookahead'); if (la) sessionStorage.setItem('pd_draft_lookahead', la.value);
@@ -3220,12 +3222,14 @@ function pdLoadDraft() {
   try {
     var s = sessionStorage.getItem('pd_draft_sections'); if (s) pdSections = JSON.parse(s);
     var e = sessionStorage.getItem('pd_draft_excluded'); if (e) pdExcluded = JSON.parse(e);
+    var n = sessionStorage.getItem('pd_draft_notes'); if (n) pdNotes = JSON.parse(n);
   } catch(e) {}
 }
 function pdClearDraft() {
   pdSections = { keysAccess: [], parking: [], residentMatters: [], shiftNotes: [] };
   pdExcluded = {};
-  try { ['pd_draft_sections','pd_draft_excluded','pd_draft_policy','pd_draft_shift','pd_draft_lookahead'].forEach(function(k){ sessionStorage.removeItem(k); }); } catch(e) {}
+  pdNotes = {};
+  try { ['pd_draft_sections','pd_draft_excluded','pd_draft_notes','pd_draft_policy','pd_draft_shift','pd_draft_lookahead'].forEach(function(k){ sessionStorage.removeItem(k); }); } catch(e) {}
   var pv = g('pd-preview'); if (pv) pv.value = '';
   renderPassdown();
   toast('Draft cleared');
@@ -3255,10 +3259,17 @@ function pdGetLookahead() {
   var el = g('pd-lookahead'); return el ? parseInt(el.value) : 1;
 }
 
-function pdAutoRow(exKey, content) {
+function pdAttrEsc(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function pdAutoRow(exKey, content, defaultNextStep) {
   var excl = pdExcluded[exKey];
+  var noteVal = pdNotes[exKey] !== undefined ? pdNotes[exKey] : (defaultNextStep || '');
+  var noteHtml = excl ? '' : '<input type="text" value="' + pdAttrEsc(noteVal) + '" placeholder="Next step..." '
+    + 'style="width:100%;font-size:11px;color:var(--text3);background:transparent;border:none;border-bottom:1px dashed var(--border2);padding:2px 0;margin-top:3px;font-family:inherit;outline:none" '
+    + 'oninput="pdNotes[\'' + exKey + '\']=this.value;pdSaveDraft()" '
+    + 'onfocus="this.style.borderBottomColor=\'var(--accent)\'" '
+    + 'onblur="this.style.borderBottomColor=\'var(--border2)\'" />';
   return '<div class="pd-auto-row' + (excl ? ' pd-auto-excl' : '') + '" style="display:flex;align-items:flex-start;gap:6px">'
-    + '<div style="flex:1' + (excl ? ';opacity:.4;text-decoration:line-through' : '') + '">' + content + '</div>'
+    + '<div style="flex:1' + (excl ? ';opacity:.4;text-decoration:line-through' : '') + '">' + content + noteHtml + '</div>'
     + '<button onclick="pdToggleExclude(\'' + exKey + '\')" title="' + (excl ? 'Re-include' : 'Exclude from passdown') + '" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:13px;padding:0;color:var(--text3);line-height:1">'
     + (excl ? '<span style="color:var(--accent)">＋</span>' : '–') + '</button>'
     + '</div>';
@@ -3289,7 +3300,8 @@ function renderPdAutoBlocks(isLead) {
       if (k.timeout) content += ' / Out: ' + k.timeout;
       if (k.fob) content += ' / Key #' + k.fob;
       if (isOverdue) { var hrs=Math.floor(overdueMs/3600000), mins=Math.floor((overdueMs%3600000)/60000); content += ' <span style="color:var(--red);font-weight:600">⚠ ' + hrs + 'h ' + mins + 'm out</span>'; }
-      html += pdAutoRow('key_' + k.id, content);
+      var ns = 'Follow up with ' + (k.guest||k.name) + ' to return key.' + (k.notes ? ' ' + k.notes : '');
+      html += pdAutoRow('key_' + k.id, content, ns);
     });
   }
   html += '</div>';
@@ -3330,29 +3342,37 @@ function renderPdAutoBlocks(isLead) {
 
   if (isLead || shiftMoveIns.length || shiftMoveOuts.length) {
     html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🚛 Move-Ins (' + allIns.length + ')</div>';
-    if (!allIns.length) html += '<div style="color:var(--text3)">None this shift' + (isLead ? ' or upcoming' : '') + '</div>';
+    if (!allIns.length) html += '<div style="color:var(--text3)">None today' + (isLead ? ' or upcoming' : '') + '</div>';
     else allIns.forEach(function(m) {
       var apptD = m.apptDate || m.date;
-      var tag = apptD === t ? '<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 5px;margin-right:4px">This shift</span>' : '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>';
+      var tag = apptD !== t ? '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>' : '';
       var content = tag + '<strong>Unit ' + m.unit + ' – ' + m.resident + '</strong>';
       if (isMoveCompleted(m)) content += ' <span style="font-size:10px;background:#D1FAE5;color:#065F46;border-radius:3px;padding:1px 5px;margin-left:2px">✓ Completed</span>';
       if (m.apptDate) { content += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); }
       else content += ' | Lease: ' + dayLblAuto(m.date);
       if (m.total) content += ' | $' + m.total;
-      html += pdAutoRow('in_' + m.id, content);
+      var postPendingNs = (m.tasks||[]).filter(function(tk){ return (tk.cat==='Post Move-In')&&!tk.done; });
+      var ns = isMoveCompleted(m)
+        ? ('Move-in completed' + (postPendingNs.length ? ' — ' + postPendingNs.length + ' post move-in task(s) still pending.' : ' — all tasks done.'))
+        : ((m.tasks||[]).filter(function(tk){return !tk.done;}).length + ' task(s) still pending — review checklist.' || 'All tasks complete — ready for move-in.');
+      html += pdAutoRow('in_' + m.id, content, ns);
     });
     html += '</div>';
 
     html += '<div class="pd-auto-block"><div class="pd-auto-hdr">📦 Move-Outs (' + allOuts.length + ')</div>';
-    if (!allOuts.length) html += '<div style="color:var(--text3)">None this shift' + (isLead ? ' or upcoming' : '') + '</div>';
+    if (!allOuts.length) html += '<div style="color:var(--text3)">None today' + (isLead ? ' or upcoming' : '') + '</div>';
     else allOuts.forEach(function(m) {
       var apptD = m.apptDate || m.date;
-      var tag = apptD === t ? '<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 5px;margin-right:4px">This shift</span>' : '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>';
+      var tag = apptD !== t ? '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>' : '';
       var content = tag + '<strong>Unit ' + m.unit + ' – ' + m.resident + '</strong>';
       if (isMoveCompleted(m)) content += ' <span style="font-size:10px;background:#D1FAE5;color:#065F46;border-radius:3px;padding:1px 5px;margin-left:2px">✓ Completed</span>';
       if (m.apptDate) { content += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); }
       else content += ' | Lease end: ' + dayLblAuto(m.date);
-      html += pdAutoRow('out_' + m.id, content);
+      var postPendingOut = (m.tasks||[]).filter(function(tk){ return (tk.cat==='Post Move-Out')&&!tk.done; });
+      var nsOut = isMoveCompleted(m)
+        ? ('Move-out completed' + (postPendingOut.length ? ' — ' + postPendingOut.length + ' post move-out task(s) still pending.' : ' — all tasks done.'))
+        : 'Confirm key return and unit walk-through upon move-out.';
+      html += pdAutoRow('out_' + m.id, content, nsOut);
     });
     html += '</div>';
   }
@@ -3362,13 +3382,13 @@ function renderPdAutoBlocks(isLead) {
   var upcomingAm = isLead ? (state.amenities||[]).filter(function(a){ return a.date>t && a.date<=maxDate; }).sort(function(a,b){ return a.date.localeCompare(b.date)||(a.start||'').localeCompare(b.start||''); }) : [];
   var allAm = shiftAm.concat(upcomingAm);
   html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🎉 Amenity Bookings</div>';
-  if (!allAm.length) html += '<div style="color:var(--text3)">None this shift' + (isLead ? ' or upcoming' : '') + '</div>';
+  if (!allAm.length) html += '<div style="color:var(--text3)">None today' + (isLead ? ' or upcoming' : '') + '</div>';
   else allAm.forEach(function(a) {
-    var tag = a.date===t ? '<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 5px;margin-right:4px">This shift</span>' : '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(a.date) + '</span>';
+    var tag = a.date!==t ? '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(a.date) + '</span>' : '';
     var content = tag + '<strong>' + a.space + '</strong> – ' + a.resident + ' (Unit ' + a.unit + ')';
     if (a.start) content += ' ' + a.start + (a.end ? '–' + a.end : '');
     if (a.notes) content += ' | ' + a.notes;
-    html += pdAutoRow('am_' + a.id, content);
+    html += pdAutoRow('am_' + a.id, content, 'Confirm booking details and ensure space is prepared.');
   });
   html += '</div>';
 
@@ -3378,7 +3398,7 @@ function renderPdAutoBlocks(isLead) {
   if (!openC.length) html += '<div style="color:var(--text3)">None open</div>';
   else openC.forEach(function(c) {
     var content = '<strong>Unit ' + c.unit + ' – ' + c.resident + '</strong> / ' + c.type + (c.notes ? ': ' + c.notes : '');
-    html += pdAutoRow('c_' + c.id, content);
+    html += pdAutoRow('c_' + c.id, content, 'Follow up and update status once resolved.');
   });
   html += '</div>';
 
@@ -3482,7 +3502,8 @@ function generatePassdown() {
       out += 'Unit ' + k.unit + ' – ' + k.name + (k.guest ? ' / Guest: ' + k.guest : '') + '\n';
       out += 'Key issued' + (k.timeout ? ' at ' + k.timeout : '') + (k.fob ? ' (Key #' + k.fob + ')' : '');
       if (isOverdue) { var hrs=Math.floor(overdueMs/3600000), mins=Math.floor((overdueMs%3600000)/60000); out += ' — ⚠ OVERDUE ' + hrs + 'h ' + mins + 'm'; }
-      out += '\nNext Step: Follow up with ' + (k.guest||k.name) + ' to return key.' + (k.notes ? ' ' + k.notes : '') + '\n';
+      var defNs = 'Follow up with ' + (k.guest||k.name) + ' to return key.' + (k.notes ? ' ' + k.notes : '');
+      out += '\nNext Step: ' + (pdNotes['key_'+k.id] !== undefined ? pdNotes['key_'+k.id] : defNs) + '\n';
     });
   }
 
@@ -3507,17 +3528,20 @@ function generatePassdown() {
       out += '\n🚛 Move-Ins\n';
       allIns.forEach(function(m) {
         var apptD = m.apptDate || m.date;
-        var tag = apptD === t ? '[This shift] ' : '[' + dayLbl(apptD) + '] ';
+        var tag = apptD !== t ? '[' + dayLbl(apptD) + '] ' : '';
         out += tag + 'Unit ' + m.unit + ' – ' + m.resident + '\n';
         out += 'Lease: ' + dayLbl(m.date);
         if (m.apptDate) { out += ' | Appt: ' + dayLbl(m.apptDate); if (m.apptTime) out += ' @ ' + fmtTime(m.apptTime); }
         if (m.total) out += ' | Move-In Total: $' + m.total;
+        var defNsIn;
         if (isMoveCompleted(m)) {
           var postPending = (m.tasks||[]).filter(function(tk){ return (tk.cat==='Post Move-In') && !tk.done; });
-          out += '\nStatus: ✅ Move-in completed' + (postPending.length ? ' — ' + postPending.length + ' post move-in task(s) still pending.' : ' — all tasks done.') + '\n';
+          defNsIn = 'Move-in completed' + (postPending.length ? ' — ' + postPending.length + ' post move-in task(s) still pending.' : ' — all tasks done.');
+          out += '\nStatus: ✅ ' + (pdNotes['in_'+m.id] !== undefined ? pdNotes['in_'+m.id] : defNsIn) + '\n';
         } else {
           var pending = (m.tasks||[]).filter(function(tk){ return !tk.done; });
-          out += '\nNext Step: ' + (pending.length ? pending.length + ' task(s) still pending — review checklist.' : 'All tasks complete — ready for move-in.') + '\n';
+          defNsIn = pending.length ? pending.length + ' task(s) still pending — review checklist.' : 'All tasks complete — ready for move-in.';
+          out += '\nNext Step: ' + (pdNotes['in_'+m.id] !== undefined ? pdNotes['in_'+m.id] : defNsIn) + '\n';
         }
       });
     }
@@ -3536,15 +3560,18 @@ function generatePassdown() {
       out += '\n📦 Move-Outs\n';
       allOuts.forEach(function(m) {
         var apptD = m.apptDate || m.date;
-        var tag = apptD === t ? '[This shift] ' : '[' + dayLbl(apptD) + '] ';
+        var tag = apptD !== t ? '[' + dayLbl(apptD) + '] ' : '';
         out += tag + 'Unit ' + m.unit + ' – ' + m.resident + '\n';
         out += 'Lease end: ' + dayLbl(m.date);
         if (m.apptDate) { out += ' | Appt: ' + dayLbl(m.apptDate); if (m.apptTime) out += ' @ ' + fmtTime(m.apptTime); }
+        var defNsOut;
         if (isMoveCompleted(m)) {
           var postPending2 = (m.tasks||[]).filter(function(tk){ return (tk.cat==='Post Move-Out') && !tk.done; });
-          out += '\nStatus: ✅ Move-out completed' + (postPending2.length ? ' — ' + postPending2.length + ' post move-out task(s) still pending.' : ' — all tasks done.') + '\n';
+          defNsOut = 'Move-out completed' + (postPending2.length ? ' — ' + postPending2.length + ' post move-out task(s) still pending.' : ' — all tasks done.');
+          out += '\nStatus: ✅ ' + (pdNotes['out_'+m.id] !== undefined ? pdNotes['out_'+m.id] : defNsOut) + '\n';
         } else {
-          out += '\nNext Step: Confirm key return and unit walk-through upon move-out.\n';
+          defNsOut = 'Confirm key return and unit walk-through upon move-out.';
+          out += '\nNext Step: ' + (pdNotes['out_'+m.id] !== undefined ? pdNotes['out_'+m.id] : defNsOut) + '\n';
         }
       });
     }
@@ -3564,10 +3591,10 @@ function generatePassdown() {
   if (allAm.length) {
     out += '\n🎉 Amenity Bookings\n';
     allAm.forEach(function(a) {
-      var tag = a.date === t ? '[This shift] ' : '[' + dayLbl(a.date) + '] ';
+      var tag = a.date !== t ? '[' + dayLbl(a.date) + '] ' : '';
       out += tag + a.space + ' – ' + a.resident + ' (Unit ' + a.unit + ')';
       if (a.start) out += ' | ' + a.start + (a.end ? '–' + a.end : '');
-      out += '\nNext Step: Confirm booking details and ensure space is prepared.\n';
+      out += '\nNext Step: ' + (pdNotes['am_'+a.id] !== undefined ? pdNotes['am_'+a.id] : 'Confirm booking details and ensure space is prepared.') + '\n';
     });
   }
 
@@ -3576,7 +3603,7 @@ function generatePassdown() {
   if (openC.length) {
     out += '\n🎭 Open Concierge Requests\n';
     openC.forEach(function(c) {
-      out += 'Unit ' + c.unit + ' – ' + c.resident + '\n' + c.type + (c.notes ? ': ' + c.notes : '') + '\nNext Step: Follow up and update status once resolved.\n';
+      out += 'Unit ' + c.unit + ' – ' + c.resident + '\n' + c.type + (c.notes ? ': ' + c.notes : '') + '\nNext Step: ' + (pdNotes['c_'+c.id] !== undefined ? pdNotes['c_'+c.id] : 'Follow up and update status once resolved.') + '\n';
     });
   }
 
