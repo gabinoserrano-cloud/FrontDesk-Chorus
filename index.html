@@ -220,7 +220,7 @@
   .wt-item-text{font-size:13px;flex:1}.flagged-item{background:var(--amber-light);border:1px solid #F5D39A;border-radius:var(--radius);padding:10px 12px;margin-bottom:6px;font-size:12.5px}
 
   /* PASSDOWN */
-  .pd-preview{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;font-family:'DM Mono',monospace;font-size:12px;white-space:pre-wrap;line-height:1.7;color:var(--text);min-height:160px}
+  .pd-preview{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;font-family:'DM Mono',monospace;font-size:12px;line-height:1.7;color:var(--text);min-height:160px;width:100%;box-sizing:border-box;resize:vertical;outline:none}
   .phi{border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;background:var(--surface)}
   .phi-hdr{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:13px}
   .phi-body{display:none;border-top:1px solid var(--border2);padding:12px 14px;font-family:'DM Mono',monospace;font-size:12px;white-space:pre-wrap;line-height:1.7}
@@ -555,7 +555,7 @@
               </div>
             </div>
           </div>
-          <div class="card"><div class="card-hdr"><span class="card-title">Preview</span></div><div class="card-body" style="padding:10px 14px"><div class="pd-preview" id="pd-preview">Fill in the sections above and click Generate.</div></div></div>
+          <div class="card"><div class="card-hdr"><span class="card-title">Preview</span></div><div class="card-body" style="padding:10px 14px"><textarea class="pd-preview" id="pd-preview" rows="16" placeholder="Fill in the sections above and click Generate."></textarea></div></div>
         </div>
         <div><div class="card"><div class="card-hdr"><span class="card-title">Passdown History</span></div><div class="card-body" id="pd-history" style="padding:8px 12px"><div class="text-3 text-sm">No passdowns saved yet.</div></div></div></div>
       </div>
@@ -3226,7 +3226,7 @@ function pdClearDraft() {
   pdSections = { keysAccess: [], parking: [], residentMatters: [], shiftNotes: [] };
   pdExcluded = {};
   try { ['pd_draft_sections','pd_draft_excluded','pd_draft_policy','pd_draft_shift','pd_draft_lookahead'].forEach(function(k){ sessionStorage.removeItem(k); }); } catch(e) {}
-  var pv = g('pd-preview'); if (pv) pv.textContent = 'Fill in the sections above and click Generate.';
+  var pv = g('pd-preview'); if (pv) pv.value = '';
   renderPassdown();
   toast('Draft cleared');
 }
@@ -3262,6 +3262,12 @@ function pdAutoRow(exKey, content) {
     + '<button onclick="pdToggleExclude(\'' + exKey + '\')" title="' + (excl ? 'Re-include' : 'Exclude from passdown') + '" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:13px;padding:0;color:var(--text3);line-height:1">'
     + (excl ? '<span style="color:var(--accent)">＋</span>' : '–') + '</button>'
     + '</div>';
+}
+function isMoveCompleted(m) {
+  var apptD = m.apptDate || m.date;
+  if (apptD > today()) return false;
+  var mainTasks = (m.tasks||[]).filter(function(tk){ return tk.cat !== 'Post Move-In' && tk.cat !== 'Post Move-Out'; });
+  return !mainTasks.length || mainTasks.every(function(tk){ return tk.done; });
 }
 
 function renderPdAutoBlocks(isLead) {
@@ -3329,6 +3335,7 @@ function renderPdAutoBlocks(isLead) {
       var apptD = m.apptDate || m.date;
       var tag = apptD === t ? '<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 5px;margin-right:4px">This shift</span>' : '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>';
       var content = tag + '<strong>Unit ' + m.unit + ' – ' + m.resident + '</strong>';
+      if (isMoveCompleted(m)) content += ' <span style="font-size:10px;background:#D1FAE5;color:#065F46;border-radius:3px;padding:1px 5px;margin-left:2px">✓ Completed</span>';
       if (m.apptDate) { content += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); }
       else content += ' | Lease: ' + dayLblAuto(m.date);
       if (m.total) content += ' | $' + m.total;
@@ -3342,6 +3349,7 @@ function renderPdAutoBlocks(isLead) {
       var apptD = m.apptDate || m.date;
       var tag = apptD === t ? '<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 5px;margin-right:4px">This shift</span>' : '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>';
       var content = tag + '<strong>Unit ' + m.unit + ' – ' + m.resident + '</strong>';
+      if (isMoveCompleted(m)) content += ' <span style="font-size:10px;background:#D1FAE5;color:#065F46;border-radius:3px;padding:1px 5px;margin-left:2px">✓ Completed</span>';
       if (m.apptDate) { content += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); }
       else content += ' | Lease end: ' + dayLblAuto(m.date);
       html += pdAutoRow('out_' + m.id, content);
@@ -3478,9 +3486,9 @@ function generatePassdown() {
     });
   }
 
-  // Move-Ins / Move-Outs (lead only, skip excluded)
-  if (isLead) {
-    var la = pdGetLookahead();
+  // Move-Ins / Move-Outs (lead: today + upcoming; staff: today only)
+  {
+    var la = isLead ? pdGetLookahead() : 0;
     var maxD = new Date(); maxD.setDate(maxD.getDate() + la);
     var maxDate = maxD.toISOString().split('T')[0];
     var moves = state.moves||[];
@@ -3489,11 +3497,11 @@ function generatePassdown() {
       var apptD = m.apptDate || m.date;
       return apptD === t && pdInShift(m.apptTime, shift);
     }).sort(function(a,b){ return (a.apptDate||a.date).localeCompare(b.apptDate||b.date); });
-    var upcomingIns = moves.filter(function(m){
+    var upcomingIns = isLead ? moves.filter(function(m){
       if (m.type!=='in' || m.archivedAt || pdExcluded['in_'+m.id]) return false;
       var apptD = m.apptDate || m.date;
       return apptD > t && apptD <= maxDate;
-    }).sort(function(a,b){ return (a.apptDate||a.date).localeCompare(b.apptDate||b.date); });
+    }).sort(function(a,b){ return (a.apptDate||a.date).localeCompare(b.apptDate||b.date); }) : [];
     var allIns = shiftIns.concat(upcomingIns);
     if (allIns.length) {
       out += '\n🚛 Move-Ins\n';
@@ -3504,8 +3512,13 @@ function generatePassdown() {
         out += 'Lease: ' + dayLbl(m.date);
         if (m.apptDate) { out += ' | Appt: ' + dayLbl(m.apptDate); if (m.apptTime) out += ' @ ' + fmtTime(m.apptTime); }
         if (m.total) out += ' | Move-In Total: $' + m.total;
-        var pending = (m.tasks||[]).filter(function(tk){ return !tk.done; });
-        out += '\nNext Step: ' + (pending.length ? pending.length + ' task(s) still pending — review checklist.' : 'All tasks complete — ready for move-in.') + '\n';
+        if (isMoveCompleted(m)) {
+          var postPending = (m.tasks||[]).filter(function(tk){ return (tk.cat==='Post Move-In') && !tk.done; });
+          out += '\nStatus: ✅ Move-in completed' + (postPending.length ? ' — ' + postPending.length + ' post move-in task(s) still pending.' : ' — all tasks done.') + '\n';
+        } else {
+          var pending = (m.tasks||[]).filter(function(tk){ return !tk.done; });
+          out += '\nNext Step: ' + (pending.length ? pending.length + ' task(s) still pending — review checklist.' : 'All tasks complete — ready for move-in.') + '\n';
+        }
       });
     }
     var shiftOuts = moves.filter(function(m){
@@ -3513,11 +3526,11 @@ function generatePassdown() {
       var apptD = m.apptDate || m.date;
       return apptD === t && pdInShift(m.apptTime, shift);
     }).sort(function(a,b){ return (a.apptDate||a.date).localeCompare(b.apptDate||b.date); });
-    var upcomingOuts = moves.filter(function(m){
+    var upcomingOuts = isLead ? moves.filter(function(m){
       if (m.type!=='out' || m.archivedAt || pdExcluded['out_'+m.id]) return false;
       var apptD = m.apptDate || m.date;
       return apptD > t && apptD <= maxDate;
-    }).sort(function(a,b){ return (a.apptDate||a.date).localeCompare(b.apptDate||b.date); });
+    }).sort(function(a,b){ return (a.apptDate||a.date).localeCompare(b.apptDate||b.date); }) : [];
     var allOuts = shiftOuts.concat(upcomingOuts);
     if (allOuts.length) {
       out += '\n📦 Move-Outs\n';
@@ -3527,7 +3540,12 @@ function generatePassdown() {
         out += tag + 'Unit ' + m.unit + ' – ' + m.resident + '\n';
         out += 'Lease end: ' + dayLbl(m.date);
         if (m.apptDate) { out += ' | Appt: ' + dayLbl(m.apptDate); if (m.apptTime) out += ' @ ' + fmtTime(m.apptTime); }
-        out += '\nNext Step: Confirm key return and unit walk-through upon move-out.\n';
+        if (isMoveCompleted(m)) {
+          var postPending2 = (m.tasks||[]).filter(function(tk){ return (tk.cat==='Post Move-Out') && !tk.done; });
+          out += '\nStatus: ✅ Move-out completed' + (postPending2.length ? ' — ' + postPending2.length + ' post move-out task(s) still pending.' : ' — all tasks done.') + '\n';
+        } else {
+          out += '\nNext Step: Confirm key return and unit walk-through upon move-out.\n';
+        }
       });
     }
   }
@@ -3589,7 +3607,7 @@ function generatePassdown() {
   var sigEmail = (acct && acct.workEmail) ? acct.workEmail : '';
   out += '\nBest,\n' + sigName + '\n' + sigTitle + '\n' + (sigEmail ? sigEmail + '\n' : '');
 
-  g('pd-preview').textContent = out;
+  g('pd-preview').value = out;
   toast('Passdown generated');
 }
 
@@ -3759,11 +3777,11 @@ function _legacyAutoGenerate() {
   var sigName2 = currentUser ? currentUser.name : 'Gabino S.M.';
   var sigRole2 = (currentUser && currentUser.role === 'admin') ? 'Front Desk Lead' : 'Front Desk';
   pd += '\n-\n' + sigName2 + ' | ' + sigRole2 + ' | Chorus - SF';
-  g('pd-preview').textContent = pd;
+  g('pd-preview').value = pd;
 }
 function savePassdown() {
-  var preview = g('pd-preview').textContent;
-  if (!preview || preview.includes('Fill in the sections')) { toast('Generate passdown first'); return; }
+  var preview = g('pd-preview').value;
+  if (!preview || !preview.trim()) { toast('Generate passdown first'); return; }
   var shift = g('pd-shift') ? g('pd-shift').value : '';
   var uid2 = currentUser ? currentUser.id : '__legacy__';
   if (!state.userPassdowns) state.userPassdowns = {};
@@ -3772,8 +3790,8 @@ function savePassdown() {
   scheduleSave(); renderPassdownHistory(); toast('Saved');
 }
 function copyPassdown() {
-  var preview = g('pd-preview').textContent;
-  if (!preview || preview.includes('Fill in the sections')) { toast('Generate passdown first'); return; }
+  var preview = g('pd-preview').value;
+  if (!preview || !preview.trim()) { toast('Generate passdown first'); return; }
   if (navigator.share) navigator.share({ text: preview }).catch(function () {});
   else navigator.clipboard.writeText(preview).then(function () { toast('Copied'); }).catch(function () { toast('Copy failed'); });
 }
@@ -3805,6 +3823,7 @@ function renderPassdownHistory() {
       + '<span class="font-600">' + fmtShort(p.date) + ' - ' + p.shift + '</span>' + authorBadge
       + '<div class="flex gap-4" style="margin-left:auto">'
       + '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();copyPD(\'' + p.id + '\')">Copy</button>'
+      + (canDelete ? '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();editPD(\'' + p.id + '\')">Edit</button>' : '')
       + (canDelete ? '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="event.stopPropagation();deletePD(\'' + p.id + '\',\'' + (p.authorId||'') + '\')">x</button>' : '')
       + '</div></div><div class="phi-body">' + p.text + '</div></div>';
   });
@@ -3813,6 +3832,14 @@ function renderPassdownHistory() {
 function copyPD(id) {
   var all = getAllPassdowns(); var p = all.find(function(x){return x.id===id;}); if (!p) return;
   navigator.clipboard.writeText(p.text).then(function(){toast('Copied');}).catch(function(){toast('Copy failed');});
+}
+function editPD(id) {
+  var all = getAllPassdowns(); var p = all.find(function(x){return x.id===id;}); if (!p) return;
+  var pv = g('pd-preview'); if (!pv) return;
+  pv.value = p.text;
+  pv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  pv.focus();
+  toast('Loaded into preview — edit then Save');
 }
 function deletePD(id, authorId) {
   if (!confirm('Delete passdown?')) return;
