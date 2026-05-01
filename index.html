@@ -539,18 +539,19 @@
             <div class="card-body">
               <div class="fr mb-8">
                 <div class="fg" style="margin-bottom:0"><label>Shift</label>
-                  <select id="pd-shift"><option value="AM">AM</option><option value="PM" selected>PM</option><option value="Overnight">Overnight</option></select>
+                  <select id="pd-shift" onchange="pdSaveDraft()"><option value="AM">AM</option><option value="PM" selected>PM</option><option value="Overnight">Overnight</option></select>
                 </div>
                 <div class="fg" style="margin-bottom:0;display:none" id="pd-lookahead-wrap"><label>Look ahead</label>
-                  <select id="pd-lookahead" onchange="renderPdAutoBlocks(true)"><option value="1">Today + Tomorrow</option><option value="2">Today + 2 days</option></select>
+                  <select id="pd-lookahead" onchange="renderPdAutoBlocks(true);pdSaveDraft()"><option value="1">Today + Tomorrow</option><option value="2">Today + 2 days</option></select>
                 </div>
               </div>
               <div id="pd-auto-blocks"></div>
               <div id="pd-free-sections"></div>
-              <div class="flex gap-8 mt-12">
+              <div class="flex gap-8 mt-12" style="flex-wrap:wrap">
                 <button class="btn btn-primary" onclick="generatePassdown()">Generate</button>
                 <button class="btn btn-secondary" onclick="savePassdown()">Save</button>
                 <button class="btn btn-ghost" onclick="copyPassdown()">Copy</button>
+                <button class="btn btn-ghost" style="margin-left:auto;color:var(--text3);font-size:12px" onclick="pdClearDraft()">Clear draft</button>
               </div>
             </div>
           </div>
@@ -3182,12 +3183,69 @@ function renderResidents() {
 
 // ─── PASSDOWN ───
 var pdSections = { keysAccess: [], parking: [], residentMatters: [], shiftNotes: [] };
+var pdExcluded = {};
 var pdEditingSection = null;
 
+function pdTimeToMins(t) {
+  if (!t) return -1;
+  t = t.trim();
+  var ap = t.match(/(am|pm)/i);
+  t = t.replace(/\s*(am|pm)\s*/i, '').trim();
+  var parts = t.split(':');
+  var h = parseInt(parts[0])||0, m = parseInt(parts[1])||0;
+  if (ap) {
+    if (ap[0].toLowerCase() === 'pm' && h !== 12) h += 12;
+    if (ap[0].toLowerCase() === 'am' && h === 12) h = 0;
+  }
+  return h * 60 + m;
+}
+function pdInShift(timeStr, shift) {
+  var mins = pdTimeToMins(timeStr);
+  if (mins < 0) return true; // no time set — always include
+  if (shift === 'AM') return mins >= 7*60 && mins < 15*60;
+  if (shift === 'PM') return mins >= 15*60 && mins < 23*60;
+  return mins >= 23*60 || mins < 7*60; // Overnight: 11pm–7am
+}
+
+function pdSaveDraft() {
+  try {
+    sessionStorage.setItem('pd_draft_sections', JSON.stringify(pdSections));
+    sessionStorage.setItem('pd_draft_excluded', JSON.stringify(pdExcluded));
+    var pol = g('pd-policy'); if (pol) sessionStorage.setItem('pd_draft_policy', pol.value);
+    var sh = g('pd-shift'); if (sh) sessionStorage.setItem('pd_draft_shift', sh.value);
+    var la = g('pd-lookahead'); if (la) sessionStorage.setItem('pd_draft_lookahead', la.value);
+  } catch(e) {}
+}
+function pdLoadDraft() {
+  try {
+    var s = sessionStorage.getItem('pd_draft_sections'); if (s) pdSections = JSON.parse(s);
+    var e = sessionStorage.getItem('pd_draft_excluded'); if (e) pdExcluded = JSON.parse(e);
+  } catch(e) {}
+}
+function pdClearDraft() {
+  pdSections = { keysAccess: [], parking: [], residentMatters: [], shiftNotes: [] };
+  pdExcluded = {};
+  try { ['pd_draft_sections','pd_draft_excluded','pd_draft_policy','pd_draft_shift','pd_draft_lookahead'].forEach(function(k){ sessionStorage.removeItem(k); }); } catch(e) {}
+  var pv = g('pd-preview'); if (pv) pv.textContent = 'Fill in the sections above and click Generate.';
+  renderPassdown();
+  toast('Draft cleared');
+}
+function pdToggleExclude(key) {
+  if (pdExcluded[key]) delete pdExcluded[key]; else pdExcluded[key] = true;
+  pdSaveDraft();
+  renderPdAutoBlocks(currentUser && currentUser.role === 'admin');
+}
+
 function renderPassdown() {
+  pdLoadDraft();
   var isLead = currentUser && currentUser.role === 'admin';
   var laWrap = g('pd-lookahead-wrap');
   if (laWrap) laWrap.style.display = isLead ? '' : 'none';
+  // Restore shift/lookahead from draft
+  try {
+    var sh = sessionStorage.getItem('pd_draft_shift'); if (sh && g('pd-shift')) g('pd-shift').value = sh;
+    var la = sessionStorage.getItem('pd_draft_lookahead'); if (la && g('pd-lookahead')) g('pd-lookahead').value = la;
+  } catch(e) {}
   renderPdAutoBlocks(isLead);
   renderPdFreeSections(isLead);
   renderPassdownHistory();
@@ -3195,6 +3253,15 @@ function renderPassdown() {
 
 function pdGetLookahead() {
   var el = g('pd-lookahead'); return el ? parseInt(el.value) : 1;
+}
+
+function pdAutoRow(exKey, content) {
+  var excl = pdExcluded[exKey];
+  return '<div class="pd-auto-row' + (excl ? ' pd-auto-excl' : '') + '" style="display:flex;align-items:flex-start;gap:6px">'
+    + '<div style="flex:1' + (excl ? ';opacity:.4;text-decoration:line-through' : '') + '">' + content + '</div>'
+    + '<button onclick="pdToggleExclude(\'' + exKey + '\')" title="' + (excl ? 'Re-include' : 'Exclude from passdown') + '" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:13px;padding:0;color:var(--text3);line-height:1">'
+    + (excl ? '<span style="color:var(--accent)">＋</span>' : '–') + '</button>'
+    + '</div>';
 }
 
 function renderPdAutoBlocks(isLead) {
@@ -3211,53 +3278,99 @@ function renderPdAutoBlocks(isLead) {
     oneTimeOut.forEach(function(k) {
       var overdueMs = k.issuedAt ? now - k.issuedAt : 0;
       var isOverdue = overdueMs >= 2*3600000;
-      html += '<div class="pd-auto-row"><strong>Unit ' + k.unit + ' – ' + k.name + '</strong>';
-      if (k.guest) html += ' / Guest: ' + k.guest;
-      if (k.timeout) html += ' / Out: ' + k.timeout;
-      if (k.fob) html += ' / Key #' + k.fob;
-      if (isOverdue) { var hrs=Math.floor(overdueMs/3600000), mins=Math.floor((overdueMs%3600000)/60000); html += ' <span style="color:var(--red);font-weight:600">⚠ ' + hrs + 'h ' + mins + 'm out</span>'; }
-      html += '</div>';
+      var content = '<strong>Unit ' + k.unit + ' – ' + k.name + '</strong>';
+      if (k.guest) content += ' / Guest: ' + k.guest;
+      if (k.timeout) content += ' / Out: ' + k.timeout;
+      if (k.fob) content += ' / Key #' + k.fob;
+      if (isOverdue) { var hrs=Math.floor(overdueMs/3600000), mins=Math.floor((overdueMs%3600000)/60000); content += ' <span style="color:var(--red);font-weight:600">⚠ ' + hrs + 'h ' + mins + 'm out</span>'; }
+      html += pdAutoRow('key_' + k.id, content);
     });
   }
   html += '</div>';
 
-  // Move-Ins / Move-Outs (lead only)
-  if (isLead) {
-    var la = pdGetLookahead();
-    var maxD = new Date(); maxD.setDate(maxD.getDate() + la);
-    var maxDate = maxD.toISOString().split('T')[0];
-    var tmrw = (function(){ var d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
-    function dayLblAuto(d) { if(d===t) return 'Today'; if(d===tmrw) return 'Tomorrow'; return fmtShort(d); }
-    var moves = state.moves||[];
-    var upIns  = moves.filter(function(m){ return m.type==='in'  && !m.archivedAt && m.date>=t && m.date<=maxDate; }).sort(function(a,b){ return a.date.localeCompare(b.date); });
-    var upOuts = moves.filter(function(m){ return m.type==='out' && !m.archivedAt && m.date>=t && m.date<=maxDate; }).sort(function(a,b){ return a.date.localeCompare(b.date); });
+  var shift = g('pd-shift') ? g('pd-shift').value : 'PM';
+  var la = isLead ? pdGetLookahead() : 0;
+  var maxD = new Date(); maxD.setDate(maxD.getDate() + la);
+  var maxDate = maxD.toISOString().split('T')[0];
+  var tmrw = (function(){ var d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
+  function dayLblAuto(d) { if(d===t) return 'Today'; if(d===tmrw) return 'Tomorrow'; return fmtShort(d); }
+  var moves = state.moves||[];
 
-    html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🚛 Move-Ins (' + upIns.length + ')</div>';
-    if (!upIns.length) html += '<div style="color:var(--text3)">None in this window</div>';
-    else upIns.forEach(function(m) {
-      html += '<div class="pd-auto-row"><strong>Unit ' + m.unit + ' – ' + m.resident + '</strong> | Lease: ' + dayLblAuto(m.date);
-      if (m.apptDate) { html += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) html += ' @ ' + fmtTime(m.apptTime); }
-      if (m.total) html += ' | Total: $' + m.total;
-      html += '</div>';
+  // Moves: split into this-shift (today, time-filtered) and upcoming (future dates, lead only)
+  function moveDateKey(m) { return m.apptDate || m.date; }
+  var shiftMoveIns = moves.filter(function(m){
+    if (m.type!=='in' || m.archivedAt) return false;
+    var apptD = m.apptDate || m.date;
+    return apptD === t && pdInShift(m.apptTime, shift);
+  }).sort(function(a,b){ return (a.apptTime||'').localeCompare(b.apptTime||''); });
+  var shiftMoveOuts = moves.filter(function(m){
+    if (m.type!=='out' || m.archivedAt) return false;
+    var apptD = m.apptDate || m.date;
+    return apptD === t && pdInShift(m.apptTime, shift);
+  }).sort(function(a,b){ return (a.apptTime||'').localeCompare(b.apptTime||''); });
+  var upcomingIns = isLead ? moves.filter(function(m){
+    if (m.type!=='in' || m.archivedAt) return false;
+    var apptD = m.apptDate || m.date;
+    return apptD > t && apptD <= maxDate;
+  }).sort(function(a,b){ return moveDateKey(a).localeCompare(moveDateKey(b)); }) : [];
+  var upcomingOuts = isLead ? moves.filter(function(m){
+    if (m.type!=='out' || m.archivedAt) return false;
+    var apptD = m.apptDate || m.date;
+    return apptD > t && apptD <= maxDate;
+  }).sort(function(a,b){ return moveDateKey(a).localeCompare(moveDateKey(b)); }) : [];
+
+  var allIns = shiftMoveIns.concat(upcomingIns);
+  var allOuts = shiftMoveOuts.concat(upcomingOuts);
+
+  if (isLead || shiftMoveIns.length || shiftMoveOuts.length) {
+    html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🚛 Move-Ins (' + allIns.length + ')</div>';
+    if (!allIns.length) html += '<div style="color:var(--text3)">None this shift' + (isLead ? ' or upcoming' : '') + '</div>';
+    else allIns.forEach(function(m) {
+      var apptD = m.apptDate || m.date;
+      var tag = apptD === t ? '<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 5px;margin-right:4px">This shift</span>' : '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>';
+      var content = tag + '<strong>Unit ' + m.unit + ' – ' + m.resident + '</strong>';
+      if (m.apptDate) { content += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); }
+      else content += ' | Lease: ' + dayLblAuto(m.date);
+      if (m.total) content += ' | $' + m.total;
+      html += pdAutoRow('in_' + m.id, content);
     });
     html += '</div>';
 
-    html += '<div class="pd-auto-block"><div class="pd-auto-hdr">📦 Move-Outs (' + upOuts.length + ')</div>';
-    if (!upOuts.length) html += '<div style="color:var(--text3)">None in this window</div>';
-    else upOuts.forEach(function(m) {
-      html += '<div class="pd-auto-row"><strong>Unit ' + m.unit + ' – ' + m.resident + '</strong> | Lease end: ' + dayLblAuto(m.date);
-      if (m.apptDate) { html += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) html += ' @ ' + fmtTime(m.apptTime); }
-      html += '</div>';
+    html += '<div class="pd-auto-block"><div class="pd-auto-hdr">📦 Move-Outs (' + allOuts.length + ')</div>';
+    if (!allOuts.length) html += '<div style="color:var(--text3)">None this shift' + (isLead ? ' or upcoming' : '') + '</div>';
+    else allOuts.forEach(function(m) {
+      var apptD = m.apptDate || m.date;
+      var tag = apptD === t ? '<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 5px;margin-right:4px">This shift</span>' : '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>';
+      var content = tag + '<strong>Unit ' + m.unit + ' – ' + m.resident + '</strong>';
+      if (m.apptDate) { content += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); }
+      else content += ' | Lease end: ' + dayLblAuto(m.date);
+      html += pdAutoRow('out_' + m.id, content);
     });
     html += '</div>';
   }
+
+  // Amenity bookings: this-shift (today, time-filtered) + upcoming (lead)
+  var shiftAm = (state.amenities||[]).filter(function(a){ return a.date===t && pdInShift(a.start, shift); }).sort(function(a,b){ return (a.start||'').localeCompare(b.start||''); });
+  var upcomingAm = isLead ? (state.amenities||[]).filter(function(a){ return a.date>t && a.date<=maxDate; }).sort(function(a,b){ return a.date.localeCompare(b.date)||(a.start||'').localeCompare(b.start||''); }) : [];
+  var allAm = shiftAm.concat(upcomingAm);
+  html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🎉 Amenity Bookings</div>';
+  if (!allAm.length) html += '<div style="color:var(--text3)">None this shift' + (isLead ? ' or upcoming' : '') + '</div>';
+  else allAm.forEach(function(a) {
+    var tag = a.date===t ? '<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 5px;margin-right:4px">This shift</span>' : '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(a.date) + '</span>';
+    var content = tag + '<strong>' + a.space + '</strong> – ' + a.resident + ' (Unit ' + a.unit + ')';
+    if (a.start) content += ' ' + a.start + (a.end ? '–' + a.end : '');
+    if (a.notes) content += ' | ' + a.notes;
+    html += pdAutoRow('am_' + a.id, content);
+  });
+  html += '</div>';
 
   // Open concierge requests
   var openC = (state.concierge||[]).filter(function(c){ return c.status==='open'; });
   html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🎭 Open Concierge Requests</div>';
   if (!openC.length) html += '<div style="color:var(--text3)">None open</div>';
   else openC.forEach(function(c) {
-    html += '<div class="pd-auto-row"><strong>Unit ' + c.unit + ' – ' + c.resident + '</strong> / ' + c.type + (c.notes ? ': ' + c.notes : '') + '</div>';
+    var content = '<strong>Unit ' + c.unit + ' – ' + c.resident + '</strong> / ' + c.type + (c.notes ? ': ' + c.notes : '');
+    html += pdAutoRow('c_' + c.id, content);
   });
   html += '</div>';
 
@@ -3276,8 +3389,10 @@ function renderPdFreeSections(isLead) {
       + '<div id="pd-items-' + s.key + '">' + renderPdItemsHtml(s.key) + '</div></div>';
   });
   if (isLead) {
+    var savedPolicy = '';
+    try { savedPolicy = sessionStorage.getItem('pd_draft_policy') || ''; } catch(e) {}
     html += '<div class="pd-sec-block"><div class="pd-sec-hdr"><span class="pd-sec-lbl">📢 Policy Reminders <span style="font-size:10px;font-weight:400;color:var(--text3)">(lead only)</span></span></div>'
-      + '<textarea id="pd-policy" rows="2" placeholder="e.g. Smoking policy reminder, package policy..." style="width:100%;font-size:12px"></textarea></div>';
+      + '<textarea id="pd-policy" rows="2" placeholder="e.g. Smoking policy reminder, package policy..." style="width:100%;font-size:12px" oninput="pdSaveDraft()">' + savedPolicy + '</textarea></div>';
   }
   container.innerHTML = html;
 }
@@ -3327,10 +3442,11 @@ function savePdItem() {
   pdSections[pdEditingSection].push({ unit: (g('pdi-unit').value||'').trim(), resident: (g('pdi-resident').value||'').trim(), desc: desc, nextStep: nextStep });
   closeModal('modal-pd-item');
   refreshPdItems(pdEditingSection);
+  pdSaveDraft();
 }
 
 function removePdItem(secKey, idx) {
-  if (pdSections[secKey]) { pdSections[secKey].splice(idx, 1); refreshPdItems(secKey); }
+  if (pdSections[secKey]) { pdSections[secKey].splice(idx, 1); refreshPdItems(secKey); pdSaveDraft(); }
 }
 
 function generatePassdown() {
@@ -3344,9 +3460,12 @@ function generatePassdown() {
   var out = 'Subject: ' + subject + '\n\n';
   out += greeting + ' team,\nHere is today\'s passdown with active items and updates from the Front Desk. Please review carefully and reach out if you have any questions.\n';
 
-  // Keys still out
   var now = Date.now();
-  var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued'; });
+  var tmrwG = (function(){ var d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
+  function dayLbl(d) { if(d===t) return 'Today'; if(d===tmrwG) return 'Tomorrow'; return fmtShort(d); }
+
+  // Keys still out (skip excluded)
+  var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued' && !pdExcluded['key_'+k.id]; });
   if (oneTimeOut.length) {
     out += '\n🗝 One-Time Keys Still Out\n';
     oneTimeOut.forEach(function(k) {
@@ -3359,20 +3478,29 @@ function generatePassdown() {
     });
   }
 
-  // Move-Ins / Move-Outs (lead only)
+  // Move-Ins / Move-Outs (lead only, skip excluded)
   if (isLead) {
     var la = pdGetLookahead();
     var maxD = new Date(); maxD.setDate(maxD.getDate() + la);
     var maxDate = maxD.toISOString().split('T')[0];
-    var tmrw = (function(){ var d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
-    function dayLbl(d) { if(d===t) return 'Today'; if(d===tmrw) return 'Tomorrow'; return fmtShort(d); }
     var moves = state.moves||[];
-    var upIns  = moves.filter(function(m){ return m.type==='in'  && !m.archivedAt && m.date>=t && m.date<=maxDate; }).sort(function(a,b){ return a.date.localeCompare(b.date); });
-    var upOuts = moves.filter(function(m){ return m.type==='out' && !m.archivedAt && m.date>=t && m.date<=maxDate; }).sort(function(a,b){ return a.date.localeCompare(b.date); });
-    if (upIns.length) {
+    var shiftIns = moves.filter(function(m){
+      if (m.type!=='in' || m.archivedAt || pdExcluded['in_'+m.id]) return false;
+      var apptD = m.apptDate || m.date;
+      return apptD === t && pdInShift(m.apptTime, shift);
+    }).sort(function(a,b){ return (a.apptDate||a.date).localeCompare(b.apptDate||b.date); });
+    var upcomingIns = moves.filter(function(m){
+      if (m.type!=='in' || m.archivedAt || pdExcluded['in_'+m.id]) return false;
+      var apptD = m.apptDate || m.date;
+      return apptD > t && apptD <= maxDate;
+    }).sort(function(a,b){ return (a.apptDate||a.date).localeCompare(b.apptDate||b.date); });
+    var allIns = shiftIns.concat(upcomingIns);
+    if (allIns.length) {
       out += '\n🚛 Move-Ins\n';
-      upIns.forEach(function(m) {
-        out += 'Unit ' + m.unit + ' – ' + m.resident + '\n';
+      allIns.forEach(function(m) {
+        var apptD = m.apptDate || m.date;
+        var tag = apptD === t ? '[This shift] ' : '[' + dayLbl(apptD) + '] ';
+        out += tag + 'Unit ' + m.unit + ' – ' + m.resident + '\n';
         out += 'Lease: ' + dayLbl(m.date);
         if (m.apptDate) { out += ' | Appt: ' + dayLbl(m.apptDate); if (m.apptTime) out += ' @ ' + fmtTime(m.apptTime); }
         if (m.total) out += ' | Move-In Total: $' + m.total;
@@ -3380,10 +3508,23 @@ function generatePassdown() {
         out += '\nNext Step: ' + (pending.length ? pending.length + ' task(s) still pending — review checklist.' : 'All tasks complete — ready for move-in.') + '\n';
       });
     }
-    if (upOuts.length) {
+    var shiftOuts = moves.filter(function(m){
+      if (m.type!=='out' || m.archivedAt || pdExcluded['out_'+m.id]) return false;
+      var apptD = m.apptDate || m.date;
+      return apptD === t && pdInShift(m.apptTime, shift);
+    }).sort(function(a,b){ return (a.apptDate||a.date).localeCompare(b.apptDate||b.date); });
+    var upcomingOuts = moves.filter(function(m){
+      if (m.type!=='out' || m.archivedAt || pdExcluded['out_'+m.id]) return false;
+      var apptD = m.apptDate || m.date;
+      return apptD > t && apptD <= maxDate;
+    }).sort(function(a,b){ return (a.apptDate||a.date).localeCompare(b.apptDate||b.date); });
+    var allOuts = shiftOuts.concat(upcomingOuts);
+    if (allOuts.length) {
       out += '\n📦 Move-Outs\n';
-      upOuts.forEach(function(m) {
-        out += 'Unit ' + m.unit + ' – ' + m.resident + '\n';
+      allOuts.forEach(function(m) {
+        var apptD = m.apptDate || m.date;
+        var tag = apptD === t ? '[This shift] ' : '[' + dayLbl(apptD) + '] ';
+        out += tag + 'Unit ' + m.unit + ' – ' + m.resident + '\n';
         out += 'Lease end: ' + dayLbl(m.date);
         if (m.apptDate) { out += ' | Appt: ' + dayLbl(m.apptDate); if (m.apptTime) out += ' @ ' + fmtTime(m.apptTime); }
         out += '\nNext Step: Confirm key return and unit walk-through upon move-out.\n';
@@ -3391,8 +3532,29 @@ function generatePassdown() {
     }
   }
 
-  // Open concierge
-  var openC = (state.concierge||[]).filter(function(c){ return c.status==='open'; });
+  // Amenity bookings (skip excluded)
+  var la2 = isLead ? pdGetLookahead() : 0;
+  var maxD2 = new Date(); maxD2.setDate(maxD2.getDate() + la2);
+  var maxDate2 = maxD2.toISOString().split('T')[0];
+  var shiftAm = (state.amenities||[]).filter(function(a){
+    return a.date===t && pdInShift(a.start, shift) && !pdExcluded['am_'+a.id];
+  }).sort(function(a,b){ return (a.start||'').localeCompare(b.start||''); });
+  var upcomingAm = isLead ? (state.amenities||[]).filter(function(a){
+    return a.date>t && a.date<=maxDate2 && !pdExcluded['am_'+a.id];
+  }).sort(function(a,b){ return a.date.localeCompare(b.date)||(a.start||'').localeCompare(b.start||''); }) : [];
+  var allAm = shiftAm.concat(upcomingAm);
+  if (allAm.length) {
+    out += '\n🎉 Amenity Bookings\n';
+    allAm.forEach(function(a) {
+      var tag = a.date === t ? '[This shift] ' : '[' + dayLbl(a.date) + '] ';
+      out += tag + a.space + ' – ' + a.resident + ' (Unit ' + a.unit + ')';
+      if (a.start) out += ' | ' + a.start + (a.end ? '–' + a.end : '');
+      out += '\nNext Step: Confirm booking details and ensure space is prepared.\n';
+    });
+  }
+
+  // Open concierge (skip excluded)
+  var openC = (state.concierge||[]).filter(function(c){ return c.status==='open' && !pdExcluded['c_'+c.id]; });
   if (openC.length) {
     out += '\n🎭 Open Concierge Requests\n';
     openC.forEach(function(c) {
