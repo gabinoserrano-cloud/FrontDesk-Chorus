@@ -227,6 +227,28 @@
   .phi.open .phi-body{display:block}
   .pd-auto-block{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px 13px;margin-bottom:8px;font-size:12px}
   .pd-auto-hdr{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+  /* ── Guide ── */
+  .guide-wrap{max-width:780px}
+  .guide-search{width:100%;padding:10px 14px;font-size:13px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);outline:none;margin-bottom:14px;box-sizing:border-box}
+  .guide-search:focus{border-color:var(--accent)}
+  .guide-card{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);margin-bottom:7px;overflow:hidden;transition:box-shadow .12s}
+  .guide-card-hdr{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;user-select:none;font-size:13px}
+  .guide-card-hdr:hover{background:var(--bg)}
+  .guide-card-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+  .guide-card-title{font-weight:600;flex:1}
+  .guide-card-meta{font-size:10px;font-weight:600;letter-spacing:.3px;padding:1px 5px;border-radius:3px;background:var(--accent);color:#fff;margin-right:4px}
+  .guide-card-chevron{color:var(--text3);font-size:11px;transition:transform .15s;flex-shrink:0}
+  .guide-card.open .guide-card-chevron{transform:rotate(90deg)}
+  .guide-card-body{display:none;padding:2px 16px 14px 44px;font-size:13px;line-height:1.75;color:var(--text2);border-top:1px solid var(--border2)}
+  .guide-card.open .guide-card-body{display:block}
+  .guide-card-body h4{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 5px}
+  .guide-card-body ul{margin:0 0 8px;padding-left:18px}
+  .guide-card-body li{margin-bottom:3px}
+  .guide-card-body p{margin:0 0 8px}
+  .guide-card-body a{color:var(--accent)}
+  .guide-tip{background:var(--accent-light);border-left:3px solid var(--accent);border-radius:4px;padding:8px 12px;margin:10px 0 4px;font-size:12px;color:var(--accent);line-height:1.6}
+  .guide-note{background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:8px 12px;margin:10px 0 4px;font-size:12px;color:var(--text3);line-height:1.6}
+  .guide-hidden{display:none}
   .pd-auto-row{margin-bottom:4px;line-height:1.5}
   .pd-sec-block{border-top:1px solid var(--border);padding-top:12px;margin-top:12px}
   .pd-sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
@@ -421,6 +443,7 @@
     <div class="nav-label">System</div>
     <div class="nav-item" data-sec="import" onclick="nav(this)"><span class="icon">&#8679;</span><span class="nav-txt">Import Center</span></div>
     <div class="nav-item" data-sec="settings" onclick="nav(this)"><span class="icon">&#9881;</span><span class="nav-txt">Settings</span></div>
+    <div class="nav-item" data-sec="guide" onclick="nav(this)"><span class="icon">&#128214;</span><span class="nav-txt">Guide</span></div>
   </div>
   <div class="sb-footer">
     <div id="user-info-line" style="display:none">
@@ -798,6 +821,12 @@
         <span style="font-size:10px;color:var(--text3);margin-left:2px">&#8212; Dashed = lease date differs from appointment</span>
       </div>
       <div id="cal-body"></div>
+    </div>
+    <div class="section" id="section-guide">
+      <div class="guide-wrap">
+        <input type="text" id="guide-search" class="guide-search" placeholder="&#128269; Search the guide — try &quot;passdown&quot;, &quot;keys&quot;, &quot;staff&quot;…" oninput="filterGuide(this.value)">
+        <div id="guide-body"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1202,7 +1231,7 @@ function openMobSidebar() { g('sidebar').classList.add('mob-open'); g('sb-ov').s
 function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov').style.display = 'none'; }
 
 // ─── NAV ───
-var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Resident Profiles' };
+var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Resident Profiles', guide: 'Guide' };
 var patrolFilter = 'log';
 var SEC_ACTIONS = {
   moves: '<button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
@@ -1254,7 +1283,7 @@ function mobNav(item) {
   curSec = sec; renderSection(sec);
 }
 function renderSection(sec) {
-  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents };
+  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, guide: renderGuide };
   if (map[sec]) map[sec]();
 }
 function renderAll() { renderSection(curSec); updateBadges(); }
@@ -4563,6 +4592,104 @@ function openCalQuickTodo(dateStr) {
 function openAddAmenityForDate(dateStr) { openAddAmenity(); if (dateStr) g('am-date').value = dateStr; }
 function openAddTourForDate(dateStr) { openAddTour(); if (dateStr) g('tr-date').value = dateStr; }
 
+// ─── GUIDE ───
+var GUIDE_DATA = [
+  { id:'g-start', icon:'🏠', title:'Getting Started', keywords:'login pin role admin staff overview data save cloud sync account password session',
+    html:'<h4>What Is This Dashboard?</h4><p>The Chorus SF Front Desk Hub is a single-page app for managing day-to-day front desk operations at 30 Otis St. All data saves automatically to your browser\'s local storage and optionally syncs to the cloud.</p><h4>Logging In</h4><ul><li>Every session starts with a login screen. Select your name and enter your 4-digit PIN.</li><li>First-time setup: if no accounts exist yet, you\'ll be prompted to create the first admin account.</li><li>Forgot your PIN? An admin can reset it in <strong>Settings → Team Accounts</strong>.</li></ul><h4>Roles</h4><ul><li><strong>Admin (Lead)</strong> — full access to all sections including Team Tracker, Import Center, and Settings. Can manage accounts, view all staff passdowns, and control staff visibility.</li><li><strong>Staff (Associate)</strong> — access to operational sections. Cannot add, edit, or delete moves (can still check off checklist tasks). Cannot access Team, Import, or Settings unless granted by admin.</li></ul><h4>Data &amp; Saving</h4><ul><li>All changes save automatically — no Save button needed for most actions.</li><li>Data is stored in your browser\'s localStorage. Clearing browser data will erase it unless cloud sync is configured.</li></ul><div class="guide-tip">💡 Session timeout is configurable in Settings → Accounts &amp; Access. Default is 30 minutes of inactivity before automatic logout.</div>' },
+
+  { id:'g-dashboard', icon:'📊', title:'Dashboard', keywords:'dashboard home overview stats badges search greeting quick counts active',
+    html:'<h4>Overview Cards</h4><p>The dashboard shows live counts of active items across all sections: pending moves, open maintenance, guests checked in, keys out, upcoming amenity bookings, open L&amp;F items, upcoming tours, and open concierge requests. Click any card to jump to that section.</p><h4>Quick Search</h4><p>Type any unit number, resident name, or keyword in the search bar to instantly find matching entries across moves, maintenance, guests, keys, amenities, and more. Click any result to navigate directly to that section.</p><h4>Greeting</h4><p>The greeting uses your logged-in name and adjusts based on the time of day. The date and building name are displayed at the top of the sidebar.</p>' },
+
+  { id:'g-calendar', icon:'📅', title:'Calendar', keywords:'calendar events move lease date amenity tour booking upcoming month week agenda',
+    html:'<h4>What Shows on the Calendar</h4><ul><li><strong>Move-ins</strong> — shown on their appointment date (or lease start date if no appointment is set)</li><li><strong>Move-outs</strong> — shown on their appointment date (or lease end date)</li><li><strong>Amenity bookings</strong> — shown on the booking date</li><li><strong>Tours</strong> — shown on the tour date</li><li><strong>Lease start/end</strong> — shown as dashed borders for reference</li></ul><h4>Views</h4><p>Switch between Week, Month, and Agenda views using the buttons in the top-right of the calendar. Use ← → to move between periods, or click Today to return to the current date.</p><div class="guide-note">📌 The calendar is read-only. All edits happen in the individual sections (Moves, Amenities, Tours, etc.).</div>' },
+
+  { id:'g-moves', icon:'🚛', title:'Move Ins / Outs', keywords:'move in out lease resident unit task checklist appointment appt archive post turnover staff admin conflict elevator total',
+    html:'<h4>Tabs</h4><ul><li><strong>Move-Ins / Move-Outs</strong> — all active (non-archived) moves split by type</li><li><strong>Today</strong> — moves whose lease or appointment date is today</li><li><strong>Needs Appt</strong> — move-ins with no appointment date scheduled yet (amber badge)</li><li><strong>Post Move-In</strong> — residents already moved in (lease start in the past) who still have incomplete tasks tagged "Post Move-In"</li><li><strong>Turnover</strong> — units with all move-out tasks complete, ready for inspection</li><li><strong>Archive</strong> — completed moves that have been archived</li></ul><h4>Adding a Move</h4><p>Click <strong>+ Add Move</strong> (admin only). Fill in unit, resident name, lease date, type (in or out), and optionally an appointment date/time, move-in total, elevator reservation, and notes. The checklist is pre-populated from your default task list (configurable in Settings).</p><h4>Checklist &amp; Tasks</h4><p>Click any move row to expand its checklist. Check off tasks as they\'re completed. Tasks can be tagged by category — tasks tagged "Post Move-In" appear in the Post Move-In tab after the resident\'s lease start date has passed.</p><h4>Appointment Conflict Detection</h4><p>If two moves share the same appointment date and time, an orange <strong>⚠ Conflict</strong> badge appears on both. Reschedule to avoid overlap.</p><h4>Completion Status</h4><p>Once a move\'s appointment date has passed and all main tasks are checked off, the move shows a green <strong>✓ Completed</strong> badge and automatically reflects that status in the Daily Passdown.</p><h4>Archiving</h4><p>Once a move is fully complete, click <strong>Archive</strong> to remove it from the active list. Archived moves remain visible in the Archive tab.</p><div class="guide-tip">💡 Click the <strong>Passdown</strong> button in Moves to jump directly to the Daily Passdown with today\'s moves pre-filled.</div><div class="guide-note">🔒 Staff cannot add, edit, or delete moves — only check off tasks on the checklist.</div>' },
+
+  { id:'g-vacant', icon:'🏘', title:'Vacant Units', keywords:'vacant unit floor bed bath sqft rent available lease sgt self guided tour note active leased',
+    html:'<h4>What It Tracks</h4><p>Vacant units available for touring or leasing. Each unit record has: unit number, floor, bed/bath count, square footage, asking rent, available date, SGT (Self-Guided Tour) eligibility, and notes.</p><h4>Adding / Editing</h4><p>Click <strong>+ Add Unit</strong> to open the form. Fill in the fields and save. Click the <strong>Edit</strong> button on any unit to update its details.</p><h4>Tabs</h4><ul><li><strong>Active</strong> — units currently vacant and available</li><li><strong>Leased</strong> — units that have been marked inactive / leased</li></ul>' },
+
+  { id:'g-patrol', icon:'🛡', title:'Security Patrols', keywords:'patrol walkthrough security floor area flag issue qr scan checkpoint pin alert overdue hours',
+    html:'<h4>What It Does</h4><p>Tracks building walkthroughs and QR checkpoint scans. Floors and areas are configured in <strong>Settings → Property → Walkthrough Floors &amp; Areas</strong>.</p><h4>Logging a Walkthrough</h4><p>Select a floor/area and mark it as checked. Add flags for any issues observed — each flag has a priority level and description. Active flags appear on the Dashboard and feed into the Daily Passdown.</p><h4>QR Checkpoint Scans</h4><p>Each checkpoint has a printable QR code. When scanned, the user selects their name and enters the QR PIN to confirm the scan. All scans are logged with a timestamp on the patrol timeline.</p><h4>Patrol Alert Threshold</h4><p>Set in <strong>Settings → Security Patrols → Patrol Alert Threshold</strong>. If no scan is logged within that window (default 4 hours), a warning appears on the Dashboard.</p><div class="guide-note">📌 The QR scan confirmation page never exposes the full dashboard — it only shows a success screen, keeping the app secure on shared devices.</div>' },
+
+  { id:'g-maint', icon:'🔧', title:'Maintenance', keywords:'maintenance issue repair unit priority status open in progress resolved reporter emergency high medium low',
+    html:'<h4>Logging an Issue</h4><p>Click <strong>+ Log Issue</strong>. Fill in unit number, issue title, description, reporter name, priority, and status.</p><h4>Priority Levels</h4><ul><li><strong>Low</strong> — cosmetic or non-urgent</li><li><strong>Medium</strong> — needs attention within a few days</li><li><strong>High</strong> — same-day or next-day response needed</li><li><strong>Emergency</strong> — immediate response required</li></ul><h4>Statuses</h4><ul><li><strong>Open</strong> — issue reported, not yet addressed</li><li><strong>In Progress</strong> — work is underway</li><li><strong>Resolved</strong> — issue is closed</li></ul><h4>Tabs</h4><p>Filter by Open, In Progress, or Resolved using the sub-tabs at the top of the section. The Dashboard badge shows the count of open + in-progress items.</p>' },
+
+  { id:'g-guests', icon:'👥', title:'Guests & Visitors', keywords:'guest visitor vendor delivery contractor mover type status checked in out pending host unit',
+    html:'<h4>Logging a Guest</h4><p>Click <strong>+ Log Guest</strong>. Enter the guest\'s name, the unit they\'re visiting, the host resident\'s name, visit type, status, and any notes.</p><h4>Visit Types</h4><p>Visitor, Vendor, Delivery, Contractor, Mover, or Other.</p><h4>Statuses</h4><ul><li><strong>Pending</strong> — expected but not yet arrived</li><li><strong>Checked In</strong> — guest is currently in the building</li><li><strong>Checked Out</strong> — guest has departed</li></ul><div class="guide-tip">💡 The Dashboard badge shows the number of guests currently checked in.</div>' },
+
+  { id:'g-keys', icon:'🔑', title:'Key Tracker', keywords:'key fob access one-time resident issued returned overdue guest unit timeout 2 hours badge red',
+    html:'<h4>Key Types</h4><ul><li><strong>Resident Key / Fob</strong> — permanent keys issued to residents. Tracked for record-keeping but not time-sensitive.</li><li><strong>One-Time Key</strong> — temporary keys for guests, vendors, or contractors. Have an expected return time and trigger overdue alerts.</li></ul><h4>Issuing a Key</h4><p>Click <strong>+ Log Key</strong>. Choose the type, fill in unit, holder name, key/fob number, and for one-time keys — the expected return time and guest name.</p><h4>Returning a Key</h4><p>Click <strong>Edit</strong> on the key entry and change status to <strong>Returned</strong>. This removes one-time keys from the overdue watch list.</p><h4>Overdue Alerts</h4><p>One-time keys out for more than 2 hours display a red <strong>⚠ OVERDUE</strong> badge showing elapsed time. These automatically appear in the Daily Passdown auto-blocks.</p>' },
+
+  { id:'g-amenities', icon:'🎉', title:'Amenity Bookings', keywords:'amenity booking rooftop gym event space resident unit date time start end notes past upcoming shift passdown',
+    html:'<h4>Adding a Booking</h4><p>Click <strong>+ Add Booking</strong>. Select the space, resident name, unit, booking date, start and end time, and any notes.</p><h4>Tabs</h4><ul><li><strong>Upcoming</strong> — bookings from today forward</li><li><strong>Past</strong> — bookings with a date already passed</li></ul><h4>Passdown Integration</h4><p>Today\'s bookings that fall within the selected shift automatically appear in the Daily Passdown auto-blocks. Admin users with the lookahead setting enabled also see upcoming bookings for the next 1–2 days.</p>' },
+
+  { id:'g-laf', icon:'🔍', title:'Lost & Found', keywords:'lost found item unclaimed claimed disposed location storage expiry reminder disposal days holding',
+    html:'<h4>Logging an Item</h4><p>Click <strong>+ Log Item</strong>. Describe the item, where it was found, the storage location, and the date found. Add a claimant name when someone picks it up.</p><h4>Statuses</h4><ul><li><strong>Unclaimed</strong> — item is in storage waiting to be claimed</li><li><strong>Claimed</strong> — resident or owner picked it up</li><li><strong>Disposed</strong> — item was discarded after the holding period</li></ul><h4>Disposal Reminders</h4><p>Unclaimed items older than the configured holding period show a red <strong>⚠ Dispose</strong> badge. The holding period is set in <strong>Settings → Property → L&amp;F Disposal Reminder</strong> (default 30 days).</p>' },
+
+  { id:'g-tours', icon:'🏡', title:'Tour Log', keywords:'tour sgt self guided unit date time notes prospect name guided log',
+    html:'<h4>Logging a Tour</h4><p>Click <strong>+ Log Tour</strong>. Enter the prospect\'s name, tour type (SGT — Self-Guided, or Guided), unit(s) shown, date, time, and notes.</p><h4>What Shows in the Log</h4><p>All tours sorted by date, most recent first. Today\'s tours appear on the Dashboard badge and in the legacy passdown generator.</p>' },
+
+  { id:'g-concierge', icon:'🎭', title:'Concierge Log', keywords:'concierge request resident unit type dry cleaning restaurant taxi package maintenance follow up status open completed handled by passdown',
+    html:'<h4>What It Tracks</h4><p>Resident requests that require front desk follow-up: restaurant reservations, dry cleaning, taxi/rideshare coordination, package holds, maintenance follow-ups, and other concierge items.</p><h4>Adding a Request</h4><p>Click <strong>+ Add Request</strong>. Fill in the unit, resident name, request type, notes, status, and who is handling it.</p><h4>Statuses</h4><ul><li><strong>Open</strong> — request is active and needs attention</li><li><strong>Completed</strong> — request has been fulfilled</li></ul><h4>Passdown Integration</h4><p>All open concierge requests automatically appear in the Daily Passdown auto-blocks so the incoming shift is always aware of pending items.</p>' },
+
+  { id:'g-residents', icon:'👤', title:'Resident Profiles', keywords:'resident profile unit name preferred phone birthday anniversary instructions pte access package vip notes banner',
+    html:'<h4>What It Stores</h4><p>Per-unit profiles with: resident name, preferred/nickname, phone number, birthday, lease anniversary, special instructions, PTE (Permission to Enter) status, and general notes.</p><h4>PTE Status</h4><ul><li><strong>Granted</strong> — resident has authorized entry for maintenance or staff</li><li><strong>Denied</strong> — resident does not authorize entry without prior notice</li><li><strong>Not Set</strong> — no preference on file yet</li></ul><h4>Package Team Banner</h4><p>A highlighted banner at the top of Resident Profiles surfaces any residents with special package delivery instructions — a quick reference for the package team without digging through individual profiles.</p><h4>Tabs</h4><p>Profiles are grouped by PTE status: All, PTE Granted, PTE Denied, Not Set. The count in each tab updates live.</p>' },
+
+  { id:'g-passdown', icon:'📋', title:'Daily Passdown', keywords:'passdown shift generate preview save copy history build draft am pm overnight lead staff next step move key amenity concierge edit exclude override',
+    html:'<h4>Overview</h4><p>The Daily Passdown section lets you build, preview, and save shift handoff notes. The left column is the <strong>Build</strong> panel; the right column is <strong>Passdown History</strong>.</p><h4>Selecting a Shift</h4><p>Choose AM, PM, or Overnight from the Shift dropdown. This filters auto-populated items to only show entries relevant to that shift\'s time window.</p><h4>Auto-Populated Blocks</h4><p>These pull live data automatically — no manual entry needed:</p><ul><li>🗝 <strong>One-Time Keys Still Out</strong> — any keys currently in "issued" status</li><li>🚛 <strong>Move-Ins</strong> — today\'s move-ins for this shift (admins also see upcoming days)</li><li>📦 <strong>Move-Outs</strong> — today\'s move-outs for this shift (admins also see upcoming)</li><li>🎉 <strong>Amenity Bookings</strong> — today\'s bookings during the selected shift window</li><li>🎭 <strong>Open Concierge Requests</strong> — all open requests regardless of shift</li></ul><p>Completed moves (appointment passed + all main tasks done) show a green <strong>✓ Completed</strong> badge automatically.</p><h4>Editing Next Steps in the Draft</h4><p>Every auto-block item has an editable <strong>Next step…</strong> field below it. The field is pre-filled with a smart default. Click it and type to override — your custom text carries into the generated passdown when you click Generate. Leave it as-is to use the default.</p><h4>Excluding Items</h4><p>Click the <strong>–</strong> button on any item to exclude it from the passdown. The item grays out with a strikethrough. Click <strong>＋</strong> to re-include it. Exclusions persist while the draft is active.</p><h4>Look Ahead <span style="font-size:10px;font-weight:400;color:var(--text3)">(admin only)</span></h4><p>Set to "Today + Tomorrow" or "Today + 2 days" to pull upcoming moves and amenities into the passdown for advance notice.</p><h4>Free-Entry Sections</h4><p>These sections are for items you add manually:</p><ul><li><strong>Admin users:</strong> 🔑 Keys / Access, 🅿️ Parking, 👤 Resident Matters, 📢 Policy Reminders</li><li><strong>Staff users:</strong> 📝 Shift Notes</li></ul><p>Click <strong>+ Add Item</strong> in any section, fill in the form (unit, resident, description, next step), and save. Items appear as cards and can be removed with ×.</p><h4>Generating</h4><p>Click <strong>Generate</strong> to build the formatted passdown text in the Preview area. The preview is a fully editable textarea — type freely to add context, adjust wording, or remove anything before saving.</p><h4>Saving &amp; Copying</h4><ul><li><strong>Save</strong> — saves the passdown to History, attributed to your account</li><li><strong>Copy</strong> — copies the text to your clipboard for pasting into email or Slack</li><li><strong>Clear draft</strong> — resets all build blocks and clears the preview</li></ul><h4>Passdown History</h4><p>Saved passdowns appear on the right. Admins see all staff passdowns; staff see the last 48 hours. Each entry can be expanded, copied, edited (loads it back into the preview for revision), or deleted (author or admin only).</p><div class="guide-tip">💡 Clicking <strong>Passdown</strong> from the Move Ins / Outs section jumps here with today\'s moves already loaded.</div>' },
+
+  { id:'g-todos', icon:'✅', title:'To-Do List', keywords:'todo to do task personal list pending done completed admin view all team switch user',
+    html:'<h4>Personal To-Dos</h4><p>Each logged-in user has their own private to-do list. Other staff cannot see your items — only admins can view all lists.</p><h4>Adding an Item</h4><p>Click <strong>+ Add To-Do</strong>, type the task, and save. The badge on the nav item shows your pending count.</p><h4>Completing Items</h4><p>Check the checkbox next to any item to mark it done. Click <strong>Clear Completed</strong> to remove all done items at once.</p><h4>Admin: View All <span style="font-size:10px;font-weight:400;color:var(--text3)">(admin only)</span></h4><p>A user-switcher dropdown appears at the top of the To-Do List for admins. Switch to any team member to view (but not edit) their list — useful for shift coverage and handoffs.</p>' },
+
+  { id:'g-team', icon:'👥', title:'Team Tracker', keywords:'team tracker staff log activity pin lead admin only note shift roster',
+    admin:true,
+    html:'<div class="guide-note">🔒 Visible to Admin (Lead) users only by default.</div><h4>What It Does</h4><p>Logs team activity and notes throughout the shift — arrivals, departures, task assignments, and any staffing notes the lead needs to track. Entries are timestamped and attributed to the logged-in user.</p><h4>PIN Protection</h4><p>The Team Tracker can require a PIN before making entries. Set or change the PIN in <strong>Settings → Team Tracker → Team Tracker PIN</strong>.</p><h4>Staff List</h4><p>The roster is managed in Settings. Creating a team account automatically adds that person to the staff list. The list supports reordering (▲/▼) and inline renaming.</p>' },
+
+  { id:'g-settings', icon:'⚙️', title:'Settings', keywords:'settings admin account pin session timeout staff visible sections moves tasks patrol qr floor walkthrough disposal laf job title email signature',
+    admin:true,
+    html:'<div class="guide-note">🔒 Visible to Admin (Lead) users only.</div><h4>Accounts &amp; Access</h4><ul><li><strong>Team Accounts</strong> — create, rename, reorder, change roles, reset PINs, and remove accounts. Roles: Admin or Staff. You can also set a job title and work email per account, which appear in passdown signatures.</li><li><strong>Session Timeout</strong> — how long before an idle session auto-logs out. Options: Never, 5, 10, 15, 30, 60, or 120 minutes.</li></ul><h4>Team Tracker</h4><ul><li><strong>Staff List</strong> — the roster used in the Team Tracker. Synced with Team Accounts automatically.</li><li><strong>Team Tracker PIN</strong> — optional PIN to restrict Team Tracker entries.</li></ul><h4>Security Patrols</h4><ul><li><strong>Patrol Alert Threshold</strong> — hours of scan inactivity before an alert fires on the Dashboard.</li><li><strong>QR Checkpoint PIN</strong> — PIN required to confirm a QR scan.</li></ul><h4>Moves</h4><ul><li><strong>Default Move-In Tasks</strong> — the checklist that pre-populates every new move-in. Edit, reorder, add, or remove tasks. Tag tasks with a category (e.g., "Post Move-In") to control which tab they appear in.</li><li><strong>Default Move-Out Tasks</strong> — same, for move-outs.</li></ul><h4>Property</h4><ul><li><strong>Walkthrough Floors &amp; Areas</strong> — configure the floors and sub-areas used in Security Patrols.</li><li><strong>Visible Sections (Your View)</strong> — hide sections from your own nav that you don\'t use.</li><li><strong>Team (Staff) Visible Sections</strong> — control which sections staff accounts can see.</li><li><strong>L&amp;F Disposal Reminder</strong> — the number of days before unclaimed items are flagged for disposal (default 30).</li></ul>' },
+
+  { id:'g-import', icon:'⬆', title:'Import Center', keywords:'import screenshot claude ai json data moves maintenance calendar eliseai excel reset data',
+    admin:true,
+    html:'<div class="guide-note">🔒 Visible to Admin (Lead) users only.</div><h4>How It Works</h4><p>The Import Center lets you bulk-import data from screenshots using Claude AI. This is useful for migrating move lists, maintenance logs, or calendar data from EliseAI, Excel, or other tools.</p><h4>Steps</h4><ul><li>Take a screenshot of your data source (calendar, spreadsheet, move list).</li><li>Paste it into <a href="https://claude.ai" target="_blank">claude.ai</a> along with the prompt shown in the Import Center.</li><li>Claude returns a JSON block — copy it.</li><li>Paste the JSON into the import field and click Import.</li></ul><div class="guide-tip">💡 The Import Center also has a <strong>Reset All Data</strong> option — use with extreme caution. This permanently deletes all records in the dashboard.</div>' }
+];
+
+function renderGuide() {
+  var container = g('guide-body');
+  if (!container) return;
+  if (container.dataset.built) { filterGuide(g('guide-search') ? g('guide-search').value : ''); return; }
+  container.dataset.built = '1';
+  var html = '';
+  GUIDE_DATA.forEach(function(s) {
+    html += '<div class="guide-card" id="' + s.id + '" data-keywords="' + (s.keywords||'').toLowerCase() + ' ' + s.title.toLowerCase() + '">'
+      + '<div class="guide-card-hdr" onclick="toggleGuideCard(\'' + s.id + '\')">'
+      + '<span class="guide-card-icon">' + s.icon + '</span>'
+      + '<span class="guide-card-title">' + s.title + '</span>'
+      + (s.admin ? '<span class="guide-card-meta">ADMIN</span>' : '')
+      + '<span class="guide-card-chevron">&#9658;</span>'
+      + '</div>'
+      + '<div class="guide-card-body">' + s.html + '</div>'
+      + '</div>';
+  });
+  container.innerHTML = html;
+}
+function toggleGuideCard(id) {
+  var el = g(id); if (!el) return;
+  el.classList.toggle('open');
+}
+function filterGuide(q) {
+  q = (q||'').toLowerCase().trim();
+  var cards = document.querySelectorAll('#guide-body .guide-card');
+  cards.forEach(function(card) {
+    var kw = (card.dataset.keywords||'') + ' ' + (card.querySelector('.guide-card-body')||{}).textContent;
+    var match = !q || kw.toLowerCase().indexOf(q) !== -1;
+    card.classList.toggle('guide-hidden', !match);
+    if (q && match) card.classList.add('open');
+    if (!q) card.classList.remove('open');
+  });
+}
+
 // ─── SETTINGS ───
 function isValidTaskList(list) { return Array.isArray(list) && list.length > 0 && list.every(function(t){ return t && typeof t.text === 'string' && t.text.length > 0; }); }
 function getCustomInTasks() { return isValidTaskList(state.customInTasks) ? state.customInTasks : DEFAULT_IN_TASKS.slice(); }
@@ -4795,7 +4922,8 @@ var TOGGLEABLE_SECTIONS = [
   { id: 'residents', label: 'Resident Profiles' },
   { id: 'team', label: 'Team Tracker' },
   { id: 'calendar', label: 'Calendar' },
-  { id: 'import', label: 'Import Center' }
+  { id: 'import', label: 'Import Center' },
+  { id: 'guide', label: 'Guide' }
 ];
 
 function renderNavVisibility() {
