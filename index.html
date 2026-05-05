@@ -398,6 +398,13 @@
   body.sc .user-info-bar{display:none}
   .by-tag{font-size:10px;color:var(--text3);background:var(--bg);border-radius:3px;padding:1px 5px;white-space:nowrap;margin-left:4px;display:inline-block}
 
+  /* ── ICON SPANS ── */
+  .icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex-shrink:0}
+  .icon svg{display:block;flex-shrink:0}
+  .mn-item .icon{width:20px;height:20px}
+  .mn-item .icon svg{width:20px;height:20px}
+  .footer-btn .icon{width:14px;height:14px}
+  .footer-btn .icon svg{width:14px;height:14px}
   /* ── LUXURY THEME OVERRIDES ── */
   /* Serif headings */
   .card-title{font-family:var(--font-serif);font-size:15px;font-weight:600;letter-spacing:.15px}
@@ -478,50 +485,50 @@
   </div>
   <div class="nav-group">
     <div class="nav-label">Home</div>
-    <div class="nav-item active" data-sec="dashboard" onclick="nav(this)"><span class="icon">&#127968;</span><span class="nav-txt">Dashboard</span></div>
-    <div class="nav-item" data-sec="calendar" onclick="nav(this)"><span class="icon">&#128197;</span><span class="nav-txt">Calendar</span></div>
+    <div class="nav-item active" data-sec="dashboard" onclick="nav(this)"><span class="icon" data-icon="home"></span><span class="nav-txt">Dashboard</span></div>
+    <div class="nav-item" data-sec="calendar" onclick="nav(this)"><span class="icon" data-icon="calendar"></span><span class="nav-txt">Calendar</span></div>
   </div>
   <div class="nav-group">
     <div class="nav-label">Operations</div>
-    <div class="nav-item" data-sec="moves" onclick="nav(this)"><span class="icon">&#128666;</span><span class="nav-txt">Move Ins / Outs</span><span class="badge" id="badge-moves"></span></div>
-    <div class="nav-item" data-sec="vacant" onclick="nav(this)"><span class="icon">&#127968;</span><span class="nav-txt">Vacant Units</span><span class="badge" id="badge-vacant"></span></div>
-    <div class="nav-item" data-sec="walkthrough" onclick="nav(this)"><span class="icon">&#128737;</span><span class="nav-txt">Security Patrols</span></div>
-    <div class="nav-item" data-sec="maintenance" onclick="nav(this)"><span class="icon">&#128295;</span><span class="nav-txt">Maintenance</span><span class="badge" id="badge-maint"></span></div>
+    <div class="nav-item" data-sec="moves" onclick="nav(this)"><span class="icon" data-icon="truck"></span><span class="nav-txt">Move Ins / Outs</span><span class="badge" id="badge-moves"></span></div>
+    <div class="nav-item" data-sec="vacant" onclick="nav(this)"><span class="icon" data-icon="building"></span><span class="nav-txt">Vacant Units</span><span class="badge" id="badge-vacant"></span></div>
+    <div class="nav-item" data-sec="walkthrough" onclick="nav(this)"><span class="icon" data-icon="shield"></span><span class="nav-txt">Security Patrols</span></div>
+    <div class="nav-item" data-sec="maintenance" onclick="nav(this)"><span class="icon" data-icon="wrench"></span><span class="nav-txt">Maintenance</span><span class="badge" id="badge-maint"></span></div>
   </div>
   <div class="nav-group">
     <div class="nav-label">Resident Services</div>
-    <div class="nav-item" data-sec="guests" onclick="nav(this)"><span class="icon">&#128101;</span><span class="nav-txt">Guests &amp; Visitors</span><span class="badge" id="badge-guests"></span></div>
-    <div class="nav-item" data-sec="keys" onclick="nav(this)"><span class="icon">&#128273;</span><span class="nav-txt">Key Tracker</span><span class="badge" id="badge-keys"></span></div>
-    <div class="nav-item" data-sec="amenities" onclick="nav(this)"><span class="icon">&#127881;</span><span class="nav-txt">Amenity Bookings</span><span class="badge" id="badge-amenities"></span></div>
-    <div class="nav-item" data-sec="laf" onclick="nav(this)"><span class="icon">&#128269;</span><span class="nav-txt">Lost &amp; Found</span><span class="badge" id="badge-laf"></span></div>
-    <div class="nav-item" data-sec="tours" onclick="nav(this)"><span class="icon">&#127969;</span><span class="nav-txt">Tour Log</span><span class="badge" id="badge-tours"></span></div>
-    <div class="nav-item" data-sec="concierge" onclick="nav(this)"><span class="icon">&#127917;</span><span class="nav-txt">Concierge Log</span><span class="badge" id="badge-concierge"></span></div>
-    <div class="nav-item" data-sec="residents" onclick="nav(this)"><span class="icon">&#128100;</span><span class="nav-txt">Resident Profiles</span></div>
+    <div class="nav-item" data-sec="guests" onclick="nav(this)"><span class="icon" data-icon="users"></span><span class="nav-txt">Guests &amp; Visitors</span><span class="badge" id="badge-guests"></span></div>
+    <div class="nav-item" data-sec="keys" onclick="nav(this)"><span class="icon" data-icon="key"></span><span class="nav-txt">Key Tracker</span><span class="badge" id="badge-keys"></span></div>
+    <div class="nav-item" data-sec="amenities" onclick="nav(this)"><span class="icon" data-icon="star"></span><span class="nav-txt">Amenity Bookings</span><span class="badge" id="badge-amenities"></span></div>
+    <div class="nav-item" data-sec="laf" onclick="nav(this)"><span class="icon" data-icon="search"></span><span class="nav-txt">Lost &amp; Found</span><span class="badge" id="badge-laf"></span></div>
+    <div class="nav-item" data-sec="tours" onclick="nav(this)"><span class="icon" data-icon="mappin"></span><span class="nav-txt">Tour Log</span><span class="badge" id="badge-tours"></span></div>
+    <div class="nav-item" data-sec="concierge" onclick="nav(this)"><span class="icon" data-icon="bell"></span><span class="nav-txt">Concierge Log</span><span class="badge" id="badge-concierge"></span></div>
+    <div class="nav-item" data-sec="residents" onclick="nav(this)"><span class="icon" data-icon="user"></span><span class="nav-txt">Resident Profiles</span></div>
   </div>
   <div class="nav-group">
     <div class="nav-label">Shift</div>
-    <div class="nav-item" data-sec="passdown" onclick="nav(this)"><span class="icon">&#128203;</span><span class="nav-txt">Daily Passdown</span></div>
-    <div class="nav-item" data-sec="todos" onclick="nav(this)"><span class="icon">&#9989;</span><span class="nav-txt">To-Do List</span><span class="badge" id="badge-todos"></span></div>
+    <div class="nav-item" data-sec="passdown" onclick="nav(this)"><span class="icon" data-icon="clipboard"></span><span class="nav-txt">Daily Passdown</span></div>
+    <div class="nav-item" data-sec="todos" onclick="nav(this)"><span class="icon" data-icon="checklist"></span><span class="nav-txt">To-Do List</span><span class="badge" id="badge-todos"></span></div>
   </div>
   <div class="nav-group">
     <div class="nav-label">Management</div>
-    <div class="nav-item" data-sec="team" onclick="nav(this)"><span class="icon">&#128100;</span><span class="nav-txt">Team Tracker</span><span style="font-size:9px;background:#C9A45E;color:#0C0B09;border-radius:3px;padding:1px 4px;margin-left:4px;font-weight:700;letter-spacing:.3px">LEAD</span></div>
+    <div class="nav-item" data-sec="team" onclick="nav(this)"><span class="icon" data-icon="users"></span><span class="nav-txt">Team Tracker</span><span style="font-size:9px;background:#C9A45E;color:#0C0B09;border-radius:3px;padding:1px 4px;margin-left:4px;font-weight:700;letter-spacing:.3px">LEAD</span></div>
   </div>
   <div class="nav-group">
     <div class="nav-label">System</div>
-    <div class="nav-item" data-sec="import" onclick="nav(this)"><span class="icon">&#8679;</span><span class="nav-txt">Import Center</span></div>
-    <div class="nav-item" data-sec="settings" onclick="nav(this)"><span class="icon">&#9881;</span><span class="nav-txt">Settings</span></div>
-    <div class="nav-item" data-sec="guide" onclick="nav(this)"><span class="icon">&#128214;</span><span class="nav-txt">Guide</span></div>
+    <div class="nav-item" data-sec="import" onclick="nav(this)"><span class="icon" data-icon="upload"></span><span class="nav-txt">Import Center</span></div>
+    <div class="nav-item" data-sec="settings" onclick="nav(this)"><span class="icon" data-icon="sliders"></span><span class="nav-txt">Settings</span></div>
+    <div class="nav-item" data-sec="guide" onclick="nav(this)"><span class="icon" data-icon="book"></span><span class="nav-txt">Guide</span></div>
   </div>
   <div class="sb-footer">
     <div id="user-info-line" style="display:none">
       <div class="user-info-bar" id="user-info-name"></div>
-      <button class="footer-btn" style="color:var(--accent)" onclick="doLogout()"><span>&#128682;</span><span>Log Out</span></button>
+      <button class="footer-btn" style="color:var(--accent)" onclick="doLogout()"><span class="icon" data-icon="logout"></span><span>Log Out</span></button>
     </div>
     <div class="save-status" id="save-status"><span class="sync-dot" id="sync-dot"></span><span id="sync-label">Loading...</span></div>
-    <button class="footer-btn" onclick="exportData()"><span>&#128190;</span><span>Export Backup</span></button>
-    <button class="footer-btn" onclick="importData()"><span>&#8593;</span><span>Import Backup</span></button>
-    <button class="footer-btn" style="color:var(--red)" onclick="resetData()"><span>&#8635;</span><span>Reset Data</span></button>
+    <button class="footer-btn" id="footer-export" onclick="exportData()"><span class="icon" data-icon="download"></span><span>Export Backup</span></button>
+    <button class="footer-btn" id="footer-import" onclick="importData()"><span class="icon" data-icon="upload"></span><span>Import Backup</span></button>
+    <button class="footer-btn" id="footer-reset" style="color:var(--red)" onclick="resetData()"><span class="icon" data-icon="alert"></span><span>Reset Data</span></button>
   </div>
 </nav>
 <div id="collapse-btn" onclick="toggleSidebar()" title="Collapse">&#8249;</div>
@@ -589,8 +596,9 @@
     </div>
     <div class="section" id="section-walkthrough">
       <div class="sub-tabs" id="patrol-tabs">
-        <div class="sub-tab active" onclick="patrolTab('log',this)">Patrol Log</div>
-        <div class="sub-tab" onclick="patrolTab('checkpoints',this)">Checkpoints</div>
+        <div class="sub-tab active" onclick="patrolTab('amenity',this)">Amenity Patrol</div>
+        <div class="sub-tab" onclick="patrolTab('stairway',this)">Stairway / Exit</div>
+        <div class="sub-tab" id="patrol-tab-checkpoints" onclick="patrolTab('checkpoints',this)">Checkpoints</div>
       </div>
       <div id="patrol-body"></div>
     </div>
@@ -900,11 +908,11 @@
 </div>
 
 <div id="mob-nav">
-  <div class="mn-item active" data-sec="dashboard" onclick="mobNav(this)"><span class="icon">&#127968;</span><span>Home</span></div>
-  <div class="mn-item" data-sec="moves" onclick="mobNav(this)"><span class="icon">&#128666;</span><span>Moves</span><span class="mn-badge" id="mb-moves"></span></div>
-  <div class="mn-item" data-sec="passdown" onclick="mobNav(this)"><span class="icon">&#128203;</span><span>Passdown</span></div>
-  <div class="mn-item" data-sec="todos" onclick="mobNav(this)"><span class="icon">&#9989;</span><span>To-Do</span><span class="mn-badge" id="mb-todos"></span></div>
-  <div class="mn-item" data-sec="keys" onclick="mobNav(this)"><span class="icon">&#128273;</span><span>Keys</span><span class="mn-badge" id="mb-keys"></span></div>
+  <div class="mn-item active" data-sec="dashboard" onclick="mobNav(this)"><span class="icon" data-icon="home"></span><span>Home</span></div>
+  <div class="mn-item" data-sec="moves" onclick="mobNav(this)"><span class="icon" data-icon="truck"></span><span>Moves</span><span class="mn-badge" id="mb-moves"></span></div>
+  <div class="mn-item" data-sec="passdown" onclick="mobNav(this)"><span class="icon" data-icon="clipboard"></span><span>Passdown</span></div>
+  <div class="mn-item" data-sec="todos" onclick="mobNav(this)"><span class="icon" data-icon="checklist"></span><span>To-Do</span><span class="mn-badge" id="mb-todos"></span></div>
+  <div class="mn-item" data-sec="keys" onclick="mobNav(this)"><span class="icon" data-icon="key"></span><span>Keys</span><span class="mn-badge" id="mb-keys"></span></div>
 </div>
 
 <!-- MODALS -->
@@ -1142,6 +1150,39 @@ function setSyncStatus(cls, msg) {
 }
 
 // ─── STATE ───
+// ─── SVG ICON SYSTEM ───
+var _s='stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
+function _svg(p,w){w=w||16;return '<svg width="'+w+'" height="'+w+'" viewBox="0 0 24 24" fill="none" '+_s+'>'+p+'</svg>';}
+var SVG_ICONS = {
+  home:      _svg('<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>'),
+  calendar:  _svg('<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'),
+  truck:     _svg('<rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>'),
+  building:  _svg('<path d="M3 21h18M3 7l9-4 9 4M4 7v14M20 7v14M9 21V11h6v10"/>'),
+  shield:    _svg('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'),
+  wrench:    _svg('<path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>'),
+  users:     _svg('<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>'),
+  key:       _svg('<circle cx="7.5" cy="15.5" r="4.5"/><path d="M21 2L10.57 12.43"/><path d="M17 6l4 4"/>'),
+  star:      _svg('<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>'),
+  search:    _svg('<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>'),
+  mappin:    _svg('<path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>'),
+  bell:      _svg('<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>'),
+  user:      _svg('<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>'),
+  clipboard: _svg('<path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>'),
+  checklist: _svg('<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>'),
+  upload:    _svg('<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>'),
+  sliders:   _svg('<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="6" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="4" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="8" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="4" x2="15" y2="4"/><line x1="17" y1="16" x2="23" y2="16"/>'),
+  book:      _svg('<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>'),
+  logout:    _svg('<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>'),
+  download:  _svg('<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'),
+  alert:     _svg('<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'),
+};
+function applyIcons() {
+  document.querySelectorAll('[data-icon]').forEach(function(el) {
+    var n = el.getAttribute('data-icon');
+    if (SVG_ICONS[n]) el.innerHTML = SVG_ICONS[n];
+  });
+}
+
 var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {} };
 var teamUnlocked = false;
 
@@ -1315,7 +1356,7 @@ function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov
 
 // ─── NAV ───
 var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Resident Profiles', guide: 'Guide' };
-var patrolFilter = 'log';
+var patrolFilter = 'amenity';
 var SEC_ACTIONS = {
   moves: '<button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
   maintenance: '<button class="btn btn-primary btn-sm" onclick="openAddMaint()">+ Log Issue</button>',
@@ -2367,6 +2408,13 @@ function patrolTab(name, el) {
   renderWT();
 }
 
+function _applyPatrolTabVisibility() {
+  var cpTab = g('patrol-tab-checkpoints');
+  if (!cpTab) return;
+  var isStaff = currentUser && currentUser.role === 'staff';
+  cpTab.style.display = isStaff ? 'none' : '';
+}
+
 function timeAgo(ts) {
   var diff = Date.now() - ts;
   var mins = Math.floor(diff / 60000);
@@ -2378,33 +2426,48 @@ function timeAgo(ts) {
 }
 
 function renderWT() {
+  _applyPatrolTabVisibility();
   if (patrolFilter === 'checkpoints') { renderCheckpoints(); return; }
-  renderPatrolLog();
+  renderPatrolByType(patrolFilter);
 }
 
-function renderPatrolLog() {
+function renderPatrolByType(type) {
   var body = g('patrol-body'); if (!body) return;
-  var scans = (state.scans || []).slice().sort(function(a,b) { return b.timestamp - a.timestamp; });
-  var checkpoints = (state.checkpoints || []);
-  var now = Date.now();
+  var allCheckpoints = (state.checkpoints || []);
   var alertHours = (state.patrolSettings && state.patrolSettings.alertHours) || 4;
-  var overdueList = checkpoints.filter(function(cp) {
+  var now = Date.now();
+
+  var relevantCps = allCheckpoints.filter(function(cp) {
+    var pt = cp.patrolType || 'both';
+    return pt === type || pt === 'both';
+  });
+  var relevantIds = relevantCps.map(function(cp) { return cp.id; });
+  var scans = (state.scans || []).filter(function(s) { return relevantIds.indexOf(s.checkpointId) !== -1; }).slice().sort(function(a,b) { return b.timestamp - a.timestamp; });
+
+  var overdueList = relevantCps.filter(function(cp) {
     var last = scans.find(function(s) { return s.checkpointId === cp.id; });
     return !last || (now - last.timestamp) > alertHours * 3600000;
   });
+
+  var typeLabel = type === 'amenity' ? 'Amenity Patrol' : 'Stairway / Exit Patrol';
   var html = '';
-  if (checkpoints.length && overdueList.length) {
+
+  if (relevantCps.length && overdueList.length) {
     html += '<div style="background:var(--red-light);border:1px solid #EDBBBB;border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;color:var(--red);font-size:13px;font-weight:500">';
     html += '&#9888; ' + overdueList.length + ' checkpoint' + (overdueList.length > 1 ? 's' : '') + ' not scanned in the last ' + alertHours + 'h: ';
     html += overdueList.map(function(cp) { return cp.name; }).join(', ');
     html += '</div>';
   }
+
   html += '<div class="flex items-center gap-8 mb-12">';
   html += '<button class="btn btn-primary btn-sm" id="manual-scan-btn">+ Manual Log</button>';
   html += '<button class="btn btn-ghost btn-sm ml-auto" onclick="openModal(\'modal-flag\')">Flag Issue</button>';
   html += '</div>';
-  if (!scans.length) {
-    html += '<div class="card"><div class="card-body"><p class="text-3 text-sm" style="text-align:center;padding:20px">No patrol scans yet.<br>Staff scan QR codes at each checkpoint, or use Manual Log.</p></div></div>';
+
+  if (!relevantCps.length) {
+    html += '<div class="card"><div class="card-body"><p class="text-3 text-sm" style="text-align:center;padding:20px">No checkpoints assigned to ' + typeLabel + '.<br>Admins can assign checkpoints under the Checkpoints tab.</p></div></div>';
+  } else if (!scans.length) {
+    html += '<div class="card"><div class="card-body"><p class="text-3 text-sm" style="text-align:center;padding:20px">No patrol scans yet for ' + typeLabel + '.<br>Staff scan QR codes at each checkpoint, or use Manual Log.</p></div></div>';
   } else {
     var grouped = {};
     scans.forEach(function(s) {
@@ -2421,7 +2484,7 @@ function renderPatrolLog() {
       html += '<div class="card-hdr"><span class="card-title">' + dayLabel + '</span><span class="card-count">' + dayScan.length + ' scan' + (dayScan.length === 1 ? '' : 's') + '</span></div>';
       html += '<div class="card-body" style="padding:0">';
       dayScan.forEach(function(s) {
-        var cp = checkpoints.find(function(c) { return c.id === s.checkpointId; });
+        var cp = allCheckpoints.find(function(c) { return c.id === s.checkpointId; });
         var cpName = s.checkpointName || (cp ? cp.name : 'Unknown');
         var cpLoc = cp ? cp.location : '';
         var scanTime = new Date(s.timestamp);
@@ -2436,6 +2499,7 @@ function renderPatrolLog() {
       html += '</div></div>';
     });
   }
+
   var activeFlags = (state.flags || []).filter(function(f) { return !f.resolved; });
   if (activeFlags.length) {
     html += '<div class="card mb-12"><div class="card-hdr"><span class="card-title">Flagged Issues</span><span class="card-count">' + activeFlags.length + '</span></div><div class="card-body" style="padding:0">';
@@ -2449,6 +2513,7 @@ function renderPatrolLog() {
     });
     html += '</div></div>';
   }
+
   body.innerHTML = html;
   var msBtn = g('manual-scan-btn');
   if (msBtn) msBtn.addEventListener('click', openManualScan);
@@ -2464,32 +2529,33 @@ function renderPatrolLog() {
 
 function renderCheckpoints() {
   var body = g('patrol-body'); if (!body) return;
+  if (currentUser && currentUser.role === 'staff') {
+    body.innerHTML = '<div class="card"><div class="card-body"><p class="text-3 text-sm" style="text-align:center;padding:20px">Checkpoint management is restricted to admins.</p></div></div>';
+    return;
+  }
   var checkpoints = (state.checkpoints || []);
-  var scans = (state.scans || []);
-  var now = Date.now();
-  var alertHours = (state.patrolSettings && state.patrolSettings.alertHours) || 4;
   var baseUrl = 'https://gabinoserrano-cloud.github.io/FrontDesk-Chorus/';
+  var ptLabels = { amenity: 'Amenity Patrol', stairway: 'Stairway / Exit', both: 'Both' };
+  var ptColors = { amenity: 'var(--purple)', stairway: 'var(--amber)', both: 'var(--accent)' };
+  var ptBg = { amenity: 'var(--purple-light)', stairway: 'var(--amber-light)', both: 'var(--accent-light)' };
   var html = '<div class="flex items-center gap-8 mb-12">';
   html += '<button class="btn btn-primary btn-sm" id="add-cp-btn">+ Add Checkpoint</button>';
   if (checkpoints.length) html += '<button class="btn btn-secondary btn-sm" id="print-qr-btn">Print QR Codes...</button>';
   html += '</div>';
   if (!checkpoints.length) {
-    html += '<div class="card"><div class="card-body"><p class="text-3 text-sm" style="text-align:center;padding:20px">No checkpoints yet.<br>Add locations and print QR codes for staff to scan during patrols.</p></div></div>';
+    html += '<div class="card"><div class="card-body"><p class="text-3 text-sm" style="text-align:center;padding:20px">No checkpoints yet.<br>Add locations, assign patrol types, and print QR codes for staff to scan.</p></div></div>';
   } else {
     html += '<div class="card"><div class="card-hdr"><span class="card-title">Checkpoints</span><span class="card-count">' + checkpoints.length + '</span></div><div class="card-body" style="padding:0">';
     checkpoints.forEach(function(cp) {
-      var cpScans = scans.filter(function(s) { return s.checkpointId === cp.id; }).sort(function(a,b) { return b.timestamp - a.timestamp; });
-      var lastScan = cpScans[0] || null;
-      var overdue = !lastScan || (now - lastScan.timestamp) > alertHours * 3600000;
-      var lastStr = lastScan ? (timeAgo(lastScan.timestamp) + ' by ' + (lastScan.staffName || 'Unknown')) : 'Never scanned';
+      var pt = cp.patrolType || 'both';
       var scanUrl = baseUrl + '?scan=' + cp.id;
       var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=4&data=' + encodeURIComponent(scanUrl);
       html += '<div style="padding:12px 14px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:12px">';
       html += '<img src="' + qrUrl + '" style="width:56px;height:56px;border-radius:4px;flex-shrink:0" alt="QR">';
       html += '<div style="flex:1;min-width:0">';
-      html += '<div class="font-600 text-sm">' + cp.name + '</div>';
+      html += '<div class="flex items-center gap-6"><span class="font-600 text-sm">' + cp.name + '</span>';
+      html += '<span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:3px;background:' + ptBg[pt] + ';color:' + ptColors[pt] + '">' + (ptLabels[pt] || pt) + '</span></div>';
       if (cp.location) html += '<div class="text-xs text-2">' + cp.location + '</div>';
-      html += '<div class="text-xs mono" style="margin-top:3px;color:' + (overdue ? 'var(--red)' : 'var(--green)') + '">' + (overdue ? '&#9888; ' : '&#10003; ') + lastStr + '</div>';
       html += '</div>';
       html += '<div class="flex gap-4" style="flex-shrink:0">';
       html += '<button class="btn btn-ghost btn-xs" id="edit-cp-' + cp.id + '" title="Edit">&#9998;</button>';
@@ -2570,6 +2636,7 @@ function openAddCheckpoint() {
       + '<div class="modal-bdy">'
       + '<div class="fg"><label>Checkpoint Name</label><input type="text" id="cp-name" placeholder="e.g. Main Lobby, Pool Deck, Rooftop"></div>'
       + '<div class="fg"><label>Location / Floor</label><input type="text" id="cp-location" placeholder="e.g. 1st Floor, 28th Floor"></div>'
+      + '<div class="fg"><label>Patrol Type</label><select id="cp-patrol-type"><option value="amenity">Amenity Patrol</option><option value="stairway">Stairway / Exit Patrol</option><option value="both">Both</option></select></div>'
       + '</div>'
       + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-add-cp\')">Cancel</button><button class="btn btn-primary" id="cp-save-btn">Add Checkpoint</button></div>'
       + '</div>';
@@ -2578,6 +2645,7 @@ function openAddCheckpoint() {
   var titleEl = g('add-cp-title'); if (titleEl) titleEl.textContent = 'Add Checkpoint';
   if (g('cp-name')) g('cp-name').value = '';
   if (g('cp-location')) g('cp-location').value = '';
+  if (g('cp-patrol-type')) g('cp-patrol-type').value = 'both';
   openModal('modal-add-cp');
   var saveBtn = g('cp-save-btn');
   var fresh = saveBtn.cloneNode(true);
@@ -2585,9 +2653,10 @@ function openAddCheckpoint() {
   g('cp-save-btn').addEventListener('click', function() {
     var name = (g('cp-name') ? g('cp-name').value.trim() : '');
     var location = (g('cp-location') ? g('cp-location').value.trim() : '');
+    var patrolType = (g('cp-patrol-type') ? g('cp-patrol-type').value : 'both');
     if (!name) { toast('Enter a checkpoint name'); return; }
     if (!state.checkpoints) state.checkpoints = [];
-    state.checkpoints.push({ id: uid(), name: name, location: location, createdAt: Date.now() });
+    state.checkpoints.push({ id: uid(), name: name, location: location, patrolType: patrolType, createdAt: Date.now() });
     scheduleSave(); closeModal('modal-add-cp'); renderWT(); toast('Checkpoint added');
   });
 }
@@ -2600,6 +2669,7 @@ function openEditCheckpoint(cpId) {
     var titleEl = g('add-cp-title'); if (titleEl) titleEl.textContent = 'Edit Checkpoint';
     if (g('cp-name')) g('cp-name').value = cp.name;
     if (g('cp-location')) g('cp-location').value = cp.location || '';
+    if (g('cp-patrol-type')) g('cp-patrol-type').value = cp.patrolType || 'both';
     openModal('modal-add-cp');
     var saveBtn = g('cp-save-btn');
     var fresh = saveBtn.cloneNode(true);
@@ -2607,8 +2677,9 @@ function openEditCheckpoint(cpId) {
     g('cp-save-btn').addEventListener('click', function() {
       var name = (g('cp-name') ? g('cp-name').value.trim() : '');
       var location = (g('cp-location') ? g('cp-location').value.trim() : '');
+      var patrolType = (g('cp-patrol-type') ? g('cp-patrol-type').value : 'both');
       if (!name) { toast('Enter a checkpoint name'); return; }
-      cp.name = name; cp.location = location;
+      cp.name = name; cp.location = location; cp.patrolType = patrolType;
       scheduleSave(); closeModal('modal-add-cp'); renderWT(); toast('Checkpoint updated');
     });
   }, 50);
@@ -2621,7 +2692,7 @@ function logScan(checkpointId, staffName, manual) {
   state.scans.push({ id: uid(), checkpointId: checkpointId, checkpointName: cp.name, staffName: staffName, timestamp: Date.now(), manual: !!manual });
   localStorage.setItem('chorus-patrol-name', staffName);
   scheduleSave(); renderDash();
-  if (patrolFilter === 'log' && g('patrol-body')) renderWT();
+  if ((patrolFilter === 'amenity' || patrolFilter === 'stairway') && g('patrol-body')) renderWT();
 }
 
 function openManualScan() {
@@ -5486,7 +5557,12 @@ function updateSidebarForRole() {
   var isStaff = currentUser && currentUser.role === 'staff';
   var uil = g('user-info-line'), uin = g('user-info-name');
   if (uil) uil.style.display = currentUser ? '' : 'none';
-  if (uin && currentUser) uin.textContent = '👤 ' + currentUser.name;
+  if (uin && currentUser) uin.textContent = currentUser.name;
+  var footerBtns = ['footer-export','footer-import','footer-reset'];
+  footerBtns.forEach(function(id) {
+    var el = g(id); if (el) el.style.display = isStaff ? 'none' : '';
+  });
+  _applyPatrolTabVisibility();
 }
 
 // ─── FIRST-TIME SETUP ───
@@ -5639,6 +5715,7 @@ function deleteAccount(id) {
 
 // ─── INIT ───
 async function init() {
+  applyIcons();
   if (localStorage.getItem('chorus-sc') === '1') document.body.classList.add('sc');
   var chip = g('today-chip'); if (chip) chip.textContent = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
   var pdDate = g('pd-date'); if (pdDate) pdDate.value = today();
