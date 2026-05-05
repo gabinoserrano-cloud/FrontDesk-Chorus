@@ -5,24 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Chorus — Front Desk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garant:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#F5F4F0;--surface:#FFFFFF;--surface2:#FAFAF8;--border:#E2E0D8;--border2:#EDEBE4;
-    --text:#1A1916;--text2:#5C5A54;--text3:#9C9A93;
-    --accent:#2C5F8A;--accent-light:#E8F0F8;--accent2:#185FA5;
-    --green:#4A8C2A;--green-light:#EAF3DE;--red:#B83232;--red-light:#FDEAEA;
-    --amber:#B06000;--amber-light:#FFF3E0;--purple:#5B3FBE;--purple-light:#EEEDFE;
-    --sidebar-w:220px;--header-h:54px;--radius:8px;
-    --shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
-    --shadow-md:0 4px 12px rgba(0,0,0,0.10),0 2px 4px rgba(0,0,0,0.06);
+    --bg:#F7F5F0;--surface:#FFFFFF;--surface2:#F3F0E8;--border:rgba(26,24,20,0.12);--border2:rgba(26,24,20,0.07);
+    --text:#1A1814;--text2:#57504A;--text3:#9A9285;
+    --accent:#C9A45E;--accent-light:rgba(201,164,94,0.13);--accent2:#B38840;
+    --green:#4A7A2A;--green-light:#ECF2DC;--red:#963030;--red-light:#FAEBEB;
+    --amber:#9E6300;--amber-light:#FBF0DC;--purple:#6044B2;--purple-light:#ECEAFA;
+    --sidebar-w:220px;--header-h:54px;--radius:6px;
+    --font-serif:'Cormorant Garant',Georgia,serif;--font-mono:'DM Mono',monospace;
+    --shadow:0 1px 4px rgba(26,24,20,0.07),0 1px 2px rgba(26,24,20,0.04);
+    --shadow-md:0 4px 16px rgba(26,24,20,0.10),0 2px 4px rgba(26,24,20,0.06);
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%}
   body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;display:flex;height:100vh;overflow:hidden}
 
   /* SIDEBAR */
-  #sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;overflow-y:auto;overflow-x:hidden;z-index:200;transition:width .22s ease,min-width .22s ease,transform .22s ease;flex-shrink:0}
+  #sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:#0C0B09;border-right:0.5px solid rgba(201,164,94,0.18);display:flex;flex-direction:column;height:100vh;overflow-y:auto;overflow-x:hidden;z-index:200;transition:width .22s ease,min-width .22s ease,transform .22s ease;flex-shrink:0}
   body.sc #sidebar{width:52px;min-width:52px}
   body.sc .sb-logo .bldg,body.sc .sb-logo .sub,body.sc .sb-logo .date-chip,body.sc .nav-label,body.sc .nav-item .nav-txt,body.sc .badge,body.sc .footer-btn span:not(:first-child),body.sc .save-status{display:none}
   body.sc .nav-item{justify-content:center;padding:10px 0}
@@ -30,9 +31,9 @@
   body.sc .sb-footer{padding:8px 0;align-items:center}
   body.sc .footer-btn{justify-content:center;padding:8px 0}
   @media(max-width:700px){
-    #sidebar{position:fixed;top:0;left:0;height:100vh;transform:translateX(-100%);box-shadow:var(--shadow-md)}
+    #sidebar{position:fixed;top:0;left:0;height:100vh;transform:translateX(-100%);box-shadow:0 0 40px rgba(0,0,0,0.6)}
     #sidebar.mob-open{transform:translateX(0)}
-    #sb-ov{display:none;position:fixed;inset:0;background:rgba(26,25,22,.4);z-index:199}
+    #sb-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:199}
     #sidebar.mob-open~#sb-ov{display:block}
     body.sc #sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w)}
     body.sc #sidebar .sb-logo .bldg,body.sc #sidebar .sb-logo .sub,body.sc #sidebar .sb-logo .date-chip,body.sc #sidebar .nav-label,body.sc #sidebar .nav-item .nav-txt,body.sc #sidebar .badge,body.sc #sidebar .footer-btn span:not(:first-child),body.sc #sidebar .save-status{display:unset}
@@ -40,27 +41,27 @@
     body.sc #sidebar .sb-logo{padding:18px 16px 14px;display:block}
     body.sc #sidebar .sb-footer{padding:10px 10px 14px;align-items:stretch}
   }
-  .sb-logo{padding:18px 16px 14px;border-bottom:1px solid var(--border2)}
-  .sb-logo .bldg{font-size:17px;font-weight:600;letter-spacing:-.3px}
-  .sb-logo .sub{font-size:11px;color:var(--text3);margin-top:1px;font-family:'DM Mono',monospace}
-  .sb-logo .date-chip{display:inline-block;margin-top:8px;background:var(--accent-light);color:var(--accent);font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;font-family:'DM Mono',monospace}
+  .sb-logo{padding:18px 16px 14px;border-bottom:0.5px solid rgba(201,164,94,0.18)}
+  .sb-logo .bldg{font-size:16px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;font-family:var(--font-serif);color:#F0EBE0}
+  .sb-logo .sub{font-size:10px;color:rgba(255,255,255,0.32);margin-top:2px;font-family:var(--font-mono);letter-spacing:.4px}
+  .sb-logo .date-chip{display:inline-block;margin-top:8px;background:rgba(201,164,94,0.16);color:#C9A45E;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;font-family:var(--font-mono)}
   .nav-group{padding:10px 0 4px}
-  .nav-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;padding:0 14px 4px;white-space:nowrap;overflow:hidden}
-  .nav-item{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:400;border-left:2px solid transparent;transition:all .12s;position:relative;user-select:none;white-space:nowrap}
-  .nav-item:hover{background:var(--bg);color:var(--text)}
-  .nav-item.active{background:var(--accent-light);color:var(--accent);border-left-color:var(--accent);font-weight:500}
+  .nav-label{font-size:9.5px;font-weight:600;color:rgba(201,164,94,0.40);text-transform:uppercase;letter-spacing:1px;padding:0 14px 4px;white-space:nowrap;overflow:hidden}
+  .nav-item{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;color:rgba(255,255,255,0.46);font-size:13px;font-weight:400;border-left:2px solid transparent;transition:all .12s;position:relative;user-select:none;white-space:nowrap}
+  .nav-item:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.80)}
+  .nav-item.active{background:rgba(201,164,94,0.13);color:#C9A45E;border-left-color:#C9A45E;font-weight:500}
   .nav-item .icon{width:16px;text-align:center;font-size:14px;flex-shrink:0}
-  .badge{margin-left:auto;background:var(--accent);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px;font-family:'DM Mono',monospace;min-width:18px;text-align:center;display:none}
+  .badge{margin-left:auto;background:#C9A45E;color:#0C0B09;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;font-family:var(--font-mono);min-width:18px;text-align:center;display:none}
   .badge.vis{display:block}
-  .sb-footer{margin-top:auto;padding:10px 10px 14px;border-top:1px solid var(--border2);display:flex;flex-direction:column;gap:4px}
-  .footer-btn{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:var(--radius);font-size:11.5px;color:var(--text2);cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;width:100%;text-align:left;transition:background .1s;white-space:nowrap}
-  .footer-btn:hover{background:var(--bg);color:var(--text)}
-  .save-status{font-size:10px;color:var(--text3);padding:0 8px 4px;font-family:'DM Mono',monospace;white-space:nowrap;overflow:hidden}
-  .sync-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;background:var(--text3)}
-  .sync-dot.synced{background:var(--green)}.sync-dot.syncing{background:var(--amber);animation:pulse 1s infinite}.sync-dot.error{background:var(--red)}
+  .sb-footer{margin-top:auto;padding:10px 10px 14px;border-top:0.5px solid rgba(201,164,94,0.18);display:flex;flex-direction:column;gap:4px}
+  .footer-btn{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:var(--radius);font-size:11.5px;color:rgba(255,255,255,0.38);cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;width:100%;text-align:left;transition:background .1s;white-space:nowrap}
+  .footer-btn:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.75)}
+  .save-status{font-size:10px;color:rgba(255,255,255,0.24);padding:0 8px 4px;font-family:var(--font-mono);white-space:nowrap;overflow:hidden}
+  .sync-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;background:rgba(255,255,255,0.25)}
+  .sync-dot.synced{background:#6DBB5A}.sync-dot.syncing{background:#C9A45E;animation:pulse 1s infinite}.sync-dot.error{background:#E05A5A}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
   #sidebar-wrap{position:relative;display:flex;flex-shrink:0}
-  #collapse-btn{position:absolute;top:16px;right:-13px;width:26px;height:26px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:201;box-shadow:var(--shadow);font-size:11px;color:var(--text2);transition:transform .22s;flex-shrink:0}
+  #collapse-btn{position:absolute;top:16px;right:-13px;width:26px;height:26px;border-radius:50%;background:#1A1714;border:0.5px solid rgba(201,164,94,0.28);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:201;box-shadow:0 2px 8px rgba(0,0,0,0.35);font-size:11px;color:rgba(255,255,255,0.50);transition:transform .22s;flex-shrink:0}
   body.sc #collapse-btn{transform:scaleX(-1)}
   @media(max-width:700px){#collapse-btn{display:none}}
 
@@ -109,7 +110,7 @@
   /* FORM */
   input,select,textarea{font-family:'DM Sans',sans-serif;font-size:14px;border:1px solid var(--border);border-radius:var(--radius);padding:9px 11px;background:var(--surface);color:var(--text);outline:none;transition:border-color .12s;width:100%}
   input:focus,select:focus,textarea:focus{border-color:var(--accent)}
-  textarea{resize:vertical;min-height:60px}
+  textarea{resize:vertical;min-height:80px}
   label{font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:4px}
   .fg{margin-bottom:12px}.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media(max-width:480px){.fr{grid-template-columns:1fr;gap:0}}
@@ -396,6 +397,73 @@
   .user-info-bar{font-size:11px;color:var(--text3);padding:2px 8px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   body.sc .user-info-bar{display:none}
   .by-tag{font-size:10px;color:var(--text3);background:var(--bg);border-radius:3px;padding:1px 5px;white-space:nowrap;margin-left:4px;display:inline-block}
+
+  /* ── LUXURY THEME OVERRIDES ── */
+  /* Serif headings */
+  .card-title{font-family:var(--font-serif);font-size:15px;font-weight:600;letter-spacing:.15px}
+  .modal-title{font-family:var(--font-serif);font-size:17px;font-weight:600;letter-spacing:.1px}
+  .hdr-title{font-family:var(--font-serif);font-size:16px;font-weight:600;letter-spacing:.1px}
+  .stat-lbl{font-family:'DM Sans',sans-serif}
+  /* Hairline card borders + warm shadow */
+  .card{border-color:rgba(26,24,20,0.09);box-shadow:0 1px 4px rgba(26,24,20,0.06),0 1px 2px rgba(26,24,20,0.03)}
+  /* Primary button — dark with gold text */
+  .btn-primary{background:#1A1714;color:#E8C87A;border-color:#1A1714}
+  .btn-primary:hover{background:#0C0B09;color:#E8C87A}
+  /* Active tab — gold */
+  .sub-tab.active{background:#C9A45E;color:#1A1714;border-color:#C9A45E;font-weight:600}
+  .sub-tab:hover{background:var(--surface2)}
+  /* Gold focus rings */
+  input:focus,select:focus,textarea:focus{border-color:#C9A45E;box-shadow:0 0 0 2px rgba(201,164,94,0.14)}
+  /* Mobile nav — dark */
+  #mob-nav{background:#0C0B09;border-top:0.5px solid rgba(201,164,94,0.18)}
+  .mn-item{color:rgba(255,255,255,0.38)}
+  .mn-item.active{color:#C9A45E}
+  /* Move row selected */
+  .move-row.sel>td{background:rgba(201,164,94,0.08)!important}
+  .cl-text-input:hover,.cl-text-input:focus{background:rgba(201,164,94,0.09)}
+  .cl-due-input:hover,.cl-due-input:focus{border-color:#C9A45E;background:rgba(201,164,94,0.09)}
+  /* Calendar today gold */
+  .cal-week-tbl th.today-hdr{background:rgba(201,164,94,0.13);color:#9A7030}
+  .cal-week-tbl td.today-col{background:rgba(201,164,94,0.05)}
+  .cal-month-day.today{border-color:#C9A45E;background:rgba(201,164,94,0.05)}
+  .cal-month-day.today .cal-day-num{color:#C9A45E}
+  .cal-pop-goto{border-color:rgba(201,164,94,0.28);background:rgba(201,164,94,0.07);color:#8A6830}
+  .cal-pop-goto:hover{background:#C9A45E;color:#fff}
+  /* Guide tip gold */
+  .guide-tip{background:rgba(201,164,94,0.09);border-left-color:#C9A45E;color:#8A6830}
+  .guide-card-meta{background:#C9A45E;color:#1A1714}
+  /* Import tab active gold */
+  .import-tab.active{background:#C9A45E;color:#1A1714}
+  /* Alert banners warm */
+  .tight-alert{background:#FBF0DC;border-color:rgba(201,164,94,0.50)}
+  .needs-appt-alert{background:#FBF0DC;border-color:rgba(201,164,94,0.50)}
+  /* PTE badges warmer */
+  .pte-granted{background:#ECF2DC;color:#3E6B1F}
+  .pte-denied{background:#FAEBEB;color:#8B2222}
+  /* Passdown preview */
+  .pd-preview{background:#F7F5F0;border-color:rgba(26,24,20,0.09)}
+  /* Pill reservation gold */
+  .pill-reservation{background:rgba(201,164,94,0.14);color:#8A6830}
+  /* Cal chip amenity warm gold */
+  .cal-chip-amenity{background:#FBF0DC;color:#9E6300}
+  /* LEAD badge in nav */
+  .nav-item [style*="background:var(--accent)"]{color:#0C0B09!important}
+  /* Stat card tints */
+  .stat-card.green{background:#ECF2DC;border-color:#C2DDA0}
+  .stat-card.red{background:#FAEBEB;border-color:#F0BFBF}
+  /* LOGIN OVERLAY — dark charcoal */
+  #login-overlay{background:#0E0D0C}
+  .login-box{background:#1A1714;border:0.5px solid rgba(201,164,94,0.24);box-shadow:0 24px 64px rgba(0,0,0,0.55)}
+  .login-logo{font-family:var(--font-serif);font-size:22px;font-weight:600;color:#F0EBE0;letter-spacing:.4px}
+  .login-sub{color:rgba(255,255,255,0.38)}
+  .acct-btn{background:#242018;border:0.5px solid rgba(201,164,94,0.18);color:rgba(255,255,255,0.78)}
+  .acct-btn:hover{background:rgba(201,164,94,0.14);border-color:#C9A45E;color:#C9A45E}
+  .acct-avatar{background:rgba(201,164,94,0.18);color:#C9A45E}
+  .acct-role-tag{color:rgba(255,255,255,0.28)}
+  .pin-dot{border-color:rgba(201,164,94,0.32)}
+  .pin-dot.filled{background:#C9A45E;border-color:#C9A45E}
+  .pin-key{background:#242018;border:0.5px solid rgba(201,164,94,0.16);color:rgba(255,255,255,0.78)}
+  .pin-key:hover{background:rgba(201,164,94,0.16);color:#C9A45E}
 </style>
 </head>
 <body>
@@ -437,7 +505,7 @@
   </div>
   <div class="nav-group">
     <div class="nav-label">Management</div>
-    <div class="nav-item" data-sec="team" onclick="nav(this)"><span class="icon">&#128100;</span><span class="nav-txt">Team Tracker</span><span style="font-size:9px;background:var(--accent);color:#fff;border-radius:3px;padding:1px 4px;margin-left:4px;font-weight:600;letter-spacing:.3px">LEAD</span></div>
+    <div class="nav-item" data-sec="team" onclick="nav(this)"><span class="icon">&#128100;</span><span class="nav-txt">Team Tracker</span><span style="font-size:9px;background:#C9A45E;color:#0C0B09;border-radius:3px;padding:1px 4px;margin-left:4px;font-weight:700;letter-spacing:.3px">LEAD</span></div>
   </div>
   <div class="nav-group">
     <div class="nav-label">System</div>
@@ -854,7 +922,7 @@
       <div class="fr"><div class="fg" style="margin-bottom:0"><label>Appointment Date</label><input id="mv-appt-date" type="date" data-no-autofill></div><div class="fg" style="margin-bottom:0"><label>Start Time</label><select id="mv-appt-time"><option value="">— No appointment yet —</option></select></div></div>
       <div style="margin-top:8px;font-size:11.5px;color:var(--text2)" id="mv-conflict-msg"></div>
     </div>
-    <div class="fg"><label>Notes</label><textarea id="mv-notes" rows="2"></textarea></div>
+    <div class="fg"><label>Notes</label><textarea id="mv-notes" rows="3"></textarea></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-move')">Cancel</button><button class="btn btn-primary" id="move-modal-save-btn" onclick="saveMove()">Save Move</button></div>
 </div></div>
@@ -872,7 +940,7 @@
   <div class="modal-hdr"><span class="modal-title" id="modal-maint-title">Log Maintenance Issue</span><button class="modal-close" onclick="closeModal('modal-maint')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Unit / Location</label><input id="mt-unit" type="text" placeholder="e.g. 804 or Lobby"></div><div class="fg"><label>Issue Type</label><input id="mt-issue" type="text" placeholder="e.g. HVAC, Plumbing"></div></div>
-    <div class="fg"><label>Description</label><textarea id="mt-desc" rows="3"></textarea></div>
+    <div class="fg"><label>Description</label><textarea id="mt-desc" rows="4"></textarea></div>
     <div class="fr"><div class="fg"><label>Priority</label><select id="mt-priority"><option value="high">High - Urgent</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></div><div class="fg"><label>Status</label><select id="mt-status"><option value="open" selected>Open</option><option value="in-progress">In Progress</option><option value="resolved">Resolved</option></select></div></div>
     <div class="fg"><label>Reported By</label><input id="mt-reporter" type="text"></div>
   </div>
@@ -885,7 +953,7 @@
     <div class="fg"><label>Guest Name</label><input id="gs-name" type="text"></div>
     <div class="fr"><div class="fg"><label>Visiting Unit #</label><input id="gs-unit" type="text"></div><div class="fg"><label>Host Resident</label><input id="gs-host" type="text"></div></div>
     <div class="fr"><div class="fg"><label>Visit Type</label><select id="gs-type"><option>Visitor</option><option>Vendor / Contractor</option><option>Delivery Person</option><option>Joiner Guest</option></select></div><div class="fg"><label>Status</label><select id="gs-status"><option value="pending">Pending</option><option value="in">Checked In</option><option value="out">Checked Out</option></select></div></div>
-    <div class="fg"><label>Notes</label><textarea id="gs-notes" rows="2"></textarea></div>
+    <div class="fg"><label>Notes</label><textarea id="gs-notes" rows="3"></textarea></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-guest')">Cancel</button><button class="btn btn-primary" onclick="saveGuest()">Log Guest</button></div>
 </div></div>
@@ -899,7 +967,7 @@
       <div class="fr"><div class="fg"><label>Guest / Visitor Name</label><input id="ky-guest" type="text" placeholder="Who has the key"></div><div class="fg"><label>Time Out</label><input id="ky-timeout" type="time"></div></div>
     </div>
     <div class="fr"><div class="fg"><label>Status</label><select id="ky-status"><option value="issued">Issued</option><option value="returned">Returned</option></select></div><div class="fg"><label>Expiry Date</label><input id="ky-expiry" type="date"></div></div>
-    <div class="fg"><label>Notes / Follow-Up</label><textarea id="ky-notes" rows="2" placeholder="e.g. Called resident at 3:15pm, awaiting return..."></textarea></div>
+    <div class="fg"><label>Notes / Follow-Up</label><textarea id="ky-notes" rows="3" placeholder="e.g. Called resident at 3:15pm, awaiting return..."></textarea></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-key')">Cancel</button><button class="btn btn-primary" id="modal-key-savebtn" onclick="saveKey()">Save</button></div>
 </div></div>
@@ -935,7 +1003,7 @@
     <div class="fr"><div class="fg"><label>Prospect Name</label><input id="tr-name" type="text"></div><div class="fg"><label>Unit(s) Shown</label><input id="tr-unit" type="text" placeholder="e.g. 804, 1102"></div></div>
     <div class="fr"><div class="fg"><label>Tour Type</label><select id="tr-type"><option value="sgt">SGT (Self-Guided)</option><option value="guided">Guided</option></select></div><div class="fg"><label>Date</label><input id="tr-date" type="date"></div></div>
     <div class="fr"><div class="fg"><label>Time</label><input id="tr-time" type="time"></div><div class="fg"><label>Contact</label><input id="tr-contact" type="text"></div></div>
-    <div class="fg"><label>Outcome / Notes</label><textarea id="tr-notes" rows="2"></textarea></div>
+    <div class="fg"><label>Outcome / Notes</label><textarea id="tr-notes" rows="3"></textarea></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-tour')">Cancel</button><button class="btn btn-primary" onclick="saveTour()">Log Tour</button></div>
 </div></div>
@@ -944,7 +1012,7 @@
   <div class="modal-hdr"><span class="modal-title">Flag an Issue</span><button class="modal-close" onclick="closeModal('modal-flag')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fg"><label>Location</label><input id="fl-location" type="text" placeholder="e.g. 3rd Floor Terrace, Lobby"></div>
-    <div class="fg"><label>Description</label><textarea id="fl-desc" rows="3"></textarea></div>
+    <div class="fg"><label>Description</label><textarea id="fl-desc" rows="4"></textarea></div>
     <div class="fg"><label>Priority</label><select id="fl-priority"><option value="high">High - Fix immediately</option><option value="medium" selected>Medium</option><option value="low">Low - Note only</option></select></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-flag')">Cancel</button><button class="btn btn-primary" onclick="saveFlag()">Flag Issue</button></div>
@@ -956,8 +1024,8 @@
     <div class="fr"><div class="fg"><label>Date Found</label><input id="lf-date" type="date"></div><div class="fg"><label>Time Found</label><input id="lf-time" type="time"></div></div>
     <div class="fr"><div class="fg"><label>Found By</label><input id="lf-foundby" type="text"></div><div class="fg"><label>Location</label><input id="lf-location" type="text"></div></div>
     <div class="fg"><label>Condition</label><select id="lf-condition"><option>Good</option><option>Fair</option><option>Damaged</option><option>Unknown</option></select></div>
-    <div class="fg"><label>Item Description</label><textarea id="lf-desc" rows="2" placeholder="Describe item clearly"></textarea></div>
-    <div class="fg"><label>Notes (optional)</label><textarea id="lf-notes" rows="2"></textarea></div>
+    <div class="fg"><label>Item Description</label><textarea id="lf-desc" rows="3" placeholder="Describe item clearly"></textarea></div>
+    <div class="fg"><label>Notes (optional)</label><textarea id="lf-notes" rows="3"></textarea></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-laf')">Cancel</button><button class="btn btn-primary" onclick="saveLAF()">Log Item</button></div>
 </div></div>
@@ -976,7 +1044,7 @@
         <div class="fr"><div class="fg"><label>Check-In</label><input id="un-bg-checkin" type="date" data-no-autofill></div><div class="fg"><label>Check-Out</label><input id="un-bg-checkout" type="date" data-no-autofill></div></div>
       </div>
     </div>
-    <div class="fg"><label>Notes</label><textarea id="un-notes" rows="2" placeholder="Additional details..."></textarea></div>
+    <div class="fg"><label>Notes</label><textarea id="un-notes" rows="3" placeholder="Additional details..."></textarea></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-unit')">Cancel</button><button class="btn btn-primary" id="modal-unit-savebtn" onclick="saveUnit()">Add Unit</button></div>
 </div></div>
@@ -986,7 +1054,7 @@
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Unit #</label><input id="cr-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Resident Name</label><input id="cr-resident" type="text"></div></div>
     <div class="fg"><label>Request Type</label><select id="cr-type"><option value="Restaurant Reservation">Restaurant Reservation</option><option value="Dry Cleaning">Dry Cleaning</option><option value="Taxi / Car Service">Taxi / Car Service</option><option value="Package Hold">Package Hold</option><option value="Maintenance Follow-Up">Maintenance Follow-Up</option><option value="Other">Other</option></select></div>
-    <div class="fg"><label>Details / Notes</label><textarea id="cr-notes" rows="3" placeholder="Describe the request..."></textarea></div>
+    <div class="fg"><label>Details / Notes</label><textarea id="cr-notes" rows="4" placeholder="Describe the request..."></textarea></div>
     <div class="fr"><div class="fg"><label>Status</label><select id="cr-status"><option value="open">Open</option><option value="completed">Completed</option></select></div><div class="fg"><label>Handled By</label><input id="cr-handled" type="text" placeholder="Staff name"></div></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-concierge')">Cancel</button><button class="btn btn-primary" id="modal-concierge-savebtn" onclick="saveConcierge()">Log Request</button></div>
@@ -998,9 +1066,24 @@
     <div class="fr"><div class="fg"><label>Unit #</label><input id="rp-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Resident Name</label><input id="rp-name" type="text"></div></div>
     <div class="fr"><div class="fg"><label>Preferred Name / Nickname</label><input id="rp-preferred" type="text" placeholder="e.g. Mike"></div><div class="fg"><label>Phone (optional)</label><input id="rp-phone" type="text"></div></div>
     <div class="fr"><div class="fg"><label>Birthday</label><input id="rp-birthday" type="date" data-no-autofill></div><div class="fg"><label>Lease Anniversary</label><input id="rp-anniversary" type="date" data-no-autofill></div></div>
-    <div class="fg"><label>Special Instructions</label><textarea id="rp-instructions" rows="2" placeholder='e.g. "Always call before buzzing", "Do not leave packages at door"'></textarea></div>
+    <div class="fg"><label>Special Instructions</label><textarea id="rp-instructions" rows="3" placeholder='e.g. "Always call before buzzing", "Do not leave packages at door"'></textarea></div>
     <div class="fg"><label>&#128230; PTE — Permission to Enter (Packages)</label><select id="rp-pte"><option value="not-set">Not Set</option><option value="granted">Granted — OK to enter for package delivery</option><option value="denied">Denied — Do NOT enter unit</option></select></div>
-    <div class="fg"><label>Additional Notes</label><textarea id="rp-notes" rows="2" placeholder="VIP notes, preferences, anything the team should know..."></textarea></div>
+    <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Parking &amp; Storage</div>
+      <div class="fr">
+        <div class="fg"><label>Parking Credentials</label><select id="rp-parking"><option value="none">None</option><option value="yes">Has Parking</option></select></div>
+        <div class="fg"><label>Space / Credential Info</label><input id="rp-parking-info" type="text" placeholder="e.g. Spot B-12, fob #4"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>Bicycle Storage</label><select id="rp-bike"><option value="none">None</option><option value="1">1 Space (free)</option><option value="2">2 Spaces ($25/mo extra)</option><option value="3">3 Spaces ($50/mo extra)</option></select></div>
+        <div class="fg"><label>Bike Notes</label><input id="rp-bike-notes" type="text" placeholder="e.g. Blue Trek, hook #7"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>Storage Unit</label><select id="rp-storage"><option value="none">None</option><option value="yes">Has Storage Unit</option></select></div>
+        <div class="fg"><label>Storage Unit #</label><input id="rp-storage-unit" type="text" placeholder="e.g. S-04"></div>
+      </div>
+    </div>
+    <div class="fg"><label>Additional Notes</label><textarea id="rp-notes" rows="3" placeholder="VIP notes, preferences, anything the team should know..."></textarea></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-resident')">Cancel</button><button class="btn btn-primary" id="modal-resident-savebtn" onclick="saveResident()">Save Profile</button></div>
 </div></div>
@@ -3140,8 +3223,11 @@ var residentsFilter = 'all', editingResidentId = null;
 function filterResidents(f, item) { residentsFilter = f; document.querySelectorAll('#section-residents .sub-tab').forEach(function(t){ t.classList.remove('active'); }); item.classList.add('active'); renderResidents(); }
 function openAddResident() {
   editingResidentId = null;
-  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-birthday','rp-anniversary','rp-instructions','rp-notes'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-birthday','rp-anniversary','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
   g('rp-pte').value = 'not-set';
+  g('rp-parking').value = 'none';
+  g('rp-bike').value = 'none';
+  g('rp-storage').value = 'none';
   setModalMode('modal-resident-title','modal-resident-savebtn','Add Resident Profile','Save Profile');
   openModal('modal-resident');
 }
@@ -3157,6 +3243,12 @@ function openEditResident(id) {
   g('rp-instructions').value = r.instructions || '';
   g('rp-pte').value = r.pte || 'not-set';
   g('rp-notes').value = r.notes || '';
+  g('rp-parking').value = r.parking || 'none';
+  g('rp-parking-info').value = r.parkingInfo || '';
+  g('rp-bike').value = r.bike || 'none';
+  g('rp-bike-notes').value = r.bikeNotes || '';
+  g('rp-storage').value = r.storage || 'none';
+  g('rp-storage-unit').value = r.storageUnit || '';
   setModalMode('modal-resident-title','modal-resident-savebtn','Edit Profile','Save Changes');
   openModal('modal-resident');
 }
@@ -3166,9 +3258,10 @@ function saveResident() {
   if (editingResidentId) {
     var r = (state.residentProfiles || []).find(function(x){ return x.id===editingResidentId; }); if (!r) return;
     r.unit=unit; r.residentName=name; r.preferredName=g('rp-preferred').value.trim(); r.phone=g('rp-phone').value.trim(); r.birthday=g('rp-birthday').value; r.anniversary=g('rp-anniversary').value; r.instructions=g('rp-instructions').value.trim(); r.pte=g('rp-pte').value; r.notes=g('rp-notes').value.trim();
+    r.parking=g('rp-parking').value; r.parkingInfo=g('rp-parking-info').value.trim(); r.bike=g('rp-bike').value; r.bikeNotes=g('rp-bike-notes').value.trim(); r.storage=g('rp-storage').value; r.storageUnit=g('rp-storage-unit').value.trim();
     editingResidentId=null; scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile updated'); return;
   }
-  var entry = { id: uid(), unit: unit, residentName: name, preferredName: g('rp-preferred').value.trim(), phone: g('rp-phone').value.trim(), birthday: g('rp-birthday').value, anniversary: g('rp-anniversary').value, instructions: g('rp-instructions').value.trim(), pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), createdAt: Date.now() };
+  var entry = { id: uid(), unit: unit, residentName: name, preferredName: g('rp-preferred').value.trim(), phone: g('rp-phone').value.trim(), birthday: g('rp-birthday').value, anniversary: g('rp-anniversary').value, instructions: g('rp-instructions').value.trim(), pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), parking: g('rp-parking').value, parkingInfo: g('rp-parking-info').value.trim(), bike: g('rp-bike').value, bikeNotes: g('rp-bike-notes').value.trim(), storage: g('rp-storage').value, storageUnit: g('rp-storage-unit').value.trim(), createdAt: Date.now() };
   if (!state.residentProfiles) state.residentProfiles = [];
   state.residentProfiles.push(entry); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile saved');
 }
@@ -3202,6 +3295,11 @@ function renderResidents() {
     if (r.anniversary) dates.push('&#127981; Lease anniversary: ' + fmtShort(r.anniversary));
     if (dates.length) html += '<div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.8">' + dates.join('<br>') + '</div>';
     if (r.instructions) html += '<div style="font-size:12px;background:var(--bg);border-radius:5px;padding:6px 8px;margin-top:8px;color:var(--text2);line-height:1.5"><strong>Instructions:</strong> ' + r.instructions + '</div>';
+    var credBadges = [];
+    if (r.parking === 'yes') credBadges.push('<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 6px;font-weight:600">&#128664; Parking' + (r.parkingInfo ? ': ' + r.parkingInfo : '') + '</span>');
+    if (r.bike && r.bike !== 'none') credBadges.push('<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 6px;font-weight:600">&#128690; Bike ×' + r.bike + (r.bikeNotes ? ': ' + r.bikeNotes : '') + '</span>');
+    if (r.storage === 'yes') credBadges.push('<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 6px;font-weight:600">&#128230; Storage' + (r.storageUnit ? ' ' + r.storageUnit : '') + '</span>');
+    if (credBadges.length) html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">' + credBadges.join('') + '</div>';
     if (r.notes) html += '<div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.4"><em>' + r.notes + '</em></div>';
     html += '<div class="flex gap-4 mt-10"><button class="btn btn-ghost btn-xs" onclick="openEditResident(\'' + r.id + '\')">&#9998; Edit</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteResident(\'' + r.id + '\')">&#215;</button></div>';
     html += '</div>';
@@ -3232,7 +3330,7 @@ function pdTimeToMins(t) {
 function pdInShift(timeStr, shift) {
   var mins = pdTimeToMins(timeStr);
   if (mins < 0) return true; // no time set — always include
-  if (shift === 'AM') return mins >= 7*60 && mins < 15*60;
+  if (shift === 'AM') return mins >= 7*60 && mins <= 15*60;
   if (shift === 'PM') return mins >= 15*60 && mins < 23*60;
   return mins >= 23*60 || mins < 7*60; // Overnight: 11pm–7am
 }
