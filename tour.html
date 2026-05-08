@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chorus SF — Self-Guided Tour</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F5F0E8;
+    --dark: #1C1A16;
+    --brown: #3D2E1E;
+    --gold: #B8955A;
+    --gold-light: #D4AF7A;
+    --warm-gray: #8C8070;
+    --card-bg: #FFFFFF;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--cream);
+    color: var(--dark);
+    font-family: 'Jost', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    background: var(--dark);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 60px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(184,149,90,0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(184,149,90,0.08) 0%, transparent 50%);
+  }
+
+  .hero-eyebrow {
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 28px;
+    position: relative;
+  }
+
+  .hero-wordmark {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(64px, 14vw, 130px);
+    font-weight: 300;
+    letter-spacing: 0.12em;
+    color: var(--cream);
+    line-height: 1;
+    position: relative;
+    margin-bottom: 8px;
+    animation: fadeUp 1s ease both;
+  }
+
+  .hero-sub {
+    font-family: 'Jost', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold-light);
+    margin-bottom: 48px;
+    animation: fadeUp 1s 0.15s ease both;
+  }
+
+  .hero-divider {
+    width: 1px;
+    height: 60px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+    margin: 0 auto 48px;
+    animation: fadeUp 1s 0.3s ease both;
+  }
+
+  .hero-tagline {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(18px, 4vw, 28px);
+    font-weight: 300;
+    font-style: italic;
+    color: rgba(245,240,232,0.7);
+    max-width: 520px;
+    line-height: 1.6;
+    animation: fadeUp 1s 0.4s ease both;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--warm-gray);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    animation: fadeUp 1s 0.8s ease both;
+  }
+
+  .scroll-hint::after {
+    content: '';
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--warm-gray), transparent);
+    animation: pulse 2s infinite;
+  }
+
+  /* ── SECTION WRAPPER ── */
+  .section {
+    padding: 80px 24px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(32px, 6vw, 52px);
+    font-weight: 300;
+    color: var(--brown);
+    line-height: 1.15;
+    margin-bottom: 40px;
+  }
+
+  /* ── ELEVATOR SHORTCUTS TABLE ── */
+  .shortcuts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 80px;
+    gap: 0;
+    border: 1px solid rgba(61,46,30,0.15);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 60px;
+  }
+
+  .shortcuts-grid .header {
+    background: var(--brown);
+    color: var(--cream);
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 14px 20px;
+    font-weight: 500;
+  }
+
+  .shortcuts-grid .cell {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(61,46,30,0.1);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .shortcuts-grid .cell.shortcut {
+    font-family: 'Jost', sans-serif;
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: var(--gold);
+    background: rgba(184,149,90,0.05);
+    border-right: 1px solid rgba(61,46,30,0.1);
+  }
+
+  .shortcuts-grid .cell.floor {
+    text-align: center;
+    color: var(--warm-gray);
+    font-size: 13px;
+  }
+
+  /* ── TOUR STOPS ── */
+  .stops-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .stop {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 0;
+    border-bottom: 1px solid rgba(61,46,30,0.1);
+    padding: 32px 0;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .stop-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 48px;
+    font-weight: 300;
+    color: rgba(184,149,90,0.35);
+    line-height: 1;
+    padding-top: 4px;
+  }
+
+  .stop-content {}
+
+  .stop-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 400;
+    color: var(--brown);
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+
+  .stop-floor {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 12px;
+  }
+
+  .stop-desc {
+    font-size: 14px;
+    color: var(--warm-gray);
+    line-height: 1.8;
+    max-width: 600px;
+  }
+
+  .stop-desc strong {
+    color: var(--brown);
+    font-weight: 500;
+  }
+
+  /* ── FEES ── */
+  .fees-section {
+    background: var(--dark);
+    padding: 80px 24px;
+    color: var(--cream);
+  }
+
+  .fees-inner {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .fees-section .section-title {
+    color: var(--cream);
+    margin-bottom: 40px;
+  }
+
+  .fees-section .section-label {
+    color: var(--gold-light);
+  }
+
+  .fees-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .fee-item {
+    padding: 28px 24px;
+    background: rgba(28,26,22,0.9);
+  }
+
+  .fee-name {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+
+  .fee-amount {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px;
+    font-weight: 300;
+    color: var(--cream);
+    margin-bottom: 6px;
+    line-height: 1;
+  }
+
+  .fee-desc {
+    font-size: 12px;
+    color: rgba(245,240,232,0.45);
+    line-height: 1.6;
+  }
+
+  /* ── BESPOKE SERVICES ── */
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 24px;
+    margin-top: 8px;
+  }
+
+  .service-card {
+    background: var(--card-bg);
+    border: 1px solid rgba(61,46,30,0.1);
+    padding: 28px 24px;
+    position: relative;
+  }
+
+  .service-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--gold);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+
+  .service-card:hover::before { transform: scaleX(1); }
+
+  .service-icon {
+    font-size: 22px;
+    margin-bottom: 14px;
+  }
+
+  .service-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--brown);
+    margin-bottom: 8px;
+  }
+
+  .service-desc {
+    font-size: 13px;
+    color: var(--warm-gray);
+    line-height: 1.7;
+  }
+
+  /* ── CONTACT FOOTER ── */
+  .contact-footer {
+    background: var(--brown);
+    padding: 60px 24px;
+    text-align: center;
+  }
+
+  .contact-footer .wordmark {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 40px;
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    color: var(--cream);
+    margin-bottom: 4px;
+  }
+
+  .contact-footer .tagline {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold-light);
+    margin-bottom: 32px;
+  }
+
+  .contact-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .contact-links a {
+    color: rgba(245,240,232,0.6);
+    text-decoration: none;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    transition: color 0.2s;
+  }
+
+  .contact-links a:hover { color: var(--gold-light); }
+
+  .contact-address {
+    margin-top: 12px;
+    font-size: 12px;
+    color: rgba(245,240,232,0.4);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  /* ── MOBILE ── */
+  @media (max-width: 600px) {
+    .shortcuts-grid { grid-template-columns: 1fr 1fr 60px; }
+    .shortcuts-grid .cell { padding: 12px 14px; font-size: 13px; }
+    .stop { grid-template-columns: 48px 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <p class="hero-eyebrow">San Francisco · 30 Otis St</p>
+  <h1 class="hero-wordmark">CHORUS</h1>
+  <p class="hero-sub">Self-Guided Tour</p>
+  <div class="hero-divider"></div>
+  <p class="hero-tagline">Luxury living defined by the arts, wellness, and community — your front-row residence in the city.</p>
+  <div class="scroll-hint">Explore</div>
+</section>
+
+<!-- ELEVATOR SHORTCUTS -->
+<section class="section">
+  <p class="section-label">Navigate the Building</p>
+  <h2 class="section-title">Elevator Shortcuts</h2>
+
+  <div class="shortcuts-grid">
+    <div class="header">Elevator Button</div>
+    <div class="header">Amenity Space(s)</div>
+    <div class="header" style="text-align:center">Floor</div>
+
+    <div class="cell shortcut">LOBBY</div>
+    <div class="cell">Progeny Coffee Bar &amp; Tech Lounge / Co-Working Space</div>
+    <div class="cell floor">1</div>
+
+    <div class="cell shortcut">SPEAKEASY &amp; SKYBOX</div>
+    <div class="cell">Resident Entertainment Hub (Lounge / Terrace)</div>
+    <div class="cell floor">2</div>
+
+    <div class="cell shortcut">DOG PARK</div>
+    <div class="cell">Pet Relief Area</div>
+    <div class="cell floor">9</div>
+
+    <div class="cell shortcut">FITNESS &amp; POOL</div>
+    <div class="cell">Indoor/Outdoor Training Studio, Outdoor Ninja Warrior Course, Rooftop Pool Deck</div>
+    <div class="cell floor">10</div>
+
+    <div class="cell shortcut">BELVEDERE ROOM</div>
+    <div class="cell">Belvedere Room Solarium</div>
+    <div class="cell floor">28</div>
+  </div>
+</section>
+
+<!-- TOUR STOPS -->
+<section class="section" style="padding-top:0">
+  <p class="section-label">The Art of Wellness &amp; Community</p>
+  <h2 class="section-title">Tour Stops</h2>
+
+  <div class="stops-list">
+    <div class="stop">
+      <div class="stop-number">1</div>
+      <div class="stop-content">
+        <div class="stop-name">Lobby &amp; Progeny Coffee Bar</div>
+        <span class="stop-floor">1st Floor</span>
+        <p class="stop-desc">Your sophisticated arrival point featuring <strong>24/7 concierge service</strong>. The Progeny Coffee Bar is open daily <strong>8am–4pm</strong>, offering custom coffee drinks and a prime gathering space.</p>
+      </div>
+    </div>
+
+    <div class="stop">
+      <div class="stop-number">2</div>
+      <div class="stop-content">
+        <div class="stop-name">Tech Lounge Co-Working Space</div>
+        <span class="stop-floor">1st Floor</span>
+        <p class="stop-desc">Inspire productivity in an ambiance-rich co-working space with <strong>private conference rooms</strong> and full video-conferencing capabilities.</p>
+      </div>
+    </div>
+
+    <div class="stop">
+      <div class="stop-number">3</div>
+      <div class="stop-content">
+        <div class="stop-name">Speakeasy / Skybox Lounge</div>
+        <span class="stop-floor">2nd Floor</span>
+        <p class="stop-desc">A hidden respite from the lobby featuring <strong>skee-ball, foosball, and arcade favorites</strong>. Connects directly to an outdoor terrace with a community pizza oven and seating.</p>
+      </div>
+    </div>
+
+    <div class="stop">
+      <div class="stop-number">4</div>
+      <div class="stop-content">
+        <div class="stop-name">Rooftop Dog Park</div>
+        <span class="stop-floor">9th Floor</span>
+        <p class="stop-desc">A dedicated, elevated <strong>pet relief area</strong> providing ultimate convenience and quick access for all residents with companions.</p>
+      </div>
+    </div>
+
+    <div class="stop">
+      <div class="stop-number">5</div>
+      <div class="stop-content">
+        <div class="stop-name">Indoor/Outdoor Training Studio</div>
+        <span class="stop-floor">10th Floor</span>
+        <p class="stop-desc">A complete indoor-outdoor wellness haven with cardio and strength machines. Enjoy <strong>rotating fitness classes</strong> per week.</p>
+      </div>
+    </div>
+
+    <div class="stop">
+      <div class="stop-number">6</div>
+      <div class="stop-content">
+        <div class="stop-name">Outdoor Ninja Warrior Course</div>
+        <span class="stop-floor">10th Floor</span>
+        <p class="stop-desc">Performance training outfitted with an <strong>8-foot warped wall and octagon frame</strong> — a distinctive amenity set unique to the city.</p>
+      </div>
+    </div>
+
+    <div class="stop">
+      <div class="stop-number">7</div>
+      <div class="stop-content">
+        <div class="stop-name">Rooftop Pool Deck</div>
+        <span class="stop-floor">10th Floor</span>
+        <p class="stop-desc">Step into the full-length <strong>rooftop pool</strong> with exceptional panoramic views. Relax poolside with <strong>private cabanas</strong>, an expansive sundeck, and a soaking <strong>Jacuzzi®</strong>.</p>
+      </div>
+    </div>
+
+    <div class="stop">
+      <div class="stop-number">8</div>
+      <div class="stop-content">
+        <div class="stop-name">Belvedere Room Solarium</div>
+        <span class="stop-floor">28th Floor</span>
+        <p class="stop-desc">The ultimate indoor-outdoor location to enjoy the San Francisco skyline. Features a <strong>floating fireplace</strong> and a <strong>tiled private dining kitchen</strong>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BESPOKE SERVICES -->
+<section class="section" style="padding-top:0">
+  <p class="section-label">Connected Living</p>
+  <h2 class="section-title">Bespoke Services</h2>
+
+  <div class="services-grid">
+    <div class="service-card">
+      <div class="service-icon">🛎️</div>
+      <div class="service-title">24/7 Concierge &amp; Valet</div>
+      <p class="service-desc">Round-the-clock concierge, valet parking, and professional guest receiving — all included in your Chorus experience.</p>
+    </div>
+    <div class="service-card">
+      <div class="service-icon">📦</div>
+      <div class="service-title">Package Concierge</div>
+      <p class="service-desc">Dedicated secure package handling and delivery service so your orders arrive safely every time.</p>
+    </div>
+    <div class="service-card">
+      <div class="service-icon">🐾</div>
+      <div class="service-title">Pet Care &amp; Grooming</div>
+      <p class="service-desc">A separate, professional-grade pet care and grooming station available right within the building.</p>
+    </div>
+    <div class="service-card">
+      <div class="service-icon">📡</div>
+      <div class="service-title">Rover Internet</div>
+      <p class="service-desc">First-of-its-kind <strong>Rover Internet</strong> on your own private mesh network — anywhere throughout the community.</p>
+    </div>
+    <div class="service-card">
+      <div class="service-icon">🏠</div>
+      <div class="service-title">Smart Home</div>
+      <p class="service-desc">Keyless entry and A/C control with <strong>EcoBee SmartHome thermostats</strong> in every residence.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FEES -->
+<section class="fees-section">
+  <div class="fees-inner">
+    <p class="section-label">Lease &amp; Property Fees</p>
+    <h2 class="section-title">At a Glance</h2>
+
+    <div class="fees-grid">
+      <div class="fee-item">
+        <div class="fee-name">Application Fee</div>
+        <div class="fee-amount">$62</div>
+        <div class="fee-desc">Per applicant. One-time fee to process your application.</div>
+      </div>
+      <div class="fee-item">
+        <div class="fee-name">Holding &amp; Security Deposit</div>
+        <div class="fee-amount">$1,000</div>
+        <div class="fee-desc">On approved credit (O.A.C.).</div>
+      </div>
+      <div class="fee-item">
+        <div class="fee-name">Monthly Amenity Fee</div>
+        <div class="fee-amount">$75</div>
+        <div class="fee-desc">Grants access to all community amenity spaces.</div>
+      </div>
+      <div class="fee-item">
+        <div class="fee-name">Monthly Internet Fee</div>
+        <div class="fee-amount">$65</div>
+        <div class="fee-desc">Mandatory fee for high-speed internet (private mesh network).</div>
+      </div>
+      <div class="fee-item">
+        <div class="fee-name">Monthly Package Concierge</div>
+        <div class="fee-amount">$25</div>
+        <div class="fee-desc">Dedicated secure package handling and delivery.</div>
+      </div>
+      <div class="fee-item">
+        <div class="fee-name">Monthly Valet Parking</div>
+        <div class="fee-amount">$595 / $225</div>
+        <div class="fee-desc">Car / Motorcycle. Attended 24/7 valet parking service.</div>
+      </div>
+      <div class="fee-item">
+        <div class="fee-name">Pet Deposit</div>
+        <div class="fee-amount">$500</div>
+        <div class="fee-desc">One-time pet deposit. Restrictions apply.</div>
+      </div>
+      <div class="fee-item">
+        <div class="fee-name">Monthly Pet Rent</div>
+        <div class="fee-amount">$75</div>
+        <div class="fee-desc">Per pet. Required for all approved pets.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="contact-footer">
+  <div class="wordmark">CHORUS</div>
+  <p class="tagline">San Francisco · 30 Otis St</p>
+  <div class="contact-links">
+    <a href="https://www.rentchorus.com">www.rentchorus.com</a>
+    <a href="mailto:info@rentchorus.com">info@rentchorus.com</a>
+  </div>
+  <p class="contact-address">30 Otis St., San Francisco, CA 94103</p>
+</footer>
+
+</body>
+</html>
