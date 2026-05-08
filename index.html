@@ -625,7 +625,7 @@
       <div class="card"><div class="card-hdr"><span class="card-title">Concierge Request Log</span><span class="card-count" id="concierge-count">0 requests</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddConcierge()">+ Log Request</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident</th><th>Request Type</th><th>Details</th><th>Status</th><th>Handled By</th><th>Date</th><th></th></tr></thead><tbody id="concierge-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-residents">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterResidents('all',this)">All Profiles</div><div class="sub-tab" onclick="filterResidents('pte-granted',this)">&#9989; PTE Granted</div><div class="sub-tab" onclick="filterResidents('pte-denied',this)">&#128683; PTE Denied</div><div class="sub-tab" onclick="filterResidents('pte-not-set',this)">PTE Not Set</div></div>
+      <div class="sub-tabs"><div class="sub-tab active" onclick="filterResidents('all',this)">All Profiles</div><div class="sub-tab" onclick="filterResidents('pte-granted',this)">&#9989; PTE Granted</div><div class="sub-tab" onclick="filterResidents('pte-denied',this)">&#128683; PTE Denied</div><div class="sub-tab" onclick="filterResidents('pte-not-set',this)">PTE Not Set</div><div class="sub-tab" onclick="filterResidents('blueground',this)">&#128309; Blueground</div></div>
       <div id="residents-pte-banner" style="display:none;margin-bottom:10px;padding:10px 14px;background:#fffbeb;border:1px solid #fcd34d;border-radius:var(--radius);font-size:13px;color:#92400e"><strong>&#128230; Package Team:</strong> This view shows PTE (Permission to Enter) status per unit. Always check before entering a unit for package delivery.</div>
       <div class="stat-grid" id="residents-stats"></div>
       <div class="card"><div class="card-hdr"><span class="card-title">Resident Profiles &amp; VIP Notes</span><span class="card-count" id="residents-count">0 profiles</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddResident()">+ Add Profile</button></div><div id="residents-grid" style="padding:12px 14px"></div></div>
@@ -997,7 +997,20 @@
   <div class="modal-hdr"><span class="modal-title" id="modal-amenity-title">Add Amenity Booking</span><button class="modal-close" onclick="closeModal('modal-amenity')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Resident Name</label><input id="am-resident" type="text"></div><div class="fg"><label>Unit #</label><input id="am-unit" type="text"></div></div>
-    <div class="fg"><label>Amenity Space</label><select id="am-space"><option>Belvedere Room (28th fl)</option><option>28th Floor Terrace</option><option>Chorus Hall (1st fl)</option><option>3rd Floor Terrace</option><option>TV Lounge (2nd fl)</option><option>Speakeasy (2nd fl)</option><option>Fitness Center (10th fl)</option><option>Pool / Hot Tub (10th fl)</option><option>Coworking Space (1st fl)</option><option>Other</option></select></div>
+    <div class="fg"><label>Amenity Space(s) <span style="font-size:10px;color:var(--text3);font-weight:400">(select all that apply)</span></label><div id="am-space-wrap" style="border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;display:grid;grid-template-columns:1fr 1fr;gap:5px 14px;font-size:12.5px;background:var(--bg)">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Belvedere Room (28th fl)"> Belvedere Room (28th fl)</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="28th Floor Terrace"> 28th Floor Terrace</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Chorus Hall (1st fl)"> Chorus Hall (1st fl)</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="3rd Floor Terrace"> 3rd Floor Terrace</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="TV Lounge (2nd fl)"> TV Lounge (2nd fl)</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Speakeasy (2nd fl)"> Speakeasy (2nd fl)</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Fitness Center (10th fl)"> Fitness Center (10th fl)</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Pool / Hot Tub (10th fl)"> Pool / Hot Tub (10th fl)</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Coworking Space (1st fl)"> Coworking Space (1st fl)</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Service Elevator"> &#128696; Service Elevator</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Loading Dock"> &#128666; Loading Dock</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Other"> Other</label>
+    </div></div>
     <div class="fr"><div class="fg"><label>Date</label><input id="am-date" type="date"></div><div class="fg"><label>Type</label><select id="am-type"><option value="reservation">Reservation</option><option value="event">Resident Event</option></select></div></div>
     <div class="fr"><div class="fg"><label>Start Time</label><input id="am-start" type="time"></div><div class="fg"><label>End Time</label><input id="am-end" type="time"></div></div>
     <div class="fr"><div class="fg"><label>Fee (reference)</label><input id="am-fee" type="text" placeholder="e.g. $150"></div><div class="fg"><label>Notes</label><input id="am-notes" type="text"></div></div>
@@ -1072,6 +1085,7 @@
   <div class="modal-hdr"><span class="modal-title" id="modal-resident-title">Add Resident Profile</span><button class="modal-close" onclick="closeModal('modal-resident')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Unit #</label><input id="rp-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Resident Name</label><input id="rp-name" type="text"></div></div>
+    <div style="padding:4px 0 2px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="rp-blueground"> <span>&#128309; <strong>Blueground Unit</strong> — Managed by Blueground</span></label></div>
     <div class="fr"><div class="fg"><label>Preferred Name / Nickname</label><input id="rp-preferred" type="text" placeholder="e.g. Mike"></div><div class="fg"><label>Phone (optional)</label><input id="rp-phone" type="text"></div></div>
     <div class="fr"><div class="fg"><label>Birthday</label><input id="rp-birthday" type="date" data-no-autofill></div><div class="fg"><label>Lease Anniversary</label><input id="rp-anniversary" type="date" data-no-autofill></div></div>
     <div class="fg"><label>Special Instructions</label><textarea id="rp-instructions" rows="3" placeholder='e.g. "Always call before buzzing", "Do not leave packages at door"'></textarea></div>
@@ -2316,18 +2330,23 @@ function deleteKey(id) { if (!confirm('Remove?')) return; state.keys = (state.ke
 // ─── AMENITIES ───
 var amenityFilter = 'all';
 function filterAmenities(f, item) { amenityFilter = f; document.querySelectorAll('#section-amenities .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderAmenities(); }
+function getSelectedSpaces() { var cbs=document.querySelectorAll('input[name="am-space-cb"]:checked'),vals=[]; cbs.forEach(function(cb){vals.push(cb.value);}); return vals.join(', '); }
+function clearSpaceCheckboxes() { document.querySelectorAll('input[name="am-space-cb"]').forEach(function(cb){cb.checked=false;}); }
+function setSpaceCheckboxes(spaceStr) { clearSpaceCheckboxes(); if(!spaceStr) return; var spaces=spaceStr.split(',').map(function(s){return s.trim();}); document.querySelectorAll('input[name="am-space-cb"]').forEach(function(cb){if(spaces.indexOf(cb.value)!==-1)cb.checked=true;}); }
 function saveAmenity() {
   var resident = g('am-resident').value.trim(), unit = g('am-unit').value.trim(), date = g('am-date').value;
+  var space = getSelectedSpaces();
   if (!resident || !unit || !date) { toast('Fill in resident, unit & date'); return; }
+  if (!space) { toast('Select at least one amenity space'); return; }
   if (editingAmenityId) {
     var a = (state.amenities||[]).find(function(x){return x.id===editingAmenityId;}); if(!a) return;
-    a.resident=resident; a.unit=unit; a.space=g('am-space').value; a.date=date; a.start=g('am-start').value; a.end=g('am-end').value; a.type=g('am-type').value; a.fee=g('am-fee').value.trim(); a.notes=g('am-notes').value.trim();
+    a.resident=resident; a.unit=unit; a.space=space; a.date=date; a.start=g('am-start').value; a.end=g('am-end').value; a.type=g('am-type').value; a.fee=g('am-fee').value.trim(); a.notes=g('am-notes').value.trim();
     editingAmenityId=null; scheduleSave(); closeModal('modal-amenity'); renderAmenities(); updateBadges(); renderCalendar(); toast('Booking updated'); return;
   }
-  var a = { id: uid(), resident: resident, unit: unit, space: g('am-space').value, date: date, start: g('am-start').value, end: g('am-end').value, type: g('am-type').value, fee: g('am-fee').value.trim(), notes: g('am-notes').value.trim(), addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
+  var a = { id: uid(), resident: resident, unit: unit, space: space, date: date, start: g('am-start').value, end: g('am-end').value, type: g('am-type').value, fee: g('am-fee').value.trim(), notes: g('am-notes').value.trim(), addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
   if (!state.amenities) state.amenities = [];
   state.amenities.push(a); scheduleSave(); closeModal('modal-amenity'); renderAmenities(); updateBadges();
-  ['am-resident', 'am-unit', 'am-fee', 'am-notes'].forEach(function (id) { g(id).value = ''; }); toast('Booking added');
+  ['am-resident', 'am-unit', 'am-fee', 'am-notes'].forEach(function (id) { g(id).value = ''; }); clearSpaceCheckboxes(); toast('Booking added');
 }
 function renderAmenities() {
   var list = (state.amenities || []).slice(), t = today();
@@ -3299,6 +3318,7 @@ function openAddResident() {
   g('rp-parking').value = 'none';
   g('rp-bike').value = 'none';
   g('rp-storage').value = 'none';
+  var bgCb = g('rp-blueground'); if (bgCb) bgCb.checked = false;
   setModalMode('modal-resident-title','modal-resident-savebtn','Add Resident Profile','Save Profile');
   openModal('modal-resident');
 }
@@ -3320,6 +3340,7 @@ function openEditResident(id) {
   g('rp-bike-notes').value = r.bikeNotes || '';
   g('rp-storage').value = r.storage || 'none';
   g('rp-storage-unit').value = r.storageUnit || '';
+  var bgCb = g('rp-blueground'); if (bgCb) bgCb.checked = !!r.blueground;
   setModalMode('modal-resident-title','modal-resident-savebtn','Edit Profile','Save Changes');
   openModal('modal-resident');
 }
@@ -3328,11 +3349,13 @@ function saveResident() {
   if (!unit || !name) { toast('Unit and resident name are required'); return; }
   if (editingResidentId) {
     var r = (state.residentProfiles || []).find(function(x){ return x.id===editingResidentId; }); if (!r) return;
+    var bgCbS = g('rp-blueground');
     r.unit=unit; r.residentName=name; r.preferredName=g('rp-preferred').value.trim(); r.phone=g('rp-phone').value.trim(); r.birthday=g('rp-birthday').value; r.anniversary=g('rp-anniversary').value; r.instructions=g('rp-instructions').value.trim(); r.pte=g('rp-pte').value; r.notes=g('rp-notes').value.trim();
-    r.parking=g('rp-parking').value; r.parkingInfo=g('rp-parking-info').value.trim(); r.bike=g('rp-bike').value; r.bikeNotes=g('rp-bike-notes').value.trim(); r.storage=g('rp-storage').value; r.storageUnit=g('rp-storage-unit').value.trim();
+    r.parking=g('rp-parking').value; r.parkingInfo=g('rp-parking-info').value.trim(); r.bike=g('rp-bike').value; r.bikeNotes=g('rp-bike-notes').value.trim(); r.storage=g('rp-storage').value; r.storageUnit=g('rp-storage-unit').value.trim(); r.blueground=bgCbS?!!bgCbS.checked:false;
     editingResidentId=null; scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile updated'); return;
   }
-  var entry = { id: uid(), unit: unit, residentName: name, preferredName: g('rp-preferred').value.trim(), phone: g('rp-phone').value.trim(), birthday: g('rp-birthday').value, anniversary: g('rp-anniversary').value, instructions: g('rp-instructions').value.trim(), pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), parking: g('rp-parking').value, parkingInfo: g('rp-parking-info').value.trim(), bike: g('rp-bike').value, bikeNotes: g('rp-bike-notes').value.trim(), storage: g('rp-storage').value, storageUnit: g('rp-storage-unit').value.trim(), createdAt: Date.now() };
+  var bgCbN = g('rp-blueground');
+  var entry = { id: uid(), unit: unit, residentName: name, preferredName: g('rp-preferred').value.trim(), phone: g('rp-phone').value.trim(), birthday: g('rp-birthday').value, anniversary: g('rp-anniversary').value, instructions: g('rp-instructions').value.trim(), pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), parking: g('rp-parking').value, parkingInfo: g('rp-parking-info').value.trim(), bike: g('rp-bike').value, bikeNotes: g('rp-bike-notes').value.trim(), storage: g('rp-storage').value, storageUnit: g('rp-storage-unit').value.trim(), blueground: bgCbN?!!bgCbN.checked:false, createdAt: Date.now() };
   if (!state.residentProfiles) state.residentProfiles = [];
   state.residentProfiles.push(entry); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile saved');
 }
@@ -3342,23 +3365,26 @@ function renderResidents() {
   if (residentsFilter === 'pte-granted') list = list.filter(function(r){ return r.pte==='granted'; });
   else if (residentsFilter === 'pte-denied') list = list.filter(function(r){ return r.pte==='denied'; });
   else if (residentsFilter === 'pte-not-set') list = list.filter(function(r){ return !r.pte || r.pte==='not-set'; });
+  else if (residentsFilter === 'blueground') list = list.filter(function(r){ return !!r.blueground; });
   list.sort(function(a,b){ return parseInt(a.unit)-parseInt(b.unit); });
   var banner = g('residents-pte-banner');
   if (banner) banner.style.display = (residentsFilter==='pte-granted'||residentsFilter==='pte-denied') ? '' : 'none';
   var granted = (state.residentProfiles||[]).filter(function(r){ return r.pte==='granted'; }).length;
   var denied = (state.residentProfiles||[]).filter(function(r){ return r.pte==='denied'; }).length;
   var notset = (state.residentProfiles||[]).filter(function(r){ return !r.pte||r.pte==='not-set'; }).length;
-  g('residents-stats').innerHTML = '<div class="stat-card green"><div class="stat-num">' + granted + '</div><div class="stat-lbl">PTE Granted</div></div><div class="stat-card red"><div class="stat-num">' + denied + '</div><div class="stat-lbl">PTE Denied</div></div><div class="stat-card"><div class="stat-num">' + notset + '</div><div class="stat-lbl">PTE Not Set</div></div><div class="stat-card"><div class="stat-num">' + (state.residentProfiles||[]).length + '</div><div class="stat-lbl">Total Profiles</div></div>';
+  var bgCount = (state.residentProfiles||[]).filter(function(r){ return !!r.blueground; }).length;
+  g('residents-stats').innerHTML = '<div class="stat-card green"><div class="stat-num">' + granted + '</div><div class="stat-lbl">PTE Granted</div></div><div class="stat-card red"><div class="stat-num">' + denied + '</div><div class="stat-lbl">PTE Denied</div></div><div class="stat-card"><div class="stat-num">' + notset + '</div><div class="stat-lbl">PTE Not Set</div></div><div class="stat-card" style="border-left:3px solid #3b82f6"><div class="stat-num">' + bgCount + '</div><div class="stat-lbl">Blueground</div></div><div class="stat-card"><div class="stat-num">' + (state.residentProfiles||[]).length + '</div><div class="stat-lbl">Total Profiles</div></div>';
   var cnt = g('residents-count'); if (cnt) cnt.textContent = list.length + ' profiles';
   var grid = g('residents-grid');
-  if (!list.length) { grid.innerHTML = '<div class="text-3 text-sm">No profiles yet. Add a profile to track resident preferences, important dates, and PTE status.</div>'; return; }
+  if (!list.length) { grid.innerHTML = '<div class="text-3 text-sm">' + (residentsFilter === 'blueground' ? 'No Blueground profiles yet. Add a profile and check the Blueground box.' : 'No profiles yet. Add a profile to track resident preferences, important dates, and PTE status.') + '</div>'; return; }
   var pteLabel = { granted: '&#9989; PTE Granted', denied: '&#128683; PTE Denied', 'not-set': 'PTE Not Set' };
   var pteClass = { granted: 'pte-granted', denied: 'pte-denied', 'not-set': 'pte-not-set' };
   var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">';
   list.forEach(function(r) {
     var pte = r.pte || 'not-set';
-    html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)">';
-    html += '<div class="flex items-center gap-8 mb-8"><span class="unit-num" style="font-size:15px">Unit ' + r.unit + '</span><span class="pte-badge ' + pteClass[pte] + '">' + pteLabel[pte] + '</span></div>';
+    var borderStyle = r.blueground ? 'border:1px solid #93c5fd;' : 'border:1px solid var(--border);';
+    html += '<div style="background:var(--surface);' + borderStyle + 'border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)">';
+    html += '<div class="flex items-center gap-8 mb-8"><span class="unit-num" style="font-size:15px">Unit ' + r.unit + '</span><span class="pte-badge ' + pteClass[pte] + '">' + pteLabel[pte] + '</span>' + (r.blueground ? '<span style="font-size:10px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600;margin-left:auto">&#128309; Blueground</span>' : '') + '</div>';
     html += '<div style="font-weight:600;font-size:14px">' + r.residentName + (r.preferredName ? ' <span style="font-weight:400;color:var(--text3);font-size:12px">(' + r.preferredName + ')</span>' : '') + '</div>';
     if (r.phone) html += '<div style="font-size:12px;color:var(--text3);margin-top:2px">&#128222; ' + r.phone + '</div>';
     var dates = [];
@@ -4154,6 +4180,7 @@ function openAddAmenity() {
   ['am-resident','am-unit','am-fee','am-notes'].forEach(function(id){g(id).value='';});
   g('am-start').value=''; g('am-end').value=''; g('am-date').value=today();
   g('am-type').value='reservation';
+  clearSpaceCheckboxes();
   openModal('modal-amenity');
 }
 function openEditAmenity(id) {
@@ -4164,9 +4191,7 @@ function openEditAmenity(id) {
   g('am-fee').value=a.fee||''; g('am-notes').value=a.notes||'';
   g('am-date').value=a.date||today(); g('am-start').value=a.start||''; g('am-end').value=a.end||'';
   g('am-type').value=a.type||'reservation';
-  // Set space select
-  var spaceEl=g('am-space');
-  if(spaceEl){for(var i=0;i<spaceEl.options.length;i++){if(spaceEl.options[i].value===a.space||spaceEl.options[i].text===a.space){spaceEl.selectedIndex=i;break;}}}
+  setSpaceCheckboxes(a.space||'');
   openModal('modal-amenity');
 }
 
