@@ -119,6 +119,9 @@
   .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
   table{width:100%;border-collapse:collapse;font-size:12.5px}
   th{background:var(--bg);font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+  th.th-sort{cursor:pointer;user-select:none;transition:color .12s}
+  th.th-sort:hover{color:var(--text)}
+  th.th-sort.sort-active{color:var(--accent)}
   td{padding:9px 10px;border-bottom:1px solid var(--border2);vertical-align:middle}
   tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   .tbl-empty{text-align:center;color:var(--text3);padding:28px;font-size:13px}
@@ -560,7 +563,7 @@
         <div class="card-hdr"><span class="card-title" id="moves-card-title">Scheduled Moves</span><span class="card-count" id="moves-count">0 entries</span>
           <div class="ml-auto flex gap-8" id="moves-admin-actions"><button class="btn btn-secondary btn-sm" onclick="generatePassdownFromMoves()">Passdown</button><button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button></div>
         </div>
-        <div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident</th><th>Lease Start</th><th>Type</th><th>Appt</th><th>Total</th><th>Notes</th><th></th></tr></thead><tbody id="moves-tbody"></tbody></table></div>
+        <div class="tbl-wrap"><table><thead><tr id="moves-thead-row"><th class="th-sort" onclick="sortMoves('unit')">Unit</th><th class="th-sort" onclick="sortMoves('name')">Resident</th><th class="th-sort" onclick="sortMoves('date')">Lease Start</th><th class="th-sort" onclick="sortMoves('type')">Type</th><th class="th-sort" onclick="sortMoves('appt')">Appt</th><th>Total</th><th>Notes</th><th></th></tr></thead><tbody id="moves-tbody"></tbody></table></div>
       </div>
       <div id="moves-cards"></div>
       <div class="card" id="tight-panel" style="display:none"><div class="card-hdr"><span class="card-title">Tight Turnovers</span></div><div class="card-body" id="tight-body"></div></div>
@@ -622,7 +625,7 @@
     <div class="section" id="section-concierge">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterConcierge('all',this)">All</div><div class="sub-tab" onclick="filterConcierge('open',this)">Open</div><div class="sub-tab" onclick="filterConcierge('completed',this)">Completed</div></div>
       <div class="stat-grid" id="concierge-stats"></div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Concierge Request Log</span><span class="card-count" id="concierge-count">0 requests</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddConcierge()">+ Log Request</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident</th><th>Request Type</th><th>Details</th><th>Status</th><th>Handled By</th><th>Date</th><th></th></tr></thead><tbody id="concierge-tbody"></tbody></table></div></div>
+      <div class="card"><div class="card-hdr"><span class="card-title">Concierge Request Log</span><span class="card-count" id="concierge-count">0 requests</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddConcierge()">+ Log Request</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident</th><th>Request Type</th><th>Details</th><th>Next Action</th><th>Status</th><th>Handled By</th><th>Date</th><th></th></tr></thead><tbody id="concierge-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-residents">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterResidents('all',this)">All Profiles</div><div class="sub-tab" onclick="filterResidents('pte-granted',this)">&#9989; PTE Granted</div><div class="sub-tab" onclick="filterResidents('pte-denied',this)">&#128683; PTE Denied</div><div class="sub-tab" onclick="filterResidents('pte-not-set',this)">PTE Not Set</div><div class="sub-tab" onclick="filterResidents('blueground',this)">&#128309; Blueground</div></div>
@@ -1074,8 +1077,9 @@
   <div class="modal-hdr"><span class="modal-title" id="modal-concierge-title">Log Concierge Request</span><button class="modal-close" onclick="closeModal('modal-concierge')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Unit #</label><input id="cr-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Resident Name</label><input id="cr-resident" type="text"></div></div>
-    <div class="fg"><label>Request Type</label><select id="cr-type"><option value="Restaurant Reservation">Restaurant Reservation</option><option value="Dry Cleaning">Dry Cleaning</option><option value="Taxi / Car Service">Taxi / Car Service</option><option value="Package Hold">Package Hold</option><option value="Maintenance Follow-Up">Maintenance Follow-Up</option><option value="Other">Other</option></select></div>
-    <div class="fg"><label>Details / Notes</label><textarea id="cr-notes" rows="4" placeholder="Describe the request..."></textarea></div>
+    <div class="fg"><label>Request Type</label><select id="cr-type"><option value="Dry Cleaning">Dry Cleaning</option><option value="Package Hold">Package Hold</option><option value="Parking Credentials">Parking Credentials</option><option value="Other">Other</option></select></div>
+    <div class="fg"><label>Details / Notes</label><textarea id="cr-notes" rows="3" placeholder="Describe the request..."></textarea></div>
+    <div class="fg"><label>➤ Next Action</label><input id="cr-nextaction" type="text" placeholder="e.g. Call parking vendor, follow up Fri, awaiting resident reply..."></div>
     <div class="fr"><div class="fg"><label>Status</label><select id="cr-status"><option value="open">Open</option><option value="completed">Completed</option></select></div><div class="fg"><label>Handled By</label><input id="cr-handled" type="text" placeholder="Staff name"></div></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-concierge')">Cancel</button><button class="btn btn-primary" id="modal-concierge-savebtn" onclick="saveConcierge()">Log Request</button></div>
@@ -1571,7 +1575,8 @@ function navToMoves(filter) {
 document.addEventListener('click', function (e) { if (!e.target.closest('.search-wrap')) { var r = g('dash-results'); if (r) r.style.display = 'none'; } });
 
 // ─── MOVES ───
-var moveFilter = 'all', openMoveId = null;
+var moveFilter = 'all', openMoveId = null, moveSort = 'date', moveSortDir = 'asc';
+function sortMoves(col) { if (moveSort === col) { moveSortDir = moveSortDir === 'asc' ? 'desc' : 'asc'; } else { moveSort = col; moveSortDir = 'asc'; } renderMoves(); }
 var editingMoveId = null;
 
 // Build 30-min time slots 8:00am – 5:30pm
@@ -1736,7 +1741,10 @@ function buildCL(m, filterCat) {
     tasks = tasks.filter(function (t) { return t.cat === 'Post Move-In'; });
   }
   var done = tasks.filter(function (t) { return t.done; }).length;
-  var html = '<div class="cl-hdr"><span class="cl-title">' + m.resident + ' - Unit ' + m.unit + '</span><span class="cl-prog-txt">' + done + '/' + tasks.length + ' tasks</span>';
+  var allTasksTotal = (m.tasks || []).length;
+  var allTasksDone = (m.tasks || []).filter(function(t){ return t.done; }).length;
+  var filteredNote = (tasks.length < allTasksTotal) ? ' <span style="font-size:10px;color:var(--text3);font-weight:400">(' + tasks.length + ' shown)</span>' : '';
+  var html = '<div class="cl-hdr"><span class="cl-title">' + m.resident + ' - Unit ' + m.unit + '</span><span class="cl-prog-txt">' + allTasksDone + '/' + allTasksTotal + ' tasks' + filteredNote + '</span>';
   html += '<div class="ml-auto flex gap-4"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();resetCL(\'' + m.id + '\')">Reset</button>';
   html += '<button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();openAddTask(\'' + m.id + '\')">+ Task</button></div></div>';
   if (!tasks.length) { html += '<div class="text-3 text-sm" style="padding:8px 0">No tasks yet.</div>'; return html; }
@@ -1832,7 +1840,40 @@ function renderMoves() {
   else if (moveFilter === 'needs-appt') list = list.filter(function (m) { return !m.archivedAt && !m.apptDate && m.date >= t; });
   else if (moveFilter === 'archive') list = list.filter(function (m) { return !!m.archivedAt; });
   else list = list.filter(function (m) { return !m.archivedAt; });
-  list.sort(function (a, b) { return a.date.localeCompare(b.date); });
+  var dir = moveSortDir === 'desc' ? -1 : 1;
+  list.sort(function (a, b) {
+    var v = 0;
+    if (moveSort === 'unit') v = parseInt(a.unit||0) - parseInt(b.unit||0);
+    else if (moveSort === 'name') v = (a.resident||'').localeCompare(b.resident||'');
+    else if (moveSort === 'type') v = (a.type||'').localeCompare(b.type||'') || a.date.localeCompare(b.date);
+    else if (moveSort === 'appt') { var ad=(a.apptDate||a.date), bd=(b.apptDate||b.date); v = ad.localeCompare(bd); }
+    else if (moveSort === 'checklist') {
+      var aPct = (a.tasks||[]).length ? (a.tasks||[]).filter(function(t){return t.done;}).length/(a.tasks||[]).length : -1;
+      var bPct = (b.tasks||[]).length ? (b.tasks||[]).filter(function(t){return t.done;}).length/(b.tasks||[]).length : -1;
+      v = aPct - bPct;
+    } else v = a.date.localeCompare(b.date);
+    return v * dir;
+  });
+  // Stamp sort indicators on column headers
+  var sortColMap = { unit:0, name:1, date:2, type:3, appt:4 };
+  var theadRow = g('moves-thead-row');
+  if (theadRow) {
+    theadRow.querySelectorAll('th.th-sort').forEach(function(th, i) {
+      th.classList.remove('sort-active');
+      th.dataset.sortIcon = '';
+      var col = ['unit','name','date','type','appt'][i];
+      if (col === moveSort) {
+        th.classList.add('sort-active');
+        th.dataset.sortIcon = moveSortDir === 'asc' ? ' ▲' : ' ▼';
+      }
+    });
+    // Re-render text content with indicator
+    var colLabels = ['Unit','Resident','Lease Start','Type','Appt'];
+    theadRow.querySelectorAll('th.th-sort').forEach(function(th, i) {
+      var col = ['unit','name','date','type','appt'][i];
+      th.textContent = colLabels[i] + (col === moveSort ? (moveSortDir === 'asc' ? ' ▲' : ' ▼') : '');
+    });
+  }
   var cnt = g('moves-count'); if (cnt) cnt.textContent = list.length + (list.length === 1 ? ' entry' : ' entries');
   var cardTitle = g('moves-card-title');
   if (cardTitle) {
@@ -2109,8 +2150,8 @@ var conciergeFilter = 'all', editingConciergeId = null;
 function filterConcierge(f, item) { conciergeFilter = f; document.querySelectorAll('#section-concierge .sub-tab').forEach(function(t){ t.classList.remove('active'); }); item.classList.add('active'); renderConcierge(); }
 function openAddConcierge() {
   editingConciergeId = null;
-  ['cr-unit','cr-resident','cr-notes','cr-handled'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
-  g('cr-type').value = 'Restaurant Reservation';
+  ['cr-unit','cr-resident','cr-notes','cr-handled','cr-nextaction'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  g('cr-type').value = 'Dry Cleaning';
   g('cr-status').value = 'open';
   if (currentUser) g('cr-handled').value = currentUser.name;
   setModalMode('modal-concierge-title','modal-concierge-savebtn','Log Concierge Request','Log Request');
@@ -2125,6 +2166,7 @@ function openEditConcierge(id) {
   g('cr-notes').value = c.notes || '';
   g('cr-status').value = c.status || 'open';
   g('cr-handled').value = c.handledBy || '';
+  var naEl = g('cr-nextaction'); if (naEl) naEl.value = c.nextAction || '';
   setModalMode('modal-concierge-title','modal-concierge-savebtn','Edit Request','Save Changes');
   openModal('modal-concierge');
 }
@@ -2133,14 +2175,16 @@ function saveConcierge() {
   if (!unit || !resident) { toast('Unit and resident are required'); return; }
   if (editingConciergeId) {
     var c = (state.concierge || []).find(function(x){ return x.id===editingConciergeId; }); if (!c) return;
-    c.unit=unit; c.resident=resident; c.type=g('cr-type').value; c.notes=g('cr-notes').value.trim(); c.status=g('cr-status').value; c.handledBy=g('cr-handled').value.trim();
+    var naV = g('cr-nextaction'); c.unit=unit; c.resident=resident; c.type=g('cr-type').value; c.notes=g('cr-notes').value.trim(); c.status=g('cr-status').value; c.handledBy=g('cr-handled').value.trim(); c.nextAction=naV?naV.value.trim():'';
     editingConciergeId=null; scheduleSave(); closeModal('modal-concierge'); renderConcierge(); updateBadges(); toast('Request updated'); return;
   }
-  var entry = { id: uid(), unit: unit, resident: resident, type: g('cr-type').value, notes: g('cr-notes').value.trim(), status: g('cr-status').value, handledBy: g('cr-handled').value.trim(), addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
+  var naVN = g('cr-nextaction');
+  var entry = { id: uid(), unit: unit, resident: resident, type: g('cr-type').value, notes: g('cr-notes').value.trim(), status: g('cr-status').value, handledBy: g('cr-handled').value.trim(), nextAction: naVN?naVN.value.trim():'', addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
   if (!state.concierge) state.concierge = [];
   state.concierge.push(entry); scheduleSave(); closeModal('modal-concierge'); renderConcierge(); updateBadges(); toast('Request logged');
 }
 function updateConciergeStatus(id, val) { var c = (state.concierge || []).find(function(x){ return x.id===id; }); if (c) { c.status=val; scheduleSave(); renderConcierge(); updateBadges(); } }
+function updateConciergeNextAction(id, val) { var c = (state.concierge || []).find(function(x){ return x.id===id; }); if (c) { c.nextAction=val.trim(); scheduleSave(); } }
 function deleteConcierge(id) { if (!confirm('Delete this request?')) return; state.concierge = (state.concierge || []).filter(function(c){ return c.id!==id; }); scheduleSave(); renderConcierge(); updateBadges(); toast('Deleted'); }
 function renderConcierge() {
   var list = (state.concierge || []).slice();
@@ -2153,15 +2197,17 @@ function renderConcierge() {
   g('concierge-stats').innerHTML = '<div class="stat-card ' + (open>0?'accent':'') + '"><div class="stat-num">' + open + '</div><div class="stat-lbl">Open</div></div><div class="stat-card green"><div class="stat-num">' + done + '</div><div class="stat-lbl">Completed</div></div><div class="stat-card"><div class="stat-num">' + total + '</div><div class="stat-lbl">Total</div></div>';
   var cnt = g('concierge-count'); if (cnt) cnt.textContent = list.length + ' requests';
   var tbody = g('concierge-tbody');
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="8" class="tbl-empty">No concierge requests logged.</td></tr>'; return; }
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="9" class="tbl-empty">No concierge requests logged.</td></tr>'; return; }
   var html = '';
   list.forEach(function(c) {
     var byTag = c.addedBy ? '<span class="by-tag">by ' + c.addedBy + '</span>' : '';
+    var naStyle = c.nextAction ? 'color:var(--text);font-weight:500' : 'color:var(--text3);font-style:italic';
     html += '<tr>';
     html += '<td class="mono font-600">' + c.unit + '</td>';
     html += '<td>' + c.resident + byTag + '</td>';
     html += '<td><span class="pill" style="background:var(--accent-light);color:var(--accent);font-size:10px">' + c.type + '</span></td>';
-    html += '<td style="max-width:200px;white-space:normal;font-size:12px;color:var(--text2)">' + (c.notes || '—') + '</td>';
+    html += '<td style="max-width:160px;white-space:normal;font-size:12px;color:var(--text2)">' + (c.notes || '—') + '</td>';
+    html += '<td style="max-width:180px"><input type="text" value="' + (c.nextAction||'').replace(/"/g,'&quot;') + '" placeholder="Add next action…" style="width:100%;font-size:11.5px;border:none;border-bottom:1px dashed var(--border);background:transparent;padding:2px 0;color:' + (c.nextAction?'var(--text)':'var(--text3)') + ';outline:none;font-family:inherit" onblur="updateConciergeNextAction(\'' + c.id + '\',this.value)" onfocus="this.style.borderBottomColor=\'var(--accent)\'" onblur="updateConciergeNextAction(\'' + c.id + '\',this.value);this.style.borderBottomColor=\'var(--border)\'"></td>';
     html += '<td><select class="ie-sel" onchange="updateConciergeStatus(\'' + c.id + '\',this.value)"><option value="open"' + (c.status==='open'?' selected':'') + '>Open</option><option value="completed"' + (c.status==='completed'?' selected':'') + '>Completed</option></select></td>';
     html += '<td class="text-xs text-2">' + (c.handledBy || '—') + '</td>';
     html += '<td class="text-xs text-3">' + new Date(c.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) + '</td>';
@@ -3487,11 +3533,11 @@ function pdAttrEsc(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot
 function pdAutoRow(exKey, content, defaultNextStep) {
   var excl = pdExcluded[exKey];
   var noteVal = pdNotes[exKey] !== undefined ? pdNotes[exKey] : (defaultNextStep || '');
-  var noteHtml = excl ? '' : '<input type="text" value="' + pdAttrEsc(noteVal) + '" placeholder="Next step..." '
-    + 'style="width:100%;font-size:11px;color:var(--text3);background:transparent;border:none;border-bottom:1px dashed var(--border2);padding:2px 0;margin-top:3px;font-family:inherit;outline:none" '
+  var noteHtml = excl ? '' : '<div style="display:flex;align-items:center;gap:5px;margin-top:5px"><span style="font-size:10px;font-weight:600;color:var(--accent);white-space:nowrap;flex-shrink:0">➤ Next Action</span><input type="text" value="' + pdAttrEsc(noteVal) + '" placeholder="What needs to happen next?" '
+    + 'style="flex:1;font-size:11.5px;color:var(--text);background:transparent;border:none;border-bottom:1px solid var(--border);padding:2px 0;font-family:inherit;outline:none;min-width:0" '
     + 'oninput="pdNotes[\'' + exKey + '\']=this.value;pdSaveDraft()" '
     + 'onfocus="this.style.borderBottomColor=\'var(--accent)\'" '
-    + 'onblur="this.style.borderBottomColor=\'var(--border2)\'" />';
+    + 'onblur="this.style.borderBottomColor=\'var(--border)\'" /></div>';
   return '<div class="pd-auto-row' + (excl ? ' pd-auto-excl' : '') + '" style="display:flex;align-items:flex-start;gap:6px">'
     + '<div style="flex:1' + (excl ? ';opacity:.4;text-decoration:line-through' : '') + '">' + content + noteHtml + '</div>'
     + '<button onclick="pdToggleExclude(\'' + exKey + '\')" title="' + (excl ? 'Re-include' : 'Exclude from passdown') + '" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:13px;padding:0;color:var(--text3);line-height:1">'
@@ -3572,8 +3618,8 @@ function renderPdAutoBlocks(isLead) {
       var tag = apptD !== t ? '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>' : '';
       var content = tag + '<strong>Unit ' + m.unit + ' – ' + m.resident + '</strong>';
       if (isMoveCompleted(m)) content += ' <span style="font-size:10px;background:#D1FAE5;color:#065F46;border-radius:3px;padding:1px 5px;margin-left:2px">✓ Completed</span>';
-      if (m.apptDate) { content += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); }
-      else content += ' | Lease: ' + dayLblAuto(m.date);
+      content += ' | Lease: ' + dayLblAuto(m.date);
+      if (m.apptDate) { content += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); } else content += ' <span style="font-size:10px;background:var(--amber-light);color:var(--amber);border-radius:3px;padding:1px 5px">No Appt</span>';
       if (m.total) content += ' | $' + m.total;
       var postPendingNs = (m.tasks||[]).filter(function(tk){ return (tk.cat==='Post Move-In')&&!tk.done; });
       var ns = isMoveCompleted(m)
@@ -3590,8 +3636,8 @@ function renderPdAutoBlocks(isLead) {
       var tag = apptD !== t ? '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>' : '';
       var content = tag + '<strong>Unit ' + m.unit + ' – ' + m.resident + '</strong>';
       if (isMoveCompleted(m)) content += ' <span style="font-size:10px;background:#D1FAE5;color:#065F46;border-radius:3px;padding:1px 5px;margin-left:2px">✓ Completed</span>';
-      if (m.apptDate) { content += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); }
-      else content += ' | Lease end: ' + dayLblAuto(m.date);
+      content += ' | Lease end: ' + dayLblAuto(m.date);
+      if (m.apptDate) { content += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); } else content += ' <span style="font-size:10px;background:var(--amber-light);color:var(--amber);border-radius:3px;padding:1px 5px">No Appt</span>';
       var postPendingOut = (m.tasks||[]).filter(function(tk){ return (tk.cat==='Post Move-Out')&&!tk.done; });
       var nsOut = isMoveCompleted(m)
         ? ('Move-out completed' + (postPendingOut.length ? ' — ' + postPendingOut.length + ' post move-out task(s) still pending.' : ' — all tasks done.'))
@@ -3755,7 +3801,7 @@ function generatePassdown() {
         var tag = apptD !== t ? '[' + dayLbl(apptD) + '] ' : '';
         out += tag + 'Unit ' + m.unit + ' – ' + m.resident + '\n';
         out += 'Lease: ' + dayLbl(m.date);
-        if (m.apptDate) { out += ' | Appt: ' + dayLbl(m.apptDate); if (m.apptTime) out += ' @ ' + fmtTime(m.apptTime); }
+        if (m.apptDate) { out += ' | Appt: ' + dayLbl(m.apptDate); if (m.apptTime) out += ' @ ' + fmtTime(m.apptTime); } else out += ' | No Appt scheduled';
         if (m.total) out += ' | Move-In Total: $' + m.total;
         var defNsIn;
         if (isMoveCompleted(m)) {
@@ -3787,7 +3833,7 @@ function generatePassdown() {
         var tag = apptD !== t ? '[' + dayLbl(apptD) + '] ' : '';
         out += tag + 'Unit ' + m.unit + ' – ' + m.resident + '\n';
         out += 'Lease end: ' + dayLbl(m.date);
-        if (m.apptDate) { out += ' | Appt: ' + dayLbl(m.apptDate); if (m.apptTime) out += ' @ ' + fmtTime(m.apptTime); }
+        if (m.apptDate) { out += ' | Appt: ' + dayLbl(m.apptDate); if (m.apptTime) out += ' @ ' + fmtTime(m.apptTime); } else out += ' | No Appt scheduled';
         var defNsOut;
         if (isMoveCompleted(m)) {
           var postPending2 = (m.tasks||[]).filter(function(tk){ return (tk.cat==='Post Move-Out') && !tk.done; });
@@ -3827,7 +3873,8 @@ function generatePassdown() {
   if (openC.length) {
     out += '\n🎭 Open Concierge Requests\n';
     openC.forEach(function(c) {
-      out += 'Unit ' + c.unit + ' – ' + c.resident + '\n' + c.type + (c.notes ? ': ' + c.notes : '') + '\nNext Step: ' + (pdNotes['c_'+c.id] !== undefined ? pdNotes['c_'+c.id] : 'Follow up and update status once resolved.') + '\n';
+      var defNsC = c.nextAction || 'Follow up and update status once resolved.';
+      out += 'Unit ' + c.unit + ' – ' + c.resident + '\n' + c.type + (c.notes ? ': ' + c.notes : '') + '\nNext Action: ' + (pdNotes['c_'+c.id] !== undefined ? pdNotes['c_'+c.id] : defNsC) + '\n';
     });
   }
 
