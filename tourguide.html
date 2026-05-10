@@ -443,8 +443,17 @@
   @media (max-width: 600px) {
     .shortcuts-grid { grid-template-columns: 1fr 1fr 80px; }
     .shortcuts-grid .cell { padding: 12px 14px; font-size: 13px; }
-    .stop { grid-template-columns: 48px 1fr; }
-    .stop-img { display: none; }
+    .stop {
+      grid-template-columns: 48px 1fr;
+      grid-template-rows: auto auto;
+    }
+    .stop-img {
+      grid-column: 1 / -1;
+      width: 100%;
+      height: 180px;
+      margin-top: 16px;
+      border-radius: 3px;
+    }
   }
 </style>
 </head>
@@ -452,7 +461,7 @@
 
 <!-- HERO -->
 <section class="hero">
-  <video class="hero-video" autoplay loop muted playsinline>
+  <video class="hero-video" autoplay loop muted playsinline poster="https://www.rentchorus.com/assets/_2400xAUTO_crop_center-center_60_none/Chorus-P3-66.jpg">
     <source src="../A-Toploop-optimized.mp4" type="video/mp4">
   </video>
   <p class="hero-eyebrow">San Francisco · 30 Otis St</p>
