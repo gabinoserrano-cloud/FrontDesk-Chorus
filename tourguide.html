@@ -54,6 +54,19 @@
     border: none;
   }
 
+  .hero-cover {
+    position: absolute;
+    inset: 0;
+    background: url('https://www.rentchorus.com/assets/_2400xAUTO_crop_center-center_60_none/Chorus-P3-66.jpg') center/cover no-repeat;
+    z-index: 2;
+    transition: opacity 1.2s ease;
+    pointer-events: none;
+  }
+
+  .hero-cover.fade {
+    opacity: 0;
+  }
+
   .hero::before {
     content: '';
     position: absolute;
@@ -63,7 +76,7 @@
       radial-gradient(ellipse 80% 60% at 50% 0%, rgba(184,149,90,0.15) 0%, transparent 60%);
     z-index: 1;
   }
-  .hero > *:not(.hero-video) { position: relative; z-index: 2; }
+  .hero > *:not(.hero-video):not(.hero-cover) { position: relative; z-index: 4; }
 
   .hero-eyebrow {
     font-family: 'Jost', sans-serif;
@@ -465,10 +478,10 @@
 
 <!-- HERO -->
 <section class="hero">
-  <iframe class="hero-video"
-    src="https://www.youtube.com/embed/aV1zYGmwSxA?autoplay=1&mute=1&loop=1&playlist=aV1zYGmwSxA&controls=0&rel=0&modestbranding=1&playsinline=1"
-    allow="autoplay; encrypted-media"
-    allowfullscreen></iframe>
+  <div class="hero-video" id="yt-container">
+    <div id="yt-player"></div>
+  </div>
+  <div class="hero-cover" id="hero-cover"></div>
   <p class="hero-eyebrow">San Francisco · 30 Otis St</p>
   <h1 class="hero-wordmark">CHORUS</h1>
   <p class="hero-sub">Self-Guided Tour</p>
@@ -691,6 +704,44 @@
   </div>
   <p class="contact-address">30 Otis St., San Francisco, CA 94103</p>
 </footer>
+
+<script>
+  // YouTube IFrame API — fades cover away the moment video starts playing
+  var tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/iframe_api";
+  document.head.appendChild(tag);
+
+  var ytPlayer;
+  function onYouTubeIframeAPIReady() {
+    ytPlayer = new YT.Player('yt-player', {
+      videoId: 'aV1zYGmwSxA',
+      playerVars: {
+        autoplay: 1,
+        mute: 1,
+        loop: 1,
+        playlist: 'aV1zYGmwSxA',
+        controls: 0,
+        rel: 0,
+        modestbranding: 1,
+        playsinline: 1,
+        showinfo: 0
+      },
+      events: {
+        onReady: function(e) { e.target.playVideo(); },
+        onStateChange: function(e) {
+          if (e.data === YT.PlayerState.PLAYING) {
+            document.getElementById('hero-cover').classList.add('fade');
+          }
+        }
+      }
+    });
+  }
+
+  // Style the iframe the API injects to fill its container
+  var style = document.createElement('style');
+  style.textContent = '#yt-container, #yt-player, #yt-player iframe { width:100%; height:100%; border:none; }';
+  document.head.appendChild(style);
+</script>
 
 </body>
 </html>
