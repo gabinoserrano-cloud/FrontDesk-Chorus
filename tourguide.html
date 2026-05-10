@@ -76,8 +76,7 @@
       radial-gradient(ellipse 80% 60% at 50% 0%, rgba(184,149,90,0.15) 0%, transparent 60%);
     z-index: 1;
   }
-  .hero > *:not(.hero-video):not(.hero-cover):not(.scroll-hint) { position: relative; z-index: 4; }
-  .scroll-hint { z-index: 4; }
+  .hero > *:not(.hero-video):not(.hero-cover) { position: relative; z-index: 4; }
 
   .hero-eyebrow {
     font-family: 'Jost', sans-serif;
@@ -135,10 +134,8 @@
   }
 
   .scroll-hint {
-    position: absolute;
-    bottom: 36px;
-    left: 50%;
-    transform: translateX(-50%);
+    margin-top: auto;
+    margin-bottom: 36px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -483,7 +480,7 @@
 <section class="hero">
   <video class="hero-video" autoplay loop muted playsinline
     poster="https://www.rentchorus.com/assets/_2400xAUTO_crop_center-center_60_none/Chorus-P3-66.jpg"
-    oncanplay="document.getElementById('hero-cover').classList.add('fade')">
+    oncanplay="setTimeout(() => document.getElementById('hero-cover').classList.add('fade'), 1200)">
     <source src="H-Hero-optimized.mp4" type="video/mp4">
   </video>
   <div class="hero-cover" id="hero-cover"></div>
