@@ -520,6 +520,61 @@
 
   .contact-links a:hover { color: var(--gold-light); }
 
+  .footer-wifi {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(245,240,232,0.1);
+  }
+
+  .footer-wifi-label {
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+
+  .footer-wifi-network {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 300;
+    color: var(--cream);
+    margin-bottom: 6px;
+  }
+
+  .footer-wifi-pw {
+    font-size: 13px;
+    color: rgba(245,240,232,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .footer-wifi-pw span {
+    color: rgba(245,240,232,0.8);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.05em;
+  }
+
+  .footer-wifi-pw button {
+    background: none;
+    border: 1px solid rgba(184,149,90,0.4);
+    color: var(--gold-light);
+    font-family: 'Jost', sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .footer-wifi-pw button:hover {
+    background: rgba(184,149,90,0.15);
+  }
+
   .contact-address {
     margin-top: 12px;
     font-size: 12px;
@@ -573,23 +628,6 @@
   <p class="hero-tagline">Luxury living defined by the arts, wellness, and community — your front-row residence in the city.</p>
   <div class="scroll-hint">Explore</div>
 </section>
-
-<!-- CONNECT BANNER -->
-<div class="connect-banner">
-  <div class="connect-inner">
-    <div class="connect-item">
-      <span class="connect-label">Guest Wi-Fi</span>
-      <span class="connect-value">Chorus Guest</span>
-      <span class="connect-sub">Password: <strong style="color:rgba(245,240,232,0.7)">guest@chorus</strong></span>
-      <button class="connect-copy" onclick="copyWifi(this)">⎘ Copy password</button>
-    </div>
-    <div class="connect-item">
-      <span class="connect-label">Front Desk</span>
-      <span class="connect-value">(415) 707-3030</span>
-      <a href="tel:4157073030" style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold-light);text-decoration:none;margin-top:2px;font-family:'Jost',sans-serif;">Call now</a>
-    </div>
-  </div>
-</div>
 
 <!-- ELEVATOR SHORTCUTS -->
 <section class="section">
@@ -805,6 +843,11 @@
     <a href="tel:4157073030">(415) 707-3030</a>
   </div>
   <p class="contact-address">30 Otis St., San Francisco, CA 94103</p>
+  <div class="footer-wifi">
+    <p class="footer-wifi-label">Guest Wi-Fi</p>
+    <p class="footer-wifi-network">Chorus Guest</p>
+    <p class="footer-wifi-pw">Password: <span>guest@chorus</span> <button onclick="copyWifi(this)">Copy</button></p>
+  </div>
 </footer>
 
 <script>
