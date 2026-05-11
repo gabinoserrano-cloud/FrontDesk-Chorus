@@ -609,10 +609,10 @@
       <div id="todos-user-switcher" style="display:none;margin-bottom:10px;padding:6px 10px;background:var(--accent-light);border:1px solid var(--border);border-radius:var(--radius);align-items:center;gap:6px"></div>
       <div class="card mb-12"><div class="card-body">
         <div class="flex gap-8 items-center" style="flex-wrap:wrap">
-          <input type="text" id="todo-input" placeholder="Add a to-do..." style="flex:1;min-width:160px" onkeydown="if(event.key==='Enter')addTodo()">
+          <input type="text" id="todo-input" placeholder="Add a to-do..." style="flex:1;min-width:160px" onkeydown="if(event.key==='Enter')openAddTodoFromBar()">
           <input type="date" id="todo-date" style="width:140px">
           <select id="todo-priority" style="width:110px"><option value="normal">Normal</option><option value="urgent">Urgent</option></select>
-          <button class="btn btn-primary" onclick="addTodo()">Add</button>
+          <button class="btn btn-primary" onclick="openAddTodoFromBar()">Add</button>
           <button class="btn btn-ghost btn-sm" onclick="clearDoneTodos()">Clear done</button>
         </div>
       </div></div>
@@ -1643,7 +1643,7 @@ function fmtTime(t) {
   if (!t) return '';
   var parts = t.split(':'); var h = parseInt(parts[0]), m = parseInt(parts[1]||0);
   var h12 = h > 12 ? h-12 : (h===0?12:h), ampm = h < 12 ? 'am' : 'pm';
-  return h12 + ':' + (m===0?'00':m) + ampm;
+  return h12 + ':' + (m < 10 ? '0'+m : m) + ampm;
 }
 
 function openAddMove() {
@@ -3223,6 +3223,14 @@ function addTodo() {
   input.value = ''; g('todo-date').value = ''; g('todo-priority').value = 'normal';
   scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Added');
 }
+function openAddTodoFromBar() {
+  if (currentUser && currentUser.role === 'admin' && todosViewingId && todosViewingId !== currentUser.id) { toast('Switch to your own list to add tasks'); return; }
+  var text = (g('todo-input').value || '').trim();
+  var date = g('todo-date').value || '';
+  var pri = g('todo-priority').value || 'normal';
+  g('todo-input').value = ''; g('todo-date').value = ''; g('todo-priority').value = 'normal';
+  openAddTodoModal(date, text, pri);
+}
 
 function renderTodos() {
   // Admin user-switcher
@@ -3624,7 +3632,7 @@ function renderPdAutoBlocks(isLead) {
       var postPendingNs = (m.tasks||[]).filter(function(tk){ return (tk.cat==='Post Move-In')&&!tk.done; });
       var ns = isMoveCompleted(m)
         ? ('Move-in completed' + (postPendingNs.length ? ' — ' + postPendingNs.length + ' post move-in task(s) still pending.' : ' — all tasks done.'))
-        : ((m.tasks||[]).filter(function(tk){return !tk.done;}).length + ' task(s) still pending — review checklist.' || 'All tasks complete — ready for move-in.');
+        : (function(){ var pend=(m.tasks||[]).filter(function(tk){return !tk.done&&tk.cat!=='Post Move-In';}); return pend.length ? pend.length+' task(s) still pending — review checklist.' : 'All tasks complete — ready for move-in.'; }());
       html += pdAutoRow('in_' + m.id, content, ns);
     });
     html += '</div>';
@@ -3656,7 +3664,7 @@ function renderPdAutoBlocks(isLead) {
   else allAm.forEach(function(a) {
     var tag = a.date!==t ? '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(a.date) + '</span>' : '';
     var content = tag + '<strong>' + a.space + '</strong> – ' + a.resident + ' (Unit ' + a.unit + ')';
-    if (a.start) content += ' ' + a.start + (a.end ? '–' + a.end : '');
+    if (a.start) content += ' ' + fmtTime(a.start) + (a.end ? '–' + fmtTime(a.end) : '');
     if (a.notes) content += ' | ' + a.notes;
     html += pdAutoRow('am_' + a.id, content, 'Confirm booking details and ensure space is prepared.');
   });
@@ -3809,7 +3817,7 @@ function generatePassdown() {
           defNsIn = 'Move-in completed' + (postPending.length ? ' — ' + postPending.length + ' post move-in task(s) still pending.' : ' — all tasks done.');
           out += '\nStatus: ✅ ' + (pdNotes['in_'+m.id] !== undefined ? pdNotes['in_'+m.id] : defNsIn) + '\n';
         } else {
-          var pending = (m.tasks||[]).filter(function(tk){ return !tk.done; });
+          var pending = (m.tasks||[]).filter(function(tk){ return !tk.done && tk.cat !== 'Post Move-In'; });
           defNsIn = pending.length ? pending.length + ' task(s) still pending — review checklist.' : 'All tasks complete — ready for move-in.';
           out += '\nNext Step: ' + (pdNotes['in_'+m.id] !== undefined ? pdNotes['in_'+m.id] : defNsIn) + '\n';
         }
@@ -3863,7 +3871,7 @@ function generatePassdown() {
     allAm.forEach(function(a) {
       var tag = a.date !== t ? '[' + dayLbl(a.date) + '] ' : '';
       out += tag + a.space + ' – ' + a.resident + ' (Unit ' + a.unit + ')';
-      if (a.start) out += ' | ' + a.start + (a.end ? '–' + a.end : '');
+      if (a.start) out += ' | ' + fmtTime(a.start) + (a.end ? '–' + fmtTime(a.end) : '');
       out += '\nNext Step: ' + (pdNotes['am_'+a.id] !== undefined ? pdNotes['am_'+a.id] : 'Confirm booking details and ensure space is prepared.') + '\n';
     });
   }
@@ -3988,7 +3996,7 @@ function _legacyAutoGenerate() {
     todayTours.forEach(function (tr) {
       tourSection += '- *' + tr.name + '* - ' + (tr.type === 'sgt' ? 'SGT' : 'Guided');
       if (tr.unit) tourSection += ' - Unit(s): ' + tr.unit;
-      if (tr.time) tourSection += ' at ' + tr.time;
+      if (tr.time) tourSection += ' at ' + fmtTime(tr.time);
       if (tr.notes) tourSection += ' - ' + tr.notes;
       tourSection += '\n';
     });
@@ -4284,13 +4292,14 @@ function openEditLAF(id) {
 
 // ─── TODO INLINE EDIT ───
 var editingTodoId = null;
-function openAddTodoModal(dateStr) {
+function openAddTodoModal(dateStr, textStr, priorityStr) {
   editingTodoId = null;
   g('modal-todo-title').textContent = 'Add To-Do';
   g('modal-todo-savebtn').textContent = 'Add';
-  g('td-text').value = ''; g('td-note').value = '';
-  g('td-date').value = dateStr || ''; g('td-priority').value = 'normal';
+  g('td-text').value = textStr || ''; g('td-note').value = '';
+  g('td-date').value = dateStr || ''; g('td-priority').value = priorityStr || 'normal';
   openModal('modal-todo');
+  if (textStr) { setTimeout(function(){ var n=g('td-note'); if(n) n.focus(); }, 80); }
 }
 function openEditTodo(id) {
   var t = getCurrentTodos().find(function (x) { return x.id === id; }); if (!t) return;
@@ -4604,7 +4613,7 @@ function openCalPop(dateStr, evt) {
   var items = [];
   // Move ins/outs
   (state.moves || []).filter(function (m) { return m.date === dateStr && !m.archivedAt; }).forEach(function (m) {
-    items.push({ type: m.type === 'in' ? 'Move In' : 'Move Out', typeClass: m.type === 'in' ? 'pill-in' : 'pill-out', main: m.resident, sub: 'Unit ' + m.unit + (m.time ? ' · ' + m.time : '') + (m.total ? ' · $' + m.total : ''), sec: 'moves', moveId: m.id });
+    items.push({ type: m.type === 'in' ? 'Move In' : 'Move Out', typeClass: m.type === 'in' ? 'pill-in' : 'pill-out', main: m.resident, sub: 'Unit ' + m.unit + (m.time ? ' · ' + fmtTime(m.time) : '') + (m.total ? ' · $' + m.total : ''), sec: 'moves', moveId: m.id });
   });
   // Task due dates
   (state.moves || []).filter(function (m) { return !m.archivedAt; }).forEach(function (m) {
@@ -4622,7 +4631,7 @@ function openCalPop(dateStr, evt) {
   });
   // Tours
   (state.tours || []).filter(function (tr) { return tr.date === dateStr; }).forEach(function (tr) {
-    items.push({ type: tr.type === 'sgt' ? 'SGT Tour' : 'Guided Tour', typeClass: 'pill-resolved', main: tr.name, sub: (tr.unit ? 'Unit ' + tr.unit : '') + (tr.time ? ' · ' + tr.time : ''), sec: 'tours' });
+    items.push({ type: tr.type === 'sgt' ? 'SGT Tour' : 'Guided Tour', typeClass: 'pill-resolved', main: tr.name, sub: (tr.unit ? 'Unit ' + tr.unit : '') + (tr.time ? ' · ' + fmtTime(tr.time) : ''), sec: 'tours' });
   });
 
   var fmtted = new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
@@ -4803,7 +4812,7 @@ function renderAgendaCal() {
       dayItems.push({ tag: 'APT', tagCls: 'cal-chip-amenity', tagStyle: '', text: a.space + ' \u2014 ' + a.resident + ', Unit ' + a.unit + (a.start ? ' at ' + a.start : ''), sec: 'amenities' });
     });
     (state.tours || []).filter(function (tr) { return tr.date === ds; }).forEach(function (tr) {
-      dayItems.push({ tag: 'TOUR', tagCls: '', tagStyle: 'background:var(--purple-light);color:var(--purple)', text: (tr.type === 'sgt' ? 'SGT' : 'Guided') + ' Tour \u2014 ' + tr.name + (tr.unit ? ', Unit ' + tr.unit : '') + (tr.time ? ' at ' + tr.time : ''), sec: 'tours' });
+      dayItems.push({ tag: 'TOUR', tagCls: '', tagStyle: 'background:var(--purple-light);color:var(--purple)', text: (tr.type === 'sgt' ? 'SGT' : 'Guided') + ' Tour \u2014 ' + tr.name + (tr.unit ? ', Unit ' + tr.unit : '') + (tr.time ? ' at ' + fmtTime(tr.time) : ''), sec: 'tours' });
     });
     if (!dayItems.length) continue;
     hasAny = true;
