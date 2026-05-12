@@ -452,6 +452,32 @@
   .pte-denied{background:#FAEBEB;color:#8B2222}
   /* Passdown preview */
   .pd-preview{background:#F7F5F0;border-color:rgba(26,24,20,0.09)}
+  /* ── Stale key row ── */
+  .key-stale-row>td:first-child{border-left:3px solid var(--amber)}
+  .stale-badge{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:var(--amber);background:var(--amber-light);border-radius:4px;padding:1px 6px;margin-left:5px}
+  .key-note-row td{padding:4px 10px 8px;background:var(--surface2)}
+  .key-note-row .note-trail{font-size:11px;color:var(--text2);margin-bottom:5px}
+  .key-note-row .note-trail-entry{padding:2px 0;border-bottom:1px solid var(--border2)}
+  .key-note-row .note-trail-entry:last-child{border-bottom:none}
+  /* ── Activity log row (Maintenance / Concierge) ── */
+  .act-log-row{display:none;background:var(--surface2)}
+  .act-log-row.open{display:table-row}
+  .act-log-row td{padding:0;border-bottom:2px solid var(--accent)}
+  .act-log-inner{padding:10px 14px}
+  .act-log-entry{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border2);font-size:12px}
+  .act-log-entry:last-child{border-bottom:none}
+  .act-log-meta{font-size:10.5px;color:var(--text3);font-family:var(--font-mono);flex-shrink:0;white-space:nowrap}
+  .act-log-note{flex:1;color:var(--text)}
+  .act-log-add{display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+  /* ── Amenity close-out ── */
+  .amenity-closeout-row{display:none;background:var(--surface2)}
+  .amenity-closeout-row.open{display:table-row}
+  .amenity-closeout-row td{padding:0;border-bottom:2px solid var(--amber)}
+  .closeout-inner{padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .pending-closeout-badge{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:var(--amber);background:var(--amber-light);border-radius:4px;padding:2px 8px}
+  /* ── Passdown pre-generation checklist ── */
+  .pd-check-item{padding:10px 0;border-bottom:1px solid var(--border2)}
+  .pd-check-item:last-child{border-bottom:none}
   /* Pill reservation gold */
   .pill-reservation{background:rgba(201,164,94,0.14);color:#8A6830}
   /* Cal chip amenity warm gold */
@@ -649,8 +675,9 @@
               </div>
               <div id="pd-auto-blocks"></div>
               <div id="pd-free-sections"></div>
+              <div id="pd-checklist-panel" style="display:none;margin-bottom:12px"></div>
               <div class="flex gap-8 mt-12" style="flex-wrap:wrap">
-                <button class="btn btn-primary" onclick="generatePassdown()">Generate</button>
+                <button class="btn btn-primary" onclick="checkPassdownReady()">Generate</button>
                 <button class="btn btn-secondary" onclick="savePassdown()">Save</button>
                 <button class="btn btn-ghost" onclick="copyPassdown()">Copy</button>
                 <button class="btn btn-ghost" style="margin-left:auto;color:var(--text3);font-size:12px" onclick="pdClearDraft()">Clear draft</button>
@@ -2179,7 +2206,9 @@ function saveConcierge() {
     editingConciergeId=null; scheduleSave(); closeModal('modal-concierge'); renderConcierge(); updateBadges(); toast('Request updated'); return;
   }
   var naVN = g('cr-nextaction');
-  var entry = { id: uid(), unit: unit, resident: resident, type: g('cr-type').value, notes: g('cr-notes').value.trim(), status: g('cr-status').value, handledBy: g('cr-handled').value.trim(), nextAction: naVN?naVN.value.trim():'', addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
+  var cNow = Date.now(), cBy = currentUser ? currentUser.name : '';
+  var cNotes = g('cr-notes').value.trim();
+  var entry = { id: uid(), unit: unit, resident: resident, type: g('cr-type').value, notes: cNotes, status: g('cr-status').value, handledBy: g('cr-handled').value.trim(), nextAction: naVN?naVN.value.trim():'', addedBy: cBy, createdAt: cNow, log: cNotes ? [{ ts: cNow, by: cBy, note: cNotes }] : [] };
   if (!state.concierge) state.concierge = [];
   state.concierge.push(entry); scheduleSave(); closeModal('modal-concierge'); renderConcierge(); updateBadges(); toast('Request logged');
 }
@@ -2201,7 +2230,10 @@ function renderConcierge() {
   var html = '';
   list.forEach(function(c) {
     var byTag = c.addedBy ? '<span class="by-tag">by ' + c.addedBy + '</span>' : '';
-    var naStyle = c.nextAction ? 'color:var(--text);font-weight:500' : 'color:var(--text3);font-style:italic';
+    // Build log (backwards compat)
+    var log = c.log || (c.notes ? [{ ts: c.createdAt, by: c.addedBy || '', note: c.notes }] : []);
+    var logCount = log.length;
+    var logBtnLabel = logCount > 1 ? '&#128221; ' + logCount + ' updates' : '&#128221; Log';
     html += '<tr>';
     html += '<td class="mono font-600">' + c.unit + '</td>';
     html += '<td>' + c.resident + byTag + '</td>';
@@ -2211,8 +2243,20 @@ function renderConcierge() {
     html += '<td><select class="ie-sel" onchange="updateConciergeStatus(\'' + c.id + '\',this.value)"><option value="open"' + (c.status==='open'?' selected':'') + '>Open</option><option value="completed"' + (c.status==='completed'?' selected':'') + '>Completed</option></select></td>';
     html += '<td class="text-xs text-2">' + (c.handledBy || '—') + '</td>';
     html += '<td class="text-xs text-3">' + new Date(c.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) + '</td>';
-    html += '<td><button class="btn btn-ghost btn-xs" onclick="openEditConcierge(\'' + c.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteConcierge(\'' + c.id + '\')">&#215;</button></td>';
+    html += '<td><button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="toggleConciergeLog(\'' + c.id + '\')" title="Activity log">' + logBtnLabel + '</button> <button class="btn btn-ghost btn-xs" onclick="openEditConcierge(\'' + c.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteConcierge(\'' + c.id + '\')">&#215;</button></td>';
     html += '</tr>';
+    // Activity log sub-row
+    var logInputId = 'concierge-log-input-' + c.id;
+    var entriesHtml = log.map(function (e) {
+      var d = new Date(e.ts); var tf = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      return '<div class="act-log-entry"><span class="act-log-meta">' + tf + (e.by ? ' · ' + e.by : '') + '</span><span class="act-log-note">' + e.note + '</span></div>';
+    }).join('');
+    html += '<tr class="act-log-row" id="concierge-log-' + c.id + '">';
+    html += '<td colspan="9"><div class="act-log-inner">';
+    html += '<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Activity Log</div>';
+    html += entriesHtml || '<div style="color:var(--text3);font-size:12px;padding:4px 0">No updates yet.</div>';
+    html += '<div class="act-log-add"><input type="text" id="' + logInputId + '" placeholder="Log an update…" style="flex:1;font-size:12px" onkeydown="if(event.key===\'Enter\')addConciergeLog(\'' + c.id + '\',this.value)"><button class="btn btn-secondary btn-sm" onclick="addConciergeLog(\'' + c.id + '\',g(\'' + logInputId + '\').value)">Log update</button></div>';
+    html += '</div></td></tr>';
   });
   tbody.innerHTML = html;
   setBadge('badge-concierge', open);
@@ -2229,7 +2273,9 @@ function saveMaint() {
     m.unit=unit; m.issue=issue; m.desc=g('mt-desc').value.trim(); m.priority=g('mt-priority').value; m.status=g('mt-status').value; m.reporter=g('mt-reporter').value.trim();
     editingMaintId=null; scheduleSave(); closeModal('modal-maint'); renderMaint(); updateBadges(); renderDash(); toast('Issue updated'); return;
   }
-  var m = { id: uid(), unit: unit, issue: issue, desc: g('mt-desc').value.trim(), priority: g('mt-priority').value, status: g('mt-status').value, reporter: g('mt-reporter').value.trim(), addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
+  var mNow = Date.now(), mBy = currentUser ? currentUser.name : '';
+  var mDesc = g('mt-desc').value.trim();
+  var m = { id: uid(), unit: unit, issue: issue, desc: mDesc, priority: g('mt-priority').value, status: g('mt-status').value, reporter: g('mt-reporter').value.trim(), addedBy: mBy, createdAt: mNow, log: mDesc ? [{ ts: mNow, by: mBy, note: mDesc }] : [] };
   if (!state.maintenance) state.maintenance = [];
   state.maintenance.push(m); scheduleSave(); closeModal('modal-maint'); renderMaint(); updateBadges(); renderDash();
   ['mt-unit', 'mt-issue', 'mt-desc', 'mt-reporter'].forEach(function (id) { g(id).value = ''; }); toast('Issue logged');
@@ -2248,13 +2294,33 @@ function renderMaint() {
   if (!list.length) { tbody.innerHTML = '<tr><td colspan="6" class="tbl-empty">No issues logged.</td></tr>'; return; }
   var html = '';
   list.forEach(function (m) {
-    var desc = m.desc ? '<div class="text-xs text-2" style="margin-top:2px">' + m.desc + '</div>' : '';
+    // Build log (backwards compat: fall back to desc if no log array yet)
+    var log = m.log || (m.desc ? [{ ts: m.createdAt, by: m.addedBy || '', note: m.desc }] : []);
+    var logCount = log.length;
+    var latestNote = logCount ? log[logCount - 1].note : (m.desc || '');
+    var desc = latestNote ? '<div class="text-xs text-2" style="margin-top:2px">' + latestNote + '</div>' : '';
     var mtBy = m.addedBy ? '<span class="by-tag">by ' + m.addedBy + '</span>' : '';
-    html += '<tr><td class="mono font-600">' + m.unit + '</td><td><div class="font-600">' + m.issue + mtBy + '</div>' + desc + '</td>';
+    var logBtnLabel = logCount > 1 ? '&#128221; ' + logCount + ' updates' : '&#128221; Log';
+    html += '<tr>';
+    html += '<td class="mono font-600">' + m.unit + '</td>';
+    html += '<td><div class="font-600">' + m.issue + mtBy + '</div>' + desc + '</td>';
     html += '<td><span class="pill pill-' + m.priority + '">' + m.priority + '</span></td>';
     html += '<td><select class="ie-sel" onchange="updateMaintStatus(\'' + m.id + '\',this.value)"><option value="open" ' + (m.status === 'open' ? 'selected' : '') + '>Open</option><option value="in-progress" ' + (m.status === 'in-progress' ? 'selected' : '') + '>In Progress</option><option value="resolved" ' + (m.status === 'resolved' ? 'selected' : '') + '>Resolved</option></select></td>';
     html += '<td class="text-xs text-3">' + new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</td>';
-    html += '<td><button class="btn btn-ghost btn-xs" onclick="openEditMaint(\'' + m.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteMaint(\'' + m.id + '\')">x</button></td></tr>';
+    html += '<td><button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="toggleMaintLog(\'' + m.id + '\')" title="Activity log">' + logBtnLabel + '</button> <button class="btn btn-ghost btn-xs" onclick="openEditMaint(\'' + m.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteMaint(\'' + m.id + '\')">x</button></td>';
+    html += '</tr>';
+    // Activity log sub-row
+    var logInputId = 'maint-log-input-' + m.id;
+    var entriesHtml = log.map(function (e) {
+      var d = new Date(e.ts); var tf = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      return '<div class="act-log-entry"><span class="act-log-meta">' + tf + (e.by ? ' · ' + e.by : '') + '</span><span class="act-log-note">' + e.note + '</span></div>';
+    }).join('');
+    html += '<tr class="act-log-row" id="maint-log-' + m.id + '">';
+    html += '<td colspan="6"><div class="act-log-inner">';
+    html += '<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Activity Log</div>';
+    html += entriesHtml || '<div style="color:var(--text3);font-size:12px;padding:4px 0">No updates yet.</div>';
+    html += '<div class="act-log-add"><input type="text" id="' + logInputId + '" placeholder="Log an update…" style="flex:1;font-size:12px" onkeydown="if(event.key===\'Enter\')addMaintLog(\'' + m.id + '\',this.value)"><button class="btn btn-secondary btn-sm" onclick="addMaintLog(\'' + m.id + '\',g(\'' + logInputId + '\').value)">Log update</button></div>';
+    html += '</div></td></tr>';
   });
   tbody.innerHTML = html;
   setBadge('badge-maint', open + inp);
@@ -2342,28 +2408,53 @@ function renderKeys() {
   if (cnt) cnt.textContent = list.length + ' entries';
   if (!list.length) { tbody.innerHTML = '<tr><td colspan="8" class="tbl-empty">No keys logged.</td></tr>'; return; }
   var now = Date.now();
+  var curShiftId = getCurrentShiftId();
   var html = '';
   list.forEach(function (k) {
     var kyBy = k.addedBy ? '<span class="by-tag">by ' + k.addedBy + '</span>' : '';
     var isOneTime = k.type === 'one-time';
-    var overdueMs = k.status === 'issued' && isOneTime && k.issuedAt ? now - k.issuedAt : 0;
+    var isIssued = k.status === 'issued';
+    var overdueMs = isIssued && isOneTime && k.issuedAt ? now - k.issuedAt : 0;
     var isOverdue = overdueMs >= 2 * 3600000;
     var overdueHrs = overdueMs > 0 ? Math.floor(overdueMs / 3600000) : 0;
     var overdueMin = overdueMs > 0 ? Math.floor((overdueMs % 3600000) / 60000) : 0;
-    var rowStyle = isOverdue ? ' style="background:#fef2f2"' : '';
+    // Stale detection: one-time issued keys with no shift note this shift
+    var isStale = isOneTime && isIssued && !(k.shiftNotes || []).some(function (n) { return n.shiftId === curShiftId; });
+    var staleCount = isStale ? countStaleShifts(k) : 0;
+    var rowClass = (isStale ? ' key-stale-row' : '') + (isOverdue ? ' key-overdue-row' : '');
+    var rowBg = isOverdue ? 'background:#fef2f2' : '';
+    var rowStyle = rowBg ? ' style="' + rowBg + '"' : '';
     var overdueTag = isOverdue ? '<span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + overdueHrs + 'h ' + overdueMin + 'm OUT</span>' : '';
+    var staleTag = isStale ? '<span class="stale-badge">&#9888; Stale &mdash; ' + staleCount + ' shift' + (staleCount !== 1 ? 's' : '') + '</span>' : '';
     var nameCell = k.name + (k.guest ? '<div style="font-size:11px;color:var(--text3)">Guest: ' + k.guest + '</div>' : '') + kyBy;
     var timeOutCell = (isOneTime && k.timeout) ? '<span class="mono text-xs">' + k.timeout + '</span>' : (isOneTime && k.issuedAt ? '<span class="mono text-xs text-3">' + new Date(k.issuedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + '</span>' : '<span class="text-xs text-3">-</span>');
-    html += '<tr' + rowStyle + '>';
+    html += '<tr class="' + rowClass + '"' + rowStyle + '>';
     html += '<td class="mono font-600">' + k.unit + '</td>';
     html += '<td>' + nameCell + '</td>';
-    html += '<td class="text-sm">' + k.type + overdueTag + '</td>';
+    html += '<td class="text-sm">' + k.type + overdueTag + staleTag + '</td>';
     html += '<td class="mono text-sm">' + (k.fob || '-') + '</td>';
     html += '<td>' + timeOutCell + '</td>';
-    html += '<td><select class="ie-sel" onchange="updateKeyStatus(\'' + k.id + '\',this.value)"><option value="issued" ' + (k.status === 'issued' ? 'selected' : '') + '>Issued</option><option value="returned" ' + (k.status === 'returned' ? 'selected' : '') + '>Returned</option></select></td>';
+    html += '<td><select class="ie-sel" onchange="updateKeyStatus(\'' + k.id + '\',this.value)"><option value="issued" ' + (isIssued ? 'selected' : '') + '>Issued</option><option value="returned" ' + (k.status === 'returned' ? 'selected' : '') + '>Returned</option></select></td>';
     html += '<td><button class="btn btn-ghost btn-xs" onclick="openEditKey(\'' + k.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteKey(\'' + k.id + '\')">x</button></td>';
     html += '</tr>';
-    if (k.status === 'issued' && isOneTime && k.notes) {
+    // Status note row for all issued one-time keys
+    if (isOneTime && isIssued) {
+      var notes = k.shiftNotes || [];
+      var trailHtml = '';
+      if (notes.length) {
+        trailHtml = '<div class="note-trail">' + notes.slice(-3).map(function (n) {
+          var d = new Date(n.ts); var tf = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+          return '<div class="note-trail-entry"><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px">' + tf + (n.by ? ' · ' + n.by : '') + (n.shift ? ' [' + n.shift + ']' : '') + '</span><span style="margin-left:8px">' + n.note + '</span></div>';
+        }).join('') + '</div>';
+      }
+      var noteInputId = 'key-note-input-' + k.id;
+      html += '<tr class="key-note-row"' + rowStyle + '><td colspan="7">';
+      html += trailHtml;
+      html += '<div style="display:flex;gap:6px;align-items:center">';
+      html += '<input type="text" id="' + noteInputId + '" placeholder="' + (isStale ? '&#9888; Add shift status note to clear stale flag…' : 'Add shift status note…') + '" style="flex:1;font-size:12px;padding:6px 8px" onkeydown="if(event.key===\'Enter\')addKeyShiftNote(\'' + k.id + '\',this.value)">';
+      html += '<button class="btn btn-secondary btn-sm" onclick="addKeyShiftNote(\'' + k.id + '\',g(\'' + noteInputId + '\').value)">Save note</button>';
+      html += '</div></td></tr>';
+    } else if (isOneTime && k.status !== 'issued' && k.notes) {
       html += '<tr' + rowStyle + '><td colspan="7" style="font-size:11px;color:var(--text2);padding:2px 12px 6px;font-style:italic">&#128221; ' + k.notes + '</td></tr>';
     }
   });
@@ -2407,12 +2498,41 @@ function renderAmenities() {
   if (!list.length) { tbody.innerHTML = '<tr><td colspan="8" class="tbl-empty">No bookings.</td></tr>'; return; }
   var html = '';
   list.forEach(function (a) {
-    var style = a.date === t ? ' style="background:var(--accent-light)"' : '';
+    var pendingCloseout = isCloseoutPending(a);
+    var isClosed = !!a.closeoutNote;
+    var rowBg = pendingCloseout ? 'background:#FFFBF0' : (a.date === t ? 'background:var(--accent-light)' : '');
+    var rowStyle = rowBg ? ' style="' + rowBg + '"' : '';
     var time = a.start ? (a.start + (a.end ? ' - ' + a.end : '')) : '-';
     var amBy = a.addedBy ? '<span class="by-tag">by ' + a.addedBy + '</span>' : '';
-    html += '<tr' + style + '><td class="font-600">' + a.resident + amBy + '</td><td class="mono">' + a.unit + '</td><td class="text-sm">' + a.space + '</td><td class="mono text-sm">' + fmtShort(a.date) + '</td><td class="text-sm">' + time + '</td>';
-    html += '<td><span class="pill ' + (a.type === 'event' ? 'pill-event' : 'pill-reservation') + '">' + (a.type === 'event' ? 'Event' : 'Reservation') + '</span></td>';
-    html += '<td class="text-sm text-2">' + (a.notes || '-') + '</td><td><button class="btn btn-ghost btn-xs" onclick="openEditAmenity(\'' + a.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteAmenity(\'' + a.id + '\')">x</button></td></tr>';
+    var typePill = '<span class="pill ' + (a.type === 'event' ? 'pill-event' : 'pill-reservation') + '">' + (a.type === 'event' ? 'Event' : 'Reservation') + '</span>';
+    var closeoutPill = pendingCloseout ? ' <span class="pending-closeout-badge">&#9888; Pending close-out</span>' : (isClosed ? ' <span style="font-size:10px;color:var(--green);background:var(--green-light);border-radius:4px;padding:1px 6px;font-weight:600">&#10003; Closed out</span>' : '');
+    html += '<tr' + rowStyle + '>';
+    html += '<td class="font-600">' + a.resident + amBy + '</td>';
+    html += '<td class="mono">' + a.unit + '</td>';
+    html += '<td class="text-sm">' + a.space + '</td>';
+    html += '<td class="mono text-sm">' + fmtShort(a.date) + '</td>';
+    html += '<td class="text-sm">' + time + '</td>';
+    html += '<td>' + typePill + closeoutPill + '</td>';
+    html += '<td class="text-sm text-2">' + (a.notes || '-') + '</td>';
+    html += '<td>';
+    if (pendingCloseout) html += '<button class="btn btn-secondary btn-sm" style="border-color:var(--amber);color:var(--amber)" onclick="toggleAmenityCloseout(\'' + a.id + '\')">Close out</button> ';
+    html += '<button class="btn btn-ghost btn-xs" onclick="openEditAmenity(\'' + a.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteAmenity(\'' + a.id + '\')">x</button>';
+    html += '</td></tr>';
+    // Close-out input sub-row
+    if (pendingCloseout) {
+      var closeInputId = 'amenity-closeout-input-' + a.id;
+      html += '<tr class="amenity-closeout-row" id="amenity-closeout-' + a.id + '">';
+      html += '<td colspan="8"><div class="closeout-inner">';
+      html += '<span style="font-size:12px;color:var(--amber);font-weight:600">Close-out note:</span>';
+      html += '<input type="text" id="' + closeInputId + '" placeholder="e.g. Space cleaned and cleared, no issues." style="flex:1;min-width:200px;font-size:12px" onkeydown="if(event.key===\'Enter\')saveAmenityCloseout(\'' + a.id + '\',this.value)">';
+      html += '<button class="btn btn-secondary btn-sm" style="border-color:var(--green);color:var(--green)" onclick="saveAmenityCloseout(\'' + a.id + '\',g(\'' + closeInputId + '\').value)">Mark resolved</button>';
+      html += '</div></td></tr>';
+    }
+    // Show closeout note if already closed
+    if (isClosed) {
+      var closedFmt = a.closeoutAt ? new Date(a.closeoutAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + new Date(a.closeoutAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : '';
+      html += '<tr style="background:var(--green-light)"><td colspan="8" style="font-size:11px;color:var(--green);padding:3px 10px 5px;font-style:italic">&#10003; Close-out: ' + a.closeoutNote + (closedFmt ? ' <span style="color:var(--text3)">(' + closedFmt + ')</span>' : '') + '</td></tr>';
+    }
   });
   tbody.innerHTML = html;
   setBadge('badge-amenities', (state.amenities || []).filter(function (a) { return a.date >= t; }).length);
@@ -5820,6 +5940,252 @@ async function init() {
   }
 }
 document.addEventListener('DOMContentLoaded', init);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TWEAK 1 — Stale flag helpers (Key Tracker)
+// ─────────────────────────────────────────────────────────────────────────────
+function getCurrentShiftLabel() {
+  var h = new Date().getHours();
+  if (h >= 7 && h < 15) return 'AM';
+  if (h >= 15 && h < 23) return 'PM';
+  return 'Overnight';
+}
+function getShiftIdForTs(ts) {
+  var d = new Date(ts);
+  var h = d.getHours();
+  var shift = (h >= 7 && h < 15) ? 'AM' : (h >= 15 && h < 23) ? 'PM' : 'Overnight';
+  // Overnight before 7am belongs to the previous calendar day's shift
+  var dateStr;
+  if (h < 7) { var prev = new Date(ts - 86400000); dateStr = prev.toISOString().split('T')[0]; }
+  else { dateStr = d.toISOString().split('T')[0]; }
+  return dateStr + '-' + shift;
+}
+function getCurrentShiftId() { return getShiftIdForTs(Date.now()); }
+function countStaleShifts(k) {
+  var fromTs;
+  if (k.shiftNotes && k.shiftNotes.length) { fromTs = k.shiftNotes[k.shiftNotes.length - 1].ts; }
+  else { fromTs = k.issuedAt || k.createdAt; }
+  var ms = Date.now() - fromTs;
+  return Math.max(1, Math.floor(ms / (8 * 3600000)));
+}
+function addKeyShiftNote(id, note) {
+  note = (note || '').trim();
+  if (!note) { toast('Enter a status note'); return; }
+  var k = (state.keys || []).find(function (x) { return x.id === id; });
+  if (!k) return;
+  if (!k.shiftNotes) k.shiftNotes = [];
+  k.shiftNotes.push({ shiftId: getCurrentShiftId(), shift: getCurrentShiftLabel(), note: note, by: currentUser ? currentUser.name : '', ts: Date.now() });
+  scheduleSave(); renderKeys(); toast('Note saved');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TWEAK 2 — Activity log helpers (Maintenance & Concierge)
+// ─────────────────────────────────────────────────────────────────────────────
+function toggleMaintLog(id) {
+  var row = g('maint-log-' + id); if (!row) return;
+  row.classList.toggle('open');
+}
+function addMaintLog(id, note) {
+  note = (note || '').trim();
+  if (!note) { toast('Enter an update'); return; }
+  var m = (state.maintenance || []).find(function (x) { return x.id === id; }); if (!m) return;
+  if (!m.log) m.log = m.desc ? [{ ts: m.createdAt, by: m.addedBy || '', note: m.desc }] : [];
+  m.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: note });
+  scheduleSave(); renderMaint(); toast('Update logged');
+  // Reopen the log row after re-render
+  setTimeout(function () { var row = g('maint-log-' + id); if (row) row.classList.add('open'); }, 0);
+}
+function toggleConciergeLog(id) {
+  var row = g('concierge-log-' + id); if (!row) return;
+  row.classList.toggle('open');
+}
+function addConciergeLog(id, note) {
+  note = (note || '').trim();
+  if (!note) { toast('Enter an update'); return; }
+  var c = (state.concierge || []).find(function (x) { return x.id === id; }); if (!c) return;
+  if (!c.log) c.log = c.notes ? [{ ts: c.createdAt, by: c.addedBy || '', note: c.notes }] : [];
+  c.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: note });
+  scheduleSave(); renderConcierge(); toast('Update logged');
+  setTimeout(function () { var row = g('concierge-log-' + id); if (row) row.classList.add('open'); }, 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TWEAK 3 — Amenity close-out helpers
+// ─────────────────────────────────────────────────────────────────────────────
+function isCloseoutPending(a) {
+  if (a.closeoutNote) return false;
+  var t = today();
+  if (a.date < t) return true;
+  if (a.date === t && a.end) {
+    var now = new Date();
+    var parts = a.end.split(':');
+    var endH = parseInt(parts[0]), endM = parseInt(parts[1] || 0);
+    return now.getHours() > endH || (now.getHours() === endH && now.getMinutes() >= endM);
+  }
+  return false;
+}
+function toggleAmenityCloseout(id) {
+  var row = g('amenity-closeout-' + id); if (!row) return;
+  row.classList.toggle('open');
+  if (row.classList.contains('open')) { var inp = g('amenity-closeout-input-' + id); if (inp) inp.focus(); }
+}
+function saveAmenityCloseout(id, note) {
+  note = (note || '').trim();
+  if (!note) { toast('Enter a close-out note'); return; }
+  var a = (state.amenities || []).find(function (x) { return x.id === id; }); if (!a) return;
+  a.closeoutNote = note; a.closeoutAt = Date.now();
+  scheduleSave(); renderAmenities(); toast('Booking closed out');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TWEAK 4 — Passdown pre-generation checklist
+// ─────────────────────────────────────────────────────────────────────────────
+var _pdChecklistItems = [];
+var _pdChecklistState = {}; // key 'type|id' → { done, note }
+
+function checkPassdownReady() {
+  var t = today();
+  var curShiftId = getCurrentShiftId();
+  var flagged = [];
+
+  // 1. One-time issued keys with no shift note this shift
+  (state.keys || []).filter(function (k) { return k.type === 'one-time' && k.status === 'issued'; }).forEach(function (k) {
+    var hasNote = (k.shiftNotes || []).some(function (n) { return n.shiftId === curShiftId; });
+    if (!hasNote) flagged.push({ type: 'key', id: k.id, label: 'Key out — Unit ' + k.unit + ' · ' + (k.guest || k.name) });
+  });
+
+  // 2. Open / in-progress maintenance with no log entry this shift
+  (state.maintenance || []).filter(function (m) { return m.status === 'open' || m.status === 'in-progress'; }).forEach(function (m) {
+    var hasLog = (m.log || []).some(function (l) { return getShiftIdForTs(l.ts) === curShiftId; });
+    if (!hasLog) flagged.push({ type: 'maint', id: m.id, label: 'Maintenance — Unit ' + m.unit + ' · ' + m.issue });
+  });
+
+  // 3. Open concierge requests with no log entry this shift
+  (state.concierge || []).filter(function (c) { return c.status === 'open'; }).forEach(function (c) {
+    var hasLog = (c.log || []).some(function (l) { return getShiftIdForTs(l.ts) === curShiftId; });
+    if (!hasLog) flagged.push({ type: 'concierge', id: c.id, label: 'Concierge — Unit ' + c.unit + ' · ' + c.type });
+  });
+
+  // 4. Today's amenity bookings past end time with no closeout note
+  (state.amenities || []).filter(function (a) { return a.date === t && isCloseoutPending(a); }).forEach(function (a) {
+    flagged.push({ type: 'amenity', id: a.id, label: 'Amenity — ' + a.space + ' · ' + a.resident });
+  });
+
+  // 5. Today's moves with no passdown note
+  (state.moves || []).filter(function (m) { return !m.archivedAt && ((m.apptDate || m.date) === t); }).forEach(function (m) {
+    var key = (m.type === 'in' ? 'in_' : 'out_') + m.id;
+    if (!pdNotes[key]) flagged.push({ type: 'move', id: m.id, moveType: m.type, label: 'Move ' + (m.type === 'in' ? 'in' : 'out') + ' — Unit ' + m.unit + ' · ' + m.resident });
+  });
+
+  // 6. Guests still checked in
+  (state.guests || []).filter(function (gs) { return gs.status === 'in'; }).forEach(function (gs) {
+    flagged.push({ type: 'guest', id: gs.id, label: 'Guest still in — ' + gs.name + ' (Unit ' + gs.unit + ')' });
+  });
+
+  if (!flagged.length) { generatePassdown(); return; }
+
+  _pdChecklistItems = flagged;
+  // Preserve existing done state, init new ones
+  flagged.forEach(function (item) {
+    var k = item.type + '|' + item.id;
+    if (!_pdChecklistState[k]) _pdChecklistState[k] = { done: false, note: '' };
+  });
+  _renderPdChecklist();
+}
+
+function _renderPdChecklist() {
+  var panel = g('pd-checklist-panel'); if (!panel) return;
+  var flagged = _pdChecklistItems;
+  var doneCount = flagged.filter(function (item) { return (_pdChecklistState[item.type + '|' + item.id] || {}).done; }).length;
+  var total = flagged.length;
+  var pct = total ? Math.round(doneCount / total * 100) : 100;
+  var allDone = doneCount === total;
+
+  var html = '<div style="border:1px solid ' + (allDone ? 'var(--green)' : 'var(--amber)') + ';border-radius:var(--radius);background:' + (allDone ? 'var(--green-light)' : '#FFFBF0') + ';margin-bottom:4px">';
+  html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">';
+  html += '<span style="font-size:13px;font-weight:600;color:' + (allDone ? 'var(--green)' : 'var(--amber)') + '">' + (allDone ? '&#10003; Ready to generate' : '&#9888; Pre-Passdown Review') + '</span>';
+  html += '<span style="font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-left:auto">' + doneCount + ' / ' + total + ' reviewed</span>';
+  html += '</div>';
+  html += '<div style="padding:10px 14px">';
+  html += '<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Review open items before generating. Add a note or mark “No change this shift” for each.</div>';
+  html += '<div style="background:var(--border2);border-radius:4px;height:5px;overflow:hidden;margin-bottom:12px"><div style="height:100%;border-radius:4px;width:' + pct + '%;background:' + (allDone ? 'var(--green)' : 'var(--amber)') + ';transition:width .3s"></div></div>';
+
+  flagged.forEach(function (item) {
+    var k = item.type + '|' + item.id;
+    var st = _pdChecklistState[k] || {};
+    var isDone = st.done;
+    var inputId = 'pdci-inp-' + k.replace('|', '-');
+    html += '<div class="pd-check-item" style="opacity:' + (isDone ? '0.6' : '1') + '">';
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:' + (isDone ? '0' : '6px') + '">';
+    html += '<span style="font-size:12.5px;font-weight:600;flex:1">' + item.label + '</span>';
+    if (isDone) html += '<span style="font-size:10px;color:var(--green);font-weight:700;background:var(--green-light);padding:2px 8px;border-radius:20px">&#10003; ' + (st.note === 'No change this shift' ? 'Skipped' : 'Noted') + '</span>';
+    html += '</div>';
+    if (!isDone) {
+      html += '<div style="display:flex;gap:6px">';
+      html += '<input type="text" id="' + inputId + '" placeholder="Add note…" style="flex:1;font-size:12px">';
+      html += '<button class="btn btn-secondary btn-sm" onclick="_pdcNote(\'' + k + '\',\'' + inputId + '\')">Save note</button>';
+      html += '<button class="btn btn-ghost btn-sm" style="font-size:11px;color:var(--text3)" onclick="_pdcSkip(\'' + k + '\')">No change</button>';
+      html += '</div>';
+    } else if (st.note && st.note !== 'No change this shift') {
+      html += '<div style="font-size:11px;color:var(--text2);font-style:italic;margin-top:2px">' + st.note + '</div>';
+    }
+    html += '</div>';
+  });
+
+  html += '</div>'; // padding
+  html += '<div style="padding:10px 14px;border-top:1px solid var(--border2);display:flex;gap:8px;align-items:center">';
+  if (allDone) {
+    html += '<button class="btn btn-primary" onclick="generatePassdown();_pdClearChecklist()">Generate Passdown</button>';
+  } else {
+    html += '<button class="btn btn-primary" disabled style="opacity:0.45;cursor:not-allowed" title="Review all items first">Generate (review items first)</button>';
+  }
+  html += '<button class="btn btn-ghost btn-sm" style="color:var(--text3)" onclick="_pdClearChecklist()">Cancel</button>';
+  html += '</div>';
+  html += '</div>';
+
+  panel.innerHTML = html; panel.style.display = 'block';
+}
+
+function _pdcNote(k, inputId) {
+  var el = g(inputId); var note = el ? el.value.trim() : '';
+  if (!note) { toast('Enter a note first'); return; }
+  if (!_pdChecklistState[k]) _pdChecklistState[k] = {};
+  _pdChecklistState[k].done = true; _pdChecklistState[k].note = note;
+  _applyPdChecklistNote(k, note, false);
+  _renderPdChecklist();
+}
+function _pdcSkip(k) {
+  if (!_pdChecklistState[k]) _pdChecklistState[k] = {};
+  _pdChecklistState[k].done = true; _pdChecklistState[k].note = 'No change this shift';
+  _applyPdChecklistNote(k, 'No change this shift', true);
+  _renderPdChecklist();
+}
+function _applyPdChecklistNote(k, note, isSkip) {
+  var sepIdx = k.indexOf('|'); var type = k.substring(0, sepIdx); var id = k.substring(sepIdx + 1);
+  var curShiftId = getCurrentShiftId();
+  if (type === 'key') {
+    var kk = (state.keys || []).find(function (x) { return x.id === id; });
+    if (kk) { if (!kk.shiftNotes) kk.shiftNotes = []; if (!kk.shiftNotes.some(function (n) { return n.shiftId === curShiftId; })) kk.shiftNotes.push({ shiftId: curShiftId, shift: getCurrentShiftLabel(), note: note, by: currentUser ? currentUser.name : '', ts: Date.now() }); }
+  } else if (type === 'maint') {
+    var m = (state.maintenance || []).find(function (x) { return x.id === id; });
+    if (m) { if (!m.log) m.log = []; m.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: note }); }
+  } else if (type === 'concierge') {
+    var c = (state.concierge || []).find(function (x) { return x.id === id; });
+    if (c) { if (!c.log) c.log = []; c.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: note }); }
+  } else if (type === 'amenity' && !isSkip) {
+    var a = (state.amenities || []).find(function (x) { return x.id === id; });
+    if (a) { a.closeoutNote = note; a.closeoutAt = Date.now(); }
+  } else if (type === 'move' && !isSkip) {
+    var mv = (_pdChecklistItems || []).find(function (x) { return x.type === 'move' && x.id === id; });
+    var pdKey = (mv && mv.moveType === 'out' ? 'out_' : 'in_') + id;
+    pdNotes[pdKey] = note;
+  }
+  scheduleSave();
+}
+function _pdClearChecklist() {
+  _pdChecklistItems = []; _pdChecklistState = {};
+  var panel = g('pd-checklist-panel'); if (panel) { panel.innerHTML = ''; panel.style.display = 'none'; }
+}
 </script>
 </body>
 </html>
