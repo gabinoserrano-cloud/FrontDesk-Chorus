@@ -602,6 +602,7 @@
     <div class="section" id="section-maintenance">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterMaint('all',this)">All</div><div class="sub-tab" onclick="filterMaint('open',this)">Open</div><div class="sub-tab" onclick="filterMaint('in-progress',this)">In Progress</div><div class="sub-tab" onclick="filterMaint('resolved',this)">Resolved</div></div>
       <div class="stat-grid" id="maint-stats"></div>
+      <div style="font-size:12px;background:rgba(217,119,6,0.08);color:#92400E;border:1px solid rgba(217,119,6,0.2);border-radius:6px;padding:8px 12px;margin-bottom:10px">⚠ If a work order has already been submitted, do not add it to the passdown — the maintenance team is notified automatically.</div>
       <div class="card"><div class="card-hdr"><span class="card-title">Maintenance Log</span><span class="card-count" id="maint-count">0 issues</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddMaint()">+ Log Issue</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Issue</th><th>Priority</th><th>Status</th><th>Reported</th><th></th></tr></thead><tbody id="maint-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-guests">
@@ -3686,7 +3687,7 @@ function isMoveCompleted(m) {
 function renderPdAutoBlocks(isLead) {
   var container = g('pd-auto-blocks'); if (!container) return;
   var now = Date.now(), t = today();
-  var html = '<div style="font-size:12px;background:rgba(217,119,6,0.08);color:#92400E;border:1px solid rgba(217,119,6,0.2);border-radius:6px;padding:8px 12px;margin-bottom:12px">⚠ Only include items needing follow-up or escalation. If a work order is already filed, skip it — maintenance is notified automatically.</div>';
+  var html = '<div style="font-size:12px;background:rgba(217,119,6,0.08);color:#92400E;border:1px solid rgba(217,119,6,0.2);border-radius:6px;padding:8px 12px;margin-bottom:12px">⚠ Only include items needing follow-up or escalation.</div>';
 
   // One-time keys still out
   var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued'; });
