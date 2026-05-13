@@ -3580,7 +3580,7 @@ function renderResidents() {
 }
 
 // ─── PASSDOWN ───
-var pdSections = { keysAccess: [], parking: [], residentMatters: [], shiftNotes: [] };
+var pdSections = { keysAccess: [], residentMatters: [], shiftNotes: [] };
 var pdExcluded = {};
 var pdNotes = {};
 var pdEditingSection = null;
@@ -3624,7 +3624,7 @@ function pdLoadDraft() {
   } catch(e) {}
 }
 function pdClearDraft() {
-  pdSections = { keysAccess: [], parking: [], residentMatters: [], shiftNotes: [] };
+  pdSections = { keysAccess: [], residentMatters: [], shiftNotes: [] };
   pdExcluded = {};
   pdNotes = {};
   try { ['pd_draft_sections','pd_draft_excluded','pd_draft_notes','pd_draft_policy','pd_draft_shift','pd_draft_lookahead'].forEach(function(k){ sessionStorage.removeItem(k); }); } catch(e) {}
@@ -3806,7 +3806,7 @@ function renderPdAutoBlocks(isLead) {
 function renderPdFreeSections(isLead) {
   var container = g('pd-free-sections'); if (!container) return;
   var secs = isLead
-    ? [{ key:'keysAccess', emoji:'🔑', label:'Keys / Access' }, { key:'parking', emoji:'🅿️', label:'Parking' }, { key:'residentMatters', emoji:'👤', label:'Resident Matters' }]
+    ? [{ key:'keysAccess', emoji:'🔑', label:'Keys / Access' }, { key:'residentMatters', emoji:'👤', label:'Resident Matters' }]
     : [{ key:'shiftNotes', emoji:'📝', label:'Shift Notes' }];
   var html = '';
   secs.forEach(function(s) {
@@ -3996,6 +3996,20 @@ function generatePassdown() {
     });
   }
 
+  // Open / in-progress maintenance (skip excluded)
+  var openM = (state.maintenance||[]).filter(function(m){ return (m.status==='open'||m.status==='in-progress') && !pdExcluded['mt_'+m.id]; });
+  if (openM.length) {
+    out += '\n🔧 Open Maintenance\n';
+    openM.forEach(function(m) {
+      var prioTag = m.priority === 'high' ? ' ⚠ HIGH' : m.priority === 'medium' ? ' MED' : '';
+      var latestNote = (m.log && m.log.length) ? m.log[m.log.length-1].note : (m.desc || '');
+      out += 'Unit ' + m.unit + ' – ' + m.issue + prioTag + '\n';
+      if (latestNote) out += 'Update: ' + latestNote + '\n';
+      var defNsM = m.status === 'in-progress' ? 'In progress — monitor and update next shift.' : 'Pending — follow up with maintenance team.';
+      out += 'Next Step: ' + (pdNotes['mt_'+m.id] !== undefined ? pdNotes['mt_'+m.id] : defNsM) + '\n';
+    });
+  }
+
   // Open concierge (skip excluded)
   var openC = (state.concierge||[]).filter(function(c){ return c.status==='open' && !pdExcluded['c_'+c.id]; });
   if (openC.length) {
@@ -4018,7 +4032,6 @@ function generatePassdown() {
   }
   if (isLead) {
     writeSec('🔑', 'Keys / Access', 'keysAccess');
-    writeSec('🅿️', 'Parking', 'parking');
     writeSec('👤', 'Resident Matters', 'residentMatters');
     var policy = g('pd-policy') ? (g('pd-policy').value||'').trim() : '';
     if (policy) out += '\n📢 Policy Reminder\n' + policy + '\n';
