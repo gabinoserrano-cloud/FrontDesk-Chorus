@@ -680,6 +680,7 @@
                 <button class="btn btn-primary" onclick="checkPassdownReady()">Generate</button>
                 <button class="btn btn-secondary" onclick="savePassdown()">Save</button>
                 <button class="btn btn-ghost" onclick="copyPassdown()">Copy</button>
+                <button class="btn btn-secondary" onclick="sendPassdownGmail()">&#9993; Send via Gmail</button>
                 <button class="btn btn-ghost" style="margin-left:auto;color:var(--text3);font-size:12px" onclick="pdClearDraft()">Clear draft</button>
               </div>
             </div>
@@ -3631,6 +3632,7 @@ function pdClearDraft() {
   pdNotes = {};
   try { ['pd_draft_sections','pd_draft_excluded','pd_draft_notes','pd_draft_policy','pd_draft_shift','pd_draft_lookahead'].forEach(function(k){ sessionStorage.removeItem(k); }); } catch(e) {}
   var pv = g('pd-preview'); if (pv) pv.value = '';
+  _pdClearChecklist();
   renderPassdown();
   toast('Draft cleared');
 }
@@ -3684,7 +3686,7 @@ function isMoveCompleted(m) {
 function renderPdAutoBlocks(isLead) {
   var container = g('pd-auto-blocks'); if (!container) return;
   var now = Date.now(), t = today();
-  var html = '';
+  var html = '<div style="font-size:12px;background:rgba(217,119,6,0.08);color:#92400E;border:1px solid rgba(217,119,6,0.2);border-radius:6px;padding:8px 12px;margin-bottom:12px">⚠ Only include items needing follow-up or escalation. If a work order is already filed, skip it — maintenance is notified automatically.</div>';
 
   // One-time keys still out
   var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued'; });
@@ -3806,7 +3808,6 @@ function renderPdAutoBlocks(isLead) {
   var openMaint = (state.maintenance||[]).filter(function(m){ return m.status!=='resolved'; });
   openMaint.sort(function(a,b){ var p={high:0,medium:1,low:2}; return (p[a.priority]||1)-(p[b.priority]||1); });
   html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🔧 Open Maintenance</div>';
-  html += '<div style="font-size:11px;background:rgba(217,119,6,0.08);color:#92400E;border:1px solid rgba(217,119,6,0.2);border-radius:6px;padding:6px 10px;margin-bottom:10px">⚠ Only include items that need follow-up or escalation. Do not include if a work order has already been submitted — the maintenance team is notified automatically.</div>';
   if (!openMaint.length) {
     html += '<div style="color:var(--text3)">No open items</div>';
   } else {
@@ -4257,6 +4258,15 @@ function copyPassdown() {
   if (!preview || !preview.trim()) { toast('Generate passdown first'); return; }
   if (navigator.share) navigator.share({ text: preview }).catch(function () {});
   else navigator.clipboard.writeText(preview).then(function () { toast('Copied'); }).catch(function () { toast('Copy failed'); });
+}
+function sendPassdownGmail() {
+  var preview = g('pd-preview').value;
+  if (!preview || !preview.trim()) { toast('Generate passdown first'); return; }
+  var shiftEl = g('pd-shift'); var shift = shiftEl ? shiftEl.value.toUpperCase() : 'AM';
+  var d = new Date(); var dateStr = (d.getMonth()+1)+'.'+d.getDate()+'.'+d.getFullYear();
+  var subject = encodeURIComponent(dateStr + ' ' + shift + ' Front Desk Passdown');
+  var body = encodeURIComponent(preview);
+  window.open('https://mail.google.com/mail/?view=cm&to=&su=' + subject + '&body=' + body, '_blank');
 }
 function getAllPassdowns(limitHours) {
   var all = [], upd = state.userPassdowns || {}, accounts = state.accounts || [];
