@@ -6211,13 +6211,13 @@ function _pdcSkip(k) {
 function _applyPdChecklistNote(k, note, isSkip) {
   var sepIdx = k.indexOf('|'); var type = k.substring(0, sepIdx); var id = k.substring(sepIdx + 1);
   var curShiftId = getCurrentShiftId();
-  if (type === 'key') {
+  if (type === 'key' && !isSkip) {
     var kk = (state.keys || []).find(function (x) { return x.id === id; });
     if (kk) { if (!kk.shiftNotes) kk.shiftNotes = []; if (!kk.shiftNotes.some(function (n) { return n.shiftId === curShiftId; })) kk.shiftNotes.push({ shiftId: curShiftId, shift: getCurrentShiftLabel(), note: note, by: currentUser ? currentUser.name : '', ts: Date.now() }); }
-  } else if (type === 'maint') {
+  } else if (type === 'maint' && !isSkip) {
     var m = (state.maintenance || []).find(function (x) { return x.id === id; });
     if (m) { if (!m.log) m.log = []; m.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: note }); }
-  } else if (type === 'concierge') {
+  } else if (type === 'concierge' && !isSkip) {
     var c = (state.concierge || []).find(function (x) { return x.id === id; });
     if (c) { if (!c.log) c.log = []; c.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: note }); }
   } else if (type === 'amenity' && !isSkip) {
