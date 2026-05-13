@@ -8,9 +8,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garant:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#F7F5F0;--surface:#FFFFFF;--surface2:#F3F0E8;--border:rgba(26,24,20,0.12);--border2:rgba(26,24,20,0.07);
-    --text:#1A1814;--text2:#57504A;--text3:#9A9285;
-    --accent:#C9A45E;--accent-light:rgba(201,164,94,0.13);--accent2:#B38840;
+    --bg:#F5F8F6;--surface:#FFFFFF;--surface2:#EAF0EB;--border:rgba(20,28,28,0.10);--border2:rgba(20,28,28,0.06);
+    --text:#141C1C;--text2:#3D5248;--text3:#7A9E80;
+    --accent:#4E8A70;--accent-light:rgba(78,138,112,0.12);--accent2:#3A6E58;
     --green:#4A7A2A;--green-light:#ECF2DC;--red:#963030;--red-light:#FAEBEB;
     --amber:#9E6300;--amber-light:#FBF0DC;--purple:#6044B2;--purple-light:#ECEAFA;
     --sidebar-w:220px;--header-h:54px;--radius:6px;
@@ -23,7 +23,7 @@
   body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;display:flex;height:100vh;overflow:hidden}
 
   /* SIDEBAR */
-  #sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:#0C0B09;border-right:0.5px solid rgba(201,164,94,0.18);display:flex;flex-direction:column;height:100vh;overflow-y:auto;overflow-x:hidden;z-index:200;transition:width .22s ease,min-width .22s ease,transform .22s ease;flex-shrink:0}
+  #sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:#141C1C;border-right:0.5px solid rgba(78,138,112,0.18);display:flex;flex-direction:column;height:100vh;overflow-y:auto;overflow-x:hidden;z-index:200;transition:width .22s ease,min-width .22s ease,transform .22s ease;flex-shrink:0}
   body.sc #sidebar{width:52px;min-width:52px}
   body.sc .sb-logo .bldg,body.sc .sb-logo .sub,body.sc .sb-logo .date-chip,body.sc .nav-label,body.sc .nav-item .nav-txt,body.sc .badge,body.sc .footer-btn span:not(:first-child),body.sc .save-status{display:none}
   body.sc .nav-item{justify-content:center;padding:10px 0}
@@ -41,27 +41,27 @@
     body.sc #sidebar .sb-logo{padding:18px 16px 14px;display:block}
     body.sc #sidebar .sb-footer{padding:10px 10px 14px;align-items:stretch}
   }
-  .sb-logo{padding:18px 16px 14px;border-bottom:0.5px solid rgba(201,164,94,0.18)}
+  .sb-logo{padding:18px 16px 14px;border-bottom:0.5px solid rgba(78,138,112,0.18)}
   .sb-logo .bldg{font-size:16px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;font-family:var(--font-serif);color:#F0EBE0}
   .sb-logo .sub{font-size:10px;color:rgba(255,255,255,0.32);margin-top:2px;font-family:var(--font-mono);letter-spacing:.4px}
-  .sb-logo .date-chip{display:inline-block;margin-top:8px;background:rgba(201,164,94,0.16);color:#C9A45E;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;font-family:var(--font-mono)}
+  .sb-logo .date-chip{display:inline-block;margin-top:8px;background:rgba(78,138,112,0.16);color:#4E8A70;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;font-family:var(--font-mono)}
   .nav-group{padding:10px 0 4px}
-  .nav-label{font-size:9.5px;font-weight:600;color:rgba(201,164,94,0.40);text-transform:uppercase;letter-spacing:1px;padding:0 14px 4px;white-space:nowrap;overflow:hidden}
+  .nav-label{font-size:9.5px;font-weight:600;color:rgba(78,138,112,0.40);text-transform:uppercase;letter-spacing:1px;padding:0 14px 4px;white-space:nowrap;overflow:hidden}
   .nav-item{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;color:rgba(255,255,255,0.46);font-size:13px;font-weight:400;border-left:2px solid transparent;transition:all .12s;position:relative;user-select:none;white-space:nowrap}
   .nav-item:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.80)}
-  .nav-item.active{background:rgba(201,164,94,0.13);color:#C9A45E;border-left-color:#C9A45E;font-weight:500}
+  .nav-item.active{background:rgba(78,138,112,0.13);color:#4E8A70;border-left-color:#4E8A70;font-weight:500}
   .nav-item .icon{width:16px;text-align:center;font-size:14px;flex-shrink:0}
-  .badge{margin-left:auto;background:#C9A45E;color:#0C0B09;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;font-family:var(--font-mono);min-width:18px;text-align:center;display:none}
+  .badge{margin-left:auto;background:#4E8A70;color:#141C1C;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;font-family:var(--font-mono);min-width:18px;text-align:center;display:none}
   .badge.vis{display:block}
-  .sb-footer{margin-top:auto;padding:10px 10px 14px;border-top:0.5px solid rgba(201,164,94,0.18);display:flex;flex-direction:column;gap:4px}
+  .sb-footer{margin-top:auto;padding:10px 10px 14px;border-top:0.5px solid rgba(78,138,112,0.18);display:flex;flex-direction:column;gap:4px}
   .footer-btn{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:var(--radius);font-size:11.5px;color:rgba(255,255,255,0.38);cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;width:100%;text-align:left;transition:background .1s;white-space:nowrap}
   .footer-btn:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.75)}
   .save-status{font-size:10px;color:rgba(255,255,255,0.24);padding:0 8px 4px;font-family:var(--font-mono);white-space:nowrap;overflow:hidden}
   .sync-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;background:rgba(255,255,255,0.25)}
-  .sync-dot.synced{background:#6DBB5A}.sync-dot.syncing{background:#C9A45E;animation:pulse 1s infinite}.sync-dot.error{background:#E05A5A}
+  .sync-dot.synced{background:#6DBB5A}.sync-dot.syncing{background:#4E8A70;animation:pulse 1s infinite}.sync-dot.error{background:#E05A5A}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
   #sidebar-wrap{position:relative;display:flex;flex-shrink:0}
-  #collapse-btn{position:absolute;top:16px;right:-13px;width:26px;height:26px;border-radius:50%;background:#1A1714;border:0.5px solid rgba(201,164,94,0.28);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:201;box-shadow:0 2px 8px rgba(0,0,0,0.35);font-size:11px;color:rgba(255,255,255,0.50);transition:transform .22s;flex-shrink:0}
+  #collapse-btn{position:absolute;top:16px;right:-13px;width:26px;height:26px;border-radius:50%;background:#141C1C;border:0.5px solid rgba(78,138,112,0.28);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:201;box-shadow:0 2px 8px rgba(0,0,0,0.35);font-size:11px;color:rgba(255,255,255,0.50);transition:transform .22s;flex-shrink:0}
   body.sc #collapse-btn{transform:scaleX(-1)}
   @media(max-width:700px){#collapse-btn{display:none}}
 
@@ -416,37 +416,37 @@
   .stat-lbl{font-family:'DM Sans',sans-serif}
   /* Hairline card borders + warm shadow */
   .card{border-color:rgba(26,24,20,0.09);box-shadow:0 1px 4px rgba(26,24,20,0.06),0 1px 2px rgba(26,24,20,0.03)}
-  /* Primary button — dark with gold text */
-  .btn-primary{background:#1A1714;color:#E8C87A;border-color:#1A1714}
-  .btn-primary:hover{background:#0C0B09;color:#E8C87A}
+  /* Primary button — sage green */
+  .btn-primary{background:#4E8A70;color:#fff;border-color:#4E8A70}
+  .btn-primary:hover{background:#3A6E58;color:#fff}
   /* Active tab — gold */
-  .sub-tab.active{background:#C9A45E;color:#1A1714;border-color:#C9A45E;font-weight:600}
+  .sub-tab.active{background:#4E8A70;color:#fff;border-color:#4E8A70;font-weight:600}
   .sub-tab:hover{background:var(--surface2)}
   /* Gold focus rings */
-  input:focus,select:focus,textarea:focus{border-color:#C9A45E;box-shadow:0 0 0 2px rgba(201,164,94,0.14)}
+  input:focus,select:focus,textarea:focus{border-color:#4E8A70;box-shadow:0 0 0 2px rgba(78,138,112,0.14)}
   /* Mobile nav — dark */
-  #mob-nav{background:#0C0B09;border-top:0.5px solid rgba(201,164,94,0.18)}
+  #mob-nav{background:#141C1C;border-top:0.5px solid rgba(78,138,112,0.18)}
   .mn-item{color:rgba(255,255,255,0.38)}
-  .mn-item.active{color:#C9A45E}
+  .mn-item.active{color:#4E8A70}
   /* Move row selected */
-  .move-row.sel>td{background:rgba(201,164,94,0.08)!important}
-  .cl-text-input:hover,.cl-text-input:focus{background:rgba(201,164,94,0.09)}
-  .cl-due-input:hover,.cl-due-input:focus{border-color:#C9A45E;background:rgba(201,164,94,0.09)}
+  .move-row.sel>td{background:rgba(78,138,112,0.08)!important}
+  .cl-text-input:hover,.cl-text-input:focus{background:rgba(78,138,112,0.09)}
+  .cl-due-input:hover,.cl-due-input:focus{border-color:#4E8A70;background:rgba(78,138,112,0.09)}
   /* Calendar today gold */
-  .cal-week-tbl th.today-hdr{background:rgba(201,164,94,0.13);color:#9A7030}
-  .cal-week-tbl td.today-col{background:rgba(201,164,94,0.05)}
-  .cal-month-day.today{border-color:#C9A45E;background:rgba(201,164,94,0.05)}
-  .cal-month-day.today .cal-day-num{color:#C9A45E}
-  .cal-pop-goto{border-color:rgba(201,164,94,0.28);background:rgba(201,164,94,0.07);color:#8A6830}
-  .cal-pop-goto:hover{background:#C9A45E;color:#fff}
+  .cal-week-tbl th.today-hdr{background:rgba(78,138,112,0.13);color:#2A6050}
+  .cal-week-tbl td.today-col{background:rgba(78,138,112,0.05)}
+  .cal-month-day.today{border-color:#4E8A70;background:rgba(78,138,112,0.05)}
+  .cal-month-day.today .cal-day-num{color:#4E8A70}
+  .cal-pop-goto{border-color:rgba(78,138,112,0.28);background:rgba(78,138,112,0.07);color:#2A6050}
+  .cal-pop-goto:hover{background:#4E8A70;color:#fff}
   /* Guide tip gold */
-  .guide-tip{background:rgba(201,164,94,0.09);border-left-color:#C9A45E;color:#8A6830}
-  .guide-card-meta{background:#C9A45E;color:#1A1714}
+  .guide-tip{background:rgba(78,138,112,0.09);border-left-color:#4E8A70;color:#2A6050}
+  .guide-card-meta{background:#4E8A70;color:#fff}
   /* Import tab active gold */
-  .import-tab.active{background:#C9A45E;color:#1A1714}
+  .import-tab.active{background:#4E8A70;color:#fff}
   /* Alert banners warm */
-  .tight-alert{background:#FBF0DC;border-color:rgba(201,164,94,0.50)}
-  .needs-appt-alert{background:#FBF0DC;border-color:rgba(201,164,94,0.50)}
+  .tight-alert{background:#FBF0DC;border-color:rgba(78,138,112,0.50)}
+  .needs-appt-alert{background:#FBF0DC;border-color:rgba(78,138,112,0.50)}
   /* PTE badges warmer */
   .pte-granted{background:#ECF2DC;color:#3E6B1F}
   .pte-denied{background:#FAEBEB;color:#8B2222}
@@ -479,27 +479,27 @@
   .pd-check-item{padding:10px 0;border-bottom:1px solid var(--border2)}
   .pd-check-item:last-child{border-bottom:none}
   /* Pill reservation gold */
-  .pill-reservation{background:rgba(201,164,94,0.14);color:#8A6830}
+  .pill-reservation{background:rgba(78,138,112,0.14);color:#2A6050}
   /* Cal chip amenity warm gold */
   .cal-chip-amenity{background:#FBF0DC;color:#9E6300}
   /* LEAD badge in nav */
-  .nav-item [style*="background:var(--accent)"]{color:#0C0B09!important}
+  .nav-item [style*="background:var(--accent)"]{color:#141C1C!important}
   /* Stat card tints */
   .stat-card.green{background:#ECF2DC;border-color:#C2DDA0}
   .stat-card.red{background:#FAEBEB;border-color:#F0BFBF}
   /* LOGIN OVERLAY — dark charcoal */
   #login-overlay{background:#0E0D0C}
-  .login-box{background:#1A1714;border:0.5px solid rgba(201,164,94,0.24);box-shadow:0 24px 64px rgba(0,0,0,0.55)}
+  .login-box{background:#1E2A2A;border:0.5px solid rgba(78,138,112,0.24);box-shadow:0 24px 64px rgba(0,0,0,0.55)}
   .login-logo{font-family:var(--font-serif);font-size:22px;font-weight:600;color:#F0EBE0;letter-spacing:.4px}
   .login-sub{color:rgba(255,255,255,0.38)}
-  .acct-btn{background:#242018;border:0.5px solid rgba(201,164,94,0.18);color:rgba(255,255,255,0.78)}
-  .acct-btn:hover{background:rgba(201,164,94,0.14);border-color:#C9A45E;color:#C9A45E}
-  .acct-avatar{background:rgba(201,164,94,0.18);color:#C9A45E}
+  .acct-btn{background:#242018;border:0.5px solid rgba(78,138,112,0.18);color:rgba(255,255,255,0.78)}
+  .acct-btn:hover{background:rgba(78,138,112,0.14);border-color:#4E8A70;color:#4E8A70}
+  .acct-avatar{background:rgba(78,138,112,0.18);color:#4E8A70}
   .acct-role-tag{color:rgba(255,255,255,0.28)}
-  .pin-dot{border-color:rgba(201,164,94,0.32)}
-  .pin-dot.filled{background:#C9A45E;border-color:#C9A45E}
-  .pin-key{background:#242018;border:0.5px solid rgba(201,164,94,0.16);color:rgba(255,255,255,0.78)}
-  .pin-key:hover{background:rgba(201,164,94,0.16);color:#C9A45E}
+  .pin-dot{border-color:rgba(78,138,112,0.32)}
+  .pin-dot.filled{background:#4E8A70;border-color:#4E8A70}
+  .pin-key{background:#242018;border:0.5px solid rgba(78,138,112,0.16);color:rgba(255,255,255,0.78)}
+  .pin-key:hover{background:rgba(78,138,112,0.16);color:#4E8A70}
 </style>
 </head>
 <body>
@@ -541,7 +541,7 @@
   </div>
   <div class="nav-group">
     <div class="nav-label">Management</div>
-    <div class="nav-item" data-sec="team" onclick="nav(this)"><span class="icon" data-icon="users"></span><span class="nav-txt">Team Tracker</span><span style="font-size:9px;background:#C9A45E;color:#0C0B09;border-radius:3px;padding:1px 4px;margin-left:4px;font-weight:700;letter-spacing:.3px">LEAD</span></div>
+    <div class="nav-item" data-sec="team" onclick="nav(this)"><span class="icon" data-icon="users"></span><span class="nav-txt">Team Tracker</span><span style="font-size:9px;background:#4E8A70;color:#141C1C;border-radius:3px;padding:1px 4px;margin-left:4px;font-weight:700;letter-spacing:.3px">LEAD</span></div>
   </div>
   <div class="nav-group">
     <div class="nav-label">System</div>
@@ -981,6 +981,7 @@
     <div class="fg"><label>Description</label><textarea id="mt-desc" rows="4"></textarea></div>
     <div class="fr"><div class="fg"><label>Priority</label><select id="mt-priority"><option value="high">High - Urgent</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></div><div class="fg"><label>Status</label><select id="mt-status"><option value="open" selected>Open</option><option value="in-progress">In Progress</option><option value="resolved">Resolved</option></select></div></div>
     <div class="fg"><label>Reported By</label><input id="mt-reporter" type="text"></div>
+    <div class="fg" style="display:flex;align-items:center;gap:8px;margin-top:4px"><input id="mt-workorder" type="checkbox" style="width:16px;height:16px;accent-color:var(--accent)"><label for="mt-workorder" style="margin:0;font-weight:500;cursor:pointer">Work Order Submitted</label></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-maint')">Cancel</button><button class="btn btn-primary" onclick="saveMaint()">Save Issue</button></div>
 </div></div>
@@ -2270,12 +2271,12 @@ function saveMaint() {
   if (!unit || !issue) { toast('Fill in unit and issue type'); return; }
   if (editingMaintId) {
     var m = (state.maintenance||[]).find(function(x){return x.id===editingMaintId;}); if(!m) return;
-    m.unit=unit; m.issue=issue; m.desc=g('mt-desc').value.trim(); m.priority=g('mt-priority').value; m.status=g('mt-status').value; m.reporter=g('mt-reporter').value.trim();
+    m.unit=unit; m.issue=issue; m.desc=g('mt-desc').value.trim(); m.priority=g('mt-priority').value; m.status=g('mt-status').value; m.reporter=g('mt-reporter').value.trim(); m.workorder=g('mt-workorder').checked;
     editingMaintId=null; scheduleSave(); closeModal('modal-maint'); renderMaint(); updateBadges(); renderDash(); toast('Issue updated'); return;
   }
   var mNow = Date.now(), mBy = currentUser ? currentUser.name : '';
   var mDesc = g('mt-desc').value.trim();
-  var m = { id: uid(), unit: unit, issue: issue, desc: mDesc, priority: g('mt-priority').value, status: g('mt-status').value, reporter: g('mt-reporter').value.trim(), addedBy: mBy, createdAt: mNow, log: mDesc ? [{ ts: mNow, by: mBy, note: mDesc }] : [] };
+  var m = { id: uid(), unit: unit, issue: issue, desc: mDesc, priority: g('mt-priority').value, status: g('mt-status').value, reporter: g('mt-reporter').value.trim(), workorder: g('mt-workorder').checked, addedBy: mBy, createdAt: mNow, log: mDesc ? [{ ts: mNow, by: mBy, note: mDesc }] : [] };
   if (!state.maintenance) state.maintenance = [];
   state.maintenance.push(m); scheduleSave(); closeModal('modal-maint'); renderMaint(); updateBadges(); renderDash();
   ['mt-unit', 'mt-issue', 'mt-desc', 'mt-reporter'].forEach(function (id) { g(id).value = ''; }); toast('Issue logged');
@@ -2302,8 +2303,9 @@ function renderMaint() {
     var mtBy = m.addedBy ? '<span class="by-tag">by ' + m.addedBy + '</span>' : '';
     var logBtnLabel = logCount > 1 ? '&#128221; ' + logCount + ' updates' : '&#128221; Log';
     html += '<tr>';
+    var woBadge = m.workorder ? ' <span style="display:inline-block;font-size:10px;font-weight:600;background:rgba(34,197,94,0.12);color:#16a34a;border:1px solid rgba(34,197,94,0.25);border-radius:4px;padding:1px 6px;vertical-align:middle">WO Filed</span>' : '';
     html += '<td class="mono font-600">' + m.unit + '</td>';
-    html += '<td><div class="font-600">' + m.issue + mtBy + '</div>' + desc + '</td>';
+    html += '<td><div class="font-600">' + m.issue + woBadge + mtBy + '</div>' + desc + '</td>';
     html += '<td><span class="pill pill-' + m.priority + '">' + m.priority + '</span></td>';
     html += '<td><select class="ie-sel" onchange="updateMaintStatus(\'' + m.id + '\',this.value)"><option value="open" ' + (m.status === 'open' ? 'selected' : '') + '>Open</option><option value="in-progress" ' + (m.status === 'in-progress' ? 'selected' : '') + '>In Progress</option><option value="resolved" ' + (m.status === 'resolved' ? 'selected' : '') + '>Resolved</option></select></td>';
     html += '<td class="text-xs text-3">' + new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</td>';
@@ -3698,7 +3700,7 @@ function renderPdAutoBlocks(isLead) {
       if (k.timeout) content += ' / Out: ' + k.timeout;
       if (k.fob) content += ' / Key #' + k.fob;
       if (isOverdue) { var hrs=Math.floor(overdueMs/3600000), mins=Math.floor((overdueMs%3600000)/60000); content += ' <span style="color:var(--red);font-weight:600">⚠ ' + hrs + 'h ' + mins + 'm out</span>'; }
-      var ns = 'Follow up with ' + (k.guest||k.name) + ' to return key.' + (k.notes ? ' ' + k.notes : '');
+      var ns = 'Follow up with resident ' + k.name + ' to ensure key is returned.' + (k.notes ? ' ' + k.notes : '');
       html += pdAutoRow('key_' + k.id, content, ns);
     });
   }
@@ -3798,6 +3800,26 @@ function renderPdAutoBlocks(isLead) {
     var content = '<strong>Unit ' + c.unit + ' – ' + c.resident + '</strong> / ' + c.type + (c.notes ? ': ' + c.notes : '');
     html += pdAutoRow('c_' + c.id, content, 'Follow up and update status once resolved.');
   });
+  html += '</div>';
+
+  // Open / in-progress maintenance items
+  var openMaint = (state.maintenance||[]).filter(function(m){ return m.status!=='resolved'; });
+  openMaint.sort(function(a,b){ var p={high:0,medium:1,low:2}; return (p[a.priority]||1)-(p[b.priority]||1); });
+  html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🔧 Open Maintenance</div>';
+  html += '<div style="font-size:11px;background:rgba(217,119,6,0.08);color:#92400E;border:1px solid rgba(217,119,6,0.2);border-radius:6px;padding:6px 10px;margin-bottom:10px">⚠ Only include items that need follow-up or escalation. Do not include if a work order has already been submitted — the maintenance team is notified automatically.</div>';
+  if (!openMaint.length) {
+    html += '<div style="color:var(--text3)">No open items</div>';
+  } else {
+    openMaint.forEach(function(m) {
+      var priBadge = { high: 'var(--red)', medium: 'var(--amber)', low: 'var(--text3)' }[m.priority] || 'var(--text3)';
+      var woBadge = m.workorder ? ' <span style="font-size:10px;font-weight:600;background:rgba(34,197,94,0.12);color:#16a34a;border:1px solid rgba(34,197,94,0.25);border-radius:4px;padding:1px 6px">WO Filed</span>' : '';
+      var statusLabel = { open: 'Open', 'in-progress': 'In Progress' }[m.status] || m.status;
+      var priLabel = m.priority.charAt(0).toUpperCase() + m.priority.slice(1);
+      var content = '<strong>Unit ' + m.unit + ' – ' + m.issue + '</strong>' + woBadge + ' <span style="font-size:11px;color:' + priBadge + ';font-weight:600">' + priLabel + '</span> · ' + statusLabel;
+      if (m.desc) content += '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + m.desc + '</div>';
+      html += pdAutoRow('mt_' + m.id, content, 'Escalate to maintenance or follow up on resolution status.');
+    });
+  }
   html += '</div>';
 
   container.innerHTML = html;
@@ -3900,7 +3922,7 @@ function generatePassdown() {
       out += 'Unit ' + k.unit + ' – ' + k.name + (k.guest ? ' / Guest: ' + k.guest : '') + '\n';
       out += 'Key issued' + (k.timeout ? ' at ' + k.timeout : '') + (k.fob ? ' (Key #' + k.fob + ')' : '');
       if (isOverdue) { var hrs=Math.floor(overdueMs/3600000), mins=Math.floor((overdueMs%3600000)/60000); out += ' — ⚠ OVERDUE ' + hrs + 'h ' + mins + 'm'; }
-      var defNs = 'Follow up with ' + (k.guest||k.name) + ' to return key.' + (k.notes ? ' ' + k.notes : '');
+      var defNs = 'Follow up with resident ' + k.name + ' to ensure key is returned.' + (k.notes ? ' ' + k.notes : '');
       out += '\nNext Step: ' + (pdNotes['key_'+k.id] !== undefined ? pdNotes['key_'+k.id] : defNs) + '\n';
     });
   }
@@ -4002,8 +4024,10 @@ function generatePassdown() {
     out += '\n🔧 Open Maintenance\n';
     openM.forEach(function(m) {
       var prioTag = m.priority === 'high' ? ' ⚠ HIGH' : m.priority === 'medium' ? ' MED' : '';
+      var woTag = m.workorder ? ' – WO Filed' : '';
+      var statusStr = { open: 'Open', 'in-progress': 'In Progress' }[m.status] || m.status;
       var latestNote = (m.log && m.log.length) ? m.log[m.log.length-1].note : (m.desc || '');
-      out += 'Unit ' + m.unit + ' – ' + m.issue + prioTag + '\n';
+      out += 'Unit ' + m.unit + ' – ' + m.issue + prioTag + woTag + ' (' + statusStr + ')\n';
       if (latestNote) out += 'Update: ' + latestNote + '\n';
       var defNsM = m.status === 'in-progress' ? 'In progress — monitor and update next shift.' : 'Pending — follow up with maintenance team.';
       out += 'Next Step: ' + (pdNotes['mt_'+m.id] !== undefined ? pdNotes['mt_'+m.id] : defNsM) + '\n';
@@ -4304,7 +4328,7 @@ function openAddMaint() {
   editingMaintId = null;
   setModalMode('modal-maint-title','modal-maint-savebtn','Log Maintenance Issue','Save Issue');
   ['mt-unit','mt-issue','mt-desc','mt-reporter'].forEach(function(id){g(id).value='';});
-  g('mt-priority').value='medium'; g('mt-status').value='open';
+  g('mt-priority').value='medium'; g('mt-status').value='open'; g('mt-workorder').checked=false;
   openModal('modal-maint');
 }
 function openEditMaint(id) {
@@ -4313,7 +4337,7 @@ function openEditMaint(id) {
   setModalMode('modal-maint-title','modal-maint-savebtn','Edit Issue','Save Changes');
   g('mt-unit').value = m.unit||''; g('mt-issue').value = m.issue||'';
   g('mt-desc').value = m.desc||''; g('mt-reporter').value = m.reporter||'';
-  g('mt-priority').value = m.priority||'medium'; g('mt-status').value = m.status||'open';
+  g('mt-priority').value = m.priority||'medium'; g('mt-status').value = m.status||'open'; g('mt-workorder').checked = m.workorder||false;
   openModal('modal-maint');
 }
 
