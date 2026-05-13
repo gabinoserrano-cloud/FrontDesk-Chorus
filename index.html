@@ -6096,22 +6096,19 @@ function checkPassdownReady() {
   var curShiftId = getCurrentShiftId();
   var flagged = [];
 
-  // 1. One-time issued keys with no shift note this shift
+  // 1. One-time issued keys still out
   (state.keys || []).filter(function (k) { return k.type === 'one-time' && k.status === 'issued'; }).forEach(function (k) {
-    var hasNote = (k.shiftNotes || []).some(function (n) { return n.shiftId === curShiftId; });
-    if (!hasNote) flagged.push({ type: 'key', id: k.id, label: 'Key out — Unit ' + k.unit + ' · ' + (k.guest || k.name) });
+    flagged.push({ type: 'key', id: k.id, label: 'Key out — Unit ' + k.unit + ' · ' + (k.guest || k.name) });
   });
 
-  // 2. Open / in-progress maintenance with no log entry this shift
+  // 2. All open / in-progress maintenance — always surfaces until resolved
   (state.maintenance || []).filter(function (m) { return m.status === 'open' || m.status === 'in-progress'; }).forEach(function (m) {
-    var hasLog = (m.log || []).some(function (l) { return getShiftIdForTs(l.ts) === curShiftId; });
-    if (!hasLog) flagged.push({ type: 'maint', id: m.id, label: 'Maintenance — Unit ' + m.unit + ' · ' + m.issue });
+    flagged.push({ type: 'maint', id: m.id, label: 'Maintenance — Unit ' + m.unit + ' · ' + m.issue });
   });
 
-  // 3. Open concierge requests with no log entry this shift
+  // 3. All open concierge requests — always surfaces until resolved
   (state.concierge || []).filter(function (c) { return c.status === 'open'; }).forEach(function (c) {
-    var hasLog = (c.log || []).some(function (l) { return getShiftIdForTs(l.ts) === curShiftId; });
-    if (!hasLog) flagged.push({ type: 'concierge', id: c.id, label: 'Concierge — Unit ' + c.unit + ' · ' + c.type });
+    flagged.push({ type: 'concierge', id: c.id, label: 'Concierge — Unit ' + c.unit + ' · ' + c.type });
   });
 
   // 4. Today's amenity bookings past end time with no closeout note
