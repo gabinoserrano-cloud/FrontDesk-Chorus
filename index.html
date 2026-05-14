@@ -2439,7 +2439,9 @@ function renderKeys() {
     html += '<td class="mono text-sm">' + (k.fob || '-') + '</td>';
     html += '<td>' + timeOutCell + '</td>';
     html += '<td><select class="ie-sel" onchange="updateKeyStatus(\'' + k.id + '\',this.value)"><option value="issued" ' + (isIssued ? 'selected' : '') + '>Issued</option><option value="returned" ' + (k.status === 'returned' ? 'selected' : '') + '>Returned</option></select></td>';
-    html += '<td><button class="btn btn-ghost btn-xs" onclick="openEditKey(\'' + k.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteKey(\'' + k.id + '\')">x</button></td>';
+    html += '<td>'
+      + (isIssued ? '<button class="btn btn-secondary btn-xs" style="margin-right:4px" onclick="logKeyReturn(\'' + k.id + '\')" title="Log key return">↩ Return</button>' : '')
+      + '<button class="btn btn-ghost btn-xs" onclick="openEditKey(\'' + k.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteKey(\'' + k.id + '\')">x</button></td>';
     html += '</tr>';
     // Status note row for all issued one-time keys
     if (isOneTime && isIssued) {
@@ -2466,6 +2468,14 @@ function renderKeys() {
   setBadge('badge-keys', allK.filter(function (k) { return k.status === 'issued'; }).length);
 }
 function updateKeyStatus(id, val) { var k = (state.keys || []).find(function (x) { return x.id === id; }); if (!k) return; k.status = val; if (val === 'returned') k.returnedAt = Date.now(); scheduleSave(); renderKeys(); updateBadges(); renderDash(); }
+function logKeyReturn(id) {
+  var k = (state.keys||[]).find(function(x){return x.id===id;}); if (!k) return;
+  var ts = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  if (!k.shiftNotes) k.shiftNotes = [];
+  k.shiftNotes.push({ shiftId: getCurrentShiftId(), shift: getCurrentShiftLabel(), note: 'Key returned — logged at ' + ts, by: currentUser ? currentUser.name : '', ts: Date.now() });
+  k.status = 'returned'; k.returnedAt = Date.now();
+  scheduleSave(); renderKeys(); updateBadges(); renderDash(); toast('Key return logged');
+}
 function deleteKey(id) { if (!confirm('Remove?')) return; state.keys = (state.keys || []).filter(function (k) { return k.id !== id; }); scheduleSave(); renderKeys(); updateBadges(); toast('Removed'); }
 
 // ─── AMENITIES ───
@@ -3584,7 +3594,7 @@ function renderResidents() {
 }
 
 // ─── PASSDOWN ───
-var pdSections = { keysAccess: [], residentMatters: [], shiftNotes: [] };
+var pdSections = { keysAccess: [], residentMatters: [], thisShift: [], shiftNotes: [] };
 var pdExcluded = {};
 var pdNotes = {};
 var pdEditingSection = null;
@@ -3622,13 +3632,13 @@ function pdSaveDraft() {
 }
 function pdLoadDraft() {
   try {
-    var s = sessionStorage.getItem('pd_draft_sections'); if (s) pdSections = JSON.parse(s);
+    var s = sessionStorage.getItem('pd_draft_sections'); if (s) { pdSections = JSON.parse(s); if (!pdSections.thisShift) pdSections.thisShift = []; }
     var e = sessionStorage.getItem('pd_draft_excluded'); if (e) pdExcluded = JSON.parse(e);
     var n = sessionStorage.getItem('pd_draft_notes'); if (n) pdNotes = JSON.parse(n);
   } catch(e) {}
 }
 function pdClearDraft() {
-  pdSections = { keysAccess: [], residentMatters: [], shiftNotes: [] };
+  pdSections = { keysAccess: [], residentMatters: [], thisShift: [], shiftNotes: [] };
   pdExcluded = {};
   pdNotes = {};
   try { ['pd_draft_sections','pd_draft_excluded','pd_draft_notes','pd_draft_policy','pd_draft_shift','pd_draft_lookahead'].forEach(function(k){ sessionStorage.removeItem(k); }); } catch(e) {}
@@ -3662,8 +3672,36 @@ function pdGetLookahead() {
   var el = g('pd-lookahead'); return el ? parseInt(el.value) : 1;
 }
 
+function getCarriedItemIds() {
+  var t = today(), carried = {};
+  getAllPassdowns(24).forEach(function(p) {
+    if (p.date === t && p.itemIds) p.itemIds.forEach(function(id) { carried[id] = true; });
+  });
+  return carried;
+}
+function getActiveAutoBlockIds() {
+  var t = today(), ids = [], shift = g('pd-shift') ? g('pd-shift').value : 'PM';
+  var isLead = currentUser && currentUser.role === 'admin';
+  var la = isLead ? pdGetLookahead() : 0;
+  var maxD = new Date(); maxD.setDate(maxD.getDate() + la);
+  var maxDate = maxD.toISOString().split('T')[0];
+  (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued' && !pdExcluded['key_'+k.id]; }).forEach(function(k){ ids.push('key_'+k.id); });
+  (state.moves||[]).forEach(function(m) {
+    if (m.archivedAt) return;
+    var apptD = m.apptDate || m.date, exKey = (m.type==='in'?'in_':'out_')+m.id;
+    if (pdExcluded[exKey]) return;
+    if ((apptD===t && pdInShift(m.apptTime, shift)) || (isLead && apptD>t && apptD<=maxDate)) ids.push(exKey);
+  });
+  (state.amenities||[]).forEach(function(a) {
+    var exKey = 'am_'+a.id; if (pdExcluded[exKey]) return;
+    if ((a.date===t && pdInShift(a.start, shift)) || (isLead && a.date>t && a.date<=maxDate)) ids.push(exKey);
+  });
+  (state.maintenance||[]).filter(function(m){ return (m.status==='open'||m.status==='in-progress') && !pdExcluded['mt_'+m.id]; }).forEach(function(m){ ids.push('mt_'+m.id); });
+  (state.concierge||[]).filter(function(c){ return c.status==='open' && !pdExcluded['c_'+c.id]; }).forEach(function(c){ ids.push('c_'+c.id); });
+  return ids;
+}
 function pdAttrEsc(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
-function pdAutoRow(exKey, content, defaultNextStep) {
+function pdAutoRow(exKey, content, defaultNextStep, isCarried) {
   var excl = pdExcluded[exKey];
   var noteVal = pdNotes[exKey] !== undefined ? pdNotes[exKey] : (defaultNextStep || '');
   var noteHtml = excl ? '' : '<div style="display:flex;align-items:center;gap:5px;margin-top:5px"><span style="font-size:10px;font-weight:600;color:var(--accent);white-space:nowrap;flex-shrink:0">➤ Next Action</span><input type="text" value="' + pdAttrEsc(noteVal) + '" placeholder="What needs to happen next?" '
@@ -3671,8 +3709,9 @@ function pdAutoRow(exKey, content, defaultNextStep) {
     + 'oninput="pdNotes[\'' + exKey + '\']=this.value;pdSaveDraft()" '
     + 'onfocus="this.style.borderBottomColor=\'var(--accent)\'" '
     + 'onblur="this.style.borderBottomColor=\'var(--border)\'" /></div>';
+  var carriedBadge = (isCarried && !excl) ? '<span style="font-size:10px;background:rgba(201,164,94,0.15);color:var(--accent);border-radius:3px;padding:1px 6px;margin-right:5px;font-weight:600;white-space:nowrap">↩ carried over</span>' : '';
   return '<div class="pd-auto-row' + (excl ? ' pd-auto-excl' : '') + '" style="display:flex;align-items:flex-start;gap:6px">'
-    + '<div style="flex:1' + (excl ? ';opacity:.4;text-decoration:line-through' : '') + '">' + content + noteHtml + '</div>'
+    + '<div style="flex:1' + (excl ? ';opacity:.4;text-decoration:line-through' : '') + '">' + carriedBadge + content + noteHtml + '</div>'
     + '<button onclick="pdToggleExclude(\'' + exKey + '\')" title="' + (excl ? 'Re-include' : 'Exclude from passdown') + '" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:13px;padding:0;color:var(--text3);line-height:1">'
     + (excl ? '<span style="color:var(--accent)">＋</span>' : '–') + '</button>'
     + '</div>';
@@ -3687,6 +3726,7 @@ function isMoveCompleted(m) {
 function renderPdAutoBlocks(isLead) {
   var container = g('pd-auto-blocks'); if (!container) return;
   var now = Date.now(), t = today();
+  var carriedSet = getCarriedItemIds();
   var html = '<div style="font-size:12px;background:rgba(217,119,6,0.08);color:#92400E;border:1px solid rgba(217,119,6,0.2);border-radius:6px;padding:8px 12px;margin-bottom:12px">⚠ Only include items needing follow-up or escalation.</div>';
 
   // One-time keys still out
@@ -3704,7 +3744,7 @@ function renderPdAutoBlocks(isLead) {
       if (k.fob) content += ' / Key #' + k.fob;
       if (isOverdue) { var hrs=Math.floor(overdueMs/3600000), mins=Math.floor((overdueMs%3600000)/60000); content += ' <span style="color:var(--red);font-weight:600">⚠ ' + hrs + 'h ' + mins + 'm out</span>'; }
       var ns = 'Follow up with resident ' + k.name + ' to ensure key is returned.' + (k.notes ? ' ' + k.notes : '');
-      html += pdAutoRow('key_' + k.id, content, ns);
+      html += pdAutoRow('key_' + k.id, content, ns, !!carriedSet['key_'+k.id]);
     });
   }
   html += '</div>';
@@ -3758,7 +3798,7 @@ function renderPdAutoBlocks(isLead) {
       var ns = isMoveCompleted(m)
         ? ('Move-in completed' + (postPendingNs.length ? ' — ' + postPendingNs.length + ' post move-in task(s) still pending.' : ' — all tasks done.'))
         : (function(){ var pend=(m.tasks||[]).filter(function(tk){return !tk.done&&tk.cat!=='Post Move-In';}); return pend.length ? pend.length+' task(s) still pending — review checklist.' : 'All tasks complete — ready for move-in.'; }());
-      html += pdAutoRow('in_' + m.id, content, ns);
+      html += pdAutoRow('in_' + m.id, content, ns, !!carriedSet['in_'+m.id]);
     });
     html += '</div>';
 
@@ -3775,7 +3815,7 @@ function renderPdAutoBlocks(isLead) {
       var nsOut = isMoveCompleted(m)
         ? ('Move-out completed' + (postPendingOut.length ? ' — ' + postPendingOut.length + ' post move-out task(s) still pending.' : ' — all tasks done.'))
         : 'Confirm key return and unit walk-through upon move-out.';
-      html += pdAutoRow('out_' + m.id, content, nsOut);
+      html += pdAutoRow('out_' + m.id, content, nsOut, !!carriedSet['out_'+m.id]);
     });
     html += '</div>';
   }
@@ -3791,7 +3831,7 @@ function renderPdAutoBlocks(isLead) {
     var content = tag + '<strong>' + a.space + '</strong> – ' + a.resident + ' (Unit ' + a.unit + ')';
     if (a.start) content += ' ' + fmtTime(a.start) + (a.end ? '–' + fmtTime(a.end) : '');
     if (a.notes) content += ' | ' + a.notes;
-    html += pdAutoRow('am_' + a.id, content, 'Confirm booking details and ensure space is prepared.');
+    html += pdAutoRow('am_' + a.id, content, 'Confirm booking details and ensure space is prepared.', !!carriedSet['am_'+a.id]);
   });
   html += '</div>';
 
@@ -3801,7 +3841,7 @@ function renderPdAutoBlocks(isLead) {
   if (!openC.length) html += '<div style="color:var(--text3)">None open</div>';
   else openC.forEach(function(c) {
     var content = '<strong>Unit ' + c.unit + ' – ' + c.resident + '</strong> / ' + c.type + (c.notes ? ': ' + c.notes : '');
-    html += pdAutoRow('c_' + c.id, content, 'Follow up and update status once resolved.');
+    html += pdAutoRow('c_' + c.id, content, 'Follow up and update status once resolved.', !!carriedSet['c_'+c.id]);
   });
   html += '</div>';
 
@@ -3819,7 +3859,7 @@ function renderPdAutoBlocks(isLead) {
       var priLabel = m.priority.charAt(0).toUpperCase() + m.priority.slice(1);
       var content = '<strong>Unit ' + m.unit + ' – ' + m.issue + '</strong>' + woBadge + ' <span style="font-size:11px;color:' + priBadge + ';font-weight:600">' + priLabel + '</span> · ' + statusLabel;
       if (m.desc) content += '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + m.desc + '</div>';
-      html += pdAutoRow('mt_' + m.id, content, 'Escalate to maintenance or follow up on resolution status.');
+      html += pdAutoRow('mt_' + m.id, content, 'Escalate to maintenance or follow up on resolution status.', !!carriedSet['mt_'+m.id]);
     });
   }
   html += '</div>';
@@ -3830,12 +3870,15 @@ function renderPdAutoBlocks(isLead) {
 function renderPdFreeSections(isLead) {
   var container = g('pd-free-sections'); if (!container) return;
   var secs = isLead
-    ? [{ key:'keysAccess', emoji:'🔑', label:'Keys / Access' }, { key:'residentMatters', emoji:'👤', label:'Resident Matters' }]
-    : [{ key:'shiftNotes', emoji:'📝', label:'Shift Notes' }];
+    ? [{ key:'thisShift', emoji:'📋', label:'This Shift', hint:'What happened during your shift? Log resolved items, new incidents, and follow-ups not covered by the auto-blocks above.' },
+       { key:'keysAccess', emoji:'🔑', label:'Keys / Access' },
+       { key:'residentMatters', emoji:'👤', label:'Resident Matters' }]
+    : [{ key:'shiftNotes', emoji:'📋', label:'This Shift', hint:'What happened during your shift? Log resolved items, new incidents, and resident interactions — not already in the auto-blocks above.' }];
   var html = '';
   secs.forEach(function(s) {
     html += '<div class="pd-sec-block"><div class="pd-sec-hdr"><span class="pd-sec-lbl">' + s.emoji + ' ' + s.label + '</span>'
       + '<button class="btn btn-ghost btn-xs" onclick="openPdItem(\'' + s.key + '\')">+ Add Item</button></div>'
+      + (s.hint ? '<div style="font-size:11px;color:var(--text3);margin:-2px 0 8px;line-height:1.5">' + s.hint + '</div>' : '')
       + '<div id="pd-items-' + s.key + '">' + renderPdItemsHtml(s.key) + '</div></div>';
   });
   if (isLead) {
@@ -4057,12 +4100,13 @@ function generatePassdown() {
     });
   }
   if (isLead) {
+    writeSec('📋', 'This Shift', 'thisShift');
     writeSec('🔑', 'Keys / Access', 'keysAccess');
     writeSec('👤', 'Resident Matters', 'residentMatters');
     var policy = g('pd-policy') ? (g('pd-policy').value||'').trim() : '';
     if (policy) out += '\n📢 Policy Reminder\n' + policy + '\n';
   } else {
-    writeSec('📝', 'Shift Notes', 'shiftNotes');
+    writeSec('📋', 'This Shift', 'shiftNotes');
   }
 
   // Sign-off
@@ -4251,7 +4295,7 @@ function savePassdown() {
   var uid2 = currentUser ? currentUser.id : '__legacy__';
   if (!state.userPassdowns) state.userPassdowns = {};
   if (!state.userPassdowns[uid2]) state.userPassdowns[uid2] = [];
-  state.userPassdowns[uid2].unshift({ id: uid(), date: today(), shift: shift, text: preview, createdAt: Date.now() });
+  state.userPassdowns[uid2].unshift({ id: uid(), date: today(), shift: shift, text: preview, itemIds: getActiveAutoBlockIds(), createdAt: Date.now() });
   scheduleSave(); renderPassdownHistory(); toast('Saved');
 }
 function copyPassdown() {
@@ -4263,6 +4307,11 @@ function copyPassdown() {
 function sendPassdownGmail() {
   var preview = g('pd-preview').value;
   if (!preview || !preview.trim()) { toast('Generate passdown first'); return; }
+  var carried = getCarriedItemIds();
+  if (Object.keys(carried).length > 0) {
+    var ok = confirm('Some items in this passdown were carried over from an earlier shift today.\n\nMake sure you\'ve added your own shift\'s updates before sending.\n\nContinue sending?');
+    if (!ok) return;
+  }
   var shiftEl = g('pd-shift'); var shift = shiftEl ? shiftEl.value.toUpperCase() : 'AM';
   var d = new Date(); var dateStr = (d.getMonth()+1)+'.'+d.getDate()+'.'+d.getFullYear();
   var subject = encodeURIComponent(dateStr + ' ' + shift + ' Front Desk Passdown');
