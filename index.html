@@ -588,9 +588,9 @@
       </div>
       <div class="card moves-tbl-wrap">
         <div class="card-hdr"><span class="card-title" id="moves-card-title">Scheduled Moves</span><span class="card-count" id="moves-count">0 entries</span>
-          <div class="ml-auto flex gap-8" id="moves-admin-actions"><button class="btn btn-secondary btn-sm" onclick="generatePassdownFromMoves()">Passdown</button><button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button></div>
+          <div class="ml-auto flex gap-8" id="moves-admin-actions"><button class="btn btn-ghost btn-sm" id="btn-move-logged" onclick="toggleMoveLogged()" title="Show/hide logged by column">Logged By</button><button class="btn btn-secondary btn-sm" onclick="generatePassdownFromMoves()">Passdown</button><button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button></div>
         </div>
-        <div class="tbl-wrap"><table><thead><tr id="moves-thead-row"><th class="th-sort" onclick="sortMoves('unit')">Unit</th><th class="th-sort" onclick="sortMoves('name')">Resident</th><th class="th-sort" onclick="sortMoves('date')">Lease Start</th><th class="th-sort" onclick="sortMoves('type')">Type</th><th class="th-sort" onclick="sortMoves('appt')">Appt</th><th>Total</th><th>Notes</th><th></th></tr></thead><tbody id="moves-tbody"></tbody></table></div>
+        <div class="tbl-wrap"><table><thead><tr id="moves-thead-row"><th class="th-sort" onclick="sortMoves('unit')">Unit</th><th class="th-sort" onclick="sortMoves('name')">Resident</th><th class="th-sort" onclick="sortMoves('date')">Lease Start</th><th class="th-sort" onclick="sortMoves('type')">Type</th><th class="th-sort" onclick="sortMoves('appt')">Appt</th><th>Total</th><th>Notes</th><th id="moves-th-logged" style="display:none">Logged By</th><th></th></tr></thead><tbody id="moves-tbody"></tbody></table></div>
       </div>
       <div id="moves-cards"></div>
       <div class="card" id="tight-panel" style="display:none"><div class="card-hdr"><span class="card-title">Tight Turnovers</span></div><div class="card-body" id="tight-body"></div></div>
@@ -1654,7 +1654,7 @@ function navToMoves(filter) {
 document.addEventListener('click', function (e) { if (!e.target.closest('.search-wrap')) { var r = g('dash-results'); if (r) r.style.display = 'none'; } });
 
 // ─── MOVES ───
-var moveFilter = 'all', openMoveId = null, moveSort = 'date', moveSortDir = 'asc';
+var moveFilter = 'all', openMoveId = null, moveSort = 'date', moveSortDir = 'asc', moveShowLogged = false;
 function sortMoves(col) { if (moveSort === col) { moveSortDir = moveSortDir === 'asc' ? 'desc' : 'asc'; } else { moveSort = col; moveSortDir = 'asc'; } renderMoves(); }
 var editingMoveId = null;
 
@@ -1828,6 +1828,13 @@ function saveMove() {
   toast('Move added \u2014 welcome & follow-up call todos created');
 }
 function filterMoves(f, item) { moveFilter = f; document.querySelectorAll('#moves-tabs .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderMoves(); }
+function toggleMoveLogged() {
+  moveShowLogged = !moveShowLogged;
+  var th = g('moves-th-logged'); if (th) th.style.display = moveShowLogged ? '' : 'none';
+  var btn = g('btn-move-logged');
+  if (btn) { btn.style.background = moveShowLogged ? 'var(--accent)' : ''; btn.style.color = moveShowLogged ? '#fff' : ''; btn.style.borderColor = moveShowLogged ? 'var(--accent)' : ''; }
+  renderMoves();
+}
 
 function buildCL(m, filterCat) {
   var tasks = m.tasks || [];
@@ -1996,7 +2003,7 @@ function renderMoves() {
   // Desktop table
   var tbody = g('moves-tbody');
   if (tbody) {
-    if (!list.length) { tbody.innerHTML = '<tr><td colspan="8" class="tbl-empty">No moves.</td></tr>'; }
+    if (!list.length) { tbody.innerHTML = '<tr><td colspan="' + (moveShowLogged ? 9 : 8) + '" class="tbl-empty">No moves.</td></tr>'; }
     else {
       var rows = '';
       list.forEach(function (m) {
@@ -2020,19 +2027,21 @@ function renderMoves() {
           }
         }
         rows += '<td><span class="mono font-600">' + m.unit + '</span></td>';
-        rows += '<td><div class="font-600">' + m.resident + '</div>' + (m.date === t && m.type === 'in' ? '<div class="text-xs" style="color:var(--accent)">Lease starts today</div>' : '') + fmtByTag(m.addedBy, m.createdAt) + '</td>';
+        rows += '<td><div class="font-600">' + m.resident + '</div>' + (m.date === t && m.type === 'in' ? '<div class="text-xs" style="color:var(--accent)">Lease starts today</div>' : '') + '</td>';
         rows += '<td class="mono text-sm">' + fmtShort(m.date) + '</td>';
         rows += '<td><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'Move In' : 'Move Out') + '</span></td>';
         rows += '<td>' + apptBadge + '</td>';
         rows += '<td class="mono text-sm">' + (m.total ? '$' + m.total : '-') + '</td>';
         rows += '<td class="text-sm text-2" style="max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (m.notes || '-') + '</td>';
+        if (moveShowLogged) rows += '<td class="text-xs text-3">' + fmtByTag(m.addedBy, m.createdAt) + '</td>';
         rows += '<td><div class="flex gap-4" style="justify-content:flex-end;align-items:center">';
         rows += pct === 100 ? '<span class="pill pill-resolved" style="font-size:10px">Done</span>' : '<div style="width:40px"><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div><div class="text-xs text-3 mono" style="text-align:right;margin-top:2px">' + dn + '/' + tot + '</div></div>';
         if (!isStaffUser) rows += '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openEditMove(\'' + m.id + '\')" title="Edit">&#9998;</button>';
         rows += archBtn;
         if (!isStaffUser) rows += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="event.stopPropagation();deleteMove(\'' + m.id + '\')">x</button>';
         rows += '</div></td></tr>';
-        rows += '<tr class="move-cl-row ' + (isOpen ? 'open' : '') + '" id="cl-' + m.id + '"><td colspan="8"><div class="cl-inner">' + buildCL(m, moveFilter) + '</div></td></tr>';
+        var cls = moveShowLogged ? 9 : 8;
+        rows += '<tr class="move-cl-row ' + (isOpen ? 'open' : '') + '" id="cl-' + m.id + '"><td colspan="' + cls + '"><div class="cl-inner">' + buildCL(m, moveFilter) + '</div></td></tr>';
       });
       tbody.innerHTML = rows;
     }
