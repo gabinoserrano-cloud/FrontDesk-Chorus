@@ -1832,7 +1832,7 @@ function buildCL(m, filterCat) {
     html += '<div class="cl-item" onclick="event.stopPropagation()">';
     html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTask(\'' + m.id + '\',\'' + t.id + '\',this.checked)">';
     // Editable task text
-    html += '<input type="text" class="cl-text-input ' + (t.done ? 'done' : '') + '" value="' + t.text.replace(/"/g, '&quot;') + '" onblur="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'text\',this.value)" onclick="event.stopPropagation()">';
+    html += '<input type="text" class="cl-text-input ' + (t.done ? 'done' : '') + '" value="' + (t.text || t.label || '').replace(/"/g, '&quot;') + '" onblur="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'text\',this.value)" onclick="event.stopPropagation()">';
     // Editable due date
     html += '<input type="date" class="cl-due-input" value="' + (t.dueDate || '') + '" title="Due date" onchange="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'dueDate\',this.value)" onclick="event.stopPropagation()">';
     // Editable category
