@@ -1792,7 +1792,7 @@ function saveMove() {
   var customIn = state.customInTasks || DEFAULT_IN_TASKS;
   var customOut = state.customOutTasks || DEFAULT_OUT_TASKS;
   var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null }; });
-  var m = { id: uid(), unit: unit, resident: resident, date: date, type: moveType, total: total, notes: notes, apptDate: apptDate, apptTime: apptTime, tasks: tasks, archivedAt: null, createdAt: Date.now() };
+  var m = { id: uid(), unit: unit, resident: resident, date: date, type: moveType, total: total, notes: notes, apptDate: apptDate, apptTime: apptTime, tasks: tasks, archivedAt: null, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : 'Front Desk' };
   if (!state.moves) state.moves = [];
   state.moves.push(m);
   if (moveType === 'in') {
@@ -2002,7 +2002,7 @@ function renderMoves() {
           }
         }
         rows += '<td><span class="mono font-600">' + m.unit + '</span></td>';
-        rows += '<td><div class="font-600">' + m.resident + '</div>' + (m.date === t && m.type === 'in' ? '<div class="text-xs" style="color:var(--accent)">Lease starts today</div>' : '') + '</td>';
+        rows += '<td><div class="font-600">' + m.resident + '</div>' + (m.date === t && m.type === 'in' ? '<div class="text-xs" style="color:var(--accent)">Lease starts today</div>' : '') + (m.addedBy ? '<div class="text-xs text-3">by ' + m.addedBy + '</div>' : '') + '</td>';
         rows += '<td class="mono text-sm">' + fmtShort(m.date) + '</td>';
         rows += '<td><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'Move In' : 'Move Out') + '</span></td>';
         rows += '<td>' + apptBadge + '</td>';
@@ -2036,7 +2036,7 @@ function renderMoves() {
         html += '<div class="move-card ' + (isOpen ? 'expanded' : '') + '" id="mc-' + m.id + '">';
         html += '<div class="mc-hdr" onclick="toggleCL(\'' + m.id + '\')">';
         html += '<span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'IN' : 'OUT') + '</span>';
-        html += '<div class="mc-meta"><div class="mc-name">' + m.resident + '</div>';
+        html += '<div class="mc-meta"><div class="mc-name">' + m.resident + '</div>' + (m.addedBy ? '<div class="text-xs text-3">by ' + m.addedBy + '</div>' : '');
         var mcApptLine = '';
         if (!m.apptDate) {
           mcApptLine = '<div class="appt-badge no-appt" style="margin-top:4px;display:inline-flex">No appointment yet</div>';
