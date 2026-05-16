@@ -1486,7 +1486,7 @@ function loadTestData() {
   state.maintenance.push({ id: uid(), unit: 'Lobby', issue: 'Elevator B - slow response', desc: 'Multiple residents reported elevator B taking 3–4 minutes. Vendor notified.', priority: 'medium', status: 'open', reporter: 'Front Desk', workorder: false, addedBy: 'Test', createdAt: now - 3600000*10, log: [{ ts: now - 3600000*10, by: 'Test', note: 'Multiple residents reported elevator B taking 3–4 minutes. Vendor notified.' }] });
   // Key out
   if (!state.keys) state.keys = [];
-  state.keys.push({ id: uid(), unit: '915', name: 'James Okafor', guest: 'Michael Torres', fob: '04', type: 'one-time', status: 'issued', issuedAt: now - 3600000*2.5, timeout: fmtTime((function(){ var d=new Date(now-3600000*2.5); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); })()), notes: 'Guest picking up a delivery that required signature.' });
+  state.keys.push({ id: uid(), unit: '915', name: 'James Okafor', guest: 'Michael Torres', fob: '04', type: 'one-time', status: 'issued', issuedAt: now - 3600000*2.5, timeout: (function(){ var d=new Date(now-3600000*2.5); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); })(), notes: 'Guest picking up a delivery that required signature.', addedBy: 'Test' });
   // Amenity booking (today, PM)
   if (!state.amenities) state.amenities = [];
   state.amenities.push({ id: uid(), space: 'Rooftop Terrace', unit: '1108', resident: 'Sofia Park', date: t, start: '18:00', end: '20:00', notes: 'Birthday dinner, 8 guests. Chairs pre-arranged.', addedBy: 'Test', createdAt: now });
@@ -2480,7 +2480,7 @@ function renderKeys() {
     var overdueTag = isOverdue ? '<span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + overdueHrs + 'h ' + overdueMin + 'm OUT</span>' : '';
     var staleTag = isStale ? '<span class="stale-badge">&#9888; Stale &mdash; ' + staleCount + ' shift' + (staleCount !== 1 ? 's' : '') + '</span>' : '';
     var nameCell = k.name + (k.guest ? '<div style="font-size:11px;color:var(--text3)">Guest: ' + k.guest + '</div>' : '') + kyBy;
-    var timeOutCell = (isOneTime && k.timeout) ? '<span class="mono text-xs">' + k.timeout + '</span>' : (isOneTime && k.issuedAt ? '<span class="mono text-xs text-3">' + new Date(k.issuedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + '</span>' : '<span class="text-xs text-3">-</span>');
+    var timeOutCell = (isOneTime && k.timeout) ? '<span class="mono text-xs">' + fmtTime(k.timeout) + '</span>' : (isOneTime && k.issuedAt ? '<span class="mono text-xs text-3">' + new Date(k.issuedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + '</span>' : '<span class="text-xs text-3">-</span>');
     html += '<tr class="' + rowClass + '"' + rowStyle + '>';
     html += '<td class="mono font-600">' + k.unit + '</td>';
     html += '<td>' + nameCell + '</td>';
