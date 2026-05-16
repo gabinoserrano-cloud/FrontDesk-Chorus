@@ -523,7 +523,7 @@
     <div class="nav-item" data-sec="vacant" onclick="nav(this)"><span class="icon" data-icon="building"></span><span class="nav-txt">Vacant Units</span><span class="badge" id="badge-vacant"></span></div>
     <div class="nav-item" data-sec="walkthrough" onclick="nav(this)"><span class="icon" data-icon="shield"></span><span class="nav-txt">Security Patrols</span></div>
     <div class="nav-item" data-sec="maintenance" onclick="nav(this)"><span class="icon" data-icon="wrench"></span><span class="nav-txt">Maintenance</span><span class="badge" id="badge-maint"></span></div>
-    <div class="nav-item" data-sec="security" onclick="nav(this)"><span class="icon" data-icon="alert-triangle"></span><span class="nav-txt">Security Log</span><span class="badge" id="badge-security"></span></div>
+    <div class="nav-item" data-sec="security" onclick="nav(this)"><span class="icon" data-icon="alert-triangle"></span><span class="nav-txt">Incident Log</span><span class="badge" id="badge-security"></span></div>
   </div>
   <div class="nav-group">
     <div class="nav-label">Resident Services</div>
@@ -663,7 +663,7 @@
     <div class="section" id="section-security">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterSecurity('all',this)">All</div><div class="sub-tab" onclick="filterSecurity('today',this)">Today</div><div class="sub-tab" onclick="filterSecurity('monitoring',this)">Monitoring</div></div>
       <div class="stat-grid" id="security-stats"></div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Security Incident Log</span><span class="card-count" id="security-count">0 incidents</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddSecurity()">+ Log Incident</button></div><div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Location</th><th>Handled By</th><th>Status</th><th>Notes</th><th></th></tr></thead><tbody id="security-tbody"></tbody></table></div></div>
+      <div class="card"><div class="card-hdr"><span class="card-title">Incident Log</span><span class="card-count" id="security-count">0 incidents</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddSecurity()">+ Log Incident</button></div><div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Location</th><th>Handled By</th><th>Status</th><th>Notes</th><th></th></tr></thead><tbody id="security-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-residents">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterResidents('all',this)">All Profiles</div><div class="sub-tab" onclick="filterResidents('pte-granted',this)">&#9989; PTE Granted</div><div class="sub-tab" onclick="filterResidents('pte-denied',this)">&#128683; PTE Denied</div><div class="sub-tab" onclick="filterResidents('pte-not-set',this)">PTE Not Set</div><div class="sub-tab" onclick="filterResidents('blueground',this)">&#128309; Blueground</div></div>
@@ -1044,19 +1044,27 @@
 </div></div>
 
 <div class="modal-ov" id="modal-security"><div class="modal" style="max-width:500px">
-  <div class="modal-hdr"><span class="modal-title" id="modal-security-title">Log Security Incident</span><button class="modal-close" onclick="closeModal('modal-security')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-security-title">Log Incident</span><button class="modal-close" onclick="closeModal('modal-security')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Date</label><input id="sec-date" type="date"></div><div class="fg"><label>Time</label><input id="sec-time" type="time"></div></div>
     <div class="fg"><label>Incident Type</label>
       <select id="sec-type" onchange="secTypeChange()">
-        <option value="Unhoused individual — removed by staff">Unhoused — Removed by Staff</option>
-        <option value="Unhoused individual — security called">Unhoused — Security Called</option>
-        <option value="Unhoused individual — SFPD called">Unhoused — SFPD Called</option>
-        <option value="Unauthorized access">Unauthorized Access</option>
-        <option value="Disturbance / altercation">Disturbance / Altercation</option>
-        <option value="Suspicious activity">Suspicious Activity</option>
-        <option value="Noise complaint escalation">Noise Complaint Escalation</option>
-        <option value="Trespassing">Trespassing</option>
+        <optgroup label="Security">
+          <option value="Unhoused individual — removed by staff">Unhoused — Removed by Staff</option>
+          <option value="Unhoused individual — security called">Unhoused — Security Called</option>
+          <option value="Unhoused individual — SFPD called">Unhoused — SFPD Called</option>
+          <option value="Unauthorized access">Unauthorized Access</option>
+          <option value="Disturbance / altercation">Disturbance / Altercation</option>
+          <option value="Suspicious activity">Suspicious Activity</option>
+          <option value="Noise complaint escalation">Noise Complaint Escalation</option>
+          <option value="Trespassing">Trespassing</option>
+        </optgroup>
+        <optgroup label="Medical">
+          <option value="Medical emergency — 911 called">Medical Emergency — 911 Called</option>
+          <option value="Medical emergency — first aid / staff handled">Medical Emergency — First Aid / Staff</option>
+          <option value="Slip / fall">Slip / Fall</option>
+          <option value="Resident welfare check">Resident Welfare Check</option>
+        </optgroup>
         <option value="Other">Other</option>
       </select>
     </div>
@@ -2800,7 +2808,7 @@ function openEditSecurity(id) {
   editingSecurityId = id;
   setModalMode('modal-security-title','modal-security-savebtn','Edit Incident','Save Changes');
   g('sec-date').value=s.date||today(); g('sec-time').value=s.time||'';
-  var knownTypes=['Unhoused individual — removed by staff','Unhoused individual — security called','Unhoused individual — SFPD called','Unauthorized access','Disturbance / altercation','Suspicious activity','Noise complaint escalation','Trespassing'];
+  var knownTypes=['Unhoused individual — removed by staff','Unhoused individual — security called','Unhoused individual — SFPD called','Unauthorized access','Disturbance / altercation','Suspicious activity','Noise complaint escalation','Trespassing','Medical emergency — 911 called','Medical emergency — first aid / staff handled','Slip / fall','Resident welfare check'];
   var isKnown = knownTypes.indexOf(s.type) !== -1;
   g('sec-type').value = isKnown ? s.type : 'Other';
   var ow=g('sec-other'); if(ow) ow.value = isKnown ? '' : s.type;
@@ -4275,7 +4283,7 @@ function renderPdAutoBlocks(isLead) {
   // Security incidents (today's shift + any monitoring)
   var secIncidents = (state.security||[]).filter(function(s){ return s.date===t || s.status==='monitoring'; });
   if (secIncidents.length) {
-    html += '<div class="pd-auto-block" style="border-color:rgba(220,38,38,0.3)"><div class="pd-auto-hdr" style="color:#dc2626">🛡 Security Incidents</div>';
+    html += '<div class="pd-auto-block" style="border-color:rgba(220,38,38,0.3)"><div class="pd-auto-hdr" style="color:#dc2626">🛡 Incidents</div>';
     secIncidents.forEach(function(s) {
       var content = '<strong>' + s.type + '</strong> — ' + s.location;
       if (s.time) content += ' at ' + fmtTime(s.time);
@@ -4564,7 +4572,7 @@ function generatePassdown() {
   // Security incidents
   var secGen = (state.security||[]).filter(function(s){ return (s.date===t || s.status==='monitoring') && !pdExcluded['sec_'+s.id]; });
   if (secGen.length) {
-    out += '\n🛡 Security Incidents\n';
+    out += '\n🛡 Incidents\n';
     secGen.forEach(function(s) {
       out += s.type + ' — ' + s.location + (s.time ? ' at ' + fmtTime(s.time) : '') + '\n';
       out += 'Handled by: ' + s.handledBy + ' | Status: ' + (s.status==='monitoring'?'⚠ Monitoring':'✓ Resolved') + '\n';
