@@ -1477,9 +1477,9 @@ function loadTestData() {
   var now = Date.now();
   // Move-in (today, PM)
   if (!state.moves) state.moves = [];
-  state.moves.push({ id: uid(), type: 'in', unit: '1204', resident: 'Marcus Webb', date: t, apptDate: t, apptTime: '3:00 PM', total: '4200', notes: 'Elevator reserved 2pm–5pm. 2 fobs requested.', tasks: [{ id: uid(), label: 'Confirm elevator reservation', cat: 'Move-In', done: false },{ id: uid(), label: 'Issue 2 fobs', cat: 'Move-In', done: true },{ id: uid(), label: 'Orientation walkthrough', cat: 'Move-In', done: false }], addedBy: 'Test', createdAt: now });
+  state.moves.push({ id: uid(), type: 'in', unit: '1204', resident: 'Marcus Webb', date: t, apptDate: t, apptTime: '15:00', total: '4200', notes: 'Elevator reserved 2pm–5pm. 2 fobs requested.', tasks: [{ id: uid(), label: 'Confirm elevator reservation', cat: 'Move-In', done: false },{ id: uid(), label: 'Issue 2 fobs', cat: 'Move-In', done: true },{ id: uid(), label: 'Orientation walkthrough', cat: 'Move-In', done: false }], addedBy: 'Test', createdAt: now });
   // Move-out (today, AM)
-  state.moves.push({ id: uid(), type: 'out', unit: '806', resident: 'Elena Huang', date: t, apptDate: t, apptTime: '10:00 AM', notes: 'Keys returned, unit walk-through pending.', tasks: [{ id: uid(), label: 'Collect all keys and fobs', cat: 'Move-Out', done: true },{ id: uid(), label: 'Unit walk-through', cat: 'Move-Out', done: false }], addedBy: 'Test', createdAt: now });
+  state.moves.push({ id: uid(), type: 'out', unit: '806', resident: 'Elena Huang', date: t, apptDate: t, apptTime: '10:00', notes: 'Keys returned, unit walk-through pending.', tasks: [{ id: uid(), label: 'Collect all keys and fobs', cat: 'Move-Out', done: true },{ id: uid(), label: 'Unit walk-through', cat: 'Move-Out', done: false }], addedBy: 'Test', createdAt: now });
   // Maintenance
   if (!state.maintenance) state.maintenance = [];
   state.maintenance.push({ id: uid(), unit: '402', issue: 'HVAC not cooling', desc: 'Resident reported no cold air since yesterday. Thermostat set to 68, reading 78.', priority: 'high', status: 'in-progress', reporter: 'Maria Santos (Resident)', workorder: true, addedBy: 'Test', createdAt: now - 3600000*5, log: [{ ts: now - 3600000*5, by: 'Test', note: 'Resident reported no cold air since yesterday. Thermostat set to 68, reading 78.' }, { ts: now - 3600000*2, by: 'Test', note: 'WO submitted. Tech scheduled for tomorrow 10am–12pm. Resident notified.' }] });
@@ -1501,7 +1501,7 @@ function loadTestData() {
   state.laf.push({ id: uid(), item: 'Black Montblanc umbrella', location: 'Elevator lobby — found near mailboxes', foundBy: 'Cleaning crew', claimedBy: '', status: 'unclaimed', addedBy: 'Test', createdAt: now - 3600000*4 });
   // Tour
   if (!state.tours) state.tours = [];
-  state.tours.push({ id: uid(), name: 'Jordan Lee', email: 'jlee@email.com', phone: '', units: '601, 808, 1102', agent: 'Leasing Team', date: t, time: '2:00 PM', notes: 'Very interested in 1102. Follow up tomorrow.', addedBy: 'Test', createdAt: now });
+  state.tours.push({ id: uid(), name: 'Jordan Lee', email: 'jlee@email.com', phone: '', units: '601, 808, 1102', agent: 'Leasing Team', date: t, time: '14:00', notes: 'Very interested in 1102. Follow up tomorrow.', addedBy: 'Test', createdAt: now });
   // To-do
   if (!state.todos) state.todos = [];
   state.todos.push({ id: uid(), text: 'Call elevator vendor re: annual inspection — due this week', priority: 'high', done: false, note: 'Contact: Apex Elevators, (415) 555-0190', addedBy: 'Test', createdAt: now });
