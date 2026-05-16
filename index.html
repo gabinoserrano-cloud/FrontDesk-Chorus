@@ -1724,6 +1724,13 @@ function fmtTime(t) {
   var h12 = h > 12 ? h-12 : (h===0?12:h), ampm = h < 12 ? 'am' : 'pm';
   return h12 + ':' + (m < 10 ? '0'+m : m) + ampm;
 }
+function fmtLogged(ts) {
+  if (!ts) return '';
+  var d = new Date(ts);
+  var dateStr = d.toISOString().split('T')[0];
+  if (dateStr === today()) return 'logged today at ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  return 'logged ' + d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
 
 function openAddMove() {
   editingMoveId = null;
@@ -2002,7 +2009,7 @@ function renderMoves() {
           }
         }
         rows += '<td><span class="mono font-600">' + m.unit + '</span></td>';
-        rows += '<td><div class="font-600">' + m.resident + '</div>' + (m.date === t && m.type === 'in' ? '<div class="text-xs" style="color:var(--accent)">Lease starts today</div>' : '') + (m.addedBy ? '<div class="text-xs text-3">by ' + m.addedBy + '</div>' : '') + '</td>';
+        rows += '<td><div class="font-600">' + m.resident + '</div>' + (m.date === t && m.type === 'in' ? '<div class="text-xs" style="color:var(--accent)">Lease starts today</div>' : '') + (m.addedBy ? '<div class="text-xs text-3">by ' + m.addedBy + '</div>' : '') + (m.createdAt ? '<div class="text-xs text-3">' + fmtLogged(m.createdAt) + '</div>' : '') + '</td>';
         rows += '<td class="mono text-sm">' + fmtShort(m.date) + '</td>';
         rows += '<td><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'Move In' : 'Move Out') + '</span></td>';
         rows += '<td>' + apptBadge + '</td>';
@@ -2411,7 +2418,7 @@ function renderGuests() {
   var html = '';
   list.forEach(function (gst) {
     var gstBy = gst.addedBy ? '<span class="by-tag">by ' + gst.addedBy + '</span>' : '';
-    html += '<tr><td class="font-600">' + gst.name + gstBy + '</td><td class="mono">' + gst.unit + '</td><td class="text-sm text-2">' + (gst.host || '-') + '</td><td class="text-sm">' + gst.type + '</td>';
+    html += '<tr><td class="font-600">' + gst.name + gstBy + (gst.createdAt ? '<div class="text-xs text-3">' + fmtLogged(gst.createdAt) + '</div>' : '') + '</td><td class="mono">' + gst.unit + '</td><td class="text-sm text-2">' + (gst.host || '-') + '</td><td class="text-sm">' + gst.type + '</td>';
     html += '<td><select class="ie-sel" onchange="updateGuestStatus(\'' + gst.id + '\',this.value)"><option value="pending" ' + (gst.status === 'pending' ? 'selected' : '') + '>Pending</option><option value="in" ' + (gst.status === 'in' ? 'selected' : '') + '>Checked In</option><option value="out" ' + (gst.status === 'out' ? 'selected' : '') + '>Checked Out</option></select></td>';
     html += '<td><button class="btn btn-ghost btn-xs" onclick="openEditGuest(\'' + gst.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteGuest(\'' + gst.id + '\')">x</button></td></tr>';
   });
@@ -2479,7 +2486,7 @@ function renderKeys() {
     var rowStyle = rowBg ? ' style="' + rowBg + '"' : '';
     var overdueTag = isOverdue ? '<span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + overdueHrs + 'h ' + overdueMin + 'm OUT</span>' : '';
     var staleTag = isStale ? '<span class="stale-badge">&#9888; Stale &mdash; ' + staleCount + ' shift' + (staleCount !== 1 ? 's' : '') + '</span>' : '';
-    var nameCell = k.name + (k.guest ? '<div style="font-size:11px;color:var(--text3)">Guest: ' + k.guest + '</div>' : '') + kyBy;
+    var nameCell = k.name + (k.guest ? '<div style="font-size:11px;color:var(--text3)">Guest: ' + k.guest + '</div>' : '') + kyBy + (k.createdAt ? '<div class="text-xs text-3">' + fmtLogged(k.createdAt) + '</div>' : '');
     var timeOutCell = (isOneTime && k.timeout) ? '<span class="mono text-xs">' + fmtTime(k.timeout) + '</span>' : (isOneTime && k.issuedAt ? '<span class="mono text-xs text-3">' + new Date(k.issuedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + '</span>' : '<span class="text-xs text-3">-</span>');
     html += '<tr class="' + rowClass + '"' + rowStyle + '>';
     html += '<td class="mono font-600">' + k.unit + '</td>';
@@ -2570,7 +2577,7 @@ function renderAmenities() {
     var typePill = '<span class="pill ' + (a.type === 'event' ? 'pill-event' : 'pill-reservation') + '">' + (a.type === 'event' ? 'Event' : 'Reservation') + '</span>';
     var closeoutPill = pendingCloseout ? ' <span class="pending-closeout-badge">&#9888; Pending close-out</span>' : (isClosed ? ' <span style="font-size:10px;color:var(--green);background:var(--green-light);border-radius:4px;padding:1px 6px;font-weight:600">&#10003; Closed out</span>' : '');
     html += '<tr' + rowStyle + '>';
-    html += '<td class="font-600">' + a.resident + amBy + '</td>';
+    html += '<td class="font-600">' + a.resident + amBy + (a.createdAt ? '<div class="text-xs text-3">' + fmtLogged(a.createdAt) + '</div>' : '') + '</td>';
     html += '<td class="mono">' + a.unit + '</td>';
     html += '<td class="text-sm">' + a.space + '</td>';
     html += '<td class="mono text-sm">' + fmtShort(a.date) + '</td>';
@@ -2632,7 +2639,7 @@ function renderTours() {
   var html = '';
   list.forEach(function (tr) {
     var trBy = tr.addedBy ? '<span class="by-tag">by ' + tr.addedBy + '</span>' : '';
-    html += '<tr><td class="font-600">' + tr.name + trBy + '</td><td class="mono text-sm">' + (tr.unit || '-') + '</td><td class="mono text-sm">' + fmtShort(tr.date) + '</td>';
+    html += '<tr><td class="font-600">' + tr.name + trBy + (tr.createdAt ? '<div class="text-xs text-3">' + fmtLogged(tr.createdAt) + '</div>' : '') + '</td><td class="mono text-sm">' + (tr.unit || '-') + '</td><td class="mono text-sm">' + fmtShort(tr.date) + '</td>';
     html += '<td><span class="pill ' + (tr.type === 'sgt' ? 'pill-reservation' : 'pill-event') + '">' + (tr.type === 'sgt' ? 'SGT' : 'Guided') + '</span></td>';
     html += '<td class="text-sm text-2">' + (tr.notes || '-') + '</td><td><button class="btn btn-ghost btn-xs" onclick="openEditTour(\'' + tr.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteTour(\'' + tr.id + '\')">x</button></td></tr>';
   });
@@ -3535,7 +3542,7 @@ function renderLAF() {
     if (overdue) statusCell += ' <span style="background:var(--amber-light);color:var(--amber);font-size:10px;border-radius:4px;padding:1px 6px;margin-left:4px">Disposal ' + days + 'd</span>';
     html += '<tr ' + (i.claimedAt ? 'style="opacity:0.55"' : (overdue ? 'style="background:var(--amber-light)"' : '')) + '>';
     var lafBy = i.addedBy ? '<span class="by-tag">by ' + i.addedBy + '</span>' : '';
-    html += '<td class="mono text-sm">' + fmtShort(i.date) + '</td><td class="text-sm">' + (i.location || '-') + '</td><td class="font-600">' + i.desc + lafBy + '</td>';
+    html += '<td class="mono text-sm">' + fmtShort(i.date) + '</td><td class="text-sm">' + (i.location || '-') + '</td><td class="font-600">' + i.desc + lafBy + ((i.createdAt || i.loggedAt) ? '<div class="text-xs text-3">' + fmtLogged(i.createdAt || i.loggedAt) + '</div>' : '') + '</td>';
     html += '<td class="text-sm text-2">' + i.condition + '</td><td class="text-sm">' + (i.foundBy || '-') + '</td>';
     html += '<td class="text-sm">' + statusCell + '</td><td><button class="btn btn-ghost btn-xs" onclick="openEditLAF(\'' + i.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteLAF(\'' + i.id + '\')">x</button></td></tr>';
   });
