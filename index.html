@@ -612,9 +612,13 @@
       <div class="card"><div class="card-hdr"><span class="card-title">Guest &amp; Visitor Log</span><span class="card-count" id="guests-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddGuest()">+ Log Guest</button></div><div class="tbl-wrap"><table><thead><tr><th>Guest</th><th>Unit</th><th>Host</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody id="guests-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-keys">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('resident',this)">Resident</div><div class="sub-tab" onclick="filterKeys('joiner',this)">Joiner</div><div class="sub-tab" onclick="filterKeys('one-time',this)">One-Time</div><div class="sub-tab" onclick="filterKeys('issued',this)">Out Now</div></div>
+      <div class="sub-tabs"><div class="sub-tab active" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('resident',this)">Resident</div><div class="sub-tab" onclick="filterKeys('joiner',this)">Joiner</div><div class="sub-tab" onclick="filterKeys('one-time',this)">One-Time</div><div class="sub-tab" onclick="filterKeys('vendor',this)">Vendor</div><div class="sub-tab" onclick="filterKeys('issued',this)">Out Now</div><div class="sub-tab" onclick="filterKeys('parking',this)">🚗 Parking</div></div>
       <div class="key-stat-row" id="keys-stats"></div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Key Log</span><span class="card-count" id="keys-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddKey()">+ Log Key</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident / Guest</th><th>Type</th><th>Key #</th><th>Time Out</th><th>Status</th><th></th></tr></thead><tbody id="keys-tbody"></tbody></table></div></div>
+      <div class="card" id="keys-log-card"><div class="card-hdr"><span class="card-title">Key Log</span><span class="card-count" id="keys-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddKey()">+ Log Key</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident / Guest</th><th>Type</th><th>Key #</th><th>Time Out</th><th>Status</th><th></th></tr></thead><tbody id="keys-tbody"></tbody></table></div></div>
+      <div id="parking-view" style="display:none">
+        <div class="card"><div class="card-hdr"><span class="card-title">Parking Credentials</span><span class="card-count" id="parking-count">0 credentials</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddParking()">+ Add Credential</button></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident</th><th>Transponder</th><th>Key Tag</th><th>Valet Sticker</th><th>Monthly Fee</th><th>Status</th><th>Notice Date</th><th></th></tr></thead><tbody id="parking-tbody"></tbody></table></div></div>
+      </div>
     </div>
     <div class="section" id="section-amenities">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterAmenities('all',this)">All</div><div class="sub-tab" onclick="filterAmenities('today',this)">Today</div><div class="sub-tab" onclick="filterAmenities('upcoming',this)">Upcoming</div><div class="sub-tab" onclick="filterAmenities('event',this)">Events</div><div class="sub-tab" onclick="filterAmenities('past',this)">Past</div></div>
@@ -1013,14 +1017,49 @@
   <div class="modal-hdr"><span class="modal-title" id="modal-key-title">Log Key / Access</span><button class="modal-close" onclick="closeModal('modal-key')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Unit #</label><input id="ky-unit" type="text"></div><div class="fg"><label>Resident Name</label><input id="ky-name" type="text" placeholder="Unit resident"></div></div>
-    <div class="fr"><div class="fg"><label>Key Type</label><select id="ky-type" onchange="keyTypeChange()"><option value="resident">Resident Key Fob</option><option value="joiner">Joiner Key</option><option value="one-time">One-Time Key</option><option value="mobile">Mobile Key</option></select></div><div class="fg"><label>Key # / Fob ID</label><input id="ky-fob" type="text"></div></div>
+    <div class="fr"><div class="fg"><label>Key Type</label><select id="ky-type" onchange="keyTypeChange()"><option value="resident">Resident Key Fob</option><option value="joiner">Joiner Key</option><option value="one-time">One-Time Key</option><option value="vendor">Vendor Card</option><option value="mobile">Mobile Key</option></select></div><div class="fg"><label>Key # / Card ID</label><input id="ky-fob" type="text"></div></div>
     <div id="ky-onetime-fields" style="display:none">
       <div class="fr"><div class="fg"><label>Guest / Visitor Name</label><input id="ky-guest" type="text" placeholder="Who has the key"></div><div class="fg"><label>Time Out</label><input id="ky-timeout" type="time"></div></div>
     </div>
+    <div id="ky-vendor-fields" style="display:none">
+      <div class="fr"><div class="fg"><label>Vendor / Company</label><input id="ky-company" type="text" placeholder="e.g. ABC Plumbing Co."></div><div class="fg"><label>Work Area / Unit</label><input id="ky-workarea" type="text" placeholder="e.g. Unit 402, Lobby"></div></div>
+      <div class="fg"><label>Expected Return Time</label><input id="ky-vendor-return" type="time"></div>
+    </div>
+    <div id="ky-replacement-wrap" style="display:none;padding:8px 0;border-top:1px solid var(--border);margin-top:4px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" id="ky-replacement" style="width:16px;height:16px;accent-color:var(--accent)">
+        <label for="ky-replacement" style="margin:0;font-weight:500;cursor:pointer;font-size:13px">Replacement card — $100 fee added to resident ledger</label>
+      </div>
+    </div>
     <div class="fr"><div class="fg"><label>Status</label><select id="ky-status"><option value="issued">Issued</option><option value="returned">Returned</option></select></div><div class="fg"><label>Expiry Date</label><input id="ky-expiry" type="date"></div></div>
-    <div class="fg"><label>Notes / Follow-Up</label><textarea id="ky-notes" rows="3" placeholder="e.g. Called resident at 3:15pm, awaiting return..."></textarea></div>
+    <div class="fg"><label>Notes / Follow-Up</label><textarea id="ky-notes" rows="2" placeholder="e.g. Called resident at 3:15pm, awaiting return..."></textarea></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-key')">Cancel</button><button class="btn btn-primary" id="modal-key-savebtn" onclick="saveKey()">Save</button></div>
+</div></div>
+
+<div class="modal-ov" id="modal-parking"><div class="modal" style="max-width:520px">
+  <div class="modal-hdr"><span class="modal-title" id="modal-parking-title">Add Parking Credential</span><button class="modal-close" onclick="closeModal('modal-parking')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <div class="fr"><div class="fg"><label>Unit #</label><input id="pk-unit" type="text"></div><div class="fg"><label>Resident Name</label><input id="pk-resident" type="text"></div></div>
+    <div class="fr"><div class="fg"><label>Monthly Fee ($)</label><input id="pk-fee" type="number" placeholder="e.g. 150" min="0"></div><div class="fg"><label>Start Date</label><input id="pk-start" type="date" data-no-autofill></div></div>
+    <div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Credentials Issued</div>
+      <div class="fr" style="align-items:center;gap:10px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:6px;flex:0 0 160px"><input type="checkbox" id="pk-transponder" style="accent-color:var(--accent)"><label for="pk-transponder" style="margin:0;font-weight:600;font-size:13px">Garage Transponder</label></div>
+        <div class="fg" style="margin:0"><input id="pk-transponder-num" type="text" placeholder="Transponder ID #" style="font-size:12px"></div>
+      </div>
+      <div class="fr" style="align-items:center;gap:10px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:6px;flex:0 0 160px"><input type="checkbox" id="pk-keytag" style="accent-color:var(--accent)"><label for="pk-keytag" style="margin:0;font-weight:600;font-size:13px">Key Tag</label></div>
+        <div class="fg" style="margin:0"><input id="pk-keytag-num" type="text" placeholder="Key Tag ID #" style="font-size:12px"></div>
+      </div>
+      <div class="fr" style="align-items:center;gap:10px">
+        <div style="display:flex;align-items:center;gap:6px;flex:0 0 160px"><input type="checkbox" id="pk-valet" style="accent-color:var(--accent)"><label for="pk-valet" style="margin:0;font-weight:600;font-size:13px">Valet Sticker</label></div>
+        <div class="fg" style="margin:0"><input id="pk-valet-num" type="text" placeholder="Sticker # / Plate" style="font-size:12px"></div>
+      </div>
+    </div>
+    <div class="fg"><label>Notes</label><textarea id="pk-notes" rows="2" placeholder="e.g. 2 spots, special instructions..."></textarea></div>
+  </div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-parking')">Cancel</button><button class="btn btn-primary" id="modal-parking-savebtn" onclick="saveParking()">Save</button></div>
 </div></div>
 
 <div class="modal-ov" id="modal-todo"><div class="modal">
@@ -1405,7 +1444,7 @@ function today() {
 function fmtShort(d) { if (!d) return '-'; return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
 function toast(msg) { var e = g('toast'); e.textContent = msg; e.classList.add('show'); setTimeout(function () { e.classList.remove('show'); }, 2500); }
 function g(id) { return document.getElementById(id); }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {} }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, parking: [] }; }
 
 // ─── SIDEBAR ───
 function toggleSidebar() { document.body.classList.toggle('sc'); localStorage.setItem('chorus-sc', document.body.classList.contains('sc') ? '1' : '0'); }
@@ -2450,11 +2489,31 @@ function deleteGuest(id) { if (!confirm('Remove?')) return; state.guests = (stat
 
 // ─── KEYS ───
 var keyFilter = 'all';
-function filterKeys(f, item) { keyFilter = f; document.querySelectorAll('#section-keys .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderKeys(); }
+function filterKeys(f, item) {
+  keyFilter = f;
+  document.querySelectorAll('#section-keys .sub-tab').forEach(function (t) { t.classList.remove('active'); });
+  item.classList.add('active');
+  var parkingView = g('parking-view'), keyCard = g('keys-log-card'), statRow = g('keys-stats');
+  if (f === 'parking') {
+    if (parkingView) parkingView.style.display = '';
+    if (keyCard) keyCard.style.display = 'none';
+    if (statRow) statRow.style.display = 'none';
+    renderParking();
+  } else {
+    if (parkingView) parkingView.style.display = 'none';
+    if (keyCard) keyCard.style.display = '';
+    if (statRow) statRow.style.display = '';
+    renderKeys();
+  }
+}
 function keyTypeChange() {
   var t = g('ky-type').value;
-  var wrap = g('ky-onetime-fields');
-  if (wrap) wrap.style.display = t === 'one-time' ? '' : 'none';
+  var oneWrap = g('ky-onetime-fields'); if (oneWrap) oneWrap.style.display = t === 'one-time' ? '' : 'none';
+  var vendWrap = g('ky-vendor-fields'); if (vendWrap) vendWrap.style.display = t === 'vendor' ? '' : 'none';
+  var replWrap = g('ky-replacement-wrap'); if (replWrap) replWrap.style.display = (t === 'resident' || t === 'joiner') ? '' : 'none';
+  // vendor uses company name as "resident", relabel
+  var nameLabel = document.querySelector('label[for="ky-name"]') || (g('ky-name') && g('ky-name').previousElementSibling);
+  var guestLabel = document.querySelector('#ky-onetime-fields label');
 }
 function saveKey() {
   var unit = g('ky-unit').value.trim(), name = g('ky-name').value.trim();
@@ -2465,13 +2524,16 @@ function saveKey() {
   if (editingKeyId) {
     var k = (state.keys||[]).find(function(x){return x.id===editingKeyId;}); if(!k) return;
     k.unit=unit; k.name=name; k.type=type; k.fob=g('ky-fob').value.trim(); k.status=g('ky-status').value; k.expiry=g('ky-expiry').value||null; k.notes=g('ky-notes').value.trim(); k.guest=guest; k.timeout=timeout;
+    k.company=g('ky-company')?g('ky-company').value.trim():''; k.workArea=g('ky-workarea')?g('ky-workarea').value.trim():''; k.vendorReturn=g('ky-vendor-return')?g('ky-vendor-return').value:'';
+    var wasReplacement = k.isReplacement; k.isReplacement=g('ky-replacement')?g('ky-replacement').checked:false; if(k.isReplacement&&!wasReplacement){k.fee=100;k.feeAddedToLedger=false;k.feeWaived=false;k.feeAddedAt=null;k.feeAddedBy='';}
     if (k.status==='returned' && !k.returnedAt) k.returnedAt=Date.now();
     editingKeyId=null; scheduleSave(); closeModal('modal-key'); renderKeys(); updateBadges(); renderDash(); toast('Key updated'); return;
   }
   var now = Date.now();
   var issuedAt = now;
   if (timeout) { var base = new Date(); var parts = timeout.split(':'); base.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0); issuedAt = base.getTime(); }
-  var k = { id: uid(), unit: unit, name: name, guest: guest, timeout: timeout, type: type, fob: g('ky-fob').value.trim(), status: g('ky-status').value, expiry: g('ky-expiry').value || null, notes: g('ky-notes').value.trim(), issuedAt: issuedAt, returnedAt: null, addedBy: currentUser ? currentUser.name : '', createdAt: now };
+  var isRepl = g('ky-replacement') ? g('ky-replacement').checked : false;
+  var k = { id: uid(), unit: unit, name: name, guest: guest, timeout: timeout, type: type, fob: g('ky-fob').value.trim(), status: g('ky-status').value, expiry: g('ky-expiry').value || null, notes: g('ky-notes').value.trim(), issuedAt: issuedAt, returnedAt: null, addedBy: currentUser ? currentUser.name : '', createdAt: now, company: g('ky-company')?g('ky-company').value.trim():'', workArea: g('ky-workarea')?g('ky-workarea').value.trim():'', vendorReturn: g('ky-vendor-return')?g('ky-vendor-return').value:'', isReplacement: isRepl, fee: isRepl ? 100 : 0, feeAddedToLedger: false, feeWaived: false, feeAddedAt: null, feeAddedBy: '', reachedOut: false, reachedOutAt: null };
   if (!state.keys) state.keys = [];
   state.keys.push(k); scheduleSave(); closeModal('modal-key'); renderKeys(); updateBadges(); renderDash();
   ['ky-unit', 'ky-name', 'ky-fob', 'ky-notes', 'ky-guest', 'ky-timeout'].forEach(function (id) { var el=g(id); if(el) el.value=''; }); g('ky-expiry').value = ''; toast('Key logged');
@@ -2482,7 +2544,7 @@ function renderKeys() {
   else if (keyFilter !== 'all') list = list.filter(function (k) { return k.type === keyFilter; });
   list.sort(function (a, b) { if (a.status === 'issued' && b.status !== 'issued') return -1; if (b.status === 'issued' && a.status !== 'issued') return 1; return b.createdAt - a.createdAt; });
   var allK = state.keys || [];
-  var stats = [{ label: 'Resident Fobs', val: allK.filter(function (k) { return k.type === 'resident' && k.status === 'issued'; }).length }, { label: 'Joiner Keys Out', val: allK.filter(function (k) { return k.type === 'joiner' && k.status === 'issued'; }).length }, { label: 'One-Time Out', val: allK.filter(function (k) { return k.type === 'one-time' && k.status === 'issued'; }).length }, { label: 'Mobile Active', val: allK.filter(function (k) { return k.type === 'mobile' && k.status === 'issued'; }).length }];
+  var stats = [{ label: 'Resident Fobs', val: allK.filter(function (k) { return k.type === 'resident' && k.status === 'issued'; }).length }, { label: 'Joiner Keys Out', val: allK.filter(function (k) { return k.type === 'joiner' && k.status === 'issued'; }).length }, { label: 'One-Time Out', val: allK.filter(function (k) { return k.type === 'one-time' && k.status === 'issued'; }).length }, { label: 'Vendor Cards Out', val: allK.filter(function (k) { return k.type === 'vendor' && k.status === 'issued'; }).length }, { label: 'Mobile Active', val: allK.filter(function (k) { return k.type === 'mobile' && k.status === 'issued'; }).length }];
   g('keys-stats').innerHTML = stats.map(function (s) { return '<div class="key-stat"><div class="key-stat-num">' + s.val + '</div><div class="key-stat-lbl">' + s.label + '</div></div>'; }).join('');
   var tbody = g('keys-tbody'), cnt = g('keys-count');
   if (cnt) cnt.textContent = list.length + ' entries';
@@ -2506,12 +2568,36 @@ function renderKeys() {
     var rowStyle = rowBg ? ' style="' + rowBg + '"' : '';
     var overdueTag = isOverdue ? '<span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + overdueHrs + 'h ' + overdueMin + 'm OUT</span>' : '';
     var staleTag = isStale ? '<span class="stale-badge">&#9888; Stale &mdash; ' + staleCount + ' shift' + (staleCount !== 1 ? 's' : '') + '</span>' : '';
-    var nameCell = k.name + (k.guest ? '<div style="font-size:11px;color:var(--text3)">Guest: ' + k.guest + '</div>' : '') + kyBy;
-    var timeOutCell = (isOneTime && k.timeout) ? '<span class="mono text-xs">' + fmtTime(k.timeout) + '</span>' : (isOneTime && k.issuedAt ? '<span class="mono text-xs text-3">' + new Date(k.issuedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + '</span>' : '<span class="text-xs text-3">-</span>');
-    html += '<tr class="' + rowClass + '"' + rowStyle + '>';
+    var isVendor = k.type === 'vendor';
+    var vendorLine = isVendor && k.company ? '<div style="font-size:11px;color:var(--text3)">' + k.company + (k.workArea ? ' · ' + k.workArea : '') + '</div>' : '';
+    var nameCell = k.name + (k.guest ? '<div style="font-size:11px;color:var(--text3)">Guest: ' + k.guest + '</div>' : '') + vendorLine + kyBy;
+    // Fee badges
+    var feeBadge = '';
+    if (k.isReplacement && k.fee && !k.feeAddedToLedger && !k.feeWaived) {
+      feeBadge = '<div style="margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:#92400E;font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">💳 $100 — Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px" onclick="event.stopPropagation();markFeeToLedger(\'' + k.id + '\')">✓ Added</button><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px;color:var(--text3)" onclick="event.stopPropagation();waiveKeyFee(\'' + k.id + '\')">Waive</button></div>';
+    } else if (k.isReplacement && k.fee && k.feeAddedToLedger) {
+      feeBadge = '<div style="margin-top:3px"><span style="font-size:10px;color:var(--green);font-weight:600">✓ $100 added to ledger' + (k.feeAddedAt ? ' · ' + new Date(k.feeAddedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '') + '</span></div>';
+    } else if (k.isReplacement && k.fee && k.feeWaived) {
+      feeBadge = '<div style="margin-top:3px"><span style="font-size:10px;color:var(--text3)">$100 waived</span></div>';
+    }
+    // Overdue one-time fee badge
+    var oneTimeFee = '';
+    if (isOneTime && isIssued && isOverdue && !k.feeAddedToLedger && !k.feeWaived) {
+      if (k.reachedOut) {
+        oneTimeFee = '<div style="margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:#92400E;font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">💳 $25 — Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px" onclick="event.stopPropagation();markFeeToLedger(\'' + k.id + '\')">✓ Added</button><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px;color:var(--text3)" onclick="event.stopPropagation();waiveKeyFee(\'' + k.id + '\')">Waive</button></div>';
+      }
+    } else if (isOneTime && k.feeAddedToLedger) {
+      oneTimeFee = '<div style="margin-top:3px"><span style="font-size:10px;color:var(--green);font-weight:600">✓ $25 added to ledger</span></div>';
+    }
+    var isVendorIssued = isVendor && isIssued;
+    var vendorOverdueMs = isVendorIssued && k.issuedAt ? now - k.issuedAt : 0;
+    var vendorOverdue = vendorOverdueMs >= 8*3600000; // 8h for vendor
+    var vendorOverdueTag = vendorOverdue ? '<span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;border-radius:4px;padding:1px 5px;margin-left:4px">⚠ ' + Math.floor(vendorOverdueMs/3600000) + 'h OUT</span>' : '';
+    var timeOutCell = (isOneTime && k.timeout) ? '<span class="mono text-xs">' + fmtTime(k.timeout) + '</span>' : (isOneTime && k.issuedAt ? '<span class="mono text-xs text-3">' + new Date(k.issuedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + '</span>' : (isVendor && k.vendorReturn ? '<span class="mono text-xs">Back by ' + fmtTime(k.vendorReturn) + '</span>' : '<span class="text-xs text-3">-</span>'));
+    html += '<tr class="' + rowClass + '"' + (isVendorIssued ? ' style="background:#F0F8FF"' : rowStyle ? rowStyle : '') + '>';
     html += '<td class="mono font-600">' + k.unit + '</td>';
-    html += '<td>' + nameCell + '</td>';
-    html += '<td class="text-sm">' + k.type + overdueTag + staleTag + '</td>';
+    html += '<td>' + nameCell + feeBadge + oneTimeFee + '</td>';
+    html += '<td class="text-sm">' + k.type + overdueTag + staleTag + vendorOverdueTag + '</td>';
     html += '<td class="mono text-sm">' + (k.fob || '-') + '</td>';
     html += '<td>' + timeOutCell + '</td>';
     html += '<td><select class="ie-sel" onchange="updateKeyStatus(\'' + k.id + '\',this.value)"><option value="issued" ' + (isIssued ? 'selected' : '') + '>Issued</option><option value="returned" ' + (k.status === 'returned' ? 'selected' : '') + '>Returned</option></select></td>';
@@ -2532,9 +2618,14 @@ function renderKeys() {
       var noteInputId = 'key-note-input-' + k.id;
       html += '<tr class="key-note-row"' + rowStyle + '><td colspan="7">';
       html += trailHtml;
-      html += '<div style="display:flex;gap:6px;align-items:center">';
-      html += '<input type="text" id="' + noteInputId + '" placeholder="' + (isStale ? '&#9888; Add shift status note to clear stale flag…' : 'Add shift status note…') + '" style="flex:1;font-size:12px;padding:6px 8px" onkeydown="if(event.key===\'Enter\')addKeyShiftNote(\'' + k.id + '\',this.value)">';
+      html += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
+      html += '<input type="text" id="' + noteInputId + '" placeholder="' + (isStale ? '&#9888; Add shift status note to clear stale flag…' : 'Add shift status note…') + '" style="flex:1;min-width:180px;font-size:12px;padding:6px 8px" onkeydown="if(event.key===\'Enter\')addKeyShiftNote(\'' + k.id + '\',this.value)">';
       html += '<button class="btn btn-secondary btn-sm" onclick="addKeyShiftNote(\'' + k.id + '\',g(\'' + noteInputId + '\').value)">Save note</button>';
+      if (isOverdue && !k.reachedOut && !k.feeAddedToLedger && !k.feeWaived) {
+        html += '<button class="btn btn-ghost btn-sm" style="border-color:var(--amber);color:var(--amber)" onclick="event.stopPropagation();toggleReachedOut(\'' + k.id + '\')">Mark reached out → $25 fee</button>';
+      } else if (isOverdue && k.reachedOut) {
+        html += '<span style="font-size:11px;color:var(--amber);font-weight:600">✓ Resident contacted</span>';
+      }
       html += '</div></td></tr>';
     } else if (isOneTime && k.status !== 'issued' && k.notes) {
       html += '<tr' + rowStyle + '><td colspan="7" style="font-size:11px;color:var(--text2);padding:2px 12px 6px;font-style:italic">&#128221; ' + k.notes + '</td></tr>';
@@ -2553,6 +2644,109 @@ function logKeyReturn(id) {
   scheduleSave(); renderKeys(); updateBadges(); renderDash(); toast('Key return logged');
 }
 function deleteKey(id) { if (!confirm('Remove?')) return; state.keys = (state.keys || []).filter(function (k) { return k.id !== id; }); scheduleSave(); renderKeys(); updateBadges(); toast('Removed'); }
+function markFeeToLedger(id) {
+  var k = (state.keys||[]).find(function(x){return x.id===id;}); if(!k) return;
+  k.feeAddedToLedger = true; k.feeAddedAt = Date.now(); k.feeAddedBy = currentUser ? currentUser.name : '';
+  scheduleSave(); renderKeys(); toast('Fee marked as added to ledger');
+}
+function waiveKeyFee(id) {
+  var k = (state.keys||[]).find(function(x){return x.id===id;}); if(!k) return;
+  if (!confirm('Waive this fee?')) return;
+  k.feeWaived = true; scheduleSave(); renderKeys(); toast('Fee waived');
+}
+function toggleReachedOut(id) {
+  var k = (state.keys||[]).find(function(x){return x.id===id;}); if(!k) return;
+  k.reachedOut = true; k.reachedOutAt = Date.now();
+  scheduleSave(); renderKeys(); toast('Marked as reached out — $25 fee now flagged for ledger');
+}
+
+// ─── PARKING CREDENTIALS ───
+var editingParkingId = null;
+function openAddParking() {
+  editingParkingId = null;
+  setModalMode('modal-parking-title','modal-parking-savebtn','Add Parking Credential','Save');
+  ['pk-unit','pk-resident','pk-fee','pk-notes','pk-transponder-num','pk-keytag-num','pk-valet-num'].forEach(function(id){var el=g(id);if(el)el.value='';});
+  ['pk-transponder','pk-keytag','pk-valet'].forEach(function(id){var el=g(id);if(el)el.checked=false;});
+  g('pk-start').value = today();
+  openModal('modal-parking');
+}
+function openEditParking(id) {
+  var p = (state.parking||[]).find(function(x){return x.id===id;}); if(!p) return;
+  editingParkingId = id;
+  setModalMode('modal-parking-title','modal-parking-savebtn','Edit Parking Credential','Save Changes');
+  g('pk-unit').value=p.unit||''; g('pk-resident').value=p.resident||'';
+  g('pk-fee').value=p.monthlyFee||''; g('pk-start').value=p.startDate||''; g('pk-notes').value=p.notes||'';
+  g('pk-transponder').checked=p.transponder&&p.transponder.issued||false; g('pk-transponder-num').value=p.transponder&&p.transponder.num||'';
+  g('pk-keytag').checked=p.keyTag&&p.keyTag.issued||false; g('pk-keytag-num').value=p.keyTag&&p.keyTag.num||'';
+  g('pk-valet').checked=p.valetSticker&&p.valetSticker.issued||false; g('pk-valet-num').value=p.valetSticker&&p.valetSticker.num||'';
+  openModal('modal-parking');
+}
+function saveParking() {
+  var unit=g('pk-unit').value.trim(), resident=g('pk-resident').value.trim();
+  if (!unit||!resident) { toast('Fill in unit and resident name'); return; }
+  var data = {
+    unit: unit, resident: resident, monthlyFee: g('pk-fee').value||'', startDate: g('pk-start').value||'', notes: g('pk-notes').value.trim(),
+    transponder: { issued: g('pk-transponder').checked, num: g('pk-transponder-num').value.trim() },
+    keyTag: { issued: g('pk-keytag').checked, num: g('pk-keytag-num').value.trim() },
+    valetSticker: { issued: g('pk-valet').checked, num: g('pk-valet-num').value.trim() }
+  };
+  if (editingParkingId) {
+    var p=(state.parking||[]).find(function(x){return x.id===editingParkingId;}); if(!p) return;
+    Object.assign(p, data); editingParkingId=null;
+    scheduleSave(); closeModal('modal-parking'); renderParking(); toast('Updated');
+  } else {
+    if (!state.parking) state.parking=[];
+    state.parking.push(Object.assign({ id:uid(), status:'active', cancelNoticeDate:null, returnedAt:null, addedBy:currentUser?currentUser.name:'', createdAt:Date.now() }, data));
+    scheduleSave(); closeModal('modal-parking'); renderParking(); toast('Parking credential added');
+  }
+}
+function giveParkingNotice(id) {
+  var p=(state.parking||[]).find(function(x){return x.id===id;}); if(!p) return;
+  if (!confirm('Mark 30-day cancellation notice submitted for Unit ' + p.unit + '?')) return;
+  p.status='notice-given'; p.cancelNoticeDate=today(); scheduleSave(); renderParking(); toast('30-day notice recorded');
+}
+function markParkingReturned(id) {
+  var p=(state.parking||[]).find(function(x){return x.id===id;}); if(!p) return;
+  if (!confirm('Mark all parking credentials returned for Unit ' + p.unit + '?')) return;
+  p.status='returned'; p.returnedAt=Date.now(); scheduleSave(); renderParking(); toast('Marked as returned');
+}
+function deleteParking(id) { if(!confirm('Remove?')) return; state.parking=(state.parking||[]).filter(function(x){return x.id!==id;}); scheduleSave(); renderParking(); toast('Removed'); }
+function renderParking() {
+  var list = (state.parking||[]).slice();
+  var cnt=g('parking-count'); if(cnt) cnt.textContent=list.length+' credentials';
+  var tbody=g('parking-tbody'); if(!tbody) return;
+  if(!list.length){tbody.innerHTML='<tr><td colspan="9" class="tbl-empty">No parking credentials logged.</td></tr>';return;}
+  list.sort(function(a,b){ var s={active:0,'notice-given':1,returned:2}; return (s[a.status]||0)-(s[b.status]||0)||(a.unit||'').localeCompare(b.unit||''); });
+  var html='';
+  list.forEach(function(p) {
+    var isReturned = p.status==='returned';
+    var rowOpacity = isReturned ? 'opacity:0.55;' : '';
+    var statusBadge = p.status==='active' ? '<span style="background:rgba(78,138,112,0.12);color:var(--accent);font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px;border:1px solid rgba(78,138,112,0.2)">Active</span>'
+      : p.status==='notice-given' ? '<span style="background:rgba(217,119,6,0.12);color:#92400E;font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px;border:1px solid rgba(217,119,6,0.25)">⚠ Notice Given</span>'
+      : '<span style="background:rgba(107,114,128,0.1);color:var(--text3);font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px">Returned</span>';
+    function credCell(c) {
+      if (!c||!c.issued) return '<span style="color:var(--text3);font-size:11px">—</span>';
+      return '<span style="font-size:11px;font-weight:600;color:var(--accent)">✓</span>' + (c.num ? '<span style="font-size:11px;color:var(--text2);margin-left:4px">#' + c.num + '</span>' : '');
+    }
+    var byTag = fmtByTag(p.addedBy, p.createdAt);
+    html += '<tr style="' + rowOpacity + '">';
+    html += '<td class="mono font-600">' + p.unit + '</td>';
+    html += '<td>' + p.resident + byTag + '</td>';
+    html += '<td>' + credCell(p.transponder) + '</td>';
+    html += '<td>' + credCell(p.keyTag) + '</td>';
+    html += '<td>' + credCell(p.valetSticker) + '</td>';
+    html += '<td class="mono text-sm">' + (p.monthlyFee ? '$' + p.monthlyFee + '/mo' : '—') + '</td>';
+    html += '<td>' + statusBadge + '</td>';
+    html += '<td class="text-sm text-3">' + (p.cancelNoticeDate ? fmtShort(p.cancelNoticeDate) : '—') + '</td>';
+    html += '<td><div class="flex gap-4">';
+    if (p.status==='active') html += '<button class="btn btn-ghost btn-xs" style="color:var(--amber)" onclick="giveParkingNotice(\'' + p.id + '\')">30-Day Notice</button>';
+    if (p.status!=='returned') html += '<button class="btn btn-ghost btn-xs" style="color:var(--green)" onclick="markParkingReturned(\'' + p.id + '\')">✓ Returned</button>';
+    html += '<button class="btn btn-ghost btn-xs" onclick="openEditParking(\'' + p.id + '\')">&#9998;</button>';
+    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteParking(\'' + p.id + '\')">x</button>';
+    html += '</div></td></tr>';
+  });
+  tbody.innerHTML = html;
+}
 
 // ─── AMENITIES ───
 var amenityFilter = 'all';
@@ -3963,6 +4157,32 @@ function renderPdAutoBlocks(isLead) {
   }
   html += '</div>';
 
+  // Fees to ledger
+  var pendingFees = (state.keys||[]).filter(function(k){
+    if (k.feeAddedToLedger || k.feeWaived) return false;
+    if (k.isReplacement && k.fee) return true;
+    if (k.type==='one-time' && k.status==='issued' && k.reachedOut) {
+      var ms = k.issuedAt ? Date.now()-k.issuedAt : 0; return ms >= 2*3600000;
+    }
+    return false;
+  });
+  if (pendingFees.length) {
+    html += '<div class="pd-auto-block" style="border-color:rgba(217,119,6,0.35)"><div class="pd-auto-hdr" style="color:#92400E">💳 Charges to Add to Ledger</div>';
+    pendingFees.forEach(function(k) {
+      var content, defNs;
+      if (k.isReplacement) {
+        content = '<strong>Unit ' + k.unit + ' – ' + k.name + '</strong> — Replacement key card issued — <strong>$100</strong>';
+        defNs = 'Add $100 replacement key card fee to resident ledger for Unit ' + k.unit + '.';
+      } else {
+        var hrs = Math.floor((Date.now()-k.issuedAt)/3600000);
+        content = '<strong>Unit ' + k.unit + ' – ' + k.name + '</strong>' + (k.guest?' / Guest: '+k.guest:'') + ' — One-time key not returned (' + hrs + 'h out, resident contacted) — <strong>$25</strong>';
+        defNs = 'Add $25 one-time key non-return fee to resident ledger for Unit ' + k.unit + '.';
+      }
+      html += pdAutoRow('fee_'+k.id, content, defNs, !!carriedSet['fee_'+k.id]);
+    });
+    html += '</div>';
+  }
+
   container.innerHTML = html;
 }
 
@@ -4208,6 +4428,27 @@ function generatePassdown() {
     if (policy) out += '\n📢 Policy Reminder\n' + policy + '\n';
   } else {
     writeSec('📋', 'This Shift', 'shiftNotes');
+  }
+
+  // Charges to ledger
+  var pendingFeesGen = (state.keys||[]).filter(function(k){
+    if (k.feeAddedToLedger || k.feeWaived || pdExcluded['fee_'+k.id]) return false;
+    if (k.isReplacement && k.fee) return true;
+    if (k.type==='one-time' && k.status==='issued' && k.reachedOut) { var ms2=k.issuedAt?now-k.issuedAt:0; return ms2>=2*3600000; }
+    return false;
+  });
+  if (pendingFeesGen.length) {
+    out += '\n💳 Charges to Add to Ledger\n';
+    pendingFeesGen.forEach(function(k) {
+      if (k.isReplacement) {
+        out += 'Unit ' + k.unit + ' – ' + k.name + ' — Replacement key card — $100\n';
+        out += 'Next Step: ' + pdNote('fee_'+k.id, 'Add $100 replacement key card fee to resident ledger.') + '\n';
+      } else {
+        var hrs2 = Math.floor((now-k.issuedAt)/3600000);
+        out += 'Unit ' + k.unit + ' – ' + k.name + (k.guest?' / Guest: '+k.guest:'') + ' — Key not returned (' + hrs2 + 'h, contacted) — $25\n';
+        out += 'Next Step: ' + pdNote('fee_'+k.id, 'Add $25 non-return fee to resident ledger.') + '\n';
+      }
+    });
   }
 
   // Sign-off
@@ -4598,9 +4839,10 @@ var editingKeyId = null;
 function openAddKey() {
   editingKeyId = null;
   setModalMode('modal-key-title','modal-key-savebtn','Log Key / Access','Save');
-  ['ky-unit','ky-name','ky-fob','ky-notes','ky-guest','ky-timeout'].forEach(function(id){var el=g(id);if(el)el.value='';});
+  ['ky-unit','ky-name','ky-fob','ky-notes','ky-guest','ky-timeout','ky-company','ky-workarea','ky-vendor-return'].forEach(function(id){var el=g(id);if(el)el.value='';});
   g('ky-type').value='resident'; g('ky-status').value='issued'; g('ky-expiry').value='';
-  var wrap=g('ky-onetime-fields'); if(wrap) wrap.style.display='none';
+  var rCb=g('ky-replacement'); if(rCb) rCb.checked=false;
+  keyTypeChange();
   openModal('modal-key');
 }
 function openEditKey(id) {
@@ -4613,7 +4855,11 @@ function openEditKey(id) {
   g('ky-expiry').value=k.expiry||'';
   var gEl=g('ky-guest'); if(gEl) gEl.value=k.guest||'';
   var tEl=g('ky-timeout'); if(tEl) tEl.value=k.timeout||'';
-  var wrap=g('ky-onetime-fields'); if(wrap) wrap.style.display=(k.type==='one-time'?'':'none');
+  var cEl=g('ky-company'); if(cEl) cEl.value=k.company||'';
+  var wEl=g('ky-workarea'); if(wEl) wEl.value=k.workArea||'';
+  var vrEl=g('ky-vendor-return'); if(vrEl) vrEl.value=k.vendorReturn||'';
+  var rCb=g('ky-replacement'); if(rCb) rCb.checked=k.isReplacement||false;
+  keyTypeChange();
   openModal('modal-key');
 }
 
