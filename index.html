@@ -523,6 +523,7 @@
     <div class="nav-item" data-sec="vacant" onclick="nav(this)"><span class="icon" data-icon="building"></span><span class="nav-txt">Vacant Units</span><span class="badge" id="badge-vacant"></span></div>
     <div class="nav-item" data-sec="walkthrough" onclick="nav(this)"><span class="icon" data-icon="shield"></span><span class="nav-txt">Security Patrols</span></div>
     <div class="nav-item" data-sec="maintenance" onclick="nav(this)"><span class="icon" data-icon="wrench"></span><span class="nav-txt">Maintenance</span><span class="badge" id="badge-maint"></span></div>
+    <div class="nav-item" data-sec="security" onclick="nav(this)"><span class="icon" data-icon="alert-triangle"></span><span class="nav-txt">Security Log</span><span class="badge" id="badge-security"></span></div>
   </div>
   <div class="nav-group">
     <div class="nav-label">Resident Services</div>
@@ -658,6 +659,11 @@
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterConcierge('all',this)">All</div><div class="sub-tab" onclick="filterConcierge('open',this)">Open</div><div class="sub-tab" onclick="filterConcierge('completed',this)">Completed</div></div>
       <div class="stat-grid" id="concierge-stats"></div>
       <div class="card"><div class="card-hdr"><span class="card-title">Concierge Request Log</span><span class="card-count" id="concierge-count">0 requests</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddConcierge()">+ Log Request</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident</th><th>Request Type</th><th>Details</th><th>Next Action</th><th>Status</th><th>Handled By</th><th>Date</th><th></th></tr></thead><tbody id="concierge-tbody"></tbody></table></div></div>
+    </div>
+    <div class="section" id="section-security">
+      <div class="sub-tabs"><div class="sub-tab active" onclick="filterSecurity('all',this)">All</div><div class="sub-tab" onclick="filterSecurity('today',this)">Today</div><div class="sub-tab" onclick="filterSecurity('monitoring',this)">Monitoring</div></div>
+      <div class="stat-grid" id="security-stats"></div>
+      <div class="card"><div class="card-hdr"><span class="card-title">Security Incident Log</span><span class="card-count" id="security-count">0 incidents</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddSecurity()">+ Log Incident</button></div><div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Location</th><th>Handled By</th><th>Status</th><th>Notes</th><th></th></tr></thead><tbody id="security-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-residents">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterResidents('all',this)">All Profiles</div><div class="sub-tab" onclick="filterResidents('pte-granted',this)">&#9989; PTE Granted</div><div class="sub-tab" onclick="filterResidents('pte-denied',this)">&#128683; PTE Denied</div><div class="sub-tab" onclick="filterResidents('pte-not-set',this)">PTE Not Set</div><div class="sub-tab" onclick="filterResidents('blueground',this)">&#128309; Blueground</div></div>
@@ -1035,6 +1041,32 @@
     <div class="fg"><label>Notes / Follow-Up</label><textarea id="ky-notes" rows="2" placeholder="e.g. Called resident at 3:15pm, awaiting return..."></textarea></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-key')">Cancel</button><button class="btn btn-primary" id="modal-key-savebtn" onclick="saveKey()">Save</button></div>
+</div></div>
+
+<div class="modal-ov" id="modal-security"><div class="modal" style="max-width:500px">
+  <div class="modal-hdr"><span class="modal-title" id="modal-security-title">Log Security Incident</span><button class="modal-close" onclick="closeModal('modal-security')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <div class="fr"><div class="fg"><label>Date</label><input id="sec-date" type="date"></div><div class="fg"><label>Time</label><input id="sec-time" type="time"></div></div>
+    <div class="fg"><label>Incident Type</label>
+      <select id="sec-type" onchange="secTypeChange()">
+        <option value="Unhoused individual — removed by staff">Unhoused — Removed by Staff</option>
+        <option value="Unhoused individual — security called">Unhoused — Security Called</option>
+        <option value="Unhoused individual — SFPD called">Unhoused — SFPD Called</option>
+        <option value="Unauthorized access">Unauthorized Access</option>
+        <option value="Disturbance / altercation">Disturbance / Altercation</option>
+        <option value="Suspicious activity">Suspicious Activity</option>
+        <option value="Noise complaint escalation">Noise Complaint Escalation</option>
+        <option value="Trespassing">Trespassing</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div id="sec-other-wrap" style="display:none"><div class="fg"><label>Describe Incident Type</label><input id="sec-other" type="text" placeholder="Describe the incident type"></div></div>
+    <div class="fr"><div class="fg"><label>Location</label><input id="sec-location" type="text" placeholder="e.g. Lobby, Garage, Rooftop"></div>
+    <div class="fg"><label>Handled By</label><select id="sec-handled"><option value="Team member">Team Member</option><option value="Team member + security">Team + Security</option><option value="Security called">Security Called</option><option value="SFPD called">SFPD Called</option><option value="Team member + SFPD">Team + SFPD</option></select></div></div>
+    <div class="fr"><div class="fg"><label>Status</label><select id="sec-status"><option value="resolved">Resolved</option><option value="monitoring">Monitoring</option></select></div></div>
+    <div class="fg"><label>Notes</label><textarea id="sec-notes" rows="3" placeholder="Describe what happened and how it was handled..."></textarea></div>
+  </div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-security')">Cancel</button><button class="btn btn-primary" id="modal-security-savebtn" onclick="saveSecurity()">Log Incident</button></div>
 </div></div>
 
 <div class="modal-ov" id="modal-parking"><div class="modal" style="max-width:520px">
@@ -1444,7 +1476,7 @@ function today() {
 function fmtShort(d) { if (!d) return '-'; return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
 function toast(msg) { var e = g('toast'); e.textContent = msg; e.classList.add('show'); setTimeout(function () { e.classList.remove('show'); }, 2500); }
 function g(id) { return document.getElementById(id); }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, parking: [] }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, parking: [], security: [] }; }
 
 // ─── SIDEBAR ───
 function toggleSidebar() { document.body.classList.toggle('sc'); localStorage.setItem('chorus-sc', document.body.classList.contains('sc') ? '1' : '0'); }
@@ -1504,7 +1536,7 @@ function mobNav(item) {
   curSec = sec; renderSection(sec);
 }
 function renderSection(sec) {
-  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, guide: renderGuide };
+  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, guide: renderGuide, security: renderSecurity };
   if (map[sec]) map[sec]();
 }
 function renderAll() { renderSection(curSec); updateBadges(); }
@@ -1571,10 +1603,11 @@ function updateBadges() {
   var naN = (state.moves || []).filter(function (m) { return !m.archivedAt && !m.apptDate && m.date >= today(); }).length;
   setBadge('badge-needs-appt', naN);
   var crN = (state.concierge || []).filter(function (c) { return c.status === 'open'; }).length;
+  var secN = (state.security||[]).filter(function(s){ return s.date===today() || s.status==='monitoring'; }).length;
   setBadge('badge-moves', mN); setBadge('badge-vacant', vN); setBadge('badge-maint', mtN);
   setBadge('badge-guests', gN); setBadge('badge-keys', kN); setBadge('badge-amenities', aN);
   setBadge('badge-tours', trN); setBadge('badge-todos', tdN); setBadge('badge-laf', lN);
-  setBadge('badge-concierge', crN);
+  setBadge('badge-concierge', crN); setBadge('badge-security', secN);
   setMBadge('mb-moves', mN); setMBadge('mb-todos', tdN); setMBadge('mb-keys', kN);
 }
 function setBadge(id, n) { var e = g(id); if (!e) return; e.textContent = n; e.classList.toggle('vis', n > 0); }
@@ -2746,6 +2779,88 @@ function renderParking() {
     html += '</div></td></tr>';
   });
   tbody.innerHTML = html;
+}
+
+// ─── SECURITY LOG ───
+var securityFilter = 'all', editingSecurityId = null;
+function filterSecurity(f, item) { securityFilter = f; document.querySelectorAll('#section-security .sub-tab').forEach(function(t){t.classList.remove('active');}); item.classList.add('active'); renderSecurity(); }
+function secTypeChange() { var v=g('sec-type').value; var w=g('sec-other-wrap'); if(w) w.style.display=v==='Other'?'':'none'; }
+function openAddSecurity() {
+  editingSecurityId = null;
+  setModalMode('modal-security-title','modal-security-savebtn','Log Security Incident','Log Incident');
+  g('sec-date').value = today();
+  var now = new Date(); g('sec-time').value = ('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2);
+  g('sec-type').value = 'Unhoused individual — removed by staff'; g('sec-handled').value = 'Team member';
+  g('sec-status').value = 'resolved'; g('sec-location').value = ''; g('sec-notes').value = '';
+  var ow=g('sec-other'); if(ow) ow.value=''; secTypeChange();
+  openModal('modal-security');
+}
+function openEditSecurity(id) {
+  var s=(state.security||[]).find(function(x){return x.id===id;}); if(!s) return;
+  editingSecurityId = id;
+  setModalMode('modal-security-title','modal-security-savebtn','Edit Incident','Save Changes');
+  g('sec-date').value=s.date||today(); g('sec-time').value=s.time||'';
+  var knownTypes=['Unhoused individual — removed by staff','Unhoused individual — security called','Unhoused individual — SFPD called','Unauthorized access','Disturbance / altercation','Suspicious activity','Noise complaint escalation','Trespassing'];
+  var isKnown = knownTypes.indexOf(s.type) !== -1;
+  g('sec-type').value = isKnown ? s.type : 'Other';
+  var ow=g('sec-other'); if(ow) ow.value = isKnown ? '' : s.type;
+  secTypeChange();
+  g('sec-location').value=s.location||''; g('sec-handled').value=s.handledBy||'Team member';
+  g('sec-status').value=s.status||'resolved'; g('sec-notes').value=s.notes||'';
+  openModal('modal-security');
+}
+function saveSecurity() {
+  var date=g('sec-date').value, time=g('sec-time').value;
+  var typeVal=g('sec-type').value; var type=typeVal==='Other'?(g('sec-other').value.trim()||'Other'):typeVal;
+  var location=g('sec-location').value.trim(), handledBy=g('sec-handled').value;
+  if (!date||!type||!location) { toast('Fill in date, type, and location'); return; }
+  var data = { date:date, time:time, type:type, location:location, handledBy:handledBy, status:g('sec-status').value, notes:g('sec-notes').value.trim() };
+  if (editingSecurityId) {
+    var s=(state.security||[]).find(function(x){return x.id===editingSecurityId;}); if(!s) return;
+    Object.assign(s, data); editingSecurityId=null;
+    scheduleSave(); closeModal('modal-security'); renderSecurity(); updateBadges(); toast('Incident updated');
+  } else {
+    if (!state.security) state.security=[];
+    state.security.push(Object.assign({id:uid(), addedBy:currentUser?currentUser.name:'', createdAt:Date.now()}, data));
+    scheduleSave(); closeModal('modal-security'); renderSecurity(); updateBadges(); toast('Incident logged');
+  }
+}
+function deleteSecurity(id) { if(!confirm('Delete this incident?')) return; state.security=(state.security||[]).filter(function(x){return x.id!==id;}); scheduleSave(); renderSecurity(); updateBadges(); toast('Deleted'); }
+function renderSecurity() {
+  var t = today();
+  var list = (state.security||[]).slice();
+  if (securityFilter==='today') list=list.filter(function(s){return s.date===t;});
+  else if (securityFilter==='monitoring') list=list.filter(function(s){return s.status==='monitoring';});
+  list.sort(function(a,b){ return b.createdAt-a.createdAt; });
+  var all = state.security||[];
+  var todayN=all.filter(function(s){return s.date===t;}).length;
+  var monN=all.filter(function(s){return s.status==='monitoring';}).length;
+  var statEl=g('security-stats');
+  if (statEl) statEl.innerHTML='<div class="stat-card '+(todayN>0?'red':'')+'"><div class="stat-num">'+todayN+'</div><div class="stat-lbl">Today</div></div><div class="stat-card '+(monN>0?'amber':'')+'"><div class="stat-num">'+monN+'</div><div class="stat-lbl">Monitoring</div></div><div class="stat-card"><div class="stat-num">'+all.length+'</div><div class="stat-lbl">All Time</div></div>';
+  var tbody=g('security-tbody'), cnt=g('security-count');
+  if (cnt) cnt.textContent=list.length+' incidents';
+  if (!list.length){tbody.innerHTML='<tr><td colspan="8" class="tbl-empty">No incidents logged.</td></tr>';return;}
+  var html='';
+  list.forEach(function(s) {
+    var isToday=s.date===t;
+    var statusBadge=s.status==='monitoring'
+      ?'<span style="background:rgba(217,119,6,0.12);color:#92400E;font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px;border:1px solid rgba(217,119,6,0.25)">⚠ Monitoring</span>'
+      :'<span style="background:rgba(34,197,94,0.1);color:#16a34a;font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px">✓ Resolved</span>';
+    var byTag=fmtByTag(s.addedBy,s.createdAt);
+    var rowBg=isToday?'background:var(--accent-light)':'';
+    html+='<tr'+(rowBg?' style="'+rowBg+'"':'')+'>';
+    html+='<td class="mono text-sm">'+fmtShort(s.date)+(isToday?'<div style="font-size:10px;color:var(--accent);font-weight:600">Today</div>':'')+byTag+'</td>';
+    html+='<td class="mono text-sm">'+(s.time?fmtTime(s.time):'—')+'</td>';
+    html+='<td class="text-sm font-600">'+s.type+'</td>';
+    html+='<td class="text-sm">'+s.location+'</td>';
+    html+='<td class="text-sm">'+s.handledBy+'</td>';
+    html+='<td>'+statusBadge+'</td>';
+    html+='<td class="text-sm text-2" style="max-width:200px;white-space:pre-wrap">'+(s.notes||'—')+'</td>';
+    html+='<td><button class="btn btn-ghost btn-xs" onclick="openEditSecurity(\''+s.id+'\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteSecurity(\''+s.id+'\')">x</button></td>';
+    html+='</tr>';
+  });
+  tbody.innerHTML=html;
+  setBadge('badge-security',(all.filter(function(s){return s.date===t||s.status==='monitoring';}).length));
 }
 
 // ─── AMENITIES ───
@@ -4157,6 +4272,22 @@ function renderPdAutoBlocks(isLead) {
   }
   html += '</div>';
 
+  // Security incidents (today's shift + any monitoring)
+  var secIncidents = (state.security||[]).filter(function(s){ return s.date===t || s.status==='monitoring'; });
+  if (secIncidents.length) {
+    html += '<div class="pd-auto-block" style="border-color:rgba(220,38,38,0.3)"><div class="pd-auto-hdr" style="color:#dc2626">🛡 Security Incidents</div>';
+    secIncidents.forEach(function(s) {
+      var content = '<strong>' + s.type + '</strong> — ' + s.location;
+      if (s.time) content += ' at ' + fmtTime(s.time);
+      content += ' | Handled by: ' + s.handledBy;
+      if (s.status==='monitoring') content += ' <span style="font-size:10px;background:rgba(217,119,6,0.12);color:#92400E;border-radius:3px;padding:1px 5px;font-weight:600">Monitoring</span>';
+      if (s.notes) content += '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+s.notes+'</div>';
+      var defNs = s.status==='monitoring' ? 'Continue monitoring — update next shift on status.' : 'Incident resolved — no further action required unless situation changes.';
+      html += pdAutoRow('sec_'+s.id, content, defNs, !!carriedSet['sec_'+s.id]);
+    });
+    html += '</div>';
+  }
+
   // Fees to ledger
   var pendingFees = (state.keys||[]).filter(function(k){
     if (k.feeAddedToLedger || k.feeWaived) return false;
@@ -4428,6 +4559,18 @@ function generatePassdown() {
     if (policy) out += '\n📢 Policy Reminder\n' + policy + '\n';
   } else {
     writeSec('📋', 'This Shift', 'shiftNotes');
+  }
+
+  // Security incidents
+  var secGen = (state.security||[]).filter(function(s){ return (s.date===t || s.status==='monitoring') && !pdExcluded['sec_'+s.id]; });
+  if (secGen.length) {
+    out += '\n🛡 Security Incidents\n';
+    secGen.forEach(function(s) {
+      out += s.type + ' — ' + s.location + (s.time ? ' at ' + fmtTime(s.time) : '') + '\n';
+      out += 'Handled by: ' + s.handledBy + ' | Status: ' + (s.status==='monitoring'?'⚠ Monitoring':'✓ Resolved') + '\n';
+      if (s.notes) out += 'Notes: ' + s.notes + '\n';
+      out += 'Next Step: ' + pdNote('sec_'+s.id, s.status==='monitoring'?'Continue monitoring — update next shift.':'Resolved — no further action unless situation changes.') + '\n';
+    });
   }
 
   // Charges to ledger
