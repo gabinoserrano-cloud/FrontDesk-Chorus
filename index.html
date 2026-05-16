@@ -557,6 +557,7 @@
     <div class="save-status" id="save-status"><span class="sync-dot" id="sync-dot"></span><span id="sync-label">Loading...</span></div>
     <button class="footer-btn" id="footer-export" onclick="exportData()"><span class="icon" data-icon="download"></span><span>Export Backup</span></button>
     <button class="footer-btn" id="footer-import" onclick="importData()"><span class="icon" data-icon="upload"></span><span>Import Backup</span></button>
+    <button class="footer-btn" id="footer-testdata" onclick="loadTestData()" title="Populate test entries in every section to try the passdown builder"><span>🧪</span><span>Test Data</span></button>
     <button class="footer-btn" id="footer-reset" style="color:var(--red)" onclick="resetData()"><span class="icon" data-icon="alert"></span><span>Reset Data</span></button>
   </div>
 </nav>
@@ -674,6 +675,15 @@
                   <select id="pd-lookahead" onchange="renderPdAutoBlocks(true);pdSaveDraft()"><option value="1">Today + Tomorrow</option><option value="2">Today + 2 days</option></select>
                 </div>
               </div>
+              <div id="pd-shift-summary-block" style="margin-bottom:12px;padding:12px 14px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border)">
+                <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Shift Summary <span style="color:var(--red);font-weight:400;font-size:10px;text-transform:none;letter-spacing:0">Required before generating</span></div>
+                <div style="display:flex;gap:6px;margin-bottom:8px" id="pd-tone-btns">
+                  <button id="pd-tone-quiet" class="btn btn-secondary btn-sm" onclick="setPdTone('Quiet')" style="font-size:11px">🌙 Quiet</button>
+                  <button id="pd-tone-normal" class="btn btn-secondary btn-sm" onclick="setPdTone('Normal')" style="font-size:11px">☀️ Normal</button>
+                  <button id="pd-tone-busy" class="btn btn-secondary btn-sm" onclick="setPdTone('Busy')" style="font-size:11px">🔥 Busy</button>
+                </div>
+                <textarea id="pd-summary" rows="2" placeholder="One-line summary — e.g. Busy PM — HVAC escalated in 804, two move-ins completed, one resident complaint resolved." style="width:100%;font-size:12px;resize:none" oninput="pdSaveDraft()"></textarea>
+              </div>
               <div id="pd-auto-blocks"></div>
               <div id="pd-free-sections"></div>
               <div id="pd-checklist-panel" style="display:none;margin-bottom:12px"></div>
@@ -681,7 +691,7 @@
                 <button class="btn btn-primary" onclick="checkPassdownReady()">Generate</button>
                 <button class="btn btn-secondary" onclick="savePassdown()">Save</button>
                 <button class="btn btn-ghost" onclick="copyPassdown()">Copy</button>
-                <button class="btn btn-secondary" onclick="sendPassdownGmail()">&#9993; Send via Gmail</button>
+                <button class="btn btn-secondary" onclick="reviewBeforeSend()">&#9993; Review &amp; Send</button>
                 <button class="btn btn-ghost" style="margin-left:auto;color:var(--text3);font-size:12px" onclick="pdClearDraft()">Clear draft</button>
               </div>
             </div>
@@ -1459,6 +1469,45 @@ function renderSection(sec) {
   if (map[sec]) map[sec]();
 }
 function renderAll() { renderSection(curSec); updateBadges(); }
+
+// ─── TEST DATA ───
+function loadTestData() {
+  if (!confirm('This will add test entries to every section so you can try the passdown builder. Your existing data will stay — test items will be added alongside it. Continue?')) return;
+  var t = today();
+  var now = Date.now();
+  // Move-in (today, PM)
+  if (!state.moves) state.moves = [];
+  state.moves.push({ id: uid(), type: 'in', unit: '1204', resident: 'Marcus Webb', date: t, apptDate: t, apptTime: '3:00 PM', total: '4200', notes: 'Elevator reserved 2pm–5pm. 2 fobs requested.', tasks: [{ id: uid(), label: 'Confirm elevator reservation', cat: 'Move-In', done: false },{ id: uid(), label: 'Issue 2 fobs', cat: 'Move-In', done: true },{ id: uid(), label: 'Orientation walkthrough', cat: 'Move-In', done: false }], addedBy: 'Test', createdAt: now });
+  // Move-out (today, AM)
+  state.moves.push({ id: uid(), type: 'out', unit: '806', resident: 'Elena Huang', date: t, apptDate: t, apptTime: '10:00 AM', notes: 'Keys returned, unit walk-through pending.', tasks: [{ id: uid(), label: 'Collect all keys and fobs', cat: 'Move-Out', done: true },{ id: uid(), label: 'Unit walk-through', cat: 'Move-Out', done: false }], addedBy: 'Test', createdAt: now });
+  // Maintenance
+  if (!state.maintenance) state.maintenance = [];
+  state.maintenance.push({ id: uid(), unit: '402', issue: 'HVAC not cooling', desc: 'Resident reported no cold air since yesterday. Thermostat set to 68, reading 78.', priority: 'high', status: 'in-progress', reporter: 'Maria Santos (Resident)', workorder: true, addedBy: 'Test', createdAt: now - 3600000*5, log: [{ ts: now - 3600000*5, by: 'Test', note: 'Resident reported no cold air since yesterday. Thermostat set to 68, reading 78.' }, { ts: now - 3600000*2, by: 'Test', note: 'WO submitted. Tech scheduled for tomorrow 10am–12pm. Resident notified.' }] });
+  state.maintenance.push({ id: uid(), unit: 'Lobby', issue: 'Elevator B - slow response', desc: 'Multiple residents reported elevator B taking 3–4 minutes. Vendor notified.', priority: 'medium', status: 'open', reporter: 'Front Desk', workorder: false, addedBy: 'Test', createdAt: now - 3600000*10, log: [{ ts: now - 3600000*10, by: 'Test', note: 'Multiple residents reported elevator B taking 3–4 minutes. Vendor notified.' }] });
+  // Key out
+  if (!state.keys) state.keys = [];
+  state.keys.push({ id: uid(), unit: '915', name: 'James Okafor', guest: 'Michael Torres', fob: '04', type: 'one-time', status: 'issued', issuedAt: now - 3600000*2.5, timeout: fmtTime((function(){ var d=new Date(now-3600000*2.5); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); })()), notes: 'Guest picking up a delivery that required signature.' });
+  // Amenity booking (today, PM)
+  if (!state.amenities) state.amenities = [];
+  state.amenities.push({ id: uid(), space: 'Rooftop Terrace', unit: '1108', resident: 'Sofia Park', date: t, start: '18:00', end: '20:00', notes: 'Birthday dinner, 8 guests. Chairs pre-arranged.', addedBy: 'Test', createdAt: now });
+  // Concierge request
+  if (!state.concierge) state.concierge = [];
+  state.concierge.push({ id: uid(), unit: '302', resident: 'Armando Vega', type: 'Dry Cleaning Coordination', notes: 'Resident left 2 suits for pickup — needs to be retrieved from unit and given to courier at 4pm.', status: 'open', handledBy: 'Front Desk', addedBy: 'Test', createdAt: now - 3600000*1 });
+  // Guest
+  if (!state.guests) state.guests = [];
+  state.guests.push({ id: uid(), name: 'Rachel Kim', unit: '1108', host: 'Sofia Park', type: 'Overnight Guest', status: 'in', notes: 'Approved for 2 nights. Has access card.', addedBy: 'Test', createdAt: now });
+  // Lost & Found
+  if (!state.laf) state.laf = [];
+  state.laf.push({ id: uid(), item: 'Black Montblanc umbrella', location: 'Elevator lobby — found near mailboxes', foundBy: 'Cleaning crew', claimedBy: '', status: 'unclaimed', addedBy: 'Test', createdAt: now - 3600000*4 });
+  // Tour
+  if (!state.tours) state.tours = [];
+  state.tours.push({ id: uid(), name: 'Jordan Lee', email: 'jlee@email.com', phone: '', units: '601, 808, 1102', agent: 'Leasing Team', date: t, time: '2:00 PM', notes: 'Very interested in 1102. Follow up tomorrow.', addedBy: 'Test', createdAt: now });
+  // To-do
+  if (!state.todos) state.todos = [];
+  state.todos.push({ id: uid(), text: 'Call elevator vendor re: annual inspection — due this week', priority: 'high', done: false, note: 'Contact: Apex Elevators, (415) 555-0190', addedBy: 'Test', createdAt: now });
+  state.todos.push({ id: uid(), text: 'Confirm rooftop setup for Unit 1108 birthday event (6pm)', priority: 'medium', done: false, note: 'Check chairs, verify guest count is 8', addedBy: 'Test', createdAt: now });
+  scheduleSave(); renderAll(); toast('Test data loaded — go try the passdown builder!');
+}
 
 // ─── MODAL ───
 function openModal(id) {
@@ -3620,6 +3669,20 @@ function pdInShift(timeStr, shift) {
   return mins >= 23*60 || mins < 7*60; // Overnight: 11pm–7am
 }
 
+var _pdTone = '';
+function setPdTone(tone) {
+  _pdTone = tone;
+  ['Quiet','Normal','Busy'].forEach(function(t) {
+    var btn = g('pd-tone-' + t.toLowerCase());
+    if (!btn) return;
+    if (t === tone) { btn.style.background = 'var(--accent)'; btn.style.color = '#fff'; btn.style.borderColor = 'var(--accent)'; }
+    else { btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = ''; }
+  });
+  pdSaveDraft();
+}
+function pdGetTone() { return _pdTone; }
+function pdGetSummary() { var el = g('pd-summary'); return el ? el.value.trim() : ''; }
+
 function pdSaveDraft() {
   try {
     sessionStorage.setItem('pd_draft_sections', JSON.stringify(pdSections));
@@ -3628,6 +3691,8 @@ function pdSaveDraft() {
     var pol = g('pd-policy'); if (pol) sessionStorage.setItem('pd_draft_policy', pol.value);
     var sh = g('pd-shift'); if (sh) sessionStorage.setItem('pd_draft_shift', sh.value);
     var la = g('pd-lookahead'); if (la) sessionStorage.setItem('pd_draft_lookahead', la.value);
+    sessionStorage.setItem('pd_draft_tone', _pdTone);
+    var sumEl = g('pd-summary'); if (sumEl) sessionStorage.setItem('pd_draft_summary', sumEl.value);
   } catch(e) {}
 }
 function pdLoadDraft() {
@@ -3635,13 +3700,18 @@ function pdLoadDraft() {
     var s = sessionStorage.getItem('pd_draft_sections'); if (s) { pdSections = JSON.parse(s); if (!pdSections.thisShift) pdSections.thisShift = []; }
     var e = sessionStorage.getItem('pd_draft_excluded'); if (e) pdExcluded = JSON.parse(e);
     var n = sessionStorage.getItem('pd_draft_notes'); if (n) pdNotes = JSON.parse(n);
+    var tone = sessionStorage.getItem('pd_draft_tone'); if (tone) { _pdTone = tone; setTimeout(function(){ setPdTone(tone); }, 50); }
+    var sum = sessionStorage.getItem('pd_draft_summary'); if (sum) { var sumEl = g('pd-summary'); if (sumEl) sumEl.value = sum; }
   } catch(e) {}
 }
 function pdClearDraft() {
   pdSections = { keysAccess: [], residentMatters: [], thisShift: [], shiftNotes: [] };
   pdExcluded = {};
   pdNotes = {};
-  try { ['pd_draft_sections','pd_draft_excluded','pd_draft_notes','pd_draft_policy','pd_draft_shift','pd_draft_lookahead'].forEach(function(k){ sessionStorage.removeItem(k); }); } catch(e) {}
+  _pdTone = '';
+  ['Quiet','Normal','Busy'].forEach(function(t){ var btn=g('pd-tone-'+t.toLowerCase()); if(btn){btn.style.background='';btn.style.color='';btn.style.borderColor='';} });
+  var sumEl = g('pd-summary'); if (sumEl) sumEl.value = '';
+  try { ['pd_draft_sections','pd_draft_excluded','pd_draft_notes','pd_draft_policy','pd_draft_shift','pd_draft_lookahead','pd_draft_tone','pd_draft_summary'].forEach(function(k){ sessionStorage.removeItem(k); }); } catch(e) {}
   var pv = g('pd-preview'); if (pv) pv.value = '';
   _pdClearChecklist();
   renderPassdown();
@@ -3872,10 +3942,10 @@ function renderPdAutoBlocks(isLead) {
 function renderPdFreeSections(isLead) {
   var container = g('pd-free-sections'); if (!container) return;
   var secs = isLead
-    ? [{ key:'thisShift', emoji:'📋', label:'This Shift', hint:'What happened during your shift? Log resolved items, new incidents, and follow-ups not covered by the auto-blocks above.' },
+    ? [{ key:'thisShift', emoji:'📋', label:'This Shift', hint:'Cover: resident interactions, escalations, resolved issues, after-hours calls, anything unusual. Do not repeat items already in the auto-blocks. Routine daily deliveries are handled by the package concierge team — only note exceptions.' },
        { key:'keysAccess', emoji:'🔑', label:'Keys / Access' },
        { key:'residentMatters', emoji:'👤', label:'Resident Matters' }]
-    : [{ key:'shiftNotes', emoji:'📋', label:'This Shift', hint:'What happened during your shift? Log resolved items, new incidents, and resident interactions — not already in the auto-blocks above.' }];
+    : [{ key:'shiftNotes', emoji:'📋', label:'This Shift', hint:'Cover: resident interactions, noise complaints, resolved maintenance, after-hours calls, anything unusual. Do not repeat items already in the auto-blocks. Routine daily deliveries are handled by the package concierge team — only note exceptions (missed delivery requiring a callback, special handling, or a complaint).' }];
   var html = '';
   secs.forEach(function(s) {
     html += '<div class="pd-sec-block"><div class="pd-sec-hdr"><span class="pd-sec-lbl">' + s.emoji + ' ' + s.label + '</span>'
@@ -3954,6 +4024,8 @@ function generatePassdown() {
   var greeting = shift === 'AM' ? 'Good morning' : shift === 'Overnight' ? 'Good evening' : 'Good afternoon';
   var out = 'Subject: ' + subject + '\n\n';
   out += greeting + ' team,\nHere is today\'s passdown with active items and updates from the Front Desk. Please review carefully and reach out if you have any questions.\n';
+  var tone = pdGetTone(); var summary = pdGetSummary();
+  if (tone || summary) { out += '\n— ' + [tone, summary].filter(Boolean).join(' — ') + '\n'; }
 
   var now = Date.now();
   var tmrwG = (function(){ var d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
@@ -4308,18 +4380,89 @@ function copyPassdown() {
   else navigator.clipboard.writeText(preview).then(function () { toast('Copied'); }).catch(function () { toast('Copy failed'); });
 }
 function sendPassdownGmail() {
-  var preview = g('pd-preview').value;
-  if (!preview || !preview.trim()) { toast('Generate passdown first'); return; }
-  var carried = getCarriedItemIds();
-  if (Object.keys(carried).length > 0) {
-    var ok = confirm('Some items in this passdown were carried over from an earlier shift today.\n\nMake sure you\'ve added your own shift\'s updates before sending.\n\nContinue sending?');
-    if (!ok) return;
-  }
   var shiftEl = g('pd-shift'); var shift = shiftEl ? shiftEl.value.toUpperCase() : 'AM';
+  var preview = g('pd-preview').value;
   var d = new Date(); var dateStr = (d.getMonth()+1)+'.'+d.getDate()+'.'+d.getFullYear();
   var subject = encodeURIComponent(dateStr + ' ' + shift + ' Front Desk Passdown');
   var body = encodeURIComponent(preview);
   window.open('https://mail.google.com/mail/?view=cm&to=&su=' + subject + '&body=' + body, '_blank');
+}
+
+function reviewBeforeSend() {
+  var preview = g('pd-preview').value;
+  if (!preview || !preview.trim()) { toast('Generate the passdown first, then send'); return; }
+
+  // Run quality checks
+  var issues = [], passes = [];
+  var vagueWords = ['monitor', 'tbd', 'n/a', 'na', 'handled', 'see above', 'nothing', 'none', 'ok', 'okay'];
+
+  // Check 1: shift tone set?
+  if (pdGetTone()) passes.push('Shift tone selected (' + pdGetTone() + ')');
+  else issues.push({ sev: 'warn', msg: 'No shift tone selected — incoming associate has no context for the shift' });
+
+  // Check 2: shift summary written?
+  if (pdGetSummary()) passes.push('Shift summary written');
+  else issues.push({ sev: 'warn', msg: 'No shift summary — every passdown should open with one line describing the shift' });
+
+  // Check 3: any "This Shift" or "Shift Notes" items logged?
+  var freeItems = (pdSections.shiftNotes || []).concat(pdSections.thisShift || []);
+  if (freeItems.length > 0) passes.push('Shift notes logged (' + freeItems.length + ' item' + (freeItems.length > 1 ? 's' : '') + ')');
+  else issues.push({ sev: 'warn', msg: 'No shift notes added — if anything happened during this shift not captured in the auto-blocks, it should be logged here' });
+
+  // Check 4: vague next actions in the preview text?
+  var lines = preview.split('\n');
+  var vagueLines = lines.filter(function(line) {
+    if (!/next step|next action/i.test(line)) return false;
+    var lower = line.toLowerCase();
+    return vagueWords.some(function(w){ return lower.indexOf(w) !== -1; });
+  });
+  if (vagueLines.length === 0) passes.push('Next actions are specific');
+  else { vagueLines.forEach(function(l){ issues.push({ sev: 'warn', msg: 'Vague next action: "' + l.trim() + '"' }); }); }
+
+  // Check 5: carried-over items?
+  var carried = getCarriedItemIds ? getCarriedItemIds() : {};
+  if (Object.keys(carried).length > 0) issues.push({ sev: 'info', msg: Object.keys(carried).length + ' item(s) carried over from a previous shift today — make sure you\'ve added your own updates' });
+  else passes.push('No carried-over items from earlier shifts');
+
+  // Build and show modal
+  var hasBlocking = false; // we allow sending either way — just inform
+  var html = '<div style="max-height:55vh;overflow-y:auto;padding:0 2px">';
+
+  if (issues.length === 0) {
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 0 14px"><span style="font-size:22px">✅</span><div><div style="font-weight:600;color:var(--green)">Passdown looks good</div><div style="font-size:12px;color:var(--text3)">All checks passed. You\'re ready to send.</div></div></div>';
+  } else {
+    html += '<div style="margin-bottom:12px;font-size:12px;color:var(--text2)">Review these items before sending. You can send anyway — these are quality flags, not blockers.</div>';
+    issues.forEach(function(issue) {
+      var icon = issue.sev === 'info' ? '🔵' : '⚠️';
+      html += '<div style="display:flex;gap-8px;padding:7px 10px;margin-bottom:6px;border-radius:5px;background:' + (issue.sev==='info'?'rgba(78,138,112,0.08)':'rgba(217,119,6,0.08)') + ';border:1px solid ' + (issue.sev==='info'?'rgba(78,138,112,0.2)':'rgba(217,119,6,0.2)') + '">'
+        + '<span style="flex-shrink:0;margin-right:8px">' + icon + '</span>'
+        + '<span style="font-size:12px;color:var(--text)">' + issue.msg + '</span></div>';
+    });
+  }
+
+  if (passes.length > 0) {
+    html += '<div style="margin-top:12px;border-top:1px solid var(--border2);padding-top:10px">';
+    passes.forEach(function(p) {
+      html += '<div style="font-size:11px;color:var(--green);padding:2px 0">✓ ' + p + '</div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Create/reuse modal
+  var ov = g('modal-pd-review');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.className = 'modal-ov'; ov.id = 'modal-pd-review';
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Review Before Sending</span><button class="modal-close" onclick="closeModal(\'modal-pd-review\')">&#x2715;</button></div>'
+    + '<div class="modal-bdy">' + html + '</div>'
+    + '<div class="modal-ftr">'
+    + '<button class="btn btn-secondary" onclick="closeModal(\'modal-pd-review\')">Go Back &amp; Edit</button>'
+    + '<button class="btn btn-primary" onclick="closeModal(\'modal-pd-review\');sendPassdownGmail()">Send via Gmail →</button>'
+    + '</div></div>';
+  openModal('modal-pd-review');
 }
 function getAllPassdowns(limitHours) {
   var all = [], upd = state.userPassdowns || {}, accounts = state.accounts || [];
@@ -6144,6 +6287,8 @@ var _pdChecklistItems = [];
 var _pdChecklistState = {}; // key 'type|id' → { done, note }
 
 function checkPassdownReady() {
+  if (!pdGetTone()) { toast('Pick a shift tone first — Quiet, Normal, or Busy'); var el = g('pd-shift-summary-block'); if(el){el.style.outline='2px solid var(--red)';setTimeout(function(){el.style.outline='';},2000);} return; }
+  if (!pdGetSummary()) { toast('Add a one-line shift summary before generating'); var el2 = g('pd-summary'); if(el2){el2.focus();el2.style.borderColor='var(--red)';setTimeout(function(){el2.style.borderColor='';},2000);} return; }
   var t = today();
   var curShiftId = getCurrentShiftId();
   var flagged = [];
