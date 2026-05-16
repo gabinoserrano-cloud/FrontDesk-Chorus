@@ -1554,37 +1554,91 @@ function loadTestData() {
   if (!confirm('This will add test entries to every section so you can try the passdown builder. Your existing data will stay — test items will be added alongside it. Continue?')) return;
   var t = today();
   var now = Date.now();
-  // Move-in (today, PM)
+  var amBy = 'Alex R.', pmBy = 'Jamie L.', nocBy = 'Sam T.';
+
+  // ── Test staff account (PIN: 0000) ──────────────────────────────────────
+  if (!state.accounts) state.accounts = [];
+  var hasTestAcct = state.accounts.some(function(a){ return a.name === 'Test Staff'; });
+  if (!hasTestAcct) state.accounts.push({ id: uid(), name: 'Test Staff', role: 'staff', pin: '0000', createdAt: now });
+
+  // ── MOVES ────────────────────────────────────────────────────────────────
   if (!state.moves) state.moves = [];
-  state.moves.push({ id: uid(), type: 'in', unit: '1204', resident: 'Marcus Webb', date: t, apptDate: t, apptTime: '15:00', total: '4200', notes: 'Elevator reserved 2pm–5pm. 2 fobs requested.', tasks: [{ id: uid(), text: 'Confirm elevator reservation', cat: 'Move-In', done: false },{ id: uid(), text: 'Issue 2 fobs', cat: 'Move-In', done: true },{ id: uid(), text: 'Orientation walkthrough', cat: 'Move-In', done: false }], addedBy: 'Test', createdAt: now });
-  // Move-out (today, AM)
-  state.moves.push({ id: uid(), type: 'out', unit: '806', resident: 'Elena Huang', date: t, apptDate: t, apptTime: '10:00', notes: 'Keys returned, unit walk-through pending.', tasks: [{ id: uid(), text: 'Collect all keys and fobs', cat: 'Move-Out', done: true },{ id: uid(), text: 'Unit walk-through', cat: 'Move-Out', done: false }], addedBy: 'Test', createdAt: now });
-  // Maintenance
+  // AM shift — move-out logged by overnight
+  state.moves.push({ id: uid(), type: 'out', unit: '806', resident: 'Elena Huang', date: t, apptDate: t, apptTime: '10:00', notes: 'Keys returned, unit walk-through pending. Elevator B reserved 9am–11am.', tasks: [{ id: uid(), text: 'Collect all keys and fobs', cat: 'Move-Out', done: true },{ id: uid(), text: 'Unit walk-through with manager', cat: 'Move-Out', done: false },{ id: uid(), text: 'Release elevator reservation', cat: 'Move-Out', done: false }], addedBy: nocBy, createdAt: now - 3600000*9 });
+  // PM shift — move-in logged by AM
+  state.moves.push({ id: uid(), type: 'in', unit: '1204', resident: 'Marcus Webb', date: t, apptDate: t, apptTime: '15:00', total: '4200', notes: 'Elevator reserved 2pm–5pm. 2 fobs requested. Moving company: Bekins.', tasks: [{ id: uid(), text: 'Confirm elevator reservation', cat: 'Move-In', done: true },{ id: uid(), text: 'Issue 2 fobs', cat: 'Move-In', done: true },{ id: uid(), text: 'Orientation walkthrough', cat: 'Move-In', done: false },{ id: uid(), text: 'Collect pro-rated rent check', cat: 'Move-In', done: false }], addedBy: amBy, createdAt: now - 3600000*5 });
+
+  // ── MAINTENANCE ──────────────────────────────────────────────────────────
   if (!state.maintenance) state.maintenance = [];
-  state.maintenance.push({ id: uid(), unit: '402', issue: 'HVAC not cooling', desc: 'Resident reported no cold air since yesterday. Thermostat set to 68, reading 78.', priority: 'high', status: 'in-progress', reporter: 'Maria Santos (Resident)', workorder: true, addedBy: 'Test', createdAt: now - 3600000*5, log: [{ ts: now - 3600000*5, by: 'Test', note: 'Resident reported no cold air since yesterday. Thermostat set to 68, reading 78.' }, { ts: now - 3600000*2, by: 'Test', note: 'WO submitted. Tech scheduled for tomorrow 10am–12pm. Resident notified.' }] });
-  state.maintenance.push({ id: uid(), unit: 'Lobby', issue: 'Elevator B - slow response', desc: 'Multiple residents reported elevator B taking 3–4 minutes. Vendor notified.', priority: 'medium', status: 'open', reporter: 'Front Desk', workorder: false, addedBy: 'Test', createdAt: now - 3600000*10, log: [{ ts: now - 3600000*10, by: 'Test', note: 'Multiple residents reported elevator B taking 3–4 minutes. Vendor notified.' }] });
-  // Key out
+  // AM: high priority, WO filed
+  state.maintenance.push({ id: uid(), unit: '402', issue: 'HVAC not cooling', desc: 'Resident reported no cold air since yesterday. Thermostat set to 68, reading 78.', priority: 'high', status: 'in-progress', reporter: 'Maria Santos (Resident)', workorder: true, addedBy: amBy, createdAt: now - 3600000*8, log: [{ ts: now - 3600000*8, by: amBy, note: 'Resident reported no cold air since yesterday.' },{ ts: now - 3600000*5, by: amBy, note: 'WO submitted. Tech scheduled tomorrow 10am–12pm. Resident notified.' }] });
+  // PM: medium, open
+  state.maintenance.push({ id: uid(), unit: 'Lobby', issue: 'Elevator B — slow response', desc: 'Multiple residents reported elevator B taking 3–4 minutes to arrive. Vendor notified.', priority: 'medium', status: 'open', reporter: 'Front Desk', workorder: false, addedBy: pmBy, createdAt: now - 3600000*3, log: [{ ts: now - 3600000*3, by: pmBy, note: 'Multiple residents reported elevator B taking 3–4 minutes. Vendor notified.' }] });
+  // Overnight: low, open — carried from previous shift
+  state.maintenance.push({ id: uid(), unit: '5th floor hallway', issue: 'Light fixture flickering', desc: 'Flickering overhead light near unit 512. Not an emergency but reported twice this week.', priority: 'low', status: 'open', reporter: 'Resident via email', workorder: false, addedBy: nocBy, createdAt: now - 3600000*14, log: [{ ts: now - 3600000*14, by: nocBy, note: 'Added after resident email. Will log WO in the morning.' }] });
+
+  // ── KEYS ─────────────────────────────────────────────────────────────────
   if (!state.keys) state.keys = [];
-  state.keys.push({ id: uid(), unit: '915', name: 'James Okafor', guest: 'Michael Torres', fob: '04', type: 'one-time', status: 'issued', issuedAt: now - 3600000*2.5, timeout: (function(){ var d=new Date(now-3600000*2.5); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); })(), notes: 'Guest picking up a delivery that required signature.', addedBy: 'Test' });
-  // Amenity booking (today, PM)
+  // AM: one-time key out — overdue, reached out (triggers $25 passdown flag)
+  var amIssued = now - 3600000*4;
+  state.keys.push({ id: uid(), unit: '915', name: 'James Okafor', guest: 'Michael Torres', fob: '09', type: 'one-time', status: 'issued', issuedAt: amIssued, timeout: (function(){ var d=new Date(amIssued); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); })(), notes: 'Guest picking up a delivery that required signature. Called at 2-hour mark, no answer.', reachedOut: true, reachedOutAt: now - 3600000*2, addedBy: amBy, createdAt: amIssued });
+  // PM: replacement key card — $100 fee pending ledger
+  state.keys.push({ id: uid(), unit: '1108', name: 'Sofia Park', guest: '', fob: '22', type: 'resident', status: 'issued', issuedAt: now - 3600000*2, timeout: '', notes: 'Reported original key card lost. Issued replacement.', isReplacement: true, fee: 100, feeAddedToLedger: false, feeWaived: false, feeAddedAt: null, feeAddedBy: '', reachedOut: false, addedBy: pmBy, createdAt: now - 3600000*2 });
+  // Vendor card — out
+  var vendorIssued = now - 3600000*1;
+  state.keys.push({ id: uid(), unit: 'Gym / 2nd floor', name: '', guest: '', fob: 'V-03', type: 'vendor', status: 'issued', issuedAt: vendorIssued, company: 'Pacific Fitness Services', workArea: 'Gym equipment repair', vendorReturn: (function(){ var d=new Date(vendorIssued+3600000*2); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); })(), notes: 'Annual treadmill maintenance. Expected back by 5pm.', addedBy: pmBy, createdAt: vendorIssued });
+
+  // ── AMENITIES ────────────────────────────────────────────────────────────
   if (!state.amenities) state.amenities = [];
-  state.amenities.push({ id: uid(), space: 'Rooftop Terrace', unit: '1108', resident: 'Sofia Park', date: t, start: '18:00', end: '20:00', notes: 'Birthday dinner, 8 guests. Chairs pre-arranged.', addedBy: 'Test', createdAt: now });
-  // Concierge request
-  if (!state.concierge) state.concierge = [];
-  state.concierge.push({ id: uid(), unit: '302', resident: 'Armando Vega', type: 'Dry Cleaning Coordination', notes: 'Resident left 2 suits for pickup — needs to be retrieved from unit and given to courier at 4pm.', status: 'open', handledBy: 'Front Desk', addedBy: 'Test', createdAt: now - 3600000*1 });
-  // Guest
+  // AM booking
+  state.amenities.push({ id: uid(), space: 'Conference Room', unit: '703', resident: 'David Chen', date: t, start: '09:00', end: '11:00', notes: 'Board meeting. Needs AV setup and whiteboard markers.', addedBy: amBy, createdAt: now - 3600000*10 });
+  // PM booking
+  state.amenities.push({ id: uid(), space: 'Rooftop Terrace', unit: '1108', resident: 'Sofia Park', date: t, start: '18:00', end: '20:00', notes: 'Birthday dinner, 8 guests. Chairs pre-arranged. Caterer arriving at 5:30pm.', addedBy: pmBy, createdAt: now - 3600000*3 });
+
+  // ── GUESTS ───────────────────────────────────────────────────────────────
   if (!state.guests) state.guests = [];
-  state.guests.push({ id: uid(), name: 'Rachel Kim', unit: '1108', host: 'Sofia Park', type: 'Overnight Guest', status: 'in', notes: 'Approved for 2 nights. Has access card.', addedBy: 'Test', createdAt: now });
-  // Lost & Found
-  if (!state.laf) state.laf = [];
-  state.laf.push({ id: uid(), item: 'Black Montblanc umbrella', location: 'Elevator lobby — found near mailboxes', foundBy: 'Cleaning crew', claimedBy: '', status: 'unclaimed', addedBy: 'Test', createdAt: now - 3600000*4 });
-  // Tour
+  // Checked in AM
+  state.guests.push({ id: uid(), name: 'Rachel Kim', unit: '1108', host: 'Sofia Park', type: 'Overnight Guest', status: 'in', notes: 'Approved for 2 nights. Has access card. Staying in unit.', addedBy: amBy, createdAt: now - 3600000*7 });
+  // Checked in PM, still in
+  state.guests.push({ id: uid(), name: 'Derek Moss', unit: '302', host: 'Armando Vega', type: 'Guest', status: 'in', notes: 'Dropped off a package for resident. Resident came down to escort.', addedBy: pmBy, createdAt: now - 3600000*2 });
+
+  // ── CONCIERGE ────────────────────────────────────────────────────────────
+  if (!state.concierge) state.concierge = [];
+  // AM request, still open
+  state.concierge.push({ id: uid(), unit: '302', resident: 'Armando Vega', type: 'Dry Cleaning Coordination', notes: 'Resident left 2 suits for pickup — needs to be retrieved from unit and given to courier at 4pm.', status: 'open', handledBy: 'Front Desk', addedBy: amBy, createdAt: now - 3600000*6 });
+  // PM request, in progress
+  state.concierge.push({ id: uid(), unit: '509', resident: 'Priya Nair', type: 'Package Holding', notes: 'Large delivery expected from Crate & Barrel. Resident asked to hold in storage and text when arrived.', status: 'open', handledBy: 'Front Desk', addedBy: pmBy, createdAt: now - 3600000*1 });
+
+  // ── TOURS ────────────────────────────────────────────────────────────────
   if (!state.tours) state.tours = [];
-  state.tours.push({ id: uid(), name: 'Jordan Lee', email: 'jlee@email.com', phone: '', units: '601, 808, 1102', agent: 'Leasing Team', date: t, time: '14:00', notes: 'Very interested in 1102. Follow up tomorrow.', addedBy: 'Test', createdAt: now });
-  // To-do
+  // AM tour — done
+  state.tours.push({ id: uid(), name: 'Claire Dubois', email: 'cdubois@email.com', phone: '(415) 555-0142', units: '508, 611', agent: 'Leasing Team', date: t, time: '10:30', notes: 'Very interested in 508 — returning with partner this weekend.', addedBy: amBy, createdAt: now - 3600000*8 });
+  // PM tour — upcoming
+  state.tours.push({ id: uid(), name: 'Jordan Lee', email: 'jlee@email.com', phone: '', units: '601, 808, 1102', agent: 'Leasing Team', date: t, time: '16:30', notes: 'Rescheduled from Wednesday. Very interested in 1102.', addedBy: pmBy, createdAt: now - 3600000*2 });
+
+  // ── LOST & FOUND ─────────────────────────────────────────────────────────
+  if (!state.laf) state.laf = [];
+  // AM find
+  state.laf.push({ id: uid(), item: 'Black Montblanc umbrella', location: 'Elevator lobby — near mailboxes', foundBy: 'Cleaning crew', claimedBy: '', status: 'unclaimed', addedBy: amBy, createdAt: now - 3600000*7 });
+  // PM find
+  state.laf.push({ id: uid(), item: 'AirPods Pro (white case, no label)', location: 'Rooftop terrace — near seating area', foundBy: 'Jamie L.', claimedBy: '', status: 'unclaimed', addedBy: pmBy, createdAt: now - 3600000*2 });
+
+  // ── TO-DOS ───────────────────────────────────────────────────────────────
   if (!state.todos) state.todos = [];
-  state.todos.push({ id: uid(), text: 'Call elevator vendor re: annual inspection — due this week', priority: 'high', done: false, note: 'Contact: Apex Elevators, (415) 555-0190', addedBy: 'Test', createdAt: now });
-  state.todos.push({ id: uid(), text: 'Confirm rooftop setup for Unit 1108 birthday event (6pm)', priority: 'medium', done: false, note: 'Check chairs, verify guest count is 8', addedBy: 'Test', createdAt: now });
+  state.todos.push({ id: uid(), text: 'Call elevator vendor re: annual inspection — due this week', priority: 'high', done: false, note: 'Contact: Apex Elevators, (415) 555-0190', addedBy: amBy, createdAt: now - 3600000*8 });
+  state.todos.push({ id: uid(), text: 'Confirm rooftop setup for Unit 1108 birthday event (6pm)', priority: 'medium', done: false, note: 'Check chairs, verify guest count is 8, caterer ETA 5:30pm', addedBy: amBy, createdAt: now - 3600000*5 });
+  state.todos.push({ id: uid(), text: 'Follow up with Unit 402 re: HVAC tech appointment tomorrow', priority: 'medium', done: false, note: 'Resident: Maria Santos. Tech window 10am–12pm.', addedBy: pmBy, createdAt: now - 3600000*2 });
+  state.todos.push({ id: uid(), text: 'Restock front desk key card supply — getting low', priority: 'low', done: false, note: 'Under 10 blank cards remaining', addedBy: nocBy, createdAt: now - 3600000*12 });
+
+  // ── INCIDENT LOG ─────────────────────────────────────────────────────────
+  if (!state.security) state.security = [];
+  // AM: unhoused, resolved
+  state.security.push({ id: uid(), date: t, time: '08:15', type: 'Unhoused — Removed by Staff', location: 'Main lobby / front entrance', handledBy: amBy, status: 'resolved', notes: 'Individual entered lobby and refused to leave. Spoke calmly — escorted to exit without incident. Did not return. No police contact needed.', addedBy: amBy, createdAt: now - 3600000*9 });
+  // AM: medical, resolved
+  state.security.push({ id: uid(), date: t, time: '11:20', type: 'Medical Emergency — First Aid / Staff', location: 'Gym — 2nd floor', handledBy: amBy + ' + Building Staff', status: 'resolved', notes: 'Resident reported dizziness after workout. Staff provided water and seated resident until recovered. Declined further assistance. Family notified by resident.', addedBy: amBy, createdAt: now - 3600000*6 });
+  // PM: noise complaint, monitoring — shows in badge + passdown
+  state.security.push({ id: uid(), date: t, time: '17:45', type: 'Noise Complaint Escalation', location: 'Unit 804', handledBy: pmBy, status: 'monitoring', notes: 'Two neighbors called down about loud music. Staff knocked — resident complied. Second complaint 30 min later. Monitoring; will escalate to manager if another complaint received.', addedBy: pmBy, createdAt: now - 3600000*1.5 });
+
   scheduleSave(); renderAll(); toast('Test data loaded — go try the passdown builder!');
 }
 
@@ -4008,9 +4062,9 @@ function pdTimeToMins(t) {
 function pdInShift(timeStr, shift) {
   var mins = pdTimeToMins(timeStr);
   if (mins < 0) return true; // no time set — always include
-  if (shift === 'AM') return mins >= 7*60 && mins <= 15*60;
-  if (shift === 'PM') return mins >= 15*60 && mins < 23*60;
-  return mins >= 23*60 || mins < 7*60; // Overnight: 11pm–7am
+  if (shift === 'AM') return mins >= 7*60 && mins < 15*60+30;       // 7:00–3:30pm
+  if (shift === 'PM') return mins >= 15*60+30 && mins < 23*60+30;   // 3:30–11:30pm
+  return mins >= 23*60+30 || mins < 7*60+30;                        // Overnight: 11:30pm–7:30am
 }
 
 var _pdTone = '';
@@ -6612,19 +6666,25 @@ document.addEventListener('DOMContentLoaded', init);
 // TWEAK 1 — Stale flag helpers (Key Tracker)
 // ─────────────────────────────────────────────────────────────────────────────
 function getCurrentShiftLabel() {
-  var h = new Date().getHours();
-  if (h >= 7 && h < 15) return 'AM';
-  if (h >= 15 && h < 23) return 'PM';
-  return 'Overnight';
+  var d = new Date(), mins = d.getHours()*60 + d.getMinutes();
+  if (mins >= 7*60 && mins < 15*60+30) return 'AM';      // 7:00–3:30pm
+  if (mins >= 15*60+30 && mins < 23*60+30) return 'PM';  // 3:30–11:30pm
+  return 'Overnight';                                      // 11:30pm–7:30am
 }
 function getShiftIdForTs(ts) {
   var d = new Date(ts);
-  var h = d.getHours();
-  var shift = (h >= 7 && h < 15) ? 'AM' : (h >= 15 && h < 23) ? 'PM' : 'Overnight';
-  // Overnight before 7am belongs to the previous calendar day's shift
-  var dateStr;
-  if (h < 7) { var prev = new Date(ts - 86400000); dateStr = prev.toISOString().split('T')[0]; }
-  else { dateStr = d.toISOString().split('T')[0]; }
+  var mins = d.getHours()*60 + d.getMinutes();
+  var shift, dateStr;
+  if (mins >= 7*60 && mins < 15*60+30) {
+    shift = 'AM'; dateStr = d.toISOString().split('T')[0];
+  } else if (mins >= 15*60+30 && mins < 23*60+30) {
+    shift = 'PM'; dateStr = d.toISOString().split('T')[0];
+  } else {
+    shift = 'Overnight';
+    // Before 7:30am belongs to the previous calendar day's overnight
+    if (mins < 7*60+30) { var prev = new Date(ts - 86400000); dateStr = prev.toISOString().split('T')[0]; }
+    else { dateStr = d.toISOString().split('T')[0]; }
+  }
   return dateStr + '-' + shift;
 }
 function getCurrentShiftId() { return getShiftIdForTs(Date.now()); }
@@ -6633,7 +6693,7 @@ function countStaleShifts(k) {
   if (k.shiftNotes && k.shiftNotes.length) { fromTs = k.shiftNotes[k.shiftNotes.length - 1].ts; }
   else { fromTs = k.issuedAt || k.createdAt; }
   var ms = Date.now() - fromTs;
-  return Math.max(1, Math.floor(ms / (8 * 3600000)));
+  return Math.max(1, Math.floor(ms / (8.5 * 3600000)));
 }
 function addKeyShiftNote(id, note) {
   note = (note || '').trim();
