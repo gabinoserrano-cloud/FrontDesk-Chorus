@@ -3812,7 +3812,7 @@ function renderPdAutoBlocks(isLead) {
       var isOverdue = overdueMs >= 2*3600000;
       var content = '<strong>Unit ' + k.unit + ' – ' + k.name + '</strong>';
       if (k.guest) content += ' / Guest: ' + k.guest;
-      if (k.timeout) content += ' / Out: ' + k.timeout;
+      if (k.timeout) content += ' / Out: ' + fmtTime(k.timeout);
       if (k.fob) content += ' / Key #' + k.fob;
       if (isOverdue) { var hrs=Math.floor(overdueMs/3600000), mins=Math.floor((overdueMs%3600000)/60000); content += ' <span style="color:var(--red);font-weight:600">⚠ ' + hrs + 'h ' + mins + 'm out</span>'; }
       var ns = 'Follow up with resident ' + k.name + ' to ensure key is returned.' + (k.notes ? ' ' + k.notes : '');
@@ -4039,7 +4039,7 @@ function generatePassdown() {
       var overdueMs = k.issuedAt ? now - k.issuedAt : 0;
       var isOverdue = overdueMs >= 2*3600000;
       out += 'Unit ' + k.unit + ' – ' + k.name + (k.guest ? ' / Guest: ' + k.guest : '') + '\n';
-      out += 'Key issued' + (k.timeout ? ' at ' + k.timeout : '') + (k.fob ? ' (Key #' + k.fob + ')' : '');
+      out += 'Key issued' + (k.timeout ? ' at ' + fmtTime(k.timeout) : '') + (k.fob ? ' (Key #' + k.fob + ')' : '');
       if (isOverdue) { var hrs=Math.floor(overdueMs/3600000), mins=Math.floor((overdueMs%3600000)/60000); out += ' — ⚠ OVERDUE ' + hrs + 'h ' + mins + 'm'; }
       var defNs = 'Follow up with resident ' + k.name + ' to ensure key is returned.' + (k.notes ? ' ' + k.notes : '');
       out += '\nNext Step: ' + pdNote('key_'+k.id, defNs) + '\n';
@@ -4215,7 +4215,7 @@ function _legacyAutoGenerate() {
       var overdueMin = Math.floor((overdueMs % 3600000) / 60000);
       keysSection += '- Key #' + (k.fob || '?') + ' | Unit ' + k.unit + ' - Resident: *' + k.name + '*';
       if (k.guest) keysSection += ' | Guest: ' + k.guest;
-      if (k.timeout) keysSection += ' | Out since: ' + k.timeout;
+      if (k.timeout) keysSection += ' | Out since: ' + fmtTime(k.timeout);
       if (isOverdue) keysSection += ' \u26A0\uFE0F OVERDUE ' + overdueHrs + 'h ' + overdueMin + 'm';
       if (k.notes) keysSection += '\n  Follow-up: ' + k.notes;
       keysSection += '\n';
@@ -4990,7 +4990,7 @@ function openCalPop(dateStr, evt) {
   });
   // Amenity bookings
   (state.amenities || []).filter(function (a) { return a.date === dateStr; }).forEach(function (a) {
-    items.push({ type: 'Booking', typeClass: 'pill-event', main: a.space, sub: a.resident + ' · Unit ' + a.unit + (a.start ? ' · ' + a.start : ''), sec: 'amenities' });
+    items.push({ type: 'Booking', typeClass: 'pill-event', main: a.space, sub: a.resident + ' · Unit ' + a.unit + (a.start ? ' · ' + fmtTime(a.start) : ''), sec: 'amenities' });
   });
   // Tours
   (state.tours || []).filter(function (tr) { return tr.date === dateStr; }).forEach(function (tr) {
@@ -5172,7 +5172,7 @@ function renderAgendaCal() {
       dayItems.push({ tag: 'TODO', tagCls: 'cal-chip-todo', tagStyle: '', text: t.text, sec: 'todos' });
     });
     (state.amenities || []).filter(function (a) { return a.date === ds; }).forEach(function (a) {
-      dayItems.push({ tag: 'APT', tagCls: 'cal-chip-amenity', tagStyle: '', text: a.space + ' \u2014 ' + a.resident + ', Unit ' + a.unit + (a.start ? ' at ' + a.start : ''), sec: 'amenities' });
+      dayItems.push({ tag: 'APT', tagCls: 'cal-chip-amenity', tagStyle: '', text: a.space + ' \u2014 ' + a.resident + ', Unit ' + a.unit + (a.start ? ' at ' + fmtTime(a.start) : ''), sec: 'amenities' });
     });
     (state.tours || []).filter(function (tr) { return tr.date === ds; }).forEach(function (tr) {
       dayItems.push({ tag: 'TOUR', tagCls: '', tagStyle: 'background:var(--purple-light);color:var(--purple)', text: (tr.type === 'sgt' ? 'SGT' : 'Guided') + ' Tour \u2014 ' + tr.name + (tr.unit ? ', Unit ' + tr.unit : '') + (tr.time ? ' at ' + fmtTime(tr.time) : ''), sec: 'tours' });
