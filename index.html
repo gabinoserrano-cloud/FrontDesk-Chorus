@@ -1027,6 +1027,7 @@
     <div class="fr"><div class="fg"><label>Visiting Unit #</label><input id="gs-unit" type="text"></div><div class="fg"><label>Host Resident</label><input id="gs-host" type="text"></div></div>
     <div class="fr"><div class="fg"><label>Visit Type</label><select id="gs-type"><option>Visitor</option><option>Vendor / Contractor</option><option>Delivery Person</option><option>Joiner Guest</option></select></div><div class="fg"><label>Status</label><select id="gs-status"><option value="pending">Pending</option><option value="in">Checked In</option><option value="out">Checked Out</option></select></div></div>
     <div class="fg"><label>Notes</label><textarea id="gs-notes" rows="3"></textarea></div>
+    <div class="fg" id="guest-key-wrap"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="guest-issue-key" style="width:auto"> Issue a one-time key for this visit</label></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-guest')">Cancel</button><button class="btn btn-primary" onclick="saveGuest()">Log Guest</button></div>
 </div></div>
@@ -2365,6 +2366,48 @@ function toggleTask(moveId, taskId, checked) {
     var note = action + ' — Unit ' + m.unit + ' · ' + m.resident + (checked && t.completedBy ? ' · ' + t.completedBy : '');
     applySupplyAdjustment(supLink.supName, direction, note);
   }
+  // ── Connection 1: Move-in key tasks → Key Tracker ──
+  if (checked && m.type === 'in') {
+    var isResidentKey = t.text === 'Prepare Unit Key(s)';
+    var isMailKey = t.text === 'Prepare Unit Mail Key(s)';
+    if (isResidentKey || isMailKey) {
+      if (!state.keys) state.keys = [];
+      var keyNote = isMailKey ? 'Mail key — created from move-in checklist' : 'Created from move-in checklist';
+      var mainKeyEntry = { id: uid(), unit: m.unit, name: m.resident, type: 'resident', fob: '', status: 'issued', notes: keyNote, addedBy: currentUser ? currentUser.name : '', issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null };
+      state.keys.push(mainKeyEntry);
+      if (m.coResidents && m.coResidents.length) {
+        m.coResidents.forEach(function(cr) {
+          state.keys.push({ id: uid(), unit: m.unit, name: cr.name, type: 'resident', fob: '', status: 'issued', notes: keyNote + ' (co-resident)', addedBy: currentUser ? currentUser.name : '', issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null });
+        });
+      }
+      toast('Key entry created in Key Tracker');
+      if (curSec === 'keys') renderKeys();
+    }
+  }
+  // ── Connection 1: Move-out collect keys task → mark keys returned ──
+  if (m.type === 'out' && t.text === 'Collect & Verify All Unit Keys') {
+    var issuedKeys = (state.keys || []).filter(function(k) { return k.unit === m.unit && k.status === 'issued'; });
+    if (issuedKeys.length) {
+      if (checked) {
+        if (confirm('Mark all ' + issuedKeys.length + ' issued key(s) for Unit ' + m.unit + ' as returned?')) {
+          issuedKeys.forEach(function(k) {
+            k.status = 'returned'; k.returnedAt = Date.now();
+            applySupplyAdjustment('Key Cards – Blank Stock', +1, 'Returned — Unit ' + m.unit + ' (move-out checklist)');
+          });
+          renderKeys(); updateBadges(); renderDash();
+        }
+      }
+    }
+  }
+  // ── Connection 3: Move-out damage task → Maintenance ──
+  if (checked && m.type === 'out' && t.text === 'Any damage noted and photographed') {
+    if (confirm('Log damage as a maintenance issue for Unit ' + m.unit + '?')) {
+      if (!state.maintenance) state.maintenance = [];
+      state.maintenance.push({ id: uid(), unit: m.unit, resident: m.resident, type: 'Damage', priority: 'medium', status: 'open', notes: 'Damage noted during move-out — see move-out checklist and photos', log: [], createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' });
+      scheduleSave(); renderMaint(); updateBadges(); renderDash();
+      toast('Maintenance issue logged for Unit ' + m.unit);
+    }
+  }
   scheduleSave();
   var ci = document.querySelector('#cl-' + moveId + ' .cl-inner'); if (ci) ci.innerHTML = buildCL(m, moveFilter);
   var mci = document.querySelector('#mc-' + moveId + ' .mc-cl'); if (mci) mci.innerHTML = buildCL(m, moveFilter);
@@ -2414,6 +2457,22 @@ function archiveMove(id) {
   var m = (state.moves || []).find(function (x) { return x.id === id; }); if (!m) return;
   m.archivedAt = Date.now(); if (openMoveId === id) openMoveId = null;
   scheduleSave(); renderMoves(); updateBadges(); renderDash(); toast('Archived');
+  // ── Connection 2: Move-in archive → Resident Profiles ──
+  if (m.type === 'in') {
+    var alreadyHasProfile = (state.residentProfiles || []).some(function(p) { return p.unit === m.unit; });
+    if (!alreadyHasProfile) {
+      if (confirm('Create resident profile for ' + m.resident + ', Unit ' + m.unit + '?')) {
+        if (!state.residentProfiles) state.residentProfiles = [];
+        state.residentProfiles.push({ id: uid(), unit: m.unit, name: m.resident, leaseStart: m.date, phone: '', email: '', notes: 'Moved in ' + fmtShort(m.date), pte: 'not-set', tags: [], vip: false, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' });
+        if (m.coResidents && m.coResidents.length) {
+          m.coResidents.forEach(function(cr) {
+            state.residentProfiles.push({ id: uid(), unit: m.unit, name: cr.name, leaseStart: m.date, phone: '', email: '', notes: 'Co-resident — moved in ' + fmtShort(m.date), pte: 'not-set', tags: [], vip: false, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' });
+          });
+        }
+        scheduleSave(); toast('Resident profile created');
+      }
+    }
+  }
 }
 function deleteMove(id) {
   if (!confirm('Delete this move?')) return;
@@ -2606,7 +2665,7 @@ function renderConcierge() {
     html += '<td><select class="ie-sel" onchange="updateConciergeStatus(\'' + c.id + '\',this.value)"><option value="open"' + (c.status==='open'?' selected':'') + '>Open</option><option value="completed"' + (c.status==='completed'?' selected':'') + '>Completed</option></select></td>';
     html += '<td class="text-xs text-2">' + (c.handledBy || '—') + '</td>';
     html += '<td class="text-xs text-3">' + new Date(c.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) + '</td>';
-    html += '<td><button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="toggleConciergeLog(\'' + c.id + '\')" title="Activity log">' + logBtnLabel + '</button> <button class="btn btn-ghost btn-xs" onclick="openEditConcierge(\'' + c.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteConcierge(\'' + c.id + '\')">&#215;</button></td>';
+    html += '<td><button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="toggleConciergeLog(\'' + c.id + '\')" title="Activity log">' + logBtnLabel + '</button> ' + (c.status === 'open' ? '<button onclick="escalateConciergeToMaint(\'' + c.id + '\')" class="btn btn-ghost btn-xs" title="Escalate to Maintenance" style="color:var(--amber)">&#8594; Maint</button> ' : '') + '<button class="btn btn-ghost btn-xs" onclick="openEditConcierge(\'' + c.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteConcierge(\'' + c.id + '\')">&#215;</button></td>';
     html += '</tr>';
     // Activity log sub-row
     var logInputId = 'concierge-log-input-' + c.id;
@@ -2627,6 +2686,18 @@ function renderConcierge() {
   });
   tbody.innerHTML = html;
   setBadge('badge-concierge', open);
+}
+// ── Connection 5: Concierge → Maintenance escalation ──
+function escalateConciergeToMaint(id) {
+  var c = (state.concierge || []).find(function(x) { return x.id === id; }); if (!c) return;
+  if (!confirm('Create a maintenance issue from this concierge request?')) return;
+  var entry = { id: uid(), unit: c.unit || '', resident: c.resident || '', type: 'General', priority: 'medium', status: 'open', notes: 'Escalated from concierge request: ' + c.type + ' — ' + c.details, log: [], createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' };
+  if (!state.maintenance) state.maintenance = [];
+  state.maintenance.push(entry);
+  if (!c.log) c.log = [];
+  c.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: 'Escalated to maintenance' });
+  scheduleSave(); renderMaint(); renderConcierge(); updateBadges(); renderDash();
+  toast('Maintenance issue created from concierge request');
 }
 
 // ─── MAINTENANCE ───
@@ -2713,8 +2784,20 @@ function saveGuest() {
   }
   var gst = { id: uid(), name: name, unit: unit, host: g('gs-host').value.trim(), type: g('gs-type').value, status: g('gs-status').value, notes: g('gs-notes').value.trim(), checkIn: Date.now(), checkOut: null, addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
   if (!state.guests) state.guests = [];
+  // ── Connection 4: Guest one-time key issuance ──
+  var issueKey = g('guest-issue-key') && g('guest-issue-key').checked;
+  if (issueKey) {
+    if (!state.keys) state.keys = [];
+    var guestKeyEntry = { id: uid(), unit: unit, name: name, guest: g('gs-host').value.trim(), type: 'one-time', fob: '', status: 'issued', notes: 'Issued for guest visit — logged from Guest Log', addedBy: currentUser ? currentUser.name : '', issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null, expiry: null, timeout: '', company: '', workArea: '', vendorReturn: '', isReplacement: false, fee: 0, feeAddedToLedger: false, feeWaived: false, feeAddedAt: null, feeAddedBy: '', reachedOut: false, reachedOutAt: null };
+    state.keys.push(guestKeyEntry);
+    gst.linkedKeyId = guestKeyEntry.id;
+    applySupplyAdjustment('Key Cards – Blank Stock', -1, 'Issued for guest — Unit ' + unit);
+    renderKeys();
+  }
   state.guests.push(gst); scheduleSave(); closeModal('modal-guest'); renderGuests(); updateBadges();
-  ['gs-name', 'gs-unit', 'gs-host', 'gs-notes'].forEach(function (id) { g(id).value = ''; }); toast('Guest logged');
+  ['gs-name', 'gs-unit', 'gs-host', 'gs-notes'].forEach(function (id) { g(id).value = ''; });
+  if (g('guest-issue-key')) g('guest-issue-key').checked = false;
+  toast(issueKey ? 'Guest logged + one-time key issued' : 'Guest logged');
 }
 function renderGuests() {
   var list = (state.guests || []).slice();
@@ -2737,7 +2820,25 @@ function renderGuests() {
   tbody.innerHTML = html;
   setBadge('badge-guests', allG.filter(function (gst) { return gst.status === 'in'; }).length);
 }
-function updateGuestStatus(id, val) { var gst = (state.guests || []).find(function (x) { return x.id === id; }); if (!gst) return; gst.status = val; if (val === 'out') gst.checkOut = Date.now(); scheduleSave(); renderGuests(); updateBadges(); }
+function updateGuestStatus(id, val) {
+  var gst = (state.guests || []).find(function (x) { return x.id === id; }); if (!gst) return;
+  gst.status = val;
+  if (val === 'out') {
+    gst.checkOut = Date.now();
+    // ── Connection 4: Guest checkout → prompt to return linked key ──
+    if (gst.linkedKeyId) {
+      var linkedKey = (state.keys || []).find(function(k) { return k.id === gst.linkedKeyId && k.status === 'issued'; });
+      if (linkedKey) {
+        if (confirm('Mark guest key as returned?')) {
+          linkedKey.status = 'returned'; linkedKey.returnedAt = Date.now();
+          applySupplyAdjustment('Key Cards – Blank Stock', +1, 'Returned — guest key Unit ' + gst.unit + ' · ' + gst.name);
+          renderKeys();
+        }
+      }
+    }
+  }
+  scheduleSave(); renderGuests(); updateBadges();
+}
 function deleteGuest(id) { if (!confirm('Remove?')) return; state.guests = (state.guests || []).filter(function (gst) { return gst.id !== id; }); scheduleSave(); renderGuests(); updateBadges(); toast('Removed'); }
 
 // ─── KEYS ───
