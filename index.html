@@ -5030,7 +5030,7 @@ function renderPdAutoBlocks(isLead) {
         content = '<strong>Unit ' + k.unit + ' – ' + k.name + '</strong>' + (k.guest?' / Guest: '+k.guest:'') + ' — One-time key not returned (' + hrs + 'h out, resident contacted) — <strong>$25</strong>';
         defNs = 'Add $25 one-time key non-return fee to resident ledger for Unit ' + k.unit + '.';
       }
-      html += pdAutoRow('fee_'+k.id, content, defNs, !!carriedSet['fee_'+k.id]);
+      html += pdAutoRow('fee_'+k.id, content, defNs, !!carriedSet['fee_'+k.id], true);
     });
     html += '</div>';
   }
