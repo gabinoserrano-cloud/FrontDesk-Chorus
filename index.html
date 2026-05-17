@@ -2456,9 +2456,13 @@ function renderConcierge() {
     html += '</tr>';
     // Activity log sub-row
     var logInputId = 'concierge-log-input-' + c.id;
-    var entriesHtml = log.map(function (e) {
+    var cid = c.id;
+    var entriesHtml = log.map(function (e, idx) {
       var d = new Date(e.ts); var tf = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-      return '<div class="act-log-entry"><span class="act-log-meta">' + tf + (e.by ? ' · ' + e.by : '') + '</span><span class="act-log-note">' + e.note + '</span></div>';
+      return '<div class="act-log-entry" id="cle-' + cid + '-' + idx + '" style="display:flex;align-items:flex-start;gap:4px"><div style="flex:1"><span class="act-log-meta">' + tf + (e.by ? ' · ' + e.by : '') + '</span><span class="act-log-note"> ' + e.note + '</span></div>'
+        + '<button class="btn btn-ghost btn-xs" style="opacity:0.45;flex-shrink:0;padding:1px 4px" onclick="editConciergeLog(\'' + cid + '\',' + idx + ')" title="Edit">✏</button>'
+        + '<button class="btn btn-ghost btn-xs" style="color:var(--red);opacity:0.45;flex-shrink:0;padding:1px 4px" onclick="deleteConciergeLog(\'' + cid + '\',' + idx + ')" title="Delete">×</button>'
+        + '</div>';
     }).join('');
     html += '<tr class="act-log-row" id="concierge-log-' + c.id + '">';
     html += '<td colspan="9"><div class="act-log-inner">';
@@ -2521,9 +2525,13 @@ function renderMaint() {
     html += '</tr>';
     // Activity log sub-row
     var logInputId = 'maint-log-input-' + m.id;
-    var entriesHtml = log.map(function (e) {
+    var mid = m.id;
+    var entriesHtml = log.map(function (e, idx) {
       var d = new Date(e.ts); var tf = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-      return '<div class="act-log-entry"><span class="act-log-meta">' + tf + (e.by ? ' · ' + e.by : '') + '</span><span class="act-log-note">' + e.note + '</span></div>';
+      return '<div class="act-log-entry" id="mle-' + mid + '-' + idx + '" style="display:flex;align-items:flex-start;gap:4px"><div style="flex:1"><span class="act-log-meta">' + tf + (e.by ? ' · ' + e.by : '') + '</span><span class="act-log-note"> ' + e.note + '</span></div>'
+        + '<button class="btn btn-ghost btn-xs" style="opacity:0.45;flex-shrink:0;padding:1px 4px" onclick="editMaintLog(\'' + mid + '\',' + idx + ')" title="Edit">✏</button>'
+        + '<button class="btn btn-ghost btn-xs" style="color:var(--red);opacity:0.45;flex-shrink:0;padding:1px 4px" onclick="deleteMaintLog(\'' + mid + '\',' + idx + ')" title="Delete">×</button>'
+        + '</div>';
     }).join('');
     html += '<tr class="act-log-row" id="maint-log-' + m.id + '">';
     html += '<td colspan="6"><div class="act-log-inner">';
@@ -6737,8 +6745,31 @@ function addMaintLog(id, note) {
   if (!m.log) m.log = m.desc ? [{ ts: m.createdAt, by: m.addedBy || '', note: m.desc }] : [];
   m.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: note });
   scheduleSave(); renderMaint(); toast('Update logged');
-  // Reopen the log row after re-render
   setTimeout(function () { var row = g('maint-log-' + id); if (row) row.classList.add('open'); }, 0);
+}
+function editMaintLog(id, idx) {
+  var el = g('mle-' + id + '-' + idx); if (!el) return;
+  var m = (state.maintenance||[]).find(function(x){return x.id===id;}); if (!m||!m.log||!m.log[idx]) return;
+  var cur = (m.log[idx].note||'').replace(/"/g,'&quot;');
+  el.innerHTML = '<div style="display:flex;gap:5px;flex:1;align-items:center">'
+    + '<input type="text" id="mle-inp-'+id+'-'+idx+'" value="'+cur+'" style="flex:1;font-size:12px" onkeydown="if(event.key===\'Enter\')saveMaintLog(\''+id+'\','+idx+')">'
+    + '<button class="btn btn-secondary btn-xs" onclick="saveMaintLog(\''+id+'\','+idx+')">Save</button>'
+    + '<button class="btn btn-ghost btn-xs" onclick="cancelMaintLog(\''+id+'\','+idx+')">Cancel</button></div>';
+  var inp = g('mle-inp-'+id+'-'+idx); if (inp) inp.focus();
+}
+function saveMaintLog(id, idx) {
+  var inp = g('mle-inp-'+id+'-'+idx); if (!inp) return;
+  var note = inp.value.trim(); if (!note) { toast('Note cannot be empty'); return; }
+  var m = (state.maintenance||[]).find(function(x){return x.id===id;}); if (!m||!m.log||!m.log[idx]) return;
+  m.log[idx].note = note; scheduleSave(); renderMaint(); toast('Log entry updated');
+  setTimeout(function(){var row=g('maint-log-'+id);if(row)row.classList.add('open');},0);
+}
+function cancelMaintLog(id, idx) { renderMaint(); setTimeout(function(){var row=g('maint-log-'+id);if(row)row.classList.add('open');},0); }
+function deleteMaintLog(id, idx) {
+  if (!confirm('Delete this log entry?')) return;
+  var m = (state.maintenance||[]).find(function(x){return x.id===id;}); if (!m||!m.log) return;
+  m.log.splice(idx, 1); scheduleSave(); renderMaint(); toast('Log entry deleted');
+  setTimeout(function(){var row=g('maint-log-'+id);if(row)row.classList.add('open');},0);
 }
 function toggleConciergeLog(id) {
   var row = g('concierge-log-' + id); if (!row) return;
@@ -6752,6 +6783,30 @@ function addConciergeLog(id, note) {
   c.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: note });
   scheduleSave(); renderConcierge(); toast('Update logged');
   setTimeout(function () { var row = g('concierge-log-' + id); if (row) row.classList.add('open'); }, 0);
+}
+function editConciergeLog(id, idx) {
+  var el = g('cle-' + id + '-' + idx); if (!el) return;
+  var c = (state.concierge||[]).find(function(x){return x.id===id;}); if (!c||!c.log||!c.log[idx]) return;
+  var cur = (c.log[idx].note||'').replace(/"/g,'&quot;');
+  el.innerHTML = '<div style="display:flex;gap:5px;flex:1;align-items:center">'
+    + '<input type="text" id="cle-inp-'+id+'-'+idx+'" value="'+cur+'" style="flex:1;font-size:12px" onkeydown="if(event.key===\'Enter\')saveConciergeLog(\''+id+'\','+idx+')">'
+    + '<button class="btn btn-secondary btn-xs" onclick="saveConciergeLog(\''+id+'\','+idx+')">Save</button>'
+    + '<button class="btn btn-ghost btn-xs" onclick="cancelConciergeLog(\''+id+'\','+idx+')">Cancel</button></div>';
+  var inp = g('cle-inp-'+id+'-'+idx); if (inp) inp.focus();
+}
+function saveConciergeLog(id, idx) {
+  var inp = g('cle-inp-'+id+'-'+idx); if (!inp) return;
+  var note = inp.value.trim(); if (!note) { toast('Note cannot be empty'); return; }
+  var c = (state.concierge||[]).find(function(x){return x.id===id;}); if (!c||!c.log||!c.log[idx]) return;
+  c.log[idx].note = note; scheduleSave(); renderConcierge(); toast('Log entry updated');
+  setTimeout(function(){var row=g('concierge-log-'+id);if(row)row.classList.add('open');},0);
+}
+function cancelConciergeLog(id, idx) { renderConcierge(); setTimeout(function(){var row=g('concierge-log-'+id);if(row)row.classList.add('open');},0); }
+function deleteConciergeLog(id, idx) {
+  if (!confirm('Delete this log entry?')) return;
+  var c = (state.concierge||[]).find(function(x){return x.id===id;}); if (!c||!c.log) return;
+  c.log.splice(idx, 1); scheduleSave(); renderConcierge(); toast('Log entry deleted');
+  setTimeout(function(){var row=g('concierge-log-'+id);if(row)row.classList.add('open');},0);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
