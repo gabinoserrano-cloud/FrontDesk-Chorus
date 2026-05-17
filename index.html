@@ -1361,7 +1361,9 @@ var DEFAULT_IN_TASKS = [
   // Keys & Credentials (prepare before move-in day)
   { text: 'Prepare Unit Key(s)', cat: 'Keys & Access', hint: '# of keys: ___ (e.g. 2 unit keys)' },
   { text: 'Prepare Unit Mail Key(s)', cat: 'Keys & Access', hint: '# of mail keys: ___ (e.g. 1 mail key)' },
-  { text: 'Prepare Parking Credentials', cat: 'Parking', hint: 'Vehicle: ___ | Transponder #: ___ | Key tag #: ___ | Valet sticker #: ___' },
+  { text: 'Parking: Vehicle info & transponder issued', cat: 'Parking', hint: 'Vehicle type & color: ___ | Transponder #: ___' },
+  { text: 'Parking: Key tag issued', cat: 'Parking', hint: 'Key tag #: ___' },
+  { text: 'Parking: Valet sticker issued', cat: 'Parking', hint: 'Valet sticker #: ___' },
   // Move-In Day
   { text: 'Confirm move-in date and time window', cat: 'Move In' },
   { text: 'Reserve service elevator', cat: 'Elevator' },
@@ -1386,7 +1388,9 @@ var DEFAULT_OUT_TASKS = [
   { text: 'Any damage noted and photographed', cat: 'Move Out' },
   { text: 'Collect & Verify All Unit Keys', cat: 'Keys & Access' },
   { text: 'Collect & Verify All Unit Mail Keys', cat: 'Keys & Access' },
-  { text: 'Return Parking Credentials', cat: 'Parking', hint: 'Transponder (if not adhered to windshield): ___ | Key tag #: ___ | Valet sticker #: ___' },
+  { text: 'Parking: Transponder returned', cat: 'Parking', hint: 'If not returned or returned damaged, note here (e.g. adhered to windshield / cracked)' },
+  { text: 'Parking: Key tag returned', cat: 'Parking' },
+  { text: 'Parking: Valet sticker returned', cat: 'Parking' },
   { text: 'Mobile key deactivated (Lenel)', cat: 'Keys & Access' },
   { text: 'Parking spot vacated', cat: 'Move Out' },
   { text: 'Mail forwarding reminder given', cat: 'Move Out' },
@@ -6446,35 +6450,51 @@ function resetTasksToDefaults(type) {
 
 function migrateTaskUpdatesV2() {
   if (state.taskMigrationV2) return;
+  // Simple renames for customInTasks
   var inRenames = {
     'Sent Welcome Email': 'Send Welcome Letter',
     'Sent Invite Link to RiseIO': 'Send Invite Link to RiseIO',
     '[1 WEEK BEFORE] Follow-Up Call': 'Pre-Move Follow-Up Call',
     'Create & Prepare Unit Key(s)': 'Prepare Unit Key(s)',
     'Create & Prepare Unit Mail Key(s)': 'Prepare Unit Mail Key(s)',
-    'Create & Prepare Parking Credentials': 'Prepare Parking Credentials',
     'WiFi Activation Link Sent': 'Send WiFi Activation Link'
   };
   var inHints = {
     'Prepare Unit Key(s)': '# of keys: ___ (e.g. 2 unit keys)',
-    'Prepare Unit Mail Key(s)': '# of mail keys: ___ (e.g. 1 mail key)',
-    'Prepare Parking Credentials': 'Vehicle: ___ | Transponder #: ___ | Key tag #: ___ | Valet sticker #: ___'
+    'Prepare Unit Mail Key(s)': '# of mail keys: ___ (e.g. 1 mail key)'
   };
+  // Parking tasks that get exploded into sub-tasks
+  var inParkingExpand = ['Create & Prepare Parking Credentials', 'Prepare Parking Credentials'];
+  var inParkingSubs = [
+    { text: 'Parking: Vehicle info & transponder issued', cat: 'Parking', hint: 'Vehicle type & color: ___ | Transponder #: ___' },
+    { text: 'Parking: Key tag issued', cat: 'Parking', hint: 'Key tag #: ___' },
+    { text: 'Parking: Valet sticker issued', cat: 'Parking', hint: 'Valet sticker #: ___' }
+  ];
   var outRenames = {
     'Initial - Inspection & Elevator Scheduling Message': 'Send Inspection & Move-Out Scheduling Message',
     'All Unit Keys have been Returned': 'Collect & Verify All Unit Keys',
-    'All Unit Mail Keys have been Returned': 'Collect & Verify All Unit Mail Keys',
-    'Parking Credentials have been Returned': 'Return Parking Credentials'
+    'All Unit Mail Keys have been Returned': 'Collect & Verify All Unit Mail Keys'
   };
-  var outHints = {
-    'Return Parking Credentials': 'Transponder (if not adhered to windshield): ___ | Key tag #: ___ | Valet sticker #: ___'
-  };
-  function applyMigration(list, renames, hints, removals) {
+  var outParkingExpand = ['Parking Credentials have been Returned', 'Return Parking Credentials'];
+  var outParkingSubs = [
+    { text: 'Parking: Transponder returned', cat: 'Parking', hint: 'If not returned or returned damaged, note here (e.g. adhered to windshield / cracked)' },
+    { text: 'Parking: Key tag returned', cat: 'Parking', hint: null },
+    { text: 'Parking: Valet sticker returned', cat: 'Parking', hint: null }
+  ];
+  function applyMigration(list, renames, hints, removals, parkingExpand, parkingSubs) {
     if (!list) return list;
     var result = [];
+    var parkingInserted = false;
     list.forEach(function(t) {
       var txt = t.text || '';
-      if (removals && removals.indexOf(txt) !== -1) return; // remove
+      if (removals && removals.indexOf(txt) !== -1) return;
+      if (parkingExpand && parkingExpand.indexOf(txt) !== -1) {
+        if (!parkingInserted) {
+          parkingSubs.forEach(function(s) { result.push({text:s.text, cat:s.cat, hint:s.hint, done:false, id:uid(), note:'', dueDate:null, completedBy:null, completedAt:null}); });
+          parkingInserted = true;
+        }
+        return;
+      }
       var renamed = renames[txt] || txt;
       var hint = hints[renamed] || t.hint || null;
       result.push({text: renamed, cat: t.cat || 'General', hint: hint, done: t.done, id: t.id, note: t.note, dueDate: t.dueDate, completedBy: t.completedBy, completedAt: t.completedAt});
@@ -6483,24 +6503,37 @@ function migrateTaskUpdatesV2() {
   }
   var removeItems = ['Include in Passdown'];
   if (isValidTaskList(state.customInTasks)) {
-    state.customInTasks = applyMigration(state.customInTasks, inRenames, inHints, removeItems);
+    state.customInTasks = applyMigration(state.customInTasks, inRenames, inHints, removeItems, inParkingExpand, inParkingSubs);
   }
   if (isValidTaskList(state.customOutTasks)) {
-    state.customOutTasks = applyMigration(state.customOutTasks, outRenames, outHints, removeItems);
+    state.customOutTasks = applyMigration(state.customOutTasks, outRenames, {}, removeItems, outParkingExpand, outParkingSubs);
   }
-  // Also migrate tasks on existing moves (rename text, add hints)
+  // Also migrate tasks on existing moves
   (state.moves || []).forEach(function(m) {
     if (!m.tasks) return;
     var isIn = m.type === 'in';
     var renames = isIn ? inRenames : outRenames;
-    var hints = isIn ? inHints : outHints;
+    var hints = isIn ? inHints : {};
+    var pExpand = isIn ? inParkingExpand : outParkingExpand;
+    var pSubs = isIn ? inParkingSubs : outParkingSubs;
+    var newTasks = [];
+    var parkingInserted = false;
     m.tasks.forEach(function(t) {
-      var renamed = renames[t.text] || t.text;
+      var txt = t.text || '';
+      if (removeItems.indexOf(txt) !== -1) return;
+      if (pExpand.indexOf(txt) !== -1) {
+        if (!parkingInserted) {
+          pSubs.forEach(function(s){ newTasks.push({text:s.text, cat:s.cat, hint:s.hint, done:false, id:uid(), note:'', dueDate:null, completedBy:null, completedAt:null}); });
+          parkingInserted = true;
+        }
+        return;
+      }
+      var renamed = renames[txt] || txt;
       t.text = renamed;
       if (!t.hint && hints[renamed]) t.hint = hints[renamed];
+      newTasks.push(t);
     });
-    // Remove "Include in Passdown" from existing moves
-    m.tasks = m.tasks.filter(function(t){ return removeItems.indexOf(t.text) === -1; });
+    m.tasks = newTasks;
   });
   state.taskMigrationV2 = true;
   scheduleSave();
