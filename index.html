@@ -856,19 +856,19 @@
       <div class="two-col">
         <div>
           <div class="card mb-12">
-            <div class="card-hdr"><span class="card-title">Default Move-In Tasks</span><span class="card-count" id="in-tasks-count"></span></div>
+            <div class="card-hdr"><span class="card-title">Default Move-In Tasks</span><span class="card-count" id="in-tasks-count"></span><button class="btn btn-ghost btn-sm ml-auto" style="font-size:11px;color:var(--text3)" onclick="resetTasksToDefaults('in')" title="Restore built-in default task list">↺ Reset to defaults</button></div>
             <div class="card-body" style="padding:8px 0" id="settings-in-tasks"></div>
             <div style="padding:10px 14px;border-top:1px solid var(--border2)">
-              <div class="flex gap-8"><input type="text" id="new-in-task" placeholder="New move-in task..." style="flex:1"><select id="new-in-cat" style="width:130px"><option>Move In</option><option>Keys &amp; Access</option><option>Elevator</option><option>Post Move-In</option><option>General</option></select><button class="btn btn-primary btn-sm" onclick="addDefaultTask('in')">Add</button></div>
+              <div class="flex gap-8"><input type="text" id="new-in-task" placeholder="New move-in task..." style="flex:1"><select id="new-in-cat" style="width:130px"><option>Pre Move-In</option><option>Move In</option><option>Keys &amp; Access</option><option>Parking</option><option>Elevator</option><option>Post Move-In</option><option>General</option></select><button class="btn btn-primary btn-sm" onclick="addDefaultTask('in')">Add</button></div>
             </div>
           </div>
         </div>
         <div>
           <div class="card mb-12">
-            <div class="card-hdr"><span class="card-title">Default Move-Out Tasks</span><span class="card-count" id="out-tasks-count"></span></div>
+            <div class="card-hdr"><span class="card-title">Default Move-Out Tasks</span><span class="card-count" id="out-tasks-count"></span><button class="btn btn-ghost btn-sm ml-auto" style="font-size:11px;color:var(--text3)" onclick="resetTasksToDefaults('out')" title="Restore built-in default task list">↺ Reset to defaults</button></div>
             <div class="card-body" style="padding:8px 0" id="settings-out-tasks"></div>
             <div style="padding:10px 14px;border-top:1px solid var(--border2)">
-              <div class="flex gap-8"><input type="text" id="new-out-task" placeholder="New move-out task..." style="flex:1"><select id="new-out-cat" style="width:130px"><option>Move Out</option><option>Keys &amp; Access</option><option>Elevator</option><option>General</option></select><button class="btn btn-primary btn-sm" onclick="addDefaultTask('out')">Add</button></div>
+              <div class="flex gap-8"><input type="text" id="new-out-task" placeholder="New move-out task..." style="flex:1"><select id="new-out-cat" style="width:130px"><option>Move Out</option><option>Keys &amp; Access</option><option>Parking</option><option>Elevator</option><option>General</option></select><button class="btn btn-primary btn-sm" onclick="addDefaultTask('out')">Add</button></div>
             </div>
           </div>
         </div>
@@ -987,7 +987,7 @@
   <div class="modal-hdr"><span class="modal-title" id="modal-task-title">Add Task</span><button class="modal-close" onclick="closeModal('modal-task')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fg"><label>Task Description</label><input id="task-text" type="text" placeholder="e.g. Confirm move time with resident"></div>
-    <div class="fr"><div class="fg"><label>Category</label><select id="task-cat"><option>Move In</option><option>Move Out</option><option>Keys &amp; Access</option><option>Elevator</option><option>Post Move-In</option><option>General</option></select></div><div class="fg"><label>Due Date (optional)</label><input id="task-due" type="date" data-no-autofill></div></div>
+    <div class="fr"><div class="fg"><label>Category</label><select id="task-cat"><option>Pre Move-In</option><option>Move In</option><option>Move Out</option><option>Keys &amp; Access</option><option>Parking</option><option>Elevator</option><option>Post Move-In</option><option>General</option></select></div><div class="fg"><label>Due Date (optional)</label><input id="task-due" type="date" data-no-autofill></div></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-task')">Cancel</button><button class="btn btn-primary" onclick="saveTask()">Add Task</button></div>
 </div></div>
@@ -1353,42 +1353,43 @@ function saveSessionTimeout() {
 }
 
 var DEFAULT_IN_TASKS = [
+  // Pre-Move-In
+  { text: 'Send Welcome Letter', cat: 'Pre Move-In' },
+  { text: 'Send Invite Link to RiseIO', cat: 'Pre Move-In' },
+  { text: 'Pre-Move Follow-Up Call', cat: 'Pre Move-In' },
+  { text: 'Send WiFi Activation Link', cat: 'Pre Move-In' },
+  // Keys & Credentials (prepare before move-in day)
+  { text: 'Prepare Unit Key(s)', cat: 'Keys & Access', hint: '# of keys: ___ (e.g. 2 unit keys)' },
+  { text: 'Prepare Unit Mail Key(s)', cat: 'Keys & Access', hint: '# of mail keys: ___ (e.g. 1 mail key)' },
+  { text: 'Prepare Parking Credentials', cat: 'Parking', hint: 'Vehicle: ___ | Transponder #: ___ | Key tag #: ___ | Valet sticker #: ___' },
+  // Move-In Day
   { text: 'Confirm move-in date and time window', cat: 'Move In' },
-  { text: 'Verify all keys/keycards are ready', cat: 'Keys & Access' },
   { text: 'Reserve service elevator', cat: 'Elevator' },
-  { text: 'Confirm elevator reservation with resident', cat: 'Elevator' },
-  { text: 'Welcome packet prepared', cat: 'Move In' },
-  { text: 'Unit walkthrough completed', cat: 'Move In' },
   { text: 'Confirm Move-In Total collected', cat: 'Move In' },
-  { text: 'Parking/valet info provided (TEZ)', cat: 'Move In' },
-  { text: 'WiFi info provided (BAI Connect)', cat: 'Move In' },
-  { text: 'RiseIO/Sentral app setup reminder given', cat: 'Move In' },
-  { text: 'Bilt rent payment setup confirmed', cat: 'Move In' },
-  { text: 'Amenity booking process explained', cat: 'Move In' },
-  { text: 'Mail/package pickup info given', cat: 'Move In' },
+  { text: 'Unit walkthrough completed', cat: 'Move In' },
   { text: 'Lobby access and fob confirmed', cat: 'Keys & Access' },
   { text: 'Resident signed move-in acknowledgment', cat: 'Move In' },
+  { text: 'Post-move elevator pad removal confirmed', cat: 'Elevator' },
   { text: 'Add resident to building contacts', cat: 'Move In' },
   { text: 'Notify leasing team of completed move-in', cat: 'Move In' },
-  { text: 'Post-move elevator pad removal confirmed', cat: 'Elevator' },
-  { text: 'Any damage noted and reported', cat: 'Move In' },
-  { text: 'Follow-up call scheduled (48hr check-in)', cat: 'Post Move-In' },
-  { text: 'Confirm resident received welcome email', cat: 'Post Move-In' },
-  { text: 'Verify app access (Sentral/Rise) working', cat: 'Post Move-In' },
+  // Post Move-In
+  { text: 'Follow-up call (48hr check-in)', cat: 'Post Move-In' },
+  { text: 'Verify app access (RiseIO/Sentral) working', cat: 'Post Move-In' },
   { text: 'Confirm WiFi connected successfully', cat: 'Post Move-In' },
   { text: 'Check in on any outstanding issues from move day', cat: 'Post Move-In' }
 ];
 var DEFAULT_OUT_TASKS = [
+  { text: 'Send Inspection & Move-Out Scheduling Message', cat: 'Move Out' },
   { text: 'Confirm move-out date and time window', cat: 'Move Out' },
   { text: 'Reserve service elevator', cat: 'Elevator' },
-  { text: 'Confirm elevator reservation with resident', cat: 'Elevator' },
-  { text: 'All keys/fobs returned and verified', cat: 'Keys & Access' },
+  { text: 'Unit inspection completed and documented', cat: 'Move Out' },
+  { text: 'Any damage noted and photographed', cat: 'Move Out' },
+  { text: 'Collect & Verify All Unit Keys', cat: 'Keys & Access' },
+  { text: 'Collect & Verify All Unit Mail Keys', cat: 'Keys & Access' },
+  { text: 'Return Parking Credentials', cat: 'Parking', hint: 'Transponder (if not adhered to windshield): ___ | Key tag #: ___ | Valet sticker #: ___' },
   { text: 'Mobile key deactivated (Lenel)', cat: 'Keys & Access' },
   { text: 'Parking spot vacated', cat: 'Move Out' },
   { text: 'Mail forwarding reminder given', cat: 'Move Out' },
-  { text: 'Unit inspection scheduled', cat: 'Move Out' },
-  { text: 'Unit inspection completed and documented', cat: 'Move Out' },
-  { text: 'Any damage noted and photographed', cat: 'Move Out' },
   { text: 'Security deposit process explained', cat: 'Move Out' },
   { text: 'Elevator pads removed after move', cat: 'Elevator' },
   { text: 'Unit cleaned and ready for next resident', cat: 'Move Out' },
@@ -1939,7 +1940,7 @@ function saveMove() {
   // New move
   var customIn = state.customInTasks || DEFAULT_IN_TASKS;
   var customOut = state.customOutTasks || DEFAULT_OUT_TASKS;
-  var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null }; });
+  var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null }; });
   var m = { id: uid(), unit: unit, resident: resident, date: date, type: moveType, total: total, notes: notes, apptDate: apptDate, apptTime: apptTime, tasks: tasks, archivedAt: null, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : 'Front Desk' };
   if (!state.moves) state.moves = [];
   state.moves.push(m);
@@ -1988,15 +1989,40 @@ function buildCL(m, filterCat) {
     html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTask(\'' + m.id + '\',\'' + t.id + '\',this.checked)">';
     // Editable task text
     html += '<input type="text" class="cl-text-input ' + (t.done ? 'done' : '') + '" value="' + (t.text || t.label || '').replace(/"/g, '&quot;') + '" onblur="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'text\',this.value)" onclick="event.stopPropagation()">';
-    // Editable due date
+    // Completed by/at tag
+    if (t.done && (t.completedBy || t.completedAt)) {
+      var doneTag = '';
+      if (t.completedAt) {
+        var d = new Date(t.completedAt);
+        var tf = d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+        doneTag = tf;
+      }
+      var parts = [];
+      if (t.completedBy) parts.push('by ' + t.completedBy);
+      if (doneTag) parts.push(doneTag);
+      html += '<span style="font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0">' + parts.join(' · ') + '</span>';
+    }
+    // Note button
+    var hasNote = t.note && t.note.trim();
+    html += '<button class="btn btn-ghost btn-xs" style="padding:1px 4px;flex-shrink:0;opacity:' + (hasNote ? '1' : '0.35') + '" title="Note" onclick="event.stopPropagation();toggleTaskNote(\'' + t.id + '\')">' + (hasNote ? '💬' : '💬') + '</button>';
+    // ··· button
+    html += '<button class="btn btn-ghost btn-xs" style="padding:1px 5px;flex-shrink:0" title="More options" onclick="event.stopPropagation();toggleTaskExtra(\'' + t.id + '\')">···</button>';
+    // Delete button
+    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);padding:1px 5px;flex-shrink:0" onclick="deleteTask(\'' + m.id + '\',\'' + t.id + '\')">x</button>';
+    html += '</div>';
+    // Note textarea (hidden by default)
+    html += '<div id="task-note-' + t.id + '" style="display:none;padding:0 4px 4px 28px" onclick="event.stopPropagation()">';
+    var notePh = t.hint ? t.hint : 'Add a note about this task…';
+    html += '<textarea rows="2" style="width:100%;font-size:12px;resize:vertical;margin-top:4px" placeholder="' + notePh.replace(/"/g,'&quot;') + '" onblur="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'note\',this.value)">' + (t.note || '').replace(/</g,'&lt;') + '</textarea>';
+    html += '</div>';
+    // Extra options (date + category, hidden by default)
+    html += '<div id="task-extra-' + t.id + '" style="display:none;padding:0 4px 4px 28px" onclick="event.stopPropagation()">';
     html += '<input type="date" class="cl-due-input" value="' + (t.dueDate || '') + '" title="Due date" onchange="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'dueDate\',this.value)" onclick="event.stopPropagation()">';
-    // Editable category
     html += '<select class="cl-cat-input" onchange="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'cat\',this.value)" onclick="event.stopPropagation()">';
-    ['Move In','Move Out','Keys & Access','Elevator','Post Move-In','General'].forEach(function(cat) {
+    ['Pre Move-In','Move In','Move Out','Keys & Access','Parking','Elevator','Post Move-In','General'].forEach(function(cat) {
       html += '<option value="' + cat + '" ' + (t.cat === cat ? 'selected' : '') + '>' + cat + '</option>';
     });
     html += '</select>';
-    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);padding:1px 5px;flex-shrink:0" onclick="deleteTask(\'' + m.id + '\',\'' + t.id + '\')">x</button>';
     html += '</div>';
   });
   if (allDone) {
@@ -2032,6 +2058,17 @@ function updateTaskField(moveId, taskId, field, value) {
   var total = (m.tasks || []).length;
   if (ci) ci.textContent = done + '/' + total + ' tasks';
   if (mci) mci.textContent = done + '/' + total + ' tasks';
+}
+
+function toggleTaskNote(taskId) {
+  var el = g('task-note-' + taskId); if (!el) return;
+  var hidden = el.style.display === 'none';
+  el.style.display = hidden ? '' : 'none';
+  if (hidden) { var ta = el.querySelector('textarea'); if (ta) ta.focus(); }
+}
+function toggleTaskExtra(taskId) {
+  var el = g('task-extra-' + taskId); if (!el) return;
+  el.style.display = (el.style.display === 'none') ? '' : 'none';
 }
 
 function renderMoves() {
@@ -2224,7 +2261,10 @@ function toggleCL(id) {
 function toggleTask(moveId, taskId, checked) {
   var m = (state.moves || []).find(function (x) { return x.id === moveId; }); if (!m) return;
   var t = (m.tasks || []).find(function (x) { return x.id === taskId; }); if (!t) return;
-  t.done = checked; scheduleSave();
+  t.done = checked;
+  if (checked) { t.completedBy = currentUser ? currentUser.name : ''; t.completedAt = Date.now(); }
+  else { t.completedBy = null; t.completedAt = null; }
+  scheduleSave();
   var ci = document.querySelector('#cl-' + moveId + ' .cl-inner'); if (ci) ci.innerHTML = buildCL(m, moveFilter);
   var mci = document.querySelector('#mc-' + moveId + ' .mc-cl'); if (mci) mci.innerHTML = buildCL(m, moveFilter);
   updateBadges(); renderDash();
@@ -5336,7 +5376,7 @@ function applyImport(type, rows) {
       } else {
         var customIn = state.customInTasks || DEFAULT_IN_TASKS;
         var customOut = state.customOutTasks || DEFAULT_OUT_TASKS;
-        var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null }; });
+        var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null }; });
         state.moves.push({ id: uid(), unit: unit, resident: resident||'', date: date, type: moveType, time: time, total: total, elevator: elevator||'no', notes: notes, tasks: tasks, archivedAt: null, createdAt: Date.now() });
         added++; preview.push({ action:'added', label: (resident||unit) + ' Unit ' + unit + ' ' + date });
       }
@@ -6338,7 +6378,7 @@ function renderTaskList(type) {
     var dnBtn = '<button class="stask-arrow" onclick="moveTask(\'' + type + '\',' + i + ',1)" title="Move down">&#9660;</button>';
     var rmBtn = '<button style="color:var(--red);flex-shrink:0;background:none;border:none;cursor:pointer;font-size:16px;padding:4px 8px;line-height:1;border-radius:4px" onclick="removeDefaultTask(\'' + type + '\',' + i + ')">&#x2715;</button>';
     var catOpts = '';
-    ['Move In', 'Move Out', 'Keys & Access', 'Elevator', 'Post Move-In', 'General'].forEach(function (cat) {
+    ['Pre Move-In', 'Move In', 'Move Out', 'Keys & Access', 'Parking', 'Elevator', 'Post Move-In', 'General'].forEach(function (cat) {
       catOpts += '<option value="' + cat + '" ' + (t.cat === cat ? 'selected' : '') + '>' + cat + '</option>';
     });
     var catSel = '<select class="stask-cat ie-sel" onchange="updateDefaultTask(\'' + type + '\',' + i + ',\'cat\',this.value)">' + catOpts + '</select>';
@@ -6351,9 +6391,9 @@ function renderTaskList(type) {
 
 function ensureCustomTasks(type) {
   if (type === 'in') {
-    if (!isValidTaskList(state.customInTasks)) state.customInTasks = DEFAULT_IN_TASKS.map(function(t){ return {text:t.text,cat:t.cat}; });
+    if (!isValidTaskList(state.customInTasks)) state.customInTasks = DEFAULT_IN_TASKS.map(function(t){ return {text:t.text,cat:t.cat,hint:t.hint||null}; });
   } else {
-    if (!isValidTaskList(state.customOutTasks)) state.customOutTasks = DEFAULT_OUT_TASKS.map(function(t){ return {text:t.text,cat:t.cat}; });
+    if (!isValidTaskList(state.customOutTasks)) state.customOutTasks = DEFAULT_OUT_TASKS.map(function(t){ return {text:t.text,cat:t.cat,hint:t.hint||null}; });
   }
 }
 
@@ -6391,6 +6431,79 @@ function moveTask(type, idx, dir) {
   if (newIdx < 0 || newIdx >= list.length) return;
   var temp = list[idx]; list[idx] = list[newIdx]; list[newIdx] = temp;
   scheduleSave(); renderTaskList(type);
+}
+
+function resetTasksToDefaults(type) {
+  var label = type === 'in' ? 'move-in' : 'move-out';
+  if (!confirm('Replace your current ' + label + ' task list with the updated defaults? This cannot be undone.')) return;
+  var defaults = type === 'in' ? DEFAULT_IN_TASKS : DEFAULT_OUT_TASKS;
+  var copy = defaults.map(function(t){ return {text:t.text, cat:t.cat, hint:t.hint||null}; });
+  if (type === 'in') state.customInTasks = copy;
+  else state.customOutTasks = copy;
+  scheduleSave(); renderTaskList(type);
+  toast((type === 'in' ? 'Move-in' : 'Move-out') + ' tasks reset to defaults');
+}
+
+function migrateTaskUpdatesV2() {
+  if (state.taskMigrationV2) return;
+  var inRenames = {
+    'Sent Welcome Email': 'Send Welcome Letter',
+    'Sent Invite Link to RiseIO': 'Send Invite Link to RiseIO',
+    '[1 WEEK BEFORE] Follow-Up Call': 'Pre-Move Follow-Up Call',
+    'Create & Prepare Unit Key(s)': 'Prepare Unit Key(s)',
+    'Create & Prepare Unit Mail Key(s)': 'Prepare Unit Mail Key(s)',
+    'Create & Prepare Parking Credentials': 'Prepare Parking Credentials',
+    'WiFi Activation Link Sent': 'Send WiFi Activation Link'
+  };
+  var inHints = {
+    'Prepare Unit Key(s)': '# of keys: ___ (e.g. 2 unit keys)',
+    'Prepare Unit Mail Key(s)': '# of mail keys: ___ (e.g. 1 mail key)',
+    'Prepare Parking Credentials': 'Vehicle: ___ | Transponder #: ___ | Key tag #: ___ | Valet sticker #: ___'
+  };
+  var outRenames = {
+    'Initial - Inspection & Elevator Scheduling Message': 'Send Inspection & Move-Out Scheduling Message',
+    'All Unit Keys have been Returned': 'Collect & Verify All Unit Keys',
+    'All Unit Mail Keys have been Returned': 'Collect & Verify All Unit Mail Keys',
+    'Parking Credentials have been Returned': 'Return Parking Credentials'
+  };
+  var outHints = {
+    'Return Parking Credentials': 'Transponder (if not adhered to windshield): ___ | Key tag #: ___ | Valet sticker #: ___'
+  };
+  function applyMigration(list, renames, hints, removals) {
+    if (!list) return list;
+    var result = [];
+    list.forEach(function(t) {
+      var txt = t.text || '';
+      if (removals && removals.indexOf(txt) !== -1) return; // remove
+      var renamed = renames[txt] || txt;
+      var hint = hints[renamed] || t.hint || null;
+      result.push({text: renamed, cat: t.cat || 'General', hint: hint, done: t.done, id: t.id, note: t.note, dueDate: t.dueDate, completedBy: t.completedBy, completedAt: t.completedAt});
+    });
+    return result;
+  }
+  var removeItems = ['Include in Passdown'];
+  if (isValidTaskList(state.customInTasks)) {
+    state.customInTasks = applyMigration(state.customInTasks, inRenames, inHints, removeItems);
+  }
+  if (isValidTaskList(state.customOutTasks)) {
+    state.customOutTasks = applyMigration(state.customOutTasks, outRenames, outHints, removeItems);
+  }
+  // Also migrate tasks on existing moves (rename text, add hints)
+  (state.moves || []).forEach(function(m) {
+    if (!m.tasks) return;
+    var isIn = m.type === 'in';
+    var renames = isIn ? inRenames : outRenames;
+    var hints = isIn ? inHints : outHints;
+    m.tasks.forEach(function(t) {
+      var renamed = renames[t.text] || t.text;
+      t.text = renamed;
+      if (!t.hint && hints[renamed]) t.hint = hints[renamed];
+    });
+    // Remove "Include in Passdown" from existing moves
+    m.tasks = m.tasks.filter(function(t){ return removeItems.indexOf(t.text) === -1; });
+  });
+  state.taskMigrationV2 = true;
+  scheduleSave();
 }
 
 // ─── LOGIN ───
@@ -6673,6 +6786,7 @@ async function init() {
   var pendingScanId = null;
   try { var params = new URLSearchParams(window.location.search); pendingScanId = params.get('scan'); } catch(e) {}
   await pullCloud();
+  migrateTaskUpdatesV2();
   lastSyncTs = Date.now();
   if (pendingScanId) {
     // Page opened via QR code — hide the dashboard entirely until after the scan
