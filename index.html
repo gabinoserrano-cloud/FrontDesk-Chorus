@@ -4272,7 +4272,7 @@ function renderPdAutoBlocks(isLead) {
       var ns = isMoveCompleted(m)
         ? ('Move-in completed' + (postPendingNs.length ? ' — ' + postPendingNs.length + ' post move-in task(s) still pending.' : ' — all tasks done.'))
         : (function(){ var pend=(m.tasks||[]).filter(function(tk){return !tk.done&&tk.cat!=='Post Move-In';}); return pend.length ? pend.length+' task(s) still pending — review checklist.' : 'All tasks complete — ready for move-in.'; }());
-      html += pdAutoRow('in_' + m.id, content, ns, !!carriedSet['in_'+m.id], isMoveCompleted(m));
+      html += pdAutoRow('in_' + m.id, content, ns, !!carriedSet['in_'+m.id]);
     });
     html += '</div>';
 
@@ -4289,7 +4289,7 @@ function renderPdAutoBlocks(isLead) {
       var nsOut = isMoveCompleted(m)
         ? ('Move-out completed' + (postPendingOut.length ? ' — ' + postPendingOut.length + ' post move-out task(s) still pending.' : ' — all tasks done.'))
         : 'Confirm key return and unit walk-through upon move-out.';
-      html += pdAutoRow('out_' + m.id, content, nsOut, !!carriedSet['out_'+m.id], isMoveCompleted(m));
+      html += pdAutoRow('out_' + m.id, content, nsOut, !!carriedSet['out_'+m.id]);
     });
     html += '</div>';
   }
@@ -4305,7 +4305,7 @@ function renderPdAutoBlocks(isLead) {
     var content = tag + '<strong>' + a.space + '</strong> – ' + a.resident + ' (Unit ' + a.unit + ')';
     if (a.start) content += ' ' + fmtTime(a.start) + (a.end ? '–' + fmtTime(a.end) : '');
     if (a.notes) content += ' | ' + a.notes;
-    html += pdAutoRow('am_' + a.id, content, 'Confirm booking details and ensure space is prepared.', !!carriedSet['am_'+a.id], true);
+    html += pdAutoRow('am_' + a.id, content, 'Confirm booking details and ensure space is prepared.', !!carriedSet['am_'+a.id]);
   });
   html += '</div>';
 
@@ -4378,7 +4378,7 @@ function renderPdAutoBlocks(isLead) {
         content = '<strong>Unit ' + k.unit + ' – ' + k.name + '</strong>' + (k.guest?' / Guest: '+k.guest:'') + ' — One-time key not returned (' + hrs + 'h out, resident contacted) — <strong>$25</strong>';
         defNs = 'Add $25 one-time key non-return fee to resident ledger for Unit ' + k.unit + '.';
       }
-      html += pdAutoRow('fee_'+k.id, content, defNs, !!carriedSet['fee_'+k.id], true);
+      html += pdAutoRow('fee_'+k.id, content, defNs, !!carriedSet['fee_'+k.id]);
     });
     html += '</div>';
   }
