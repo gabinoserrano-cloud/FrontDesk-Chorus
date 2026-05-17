@@ -53,6 +53,7 @@
   .nav-item .icon{width:16px;text-align:center;font-size:14px;flex-shrink:0}
   .badge{margin-left:auto;background:#4E8A70;color:#141C1C;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;font-family:var(--font-mono);min-width:18px;text-align:center;display:none}
   .badge.vis{display:block}
+  .badge.badge-red{background:var(--red);color:#fff}
   .sb-footer{margin-top:auto;padding:10px 10px 14px;border-top:0.5px solid rgba(78,138,112,0.18);display:flex;flex-direction:column;gap:4px}
   .footer-btn{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:var(--radius);font-size:11.5px;color:rgba(255,255,255,0.38);cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;width:100%;text-align:left;transition:background .1s;white-space:nowrap}
   .footer-btn:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.75)}
@@ -1084,7 +1085,7 @@
     <div id="sec-other-wrap" style="display:none"><div class="fg"><label>Describe Incident Type</label><input id="sec-other" type="text" placeholder="Describe the incident type"></div></div>
     <div class="fr"><div class="fg"><label>Location</label><input id="sec-location" type="text" placeholder="e.g. Lobby, Garage, Rooftop"></div>
     <div class="fg"><label>Handled By</label><select id="sec-handled"><option value="Team member">Team Member</option><option value="Team member + security">Team + Security</option><option value="Security called">Security Called</option><option value="SFPD called">SFPD Called</option><option value="Team member + SFPD">Team + SFPD</option></select></div></div>
-    <div class="fr"><div class="fg"><label>Status</label><select id="sec-status"><option value="resolved">Resolved</option><option value="monitoring">Monitoring</option></select></div></div>
+    <div class="fr"><div class="fg"><label>Unit # <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="sec-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Status</label><select id="sec-status"><option value="resolved">Resolved</option><option value="monitoring">Monitoring</option></select></div></div>
     <div class="fg"><label>Notes</label><textarea id="sec-notes" rows="3" placeholder="Describe what happened and how it was handled..."></textarea></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-security')">Cancel</button><button class="btn btn-primary" id="modal-security-savebtn" onclick="saveSecurity()">Log Incident</button></div>
@@ -1729,10 +1730,12 @@ function updateBadges() {
   var crN = (state.concierge || []).filter(function (c) { return c.status === 'open'; }).length;
   var secN = (state.security||[]).filter(function(s){ return s.date===today() || s.status==='monitoring'; }).length;
   var supLow = (state.supplies || []).filter(function(s){ return s.lowAt != null && s.qty <= s.lowAt; }).length;
+  var supOut = (state.supplies || []).filter(function(s){ return s.qty === 0; }).length;
   setBadge('badge-moves', mN); setBadge('badge-vacant', vN); setBadge('badge-maint', mtN);
   setBadge('badge-guests', gN); setBadge('badge-keys', kN); setBadge('badge-amenities', aN);
   setBadge('badge-tours', trN); setBadge('badge-todos', tdN); setBadge('badge-laf', lN);
   setBadge('badge-concierge', crN); setBadge('badge-security', secN); setBadge('badge-supplies', supLow);
+  var supBadge = g('badge-supplies'); if (supBadge) supBadge.classList.toggle('badge-red', supOut > 0);
   setMBadge('mb-moves', mN); setMBadge('mb-todos', tdN); setMBadge('mb-keys', kN);
 }
 function setBadge(id, n) { var e = g(id); if (!e) return; e.textContent = n; e.classList.toggle('vis', n > 0); }
@@ -3168,6 +3171,7 @@ function openAddSecurity() {
   var now = new Date(); g('sec-time').value = ('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2);
   g('sec-type').value = 'Unhoused individual — removed by staff'; g('sec-handled').value = 'Team member';
   g('sec-status').value = 'resolved'; g('sec-location').value = ''; g('sec-notes').value = '';
+  var su=g('sec-unit'); if(su) su.value='';
   var ow=g('sec-other'); if(ow) ow.value=''; secTypeChange();
   openModal('modal-security');
 }
@@ -3183,6 +3187,7 @@ function openEditSecurity(id) {
   secTypeChange();
   g('sec-location').value=s.location||''; g('sec-handled').value=s.handledBy||'Team member';
   g('sec-status').value=s.status||'resolved'; g('sec-notes').value=s.notes||'';
+  var su=g('sec-unit'); if(su) su.value=s.unit||'';
   openModal('modal-security');
 }
 function saveSecurity() {
@@ -3190,7 +3195,8 @@ function saveSecurity() {
   var typeVal=g('sec-type').value; var type=typeVal==='Other'?(g('sec-other').value.trim()||'Other'):typeVal;
   var location=g('sec-location').value.trim(), handledBy=g('sec-handled').value;
   if (!date||!type||!location) { toast('Fill in date, type, and location'); return; }
-  var data = { date:date, time:time, type:type, location:location, handledBy:handledBy, status:g('sec-status').value, notes:g('sec-notes').value.trim() };
+  var secUnit = g('sec-unit') ? g('sec-unit').value.trim() : '';
+  var data = { date:date, time:time, type:type, location:location, handledBy:handledBy, status:g('sec-status').value, notes:g('sec-notes').value.trim(), unit:secUnit };
   if (editingSecurityId) {
     var s=(state.security||[]).find(function(x){return x.id===editingSecurityId;}); if(!s) return;
     Object.assign(s, data); editingSecurityId=null;
@@ -4269,7 +4275,7 @@ function renderLAF() {
   if (!list.length) { tbody.innerHTML = '<tr><td colspan="7" class="tbl-empty">No items logged.</td></tr>'; return; }
   var html = '';
   list.forEach(function (i) {
-    var days = Math.floor((Date.now() - i.loggedAt) / 86400000);
+    var days = i.loggedAt ? Math.floor((Date.now() - i.loggedAt) / 86400000) : 0;
     var overdue = !i.claimedAt && days >= expiryDays;
     var statusCell = i.claimedAt
       ? '<span style="color:var(--green);font-size:12px">&#10003; ' + new Date(i.claimedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span>'
@@ -4540,7 +4546,7 @@ function saveSupply() {
   } else {
     state.supplies.push({ id: uid(), name: name, cat: cat, unit: unit, qty: qty, lowAt: lowAt, notes: notes, updatedAt: Date.now(), updatedBy: by });
   }
-  checkSupplyLowStockTodos(); scheduleSave(); closeModal('modal-supply'); renderSupplies(); updateBadges(); toast(editingSupplyId ? 'Item updated' : 'Item added');
+  checkSupplyLowStockTodos(); scheduleSave(); closeModal('modal-supply'); renderSupplies(); updateBadges(); if(curSec==='todos') renderTodos(); toast(editingSupplyId ? 'Item updated' : 'Item added');
 }
 
 function checkSupplyLowStockTodos() {
@@ -4585,6 +4591,7 @@ function applySupplyAdjustment(supName, delta, note) {
   s.log.push({ ts: Date.now(), by: by, delta: delta, prevQty: prevQty, newQty: s.qty, note: note });
   checkSupplyLowStockTodos(); scheduleSave(); updateBadges(); renderDash();
   if (curSec === 'supplies') renderSupplies();
+  if (curSec === 'todos') renderTodos();
 }
 
 function adjustSupply(id, delta) {
@@ -4597,7 +4604,7 @@ function adjustSupply(id, delta) {
   s.qty = Math.max(0, prevQty + delta);
   s.updatedAt = Date.now(); s.updatedBy = by;
   s.log.push({ ts: Date.now(), by: by, delta: delta, prevQty: prevQty, newQty: s.qty, note: 'Manual adjustment' });
-  checkSupplyLowStockTodos(); scheduleSave(); renderSupplies(); updateBadges(); renderDash();
+  checkSupplyLowStockTodos(); scheduleSave(); renderSupplies(); updateBadges(); renderDash(); if(curSec==='todos') renderTodos();
 }
 
 function setSupplyQtyPrompt(id) {
@@ -4614,7 +4621,7 @@ function setSupplyQtyPrompt(id) {
   s.qty = n;
   s.updatedAt = Date.now(); s.updatedBy = by;
   s.log.push({ ts: Date.now(), by: by, delta: n - prevQty, prevQty: prevQty, newQty: n, note: 'Set manually' });
-  checkSupplyLowStockTodos(); scheduleSave(); renderSupplies(); updateBadges(); renderDash();
+  checkSupplyLowStockTodos(); scheduleSave(); renderSupplies(); updateBadges(); renderDash(); if(curSec==='todos') renderTodos();
 }
 
 function deleteSupply(id) {
@@ -5215,7 +5222,7 @@ function generatePassdown() {
     var apptD = m.apptDate || m.date;
     if (leaseEnd > t) return false; // lease hasn't ended yet
     if (apptD > t) return false;    // appointment hasn't happened yet
-    var keyTask = (m.tasks || []).find(function(tk){ return tk.text === 'Collect & Verify All Unit Keys'; });
+    var keyTask = (m.tasks || []).find(function(tk){ return tk.cat === 'Keys & Access' && /unit keys/i.test(tk.text); });
     return keyTask && !keyTask.done;
   });
   if (outstandingKeys.length) {
@@ -5279,7 +5286,7 @@ function generatePassdown() {
   if (flaggedLAF.length) {
     out += '\n📦 Lost & Found — Follow Up\n';
     flaggedLAF.forEach(function(i) {
-      var days = Math.floor((Date.now() - i.loggedAt) / 86400000);
+      var days = i.loggedAt ? Math.floor((Date.now() - i.loggedAt) / 86400000) : 0;
       out += i.desc + (i.location ? ' — found at ' + i.location : '') + ' (' + days + 'd ago)\n';
       out += 'Next Step: ' + pdNote('laf_'+i.id, 'Follow up on this item — contact resident or arrange for disposal if expired.') + '\n';
     });
@@ -6412,7 +6419,7 @@ var GUIDE_DATA = [
     html:'<h4>What It Stores</h4><p>Per-unit profiles with: resident name, preferred/nickname, phone number, birthday, lease anniversary, special instructions, PTE (Permission to Enter) status, and general notes.</p><h4>PTE Status</h4><ul><li><strong>Granted</strong> — resident has authorized entry for maintenance or staff</li><li><strong>Denied</strong> — resident does not authorize entry without prior notice</li><li><strong>Not Set</strong> — no preference on file yet</li></ul><h4>Package Team Banner</h4><p>A highlighted banner at the top of Resident Profiles surfaces any residents with special package delivery instructions — a quick reference for the package team without digging through individual profiles.</p><h4>Tabs</h4><p>Profiles are grouped by PTE status: All, PTE Granted, PTE Denied, Not Set. The count in each tab updates live.</p>' },
 
   { id:'g-passdown', icon:'📋', title:'Daily Passdown', keywords:'passdown shift generate preview save copy history build draft am pm overnight lead staff next step move key amenity concierge edit exclude override',
-    html:'<h4>Overview</h4><p>The Daily Passdown section lets you build, preview, and save shift handoff notes. The left column is the <strong>Build</strong> panel; the right column is <strong>Passdown History</strong>.</p><h4>Selecting a Shift</h4><p>Choose AM, PM, or Overnight from the Shift dropdown. This filters auto-populated items to only show entries relevant to that shift\'s time window.</p><h4>Auto-Populated Blocks</h4><p>These pull live data automatically — no manual entry needed:</p><ul><li>🗝 <strong>One-Time Keys Still Out</strong> — any keys currently in "issued" status</li><li>🚛 <strong>Move-Ins</strong> — today\'s move-ins for this shift (admins also see upcoming days)</li><li>📦 <strong>Move-Outs</strong> — today\'s move-outs for this shift (admins also see upcoming)</li><li>🎉 <strong>Amenity Bookings</strong> — today\'s bookings during the selected shift window</li><li>🎭 <strong>Open Concierge Requests</strong> — all open requests regardless of shift</li></ul><p>Completed moves (appointment passed + all main tasks done) show a green <strong>✓ Completed</strong> badge automatically.</p><h4>Editing Next Steps in the Draft</h4><p>Every auto-block item has an editable <strong>Next step…</strong> field below it. The field is pre-filled with a smart default. Click it and type to override — your custom text carries into the generated passdown when you click Generate. Leave it as-is to use the default.</p><h4>Excluding Items</h4><p>Click the <strong>–</strong> button on any item to exclude it from the passdown. The item grays out with a strikethrough. Click <strong>＋</strong> to re-include it. Exclusions persist while the draft is active.</p><h4>Look Ahead <span style="font-size:10px;font-weight:400;color:var(--text3)">(admin only)</span></h4><p>Set to "Today + Tomorrow" or "Today + 2 days" to pull upcoming moves and amenities into the passdown for advance notice.</p><h4>Free-Entry Sections</h4><p>These sections are for items you add manually:</p><ul><li><strong>Admin users:</strong> 🔑 Keys / Access, 🅿️ Parking, 👤 Resident Matters, 📢 Policy Reminders</li><li><strong>Staff users:</strong> 📝 Shift Notes</li></ul><p>Click <strong>+ Add Item</strong> in any section, fill in the form (unit, resident, description, next step), and save. Items appear as cards and can be removed with ×.</p><h4>Generating</h4><p>Click <strong>Generate</strong> to build the formatted passdown text in the Preview area. The preview is a fully editable textarea — type freely to add context, adjust wording, or remove anything before saving.</p><h4>Saving &amp; Copying</h4><ul><li><strong>Save</strong> — saves the passdown to History, attributed to your account</li><li><strong>Copy</strong> — copies the text to your clipboard for pasting into email or Slack</li><li><strong>Clear draft</strong> — resets all build blocks and clears the preview</li></ul><h4>Passdown History</h4><p>Saved passdowns appear on the right. Admins see all staff passdowns; staff see the last 48 hours. Each entry can be expanded, copied, edited (loads it back into the preview for revision), or deleted (author or admin only).</p><div class="guide-tip">💡 Clicking <strong>Passdown</strong> from the Move Ins / Outs section jumps here with today\'s moves already loaded.</div>' },
+    html:'<h4>Overview</h4><p>The Daily Passdown section lets you build, preview, and save shift handoff notes. The left column is the <strong>Build</strong> panel; the right column is <strong>Passdown History</strong>.</p><h4>Selecting a Shift</h4><p>Choose AM, PM, or Overnight from the Shift dropdown. This filters auto-populated items to only show entries relevant to that shift\'s time window.</p><h4>Auto-Populated Blocks</h4><p>These pull live data automatically — no manual entry needed:</p><ul><li>🗝 <strong>One-Time Keys Still Out</strong> — any keys currently in "issued" status</li><li>🗝 <strong>Outstanding Key Returns</strong> — move-outs whose lease has ended and key collection task is still unchecked</li><li>🚛 <strong>Move-Ins</strong> — today\'s move-ins for this shift (admins also see upcoming days)</li><li>📦 <strong>Move-Outs</strong> — today\'s move-outs for this shift (admins also see upcoming)</li><li>🎉 <strong>Amenity Bookings</strong> — today\'s bookings during the selected shift window</li><li>🎭 <strong>Open Concierge Requests</strong> — all open requests regardless of shift</li><li>📦 <strong>L&amp;F Follow Up</strong> — lost &amp; found items manually flagged for passdown</li><li>💳 <strong>Charges to Add to Ledger</strong> — replacement key cards ($100) and unreturned one-time keys ($25) with outstanding fees</li></ul><p>Completed moves (appointment passed + all main tasks done) show a green <strong>✓ Completed</strong> badge automatically.</p><h4>Editing Next Steps in the Draft</h4><p>Every auto-block item has an editable <strong>Next step…</strong> field below it. The field is pre-filled with a smart default. Click it and type to override — your custom text carries into the generated passdown when you click Generate. Leave it as-is to use the default.</p><h4>Excluding Items</h4><p>Click the <strong>–</strong> button on any item to exclude it from the passdown. The item grays out with a strikethrough. Click <strong>＋</strong> to re-include it. Exclusions persist while the draft is active.</p><h4>Look Ahead <span style="font-size:10px;font-weight:400;color:var(--text3)">(admin only)</span></h4><p>Set to "Today + Tomorrow" or "Today + 2 days" to pull upcoming moves and amenities into the passdown for advance notice.</p><h4>Free-Entry Sections</h4><p>These sections are for items you add manually:</p><ul><li><strong>Admin users:</strong> 🔑 Keys / Access, 🅿️ Parking, 👤 Resident Matters, 📢 Policy Reminders</li><li><strong>Staff users:</strong> 📝 Shift Notes</li></ul><p>Click <strong>+ Add Item</strong> in any section, fill in the form (unit, resident, description, next step), and save. Items appear as cards and can be removed with ×.</p><h4>Generating</h4><p>Click <strong>Generate</strong> to build the formatted passdown text in the Preview area. The preview is a fully editable textarea — type freely to add context, adjust wording, or remove anything before saving.</p><h4>Saving &amp; Copying</h4><ul><li><strong>Save</strong> — saves the passdown to History, attributed to your account</li><li><strong>Copy</strong> — copies the text to your clipboard for pasting into email or Slack</li><li><strong>Clear draft</strong> — resets all build blocks and clears the preview</li></ul><h4>Passdown History</h4><p>Saved passdowns appear on the right. Admins see all staff passdowns; staff see the last 48 hours. Each entry can be expanded, copied, edited (loads it back into the preview for revision), or deleted (author or admin only).</p><div class="guide-tip">💡 Clicking <strong>Passdown</strong> from the Move Ins / Outs section jumps here with today\'s moves already loaded.</div>' },
 
   { id:'g-todos', icon:'✅', title:'To-Do List', keywords:'todo to do task personal list pending done completed admin view all team switch user',
     html:'<h4>Personal To-Dos</h4><p>Each logged-in user has their own private to-do list. Other staff cannot see your items — only admins can view all lists.</p><h4>Adding an Item</h4><p>Click <strong>+ Add To-Do</strong>, type the task, and save. The badge on the nav item shows your pending count.</p><h4>Completing Items</h4><p>Check the checkbox next to any item to mark it done. Click <strong>Clear Completed</strong> to remove all done items at once.</p><h4>Admin: View All <span style="font-size:10px;font-weight:400;color:var(--text3)">(admin only)</span></h4><p>A user-switcher dropdown appears at the top of the To-Do List for admins. Switch to any team member to view (but not edit) their list — useful for shift coverage and handoffs.</p>' },
@@ -6424,6 +6431,12 @@ var GUIDE_DATA = [
   { id:'g-settings', icon:'⚙️', title:'Settings', keywords:'settings admin account pin session timeout staff visible sections moves tasks patrol qr floor walkthrough disposal laf job title email signature',
     admin:true,
     html:'<div class="guide-note">🔒 Visible to Admin (Lead) users only.</div><h4>Accounts &amp; Access</h4><ul><li><strong>Team Accounts</strong> — create, rename, reorder, change roles, reset PINs, and remove accounts. Roles: Admin or Staff. You can also set a job title and work email per account, which appear in passdown signatures.</li><li><strong>Session Timeout</strong> — how long before an idle session auto-logs out. Options: Never, 5, 10, 15, 30, 60, or 120 minutes.</li></ul><h4>Team Tracker</h4><ul><li><strong>Staff List</strong> — the roster used in the Team Tracker. Synced with Team Accounts automatically.</li><li><strong>Team Tracker PIN</strong> — optional PIN to restrict Team Tracker entries.</li></ul><h4>Security Patrols</h4><ul><li><strong>Patrol Alert Threshold</strong> — hours of scan inactivity before an alert fires on the Dashboard.</li><li><strong>QR Checkpoint PIN</strong> — PIN required to confirm a QR scan.</li></ul><h4>Moves</h4><ul><li><strong>Default Move-In Tasks</strong> — the checklist that pre-populates every new move-in. Edit, reorder, add, or remove tasks. Tag tasks with a category (e.g., "Post Move-In") to control which tab they appear in.</li><li><strong>Default Move-Out Tasks</strong> — same, for move-outs.</li></ul><h4>Property</h4><ul><li><strong>Walkthrough Floors &amp; Areas</strong> — configure the floors and sub-areas used in Security Patrols.</li><li><strong>Visible Sections (Your View)</strong> — hide sections from your own nav that you don\'t use.</li><li><strong>Team (Staff) Visible Sections</strong> — control which sections staff accounts can see.</li><li><strong>L&amp;F Disposal Reminder</strong> — the number of days before unclaimed items are flagged for disposal (default 30).</li></ul>' },
+
+  { id:'g-supplies', icon:'📦', title:'Supplies & Inventory', keywords:'supplies inventory stock quantity low reorder threshold admin edit item add remove badge red amber',
+    html:'<h4>What It Tracks</h4><p>Office and building supplies with live stock levels. Each item has a name, current quantity, and an optional reorder threshold. When stock drops to or below the threshold, an amber badge appears on the nav item. If any item reaches zero, the badge turns red.</p><h4>Adding / Editing Items</h4><p>Admin only. Click <strong>+ Add Item</strong> to create a new supply entry. Click the pencil icon to edit an item\'s name, quantity, or threshold.</p><h4>Adjusting Quantities</h4><ul><li><strong>+ / –</strong> buttons — increment or decrement by 1</li><li><strong>Set Qty</strong> — enter an exact number</li></ul><p>Staff can view stock levels and low-stock alerts but cannot edit quantities or add/remove items.</p><h4>Reorder Todos</h4><p>When stock drops below the reorder threshold, a to-do is automatically created for all admin accounts: <em>"Reorder [item] — X remaining (reorder at Y)."</em> The todo auto-completes when stock is replenished above the threshold.</p><div class="guide-note">📌 Quantity changes from other sections (key issuance, parking credentials, etc.) apply automatically regardless of role.</div>' },
+
+  { id:'g-security', icon:'🚨', title:'Incident Log', keywords:'incident security log type unhoused medical emergency disturbance trespassing handled status monitoring resolved unit location notes escalate maintenance',
+    html:'<h4>What It Tracks</h4><p>Building security and medical incidents — unauthorized access, disturbances, medical emergencies, slip/falls, welfare checks, and more. Each entry captures the date, time, incident type, location, unit (optional), who handled it, status, and notes.</p><h4>Logging an Incident</h4><p>Click <strong>+ Log Incident</strong>. Select the incident type from the grouped dropdown (Security or Medical), fill in the location, unit number if applicable, who handled it, and status.</p><h4>Statuses</h4><ul><li><strong>Resolved</strong> — incident is closed</li><li><strong>Monitoring</strong> — ongoing situation that needs watch</li></ul><h4>Escalating to Maintenance</h4><p>Any incident can be escalated to a maintenance work order using the amber <strong>→ Maint</strong> button. This pre-fills a new maintenance entry with the incident details. Once escalated, the button is replaced with a gray "Escalated" label.</p><h4>Nav Badge</h4><p>Shows the count of today\'s incidents plus any currently in "Monitoring" status.</p>' },
 
   { id:'g-import', icon:'⬆', title:'Import Center', keywords:'import screenshot claude ai json data moves maintenance calendar eliseai excel reset data',
     admin:true,
