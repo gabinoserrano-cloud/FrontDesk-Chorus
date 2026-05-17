@@ -706,7 +706,7 @@
               </div>
             </div>
           </div>
-          <div class="card"><div class="card-hdr"><span class="card-title">Preview</span></div><div class="card-body" style="padding:10px 14px"><textarea class="pd-preview" id="pd-preview" rows="16" placeholder="Fill in the sections above and click Generate."></textarea></div></div>
+          <div class="card"><div class="card-hdr"><span class="card-title">Preview</span><span style="font-size:11px;color:var(--text3);font-weight:400;margin-left:8px">✏ Editable — make any final changes before sending</span></div><div class="card-body" style="padding:10px 14px"><textarea class="pd-preview" id="pd-preview" rows="16" placeholder="Fill in the sections above and click Generate."></textarea></div></div>
         </div>
         <div><div class="card"><div class="card-hdr"><span class="card-title">Passdown History</span></div><div class="card-body" id="pd-history" style="padding:8px 12px"><div class="text-3 text-sm">No passdowns saved yet.</div></div></div></div>
       </div>
@@ -4345,7 +4345,10 @@ function renderPdAutoBlocks(isLead) {
       if (s.status==='monitoring') content += ' <span style="font-size:10px;background:rgba(217,119,6,0.12);color:#92400E;border-radius:3px;padding:1px 5px;font-weight:600">Monitoring</span>';
       if (s.notes) content += '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+s.notes+'</div>';
       var defNs = s.status==='monitoring' ? 'Continue monitoring — update next shift on status.' : 'Incident resolved — no further action required unless situation changes.';
-      html += pdAutoRow('sec_'+s.id, content, defNs, !!carriedSet['sec_'+s.id]);
+      var secKey = 'sec_'+s.id;
+      // Pre-fill resolved incidents with the default so they don't show as required
+      if (s.status !== 'monitoring' && pdNotes[secKey] === undefined) pdNotes[secKey] = defNs;
+      html += pdAutoRow(secKey, content, defNs, !!carriedSet[secKey]);
     });
     html += '</div>';
   }
