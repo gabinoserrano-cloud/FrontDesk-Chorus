@@ -4135,6 +4135,14 @@ function deleteResident(id) { if (!confirm('Remove this profile?')) return; stat
 
 // ─── SUPPLIES ───
 var editingSupplyId = null;
+var suppliesView = 'overview';
+
+function filterSupplies(view, el) {
+  suppliesView = view;
+  document.querySelectorAll('#supplies-tabs .sub-tab').forEach(function(t){ t.classList.remove('active'); });
+  if (el) el.classList.add('active');
+  renderSupplies();
+}
 
 function renderSupplies() {
   if (!state.supplies || state.supplies.length === 0) {
@@ -4142,45 +4150,103 @@ function renderSupplies() {
       return { id: uid(), name: d.name, cat: d.cat, unit: d.unit, qty: 0, lowAt: d.lowAt, notes: '', updatedAt: null, updatedBy: null };
     });
   }
-  var el = g('supplies-body');
-  if (!el) return;
-  var supLow = state.supplies.filter(function(s){ return s.lowAt != null && s.qty <= s.lowAt; }).length;
+  var el = g('supplies-body'); if (!el) return;
+  var supplies = state.supplies;
+  var supOut  = supplies.filter(function(s){ return s.lowAt != null && s.qty === 0; }).length;
+  var supLow  = supplies.filter(function(s){ return s.lowAt != null && s.qty > 0 && s.qty <= s.lowAt; }).length;
+  var supOk   = supplies.filter(function(s){ return s.lowAt == null || s.qty > s.lowAt; }).length;
   var cats = ['Office Supplies', 'Printer & Paper', 'Key Cards & Access', 'Other'];
-  var html = '<div class="sec-hdr" style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="font-size:18px;font-weight:700">Supplies &amp; Inventory</span><span style="font-size:12px;color:var(--text3);margin-left:4px">' + state.supplies.length + ' items &middot; ' + supLow + ' low or out</span></div>';
-  cats.forEach(function(cat) {
-    var items = state.supplies.filter(function(s){ return s.cat === cat; });
-    if (!items.length) return;
-    html += '<div class="card" style="margin-bottom:14px"><div class="card-hdr"><span class="card-title">' + cat + '</span><span class="card-count">' + items.length + ' item' + (items.length !== 1 ? 's' : '') + '</span></div>';
-    items.forEach(function(s) {
-      var statusBadge = '';
-      if (s.lowAt != null) {
-        if (s.qty === 0) statusBadge = '<span class="pill" style="background:var(--red-light);color:var(--red);border:1px solid var(--red);font-size:10px">Out</span>';
-        else if (s.qty <= s.lowAt) statusBadge = '<span class="pill" style="background:#fef9c3;color:#92400e;border:1px solid #fcd34d;font-size:10px">Low</span>';
-        else statusBadge = '<span class="pill" style="background:var(--green-light);color:var(--green);border:1px solid #C8E4B0;font-size:10px">In Stock</span>';
-      } else {
-        statusBadge = '<span class="pill" style="background:var(--surface2);color:var(--text3);font-size:10px">&mdash;</span>';
-      }
-      var updTag = '';
-      if (s.updatedAt) {
-        var d = new Date(s.updatedAt);
-        var mo = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-        updTag = '<span class="sup-updated">' + mo + (s.updatedBy ? ' &middot; ' + s.updatedBy : '') + '</span>';
-      }
-      html += '<div class="supply-row">'
-        + '<span class="sup-name">' + s.name + '</span>'
-        + statusBadge
-        + '<button class="sup-qty-btn" onclick="adjustSupply(\'' + s.id + '\',-1)">&#8722;</button>'
-        + '<span class="sup-qty-num" onclick="setSupplyQtyPrompt(\'' + s.id + '\')">' + (s.qty || 0) + '</span>'
-        + '<button class="sup-qty-btn" onclick="adjustSupply(\'' + s.id + '\',1)">&#43;</button>'
-        + '<span class="sup-unit">' + s.unit + '</span>'
-        + updTag
-        + '<button class="btn btn-ghost btn-xs" onclick="openEditSupply(\'' + s.id + '\')" title="Edit" style="padding:2px 5px">&#9998;</button>'
-        + '<button class="btn btn-ghost btn-xs" onclick="deleteSupply(\'' + s.id + '\')" title="Remove" style="padding:2px 5px;color:var(--red)">&#x2715;</button>'
-        + '</div>';
+
+  // ── tabs ──
+  var html = '<div class="sub-tabs" id="supplies-tabs" style="margin-bottom:14px">'
+    + '<div class="sub-tab ' + (suppliesView==='overview'?'active':'') + '" onclick="filterSupplies(\'overview\',this)">Overview</div>'
+    + '<div class="sub-tab ' + (suppliesView==='list'?'active':'') + '" onclick="filterSupplies(\'list\',this)">List</div>'
+    + '<button class="btn btn-primary btn-sm ml-auto" onclick="openAddSupply()">+ Add Item</button>'
+    + '</div>';
+
+  if (suppliesView === 'overview') {
+    // ── stat summary ──
+    html += '<div class="stat-grid" style="margin-bottom:20px">'
+      + '<div class="stat-card"><div class="stat-num">' + supplies.length + '</div><div class="stat-lbl">Total Items</div></div>'
+      + '<div class="stat-card" style="border-color:var(--green)"><div class="stat-num" style="color:var(--green)">' + supOk + '</div><div class="stat-lbl">In Stock</div></div>'
+      + (supLow ? '<div class="stat-card" style="border-color:var(--amber)"><div class="stat-num" style="color:var(--amber)">' + supLow + '</div><div class="stat-lbl">Running Low</div></div>' : '')
+      + (supOut ? '<div class="stat-card" style="border-color:var(--red)"><div class="stat-num" style="color:var(--red)">' + supOut + '</div><div class="stat-lbl">Out of Stock</div></div>' : '')
+      + '</div>';
+
+    // ── category grids ──
+    cats.forEach(function(cat) {
+      var items = supplies.filter(function(s){ return s.cat === cat; });
+      if (!items.length) return;
+      html += '<div style="margin-bottom:24px">'
+        + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:10px">' + cat + '</div>'
+        + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px">';
+      items.forEach(function(s) {
+        var accentColor, statusLabel, cardBg;
+        if (s.lowAt == null) {
+          accentColor = 'var(--text3)'; statusLabel = 'Active count'; cardBg = 'var(--surface)';
+        } else if (s.qty === 0) {
+          accentColor = 'var(--red)'; statusLabel = 'Out of stock'; cardBg = 'var(--red-light,#fef2f2)';
+        } else if (s.qty <= s.lowAt) {
+          accentColor = 'var(--amber)'; statusLabel = 'Running low'; cardBg = '#fffdf0';
+        } else {
+          accentColor = 'var(--green)'; statusLabel = 'In stock'; cardBg = 'var(--surface)';
+        }
+        var updLine = '';
+        if (s.updatedAt) {
+          var du = new Date(s.updatedAt);
+          updLine = '<div style="font-size:10px;color:var(--text3);margin-top:2px">' + du.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + (s.updatedBy ? ' · ' + s.updatedBy.split(' ')[0] : '') + '</div>';
+        }
+        html += '<div style="background:' + cardBg + ';border:1px solid var(--border2);border-radius:var(--radius);border-top:3px solid ' + accentColor + ';padding:14px 12px;display:flex;flex-direction:column;gap:4px">'
+          + '<div style="font-size:12px;font-weight:600;color:var(--text2);line-height:1.3;min-height:30px">' + s.name + '</div>'
+          + '<div style="font-size:34px;font-weight:800;color:' + accentColor + ';line-height:1.1;margin:4px 0">' + (s.qty || 0) + '<span style="font-size:12px;font-weight:400;color:var(--text3);margin-left:4px">' + s.unit + '</span></div>'
+          + '<div style="font-size:11px;font-weight:600;color:' + accentColor + '">' + statusLabel + '</div>'
+          + '<div style="display:flex;gap:6px;margin-top:6px">'
+          + '<button class="sup-qty-btn" style="flex:1" onclick="adjustSupply(\'' + s.id + '\',-1)">&#8722;</button>'
+          + '<button class="sup-qty-btn" style="flex:1" onclick="adjustSupply(\'' + s.id + '\',1)">&#43;</button>'
+          + '<button class="btn btn-ghost btn-xs" onclick="openEditSupply(\'' + s.id + '\')" title="Edit" style="padding:2px 6px">&#9998;</button>'
+          + '</div>'
+          + updLine
+          + '</div>';
+      });
+      html += '</div></div>';
     });
-    html += '</div>';
-  });
-  html += '<button class="btn btn-secondary" style="width:100%" onclick="openAddSupply()">&#65291; Add Item</button>';
+
+  } else {
+    // ── LIST VIEW ──
+    cats.forEach(function(cat) {
+      var items = supplies.filter(function(s){ return s.cat === cat; });
+      if (!items.length) return;
+      html += '<div class="card" style="margin-bottom:14px"><div class="card-hdr"><span class="card-title">' + cat + '</span><span class="card-count">' + items.length + ' item' + (items.length !== 1 ? 's' : '') + '</span></div>';
+      items.forEach(function(s) {
+        var statusBadge;
+        if (s.lowAt != null) {
+          if (s.qty === 0) statusBadge = '<span class="pill" style="background:var(--red-light,#fef2f2);color:var(--red);border:1px solid var(--red);font-size:10px">Out</span>';
+          else if (s.qty <= s.lowAt) statusBadge = '<span class="pill" style="background:#fef9c3;color:#92400e;border:1px solid #fcd34d;font-size:10px">Low</span>';
+          else statusBadge = '<span class="pill" style="background:var(--green-light);color:var(--green);border:1px solid #C8E4B0;font-size:10px">In Stock</span>';
+        } else {
+          statusBadge = '<span class="pill" style="background:var(--surface2);color:var(--text3);font-size:10px">&mdash;</span>';
+        }
+        var updTag = '';
+        if (s.updatedAt) {
+          var dl = new Date(s.updatedAt);
+          updTag = '<span class="sup-updated">' + dl.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + (s.updatedBy ? ' &middot; ' + s.updatedBy : '') + '</span>';
+        }
+        html += '<div class="supply-row">'
+          + '<span class="sup-name">' + s.name + '</span>'
+          + statusBadge
+          + '<button class="sup-qty-btn" onclick="adjustSupply(\'' + s.id + '\',-1)">&#8722;</button>'
+          + '<span class="sup-qty-num" onclick="setSupplyQtyPrompt(\'' + s.id + '\')" title="Click to set exact qty">' + (s.qty || 0) + '</span>'
+          + '<button class="sup-qty-btn" onclick="adjustSupply(\'' + s.id + '\',1)">&#43;</button>'
+          + '<span class="sup-unit">' + s.unit + '</span>'
+          + updTag
+          + '<button class="btn btn-ghost btn-xs" onclick="openEditSupply(\'' + s.id + '\')" title="Edit" style="padding:2px 5px">&#9998;</button>'
+          + '<button class="btn btn-ghost btn-xs" onclick="deleteSupply(\'' + s.id + '\')" title="Remove" style="padding:2px 5px;color:var(--red)">&#x2715;</button>'
+          + '</div>';
+      });
+      html += '</div>';
+    });
+  }
+
   el.innerHTML = html;
 }
 
