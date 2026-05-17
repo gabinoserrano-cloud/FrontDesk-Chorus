@@ -93,6 +93,18 @@
   .stat-card.accent{background:var(--accent);border-color:var(--accent)}.stat-card.accent .stat-num,.stat-card.accent .stat-lbl{color:#fff}
   .stat-card.green{background:var(--green-light);border-color:#C8E4B0}.stat-card.red{background:var(--red-light);border-color:#F0BFBF}
 
+  /* SUPPLIES */
+  .supply-row{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border2);font-size:13px}
+  .supply-row:last-child{border-bottom:none}
+  .supply-row:hover{background:var(--surface2)}
+  .sup-qty-btn{background:var(--surface2);border:1px solid var(--border2);border-radius:4px;width:26px;height:26px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text)}
+  .sup-qty-btn:hover{background:var(--border2)}
+  .sup-qty-num{font-size:15px;font-weight:700;min-width:28px;text-align:center;cursor:pointer;color:var(--text)}
+  .sup-qty-num:hover{color:var(--primary)}
+  .sup-unit{font-size:11px;color:var(--text3);flex-shrink:0}
+  .sup-name{flex:1;font-weight:500}
+  .sup-updated{font-size:11px;color:var(--text3);white-space:nowrap}
+
   /* CARD */
   .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:14px}
   .card-hdr{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--border2);flex-wrap:wrap}
@@ -521,6 +533,7 @@
     <div class="nav-item" data-sec="walkthrough" onclick="nav(this)"><span class="icon" data-icon="shield"></span><span class="nav-txt">Security Patrols</span></div>
     <div class="nav-item" data-sec="maintenance" onclick="nav(this)"><span class="icon" data-icon="wrench"></span><span class="nav-txt">Maintenance</span><span class="badge" id="badge-maint"></span></div>
     <div class="nav-item" data-sec="security" onclick="nav(this)"><span class="icon" data-icon="alert-triangle"></span><span class="nav-txt">Incident Log</span><span class="badge" id="badge-security"></span></div>
+    <div class="nav-item" data-sec="supplies" onclick="nav(this)"><span class="icon" data-icon="package"></span><span class="nav-txt">Supplies</span><span class="badge" id="badge-supplies"></span></div>
   </div>
   <div class="nav-group">
     <div class="nav-label">Resident Services</div>
@@ -661,6 +674,9 @@
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterSecurity('all',this)">All</div><div class="sub-tab" onclick="filterSecurity('today',this)">Today</div><div class="sub-tab" onclick="filterSecurity('monitoring',this)">Monitoring</div></div>
       <div class="stat-grid" id="security-stats"></div>
       <div class="card"><div class="card-hdr"><span class="card-title">Incident Log</span><span class="card-count" id="security-count">0 incidents</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddSecurity()">+ Log Incident</button></div><div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Location</th><th>Handled By</th><th>Status</th><th>Notes</th><th></th></tr></thead><tbody id="security-tbody"></tbody></table></div></div>
+    </div>
+    <div class="section" id="section-supplies">
+      <div id="supplies-body"></div>
     </div>
     <div class="section" id="section-residents">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterResidents('all',this)">All Profiles</div><div class="sub-tab" onclick="filterResidents('pte-granted',this)">&#9989; PTE Granted</div><div class="sub-tab" onclick="filterResidents('pte-denied',this)">&#128683; PTE Denied</div><div class="sub-tab" onclick="filterResidents('pte-not-set',this)">PTE Not Set</div><div class="sub-tab" onclick="filterResidents('blueground',this)">&#128309; Blueground</div></div>
@@ -1235,6 +1251,23 @@
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-import')">Cancel</button><button class="btn btn-primary" onclick="processImport()">Import</button></div>
 </div></div>
 
+<div class="modal-ov" id="modal-supply"><div class="modal" style="max-width:440px">
+  <div class="modal-hdr"><span class="modal-title" id="modal-supply-title">Add Supply Item</span><button class="modal-close" onclick="closeModal('modal-supply')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <div class="fg"><label>Item Name</label><input id="sup-name" type="text" placeholder="e.g. Printer Paper"></div>
+    <div class="fr">
+      <div class="fg"><label>Category</label><select id="sup-cat"><option>Office Supplies</option><option>Printer &amp; Paper</option><option>Key Cards &amp; Access</option><option>Other</option></select></div>
+      <div class="fg"><label>Unit Label</label><input id="sup-unit" type="text" placeholder="e.g. reams, cards, pens"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Current Qty</label><input id="sup-qty" type="number" min="0" value="0"></div>
+      <div class="fg"><label>Low Alert At (optional)</label><input id="sup-low" type="number" min="0" placeholder="leave blank = counter"></div>
+    </div>
+    <div class="fg"><label>Notes (optional)</label><input id="sup-notes" type="text" placeholder="Any notes about this item"></div>
+  </div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-supply')">Cancel</button><button class="btn btn-primary" onclick="saveSupply()">Save Item</button></div>
+</div></div>
+
 <div id="login-overlay">
   <div class="login-box">
     <div class="login-logo">&#127968; Chorus Front Desk</div>
@@ -1308,6 +1341,7 @@ var SVG_ICONS = {
   logout:    _svg('<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>'),
   download:  _svg('<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'),
   alert:     _svg('<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'),
+  package:   _svg('<line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>'),
 };
 function applyIcons() {
   document.querySelectorAll('[data-icon]').forEach(function(el) {
@@ -1316,7 +1350,7 @@ function applyIcons() {
   });
 }
 
-var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {} };
+var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [] };
 var teamUnlocked = false;
 
 var currentUser = null;
@@ -1401,6 +1435,19 @@ var DEFAULT_OUT_TASKS = [
   { text: 'Unit status updated to Vacant', cat: 'Move Out' },
   { text: 'Notify leasing of completed move-out', cat: 'Move Out' }
 ];
+var DEFAULT_SUPPLIES = [
+  { name: 'Printer Paper', cat: 'Printer & Paper', unit: 'reams', lowAt: 1 },
+  { name: 'Toner – Black', cat: 'Printer & Paper', unit: 'cartridges', lowAt: 1 },
+  { name: 'Toner – Color', cat: 'Printer & Paper', unit: 'cartridges', lowAt: 1 },
+  { name: 'Pens', cat: 'Office Supplies', unit: 'pens', lowAt: 5 },
+  { name: 'Sticky Notes', cat: 'Office Supplies', unit: 'pads', lowAt: 2 },
+  { name: 'Staples', cat: 'Office Supplies', unit: 'boxes', lowAt: 1 },
+  { name: 'Envelopes', cat: 'Office Supplies', unit: 'envelopes', lowAt: 20 },
+  { name: 'Key Cards – Blank Stock', cat: 'Key Cards & Access', unit: 'cards', lowAt: 10 },
+  { name: 'Vendor Cards – Active Issued', cat: 'Key Cards & Access', unit: 'cards', lowAt: null },
+  { name: 'One-Time Cards – Active Issued', cat: 'Key Cards & Access', unit: 'cards', lowAt: null },
+  { name: 'Self-Guided Tour Keys – Active', cat: 'Key Cards & Access', unit: 'keys', lowAt: null }
+];
 var WT_FLOORS = [
   { label: 'Lobby & Exterior', items: ['Main entrance clean & clear', 'Door signage OK', 'Lobby furniture arranged', 'Elevator lobby clean', 'Mail room organized', 'Package area clean', 'Bike storage OK', 'Trash/recycling rooms clear', 'Lighting OK'] },
   { label: '1st Floor - Chorus Hall / Coworking', items: ['Chorus Hall clean & lights off', 'Coworking space organized', 'Chairs/tables arranged', 'Kitchen/pantry wiped down', 'No items left behind'] },
@@ -1416,7 +1463,7 @@ function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(stat
 function loadLocal() {
   try {
     var raw = localStorage.getItem(LOCAL_KEY);
-    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [] }, JSON.parse(raw));
+    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], supplies: [] }, JSON.parse(raw));
   } catch (e) {}
 }
 function scheduleSave() { saveLocal(); clearTimeout(syncTO); syncTO = setTimeout(pushCloud, 800); }
@@ -1470,7 +1517,7 @@ function processImport() {
 }
 function resetData() {
   if (!confirm('Reset ALL data? Cannot be undone.')) return;
-  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {} };
+  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [] };
   scheduleSave(); renderAll(); toast('Data reset');
 }
 
@@ -1546,7 +1593,7 @@ function mobNav(item) {
   curSec = sec; renderSection(sec);
 }
 function renderSection(sec) {
-  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, guide: renderGuide, security: renderSecurity };
+  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, guide: renderGuide, security: renderSecurity, supplies: renderSupplies };
   if (map[sec]) map[sec]();
 }
 function renderAll() { renderSection(curSec); updateBadges(); }
@@ -1668,10 +1715,11 @@ function updateBadges() {
   setBadge('badge-needs-appt', naN);
   var crN = (state.concierge || []).filter(function (c) { return c.status === 'open'; }).length;
   var secN = (state.security||[]).filter(function(s){ return s.date===today() || s.status==='monitoring'; }).length;
+  var supLow = (state.supplies || []).filter(function(s){ return s.lowAt != null && s.qty <= s.lowAt; }).length;
   setBadge('badge-moves', mN); setBadge('badge-vacant', vN); setBadge('badge-maint', mtN);
   setBadge('badge-guests', gN); setBadge('badge-keys', kN); setBadge('badge-amenities', aN);
   setBadge('badge-tours', trN); setBadge('badge-todos', tdN); setBadge('badge-laf', lN);
-  setBadge('badge-concierge', crN); setBadge('badge-security', secN);
+  setBadge('badge-concierge', crN); setBadge('badge-security', secN); setBadge('badge-supplies', supLow);
   setMBadge('mb-moves', mN); setMBadge('mb-todos', tdN); setMBadge('mb-keys', kN);
 }
 function setBadge(id, n) { var e = g(id); if (!e) return; e.textContent = n; e.classList.toggle('vis', n > 0); }
@@ -1721,6 +1769,8 @@ function renderDash() {
   var alertHours = (state.patrolSettings && state.patrolSettings.alertHours) || 4;
   var patrolOverdue = checkpoints.filter(function(cp) { var last = scans.filter(function(s) { return s.checkpointId === cp.id; }).sort(function(a,b) { return b.timestamp - a.timestamp; })[0]; return !last || (Date.now() - last.timestamp) > alertHours * 3600000; }).length;
   if (checkpoints.length) html += '<div class="stat-card stat-clickable ' + (patrolOverdue > 0 ? 'red' : 'green') + '" onclick="navToSec(\'walkthrough\')"><div class="stat-num">' + patrolOverdue + '</div><div class="stat-lbl">&#128737; Patrol Overdue</div></div>';
+  var supLow = (state.supplies||[]).filter(function(s){ return s.lowAt!=null && s.qty<=s.lowAt; }).length;
+  if (supLow > 0) html += '<div class="stat-card stat-clickable" onclick="navToSec(\'supplies\')" style="border-color:var(--amber)"><div class="stat-num" style="color:var(--amber)">' + supLow + '</div><div class="stat-lbl">Supplies Low</div></div>';
   html += '</div>';
   if (tights.length) {
     html += '<div class="tight-alert"><div class="ta-title">Tight Turnovers - ' + tights.length + ' unit' + (tights.length > 1 ? 's' : '') + ' need attention</div>';
@@ -4082,6 +4132,132 @@ function saveResident() {
   state.residentProfiles.push(entry); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile saved');
 }
 function deleteResident(id) { if (!confirm('Remove this profile?')) return; state.residentProfiles = (state.residentProfiles || []).filter(function(r){ return r.id!==id; }); scheduleSave(); renderResidents(); toast('Removed'); }
+
+// ─── SUPPLIES ───
+var editingSupplyId = null;
+
+function renderSupplies() {
+  if (!state.supplies || state.supplies.length === 0) {
+    state.supplies = DEFAULT_SUPPLIES.map(function(d) {
+      return { id: uid(), name: d.name, cat: d.cat, unit: d.unit, qty: 0, lowAt: d.lowAt, notes: '', updatedAt: null, updatedBy: null };
+    });
+  }
+  var el = g('supplies-body');
+  if (!el) return;
+  var supLow = state.supplies.filter(function(s){ return s.lowAt != null && s.qty <= s.lowAt; }).length;
+  var cats = ['Office Supplies', 'Printer & Paper', 'Key Cards & Access', 'Other'];
+  var html = '<div class="sec-hdr" style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="font-size:18px;font-weight:700">Supplies &amp; Inventory</span><span style="font-size:12px;color:var(--text3);margin-left:4px">' + state.supplies.length + ' items &middot; ' + supLow + ' low or out</span></div>';
+  cats.forEach(function(cat) {
+    var items = state.supplies.filter(function(s){ return s.cat === cat; });
+    if (!items.length) return;
+    html += '<div class="card" style="margin-bottom:14px"><div class="card-hdr"><span class="card-title">' + cat + '</span><span class="card-count">' + items.length + ' item' + (items.length !== 1 ? 's' : '') + '</span></div>';
+    items.forEach(function(s) {
+      var statusBadge = '';
+      if (s.lowAt != null) {
+        if (s.qty === 0) statusBadge = '<span class="pill" style="background:var(--red-light);color:var(--red);border:1px solid var(--red);font-size:10px">Out</span>';
+        else if (s.qty <= s.lowAt) statusBadge = '<span class="pill" style="background:#fef9c3;color:#92400e;border:1px solid #fcd34d;font-size:10px">Low</span>';
+        else statusBadge = '<span class="pill" style="background:var(--green-light);color:var(--green);border:1px solid #C8E4B0;font-size:10px">In Stock</span>';
+      } else {
+        statusBadge = '<span class="pill" style="background:var(--surface2);color:var(--text3);font-size:10px">&mdash;</span>';
+      }
+      var updTag = '';
+      if (s.updatedAt) {
+        var d = new Date(s.updatedAt);
+        var mo = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+        updTag = '<span class="sup-updated">' + mo + (s.updatedBy ? ' &middot; ' + s.updatedBy : '') + '</span>';
+      }
+      html += '<div class="supply-row">'
+        + '<span class="sup-name">' + s.name + '</span>'
+        + statusBadge
+        + '<button class="sup-qty-btn" onclick="adjustSupply(\'' + s.id + '\',-1)">&#8722;</button>'
+        + '<span class="sup-qty-num" onclick="setSupplyQtyPrompt(\'' + s.id + '\')">' + (s.qty || 0) + '</span>'
+        + '<button class="sup-qty-btn" onclick="adjustSupply(\'' + s.id + '\',1)">&#43;</button>'
+        + '<span class="sup-unit">' + s.unit + '</span>'
+        + updTag
+        + '<button class="btn btn-ghost btn-xs" onclick="openEditSupply(\'' + s.id + '\')" title="Edit" style="padding:2px 5px">&#9998;</button>'
+        + '<button class="btn btn-ghost btn-xs" onclick="deleteSupply(\'' + s.id + '\')" title="Remove" style="padding:2px 5px;color:var(--red)">&#x2715;</button>'
+        + '</div>';
+    });
+    html += '</div>';
+  });
+  html += '<button class="btn btn-secondary" style="width:100%" onclick="openAddSupply()">&#65291; Add Item</button>';
+  el.innerHTML = html;
+}
+
+function openAddSupply() {
+  editingSupplyId = null;
+  g('modal-supply-title').textContent = 'Add Supply Item';
+  g('sup-name').value = '';
+  g('sup-cat').value = 'Office Supplies';
+  g('sup-unit').value = '';
+  g('sup-qty').value = 0;
+  g('sup-low').value = '';
+  g('sup-notes').value = '';
+  openModal('modal-supply');
+}
+
+function openEditSupply(id) {
+  var s = (state.supplies || []).find(function(x){ return x.id === id; });
+  if (!s) return;
+  editingSupplyId = id;
+  g('modal-supply-title').textContent = 'Edit Supply Item';
+  g('sup-name').value = s.name || '';
+  g('sup-cat').value = s.cat || 'Office Supplies';
+  g('sup-unit').value = s.unit || '';
+  g('sup-qty').value = s.qty || 0;
+  g('sup-low').value = s.lowAt != null ? s.lowAt : '';
+  g('sup-notes').value = s.notes || '';
+  openModal('modal-supply');
+}
+
+function saveSupply() {
+  var name = g('sup-name').value.trim();
+  if (!name) { toast('Enter an item name'); return; }
+  var cat = g('sup-cat').value;
+  var unit = g('sup-unit').value.trim() || 'units';
+  var qty = parseInt(g('sup-qty').value) || 0;
+  var lowRaw = g('sup-low').value.trim();
+  var lowAt = lowRaw !== '' ? parseInt(lowRaw) : null;
+  var notes = g('sup-notes').value.trim();
+  var by = currentUser ? currentUser.name : '';
+  if (!state.supplies) state.supplies = [];
+  if (editingSupplyId) {
+    var s = state.supplies.find(function(x){ return x.id === editingSupplyId; });
+    if (s) { s.name = name; s.cat = cat; s.unit = unit; s.qty = qty; s.lowAt = lowAt; s.notes = notes; s.updatedAt = Date.now(); s.updatedBy = by; }
+  } else {
+    state.supplies.push({ id: uid(), name: name, cat: cat, unit: unit, qty: qty, lowAt: lowAt, notes: notes, updatedAt: Date.now(), updatedBy: by });
+  }
+  scheduleSave(); closeModal('modal-supply'); renderSupplies(); updateBadges(); toast(editingSupplyId ? 'Item updated' : 'Item added');
+}
+
+function adjustSupply(id, delta) {
+  var s = (state.supplies || []).find(function(x){ return x.id === id; });
+  if (!s) return;
+  s.qty = Math.max(0, (s.qty || 0) + delta);
+  s.updatedAt = Date.now();
+  s.updatedBy = currentUser ? currentUser.name : '';
+  scheduleSave(); renderSupplies(); updateBadges(); renderDash();
+}
+
+function setSupplyQtyPrompt(id) {
+  var s = (state.supplies || []).find(function(x){ return x.id === id; });
+  if (!s) return;
+  var val = prompt('Set quantity for ' + s.name + ':', s.qty || 0);
+  if (val === null) return;
+  var n = parseInt(val);
+  if (isNaN(n) || n < 0) { toast('Enter a valid number'); return; }
+  s.qty = n;
+  s.updatedAt = Date.now();
+  s.updatedBy = currentUser ? currentUser.name : '';
+  scheduleSave(); renderSupplies(); updateBadges(); renderDash();
+}
+
+function deleteSupply(id) {
+  if (!confirm('Remove this supply item?')) return;
+  state.supplies = (state.supplies || []).filter(function(x){ return x.id !== id; });
+  scheduleSave(); renderSupplies(); updateBadges(); toast('Item removed');
+}
+
 function renderResidents() {
   var list = (state.residentProfiles || []).slice();
   if (residentsFilter === 'pte-granted') list = list.filter(function(r){ return r.pte==='granted'; });
