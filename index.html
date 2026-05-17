@@ -1356,6 +1356,7 @@ var DEFAULT_IN_TASKS = [
   // Pre-Move-In
   { text: 'Send Welcome Letter', cat: 'Pre Move-In' },
   { text: 'Send Invite Link to RiseIO', cat: 'Pre Move-In' },
+  { text: 'Create RiseIO Profile', cat: 'Pre Move-In' },
   { text: 'Pre-Move Follow-Up Call', cat: 'Pre Move-In' },
   { text: 'Send WiFi Activation Link', cat: 'Pre Move-In' },
   // Keys & Credentials (prepare before move-in day)
@@ -1983,9 +1984,24 @@ function buildCL(m, filterCat) {
   var allTasksTotal = (m.tasks || []).length;
   var allTasksDone = (m.tasks || []).filter(function(t){ return t.done; }).length;
   var filteredNote = (tasks.length < allTasksTotal) ? ' <span style="font-size:10px;color:var(--text3);font-weight:400">(' + tasks.length + ' shown)</span>' : '';
+  var coRes = m.coResidents || [];
+  var totalResidents = 1 + coRes.length;
   var html = '<div class="cl-hdr"><span class="cl-title">' + m.resident + ' - Unit ' + m.unit + '</span><span class="cl-prog-txt">' + allTasksDone + '/' + allTasksTotal + ' tasks' + filteredNote + '</span>';
   html += '<div class="ml-auto flex gap-4"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();resetCL(\'' + m.id + '\')">Reset</button>';
   html += '<button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();openAddTask(\'' + m.id + '\')">+ Task</button></div></div>';
+  // Co-residents panel
+  html += '<div style="padding:6px 0 2px;border-bottom:1px solid var(--border2);margin-bottom:4px" onclick="event.stopPropagation()">';
+  html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
+  html += '<span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap">Residents</span>';
+  html += '<span style="font-size:12px;color:var(--text2)">' + m.resident + '</span>';
+  coRes.forEach(function(cr) {
+    html += '<span style="display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border-radius:12px;padding:1px 8px 1px 10px;font-size:12px">'
+      + cr.name
+      + '<button onclick="event.stopPropagation();removeCoResident(\'' + m.id + '\',\'' + cr.id + '\')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;line-height:1;padding:0 0 0 2px" title="Remove">&times;</button></span>';
+  });
+  html += '<button class="btn btn-ghost btn-xs" style="font-size:11px" onclick="event.stopPropagation();addCoResident(\'' + m.id + '\')">+ Roommate</button>';
+  if (totalResidents > 1) html += '<span style="font-size:11px;color:var(--text3);margin-left:auto">' + totalResidents + ' residents total</span>';
+  html += '</div></div>';
   if (!tasks.length) { html += '<div class="text-3 text-sm" style="padding:8px 0">No tasks yet.</div>'; return html; }
   var allDone = tasks.length > 0 && done === tasks.length;
   tasks.forEach(function (t) {
@@ -2017,6 +2033,12 @@ function buildCL(m, filterCat) {
     // Note textarea (hidden by default)
     html += '<div id="task-note-' + t.id + '" style="display:none;padding:0 4px 4px 28px" onclick="event.stopPropagation()">';
     var notePh = t.hint ? t.hint : 'Add a note about this task…';
+    // For key/mail key tasks, inject resident count into hint
+    var txt = t.text || '';
+    if (totalResidents > 1 && (txt === 'Prepare Unit Key(s)' || txt === 'Prepare Unit Mail Key(s)')) {
+      var keyType = txt.indexOf('Mail') !== -1 ? 'mail keys' : 'unit keys';
+      notePh = totalResidents + ' residents — prepare ' + totalResidents + ' ' + keyType + ' (one per resident)';
+    }
     html += '<textarea rows="2" style="width:100%;font-size:12px;resize:vertical;margin-top:4px" placeholder="' + notePh.replace(/"/g,'&quot;') + '" onblur="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'note\',this.value)">' + (t.note || '').replace(/</g,'&lt;') + '</textarea>';
     html += '</div>';
     // Extra options (date + category, hidden by default)
@@ -2198,7 +2220,10 @@ function renderMoves() {
           }
         }
         rows += '<td><span class="mono font-600">' + m.unit + '</span></td>';
-        rows += '<td><div class="font-600">' + m.resident + '</div>' + (m.date === t && m.type === 'in' ? '<div class="text-xs" style="color:var(--accent)">Lease starts today</div>' : '') + '</td>';
+        var coResNames = (m.coResidents || []).map(function(c){ return c.name; }).join(', ');
+        rows += '<td><div class="font-600">' + m.resident + '</div>'
+          + (coResNames ? '<div class="text-xs text-3">+ ' + coResNames + '</div>' : '')
+          + (m.date === t && m.type === 'in' ? '<div class="text-xs" style="color:var(--accent)">Lease starts today</div>' : '') + '</td>';
         rows += '<td class="mono text-sm">' + fmtShort(m.date) + '</td>';
         rows += '<td><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'Move In' : 'Move Out') + '</span></td>';
         rows += '<td>' + apptBadge + '</td>';
@@ -2234,7 +2259,8 @@ function renderMoves() {
         html += '<div class="move-card ' + (isOpen ? 'expanded' : '') + '" id="mc-' + m.id + '">';
         html += '<div class="mc-hdr" onclick="toggleCL(\'' + m.id + '\')">';
         html += '<span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'IN' : 'OUT') + '</span>';
-        html += '<div class="mc-meta"><div class="mc-name">' + m.resident + '</div>' + (m.addedBy ? '<div class="text-xs text-3">by ' + m.addedBy + '</div>' : '');
+        var mcCoRes = (m.coResidents || []).map(function(c){ return c.name; }).join(', ');
+        html += '<div class="mc-meta"><div class="mc-name">' + m.resident + (mcCoRes ? ' <span style="font-weight:400;font-size:12px;color:var(--text3)">+ ' + mcCoRes + '</span>' : '') + '</div>' + (m.addedBy ? '<div class="text-xs text-3">by ' + m.addedBy + '</div>' : '');
         var mcApptLine = '';
         if (!m.apptDate) {
           mcApptLine = '<div class="appt-badge no-appt" style="margin-top:4px;display:inline-flex">No appointment yet</div>';
@@ -2299,6 +2325,19 @@ function resetCL(moveId) {
   var m = (state.moves || []).find(function (x) { return x.id === id; }); if (!m) return;
   (m.tasks || []).forEach(function (t) { t.done = false; });
   scheduleSave(); renderMoves(); toast('Checklist reset');
+}
+function addCoResident(moveId) {
+  var name = prompt('Roommate / co-leaseholder name:');
+  if (!name || !name.trim()) return;
+  var m = (state.moves || []).find(function(x){ return x.id === moveId; }); if (!m) return;
+  if (!m.coResidents) m.coResidents = [];
+  m.coResidents.push({ id: uid(), name: name.trim() });
+  scheduleSave(); renderMoves();
+}
+function removeCoResident(moveId, coId) {
+  var m = (state.moves || []).find(function(x){ return x.id === moveId; }); if (!m) return;
+  m.coResidents = (m.coResidents || []).filter(function(c){ return c.id !== coId; });
+  scheduleSave(); renderMoves();
 }
 function archiveMove(id) {
   var m = (state.moves || []).find(function (x) { return x.id === id; }); if (!m) return;
