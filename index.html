@@ -1073,6 +1073,13 @@
           <option value="Noise complaint escalation">Noise Complaint Escalation</option>
           <option value="Trespassing">Trespassing</option>
         </optgroup>
+        <optgroup label="Property">
+          <option value="Missing package">Missing Package</option>
+          <option value="Package theft suspected">Package Theft Suspected</option>
+          <option value="Footage review requested">Footage Review Requested</option>
+          <option value="Property damage">Property Damage</option>
+          <option value="Elevator issue">Elevator Issue</option>
+        </optgroup>
         <optgroup label="Medical">
           <option value="Medical emergency — 911 called">Medical Emergency — 911 Called</option>
           <option value="Medical emergency — first aid / staff handled">Medical Emergency — First Aid / Staff</option>
@@ -3180,7 +3187,7 @@ function openEditSecurity(id) {
   editingSecurityId = id;
   setModalMode('modal-security-title','modal-security-savebtn','Edit Incident','Save Changes');
   g('sec-date').value=s.date||today(); g('sec-time').value=s.time||'';
-  var knownTypes=['Unhoused individual — removed by staff','Unhoused individual — security called','Unhoused individual — SFPD called','Unauthorized access','Disturbance / altercation','Suspicious activity','Noise complaint escalation','Trespassing','Medical emergency — 911 called','Medical emergency — first aid / staff handled','Slip / fall','Resident welfare check'];
+  var knownTypes=['Unhoused individual — removed by staff','Unhoused individual — security called','Unhoused individual — SFPD called','Unauthorized access','Disturbance / altercation','Suspicious activity','Noise complaint escalation','Trespassing','Missing package','Package theft suspected','Footage review requested','Property damage','Elevator issue','Medical emergency — 911 called','Medical emergency — first aid / staff handled','Slip / fall','Resident welfare check'];
   var isKnown = knownTypes.indexOf(s.type) !== -1;
   g('sec-type').value = isKnown ? s.type : 'Other';
   var ow=g('sec-other'); if(ow) ow.value = isKnown ? '' : s.type;
