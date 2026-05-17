@@ -5208,6 +5208,25 @@ function generatePassdown() {
     }
   }
 
+  // Outstanding keys — move-out lease ended, appointment passed, key task still unchecked
+  var outstandingKeys = (state.moves || []).filter(function(m) {
+    if (m.type !== 'out' || m.archivedAt || pdExcluded['keys_out_'+m.id]) return false;
+    var leaseEnd = m.date;
+    var apptD = m.apptDate || m.date;
+    if (leaseEnd > t) return false; // lease hasn't ended yet
+    if (apptD > t) return false;    // appointment hasn't happened yet
+    var keyTask = (m.tasks || []).find(function(tk){ return tk.text === 'Collect & Verify All Unit Keys'; });
+    return keyTask && !keyTask.done;
+  });
+  if (outstandingKeys.length) {
+    out += '\n🗝 Outstanding Key Returns\n';
+    outstandingKeys.forEach(function(m) {
+      out += 'Unit ' + m.unit + ' — ' + m.resident + '\n';
+      out += 'Lease ended: ' + dayLbl(m.date) + (m.apptDate ? ' | Move appt was: ' + dayLbl(m.apptDate) : '') + '\n';
+      out += 'Next Step: ' + pdNote('keys_out_'+m.id, 'Keys not yet collected — follow up with resident to confirm return.') + '\n';
+    });
+  }
+
   // Amenity bookings (skip excluded)
   var la2 = isLead ? pdGetLookahead() : 0;
   var maxD2 = new Date(); maxD2.setDate(maxD2.getDate() + la2);
