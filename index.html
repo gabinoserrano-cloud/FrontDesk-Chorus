@@ -475,9 +475,6 @@
   .amenity-closeout-row td{padding:0;border-bottom:2px solid var(--amber)}
   .closeout-inner{padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .pending-closeout-badge{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:var(--amber);background:var(--amber-light);border-radius:4px;padding:2px 8px}
-  /* ── Passdown pre-generation checklist ── */
-  .pd-check-item{padding:10px 0;border-bottom:1px solid var(--border2)}
-  .pd-check-item:last-child{border-bottom:none}
   /* Pill reservation gold */
   .pill-reservation{background:rgba(78,138,112,0.14);color:#2A6050}
   /* Cal chip amenity warm gold */
@@ -696,7 +693,6 @@
               </div>
               <div id="pd-auto-blocks"></div>
               <div id="pd-free-sections"></div>
-              <div id="pd-checklist-panel" style="display:none;margin-bottom:12px"></div>
               <div class="flex gap-8 mt-12" style="flex-wrap:wrap">
                 <button class="btn btn-primary" onclick="checkPassdownReady()">Generate</button>
                 <button class="btn btn-secondary" onclick="savePassdown()">Save</button>
@@ -4111,7 +4107,6 @@ function pdClearDraft() {
   var sumEl = g('pd-summary'); if (sumEl) sumEl.value = '';
   try { ['pd_draft_sections','pd_draft_excluded','pd_draft_notes','pd_draft_policy','pd_draft_shift','pd_draft_lookahead','pd_draft_tone','pd_draft_summary'].forEach(function(k){ sessionStorage.removeItem(k); }); } catch(e) {}
   var pv = g('pd-preview'); if (pv) pv.value = '';
-  _pdClearChecklist();
   renderPassdown();
   toast('Draft cleared');
 }
@@ -4169,6 +4164,22 @@ function getActiveAutoBlockIds() {
   return ids;
 }
 function pdAttrEsc(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function pdAutoRowSave(exKey, value) {
+  pdNotes[exKey] = value; pdSaveDraft();
+  if (!value.trim()) return;
+  var now = Date.now(), by = currentUser ? currentUser.name : '';
+  var sid = getCurrentShiftId(), slbl = getCurrentShiftLabel();
+  if (exKey.indexOf('mt_') === 0) {
+    var id = exKey.slice(3), m = (state.maintenance||[]).find(function(x){return x.id===id;});
+    if (m) { if (!m.log) m.log = []; m.log.push({ts:now, by:by, note:value.trim()}); scheduleSave(); }
+  } else if (exKey.indexOf('key_') === 0) {
+    var id = exKey.slice(4), k = (state.keys||[]).find(function(x){return x.id===id;});
+    if (k) { if (!k.shiftNotes) k.shiftNotes = []; if (!k.shiftNotes.some(function(n){return n.shiftId===sid;})) { k.shiftNotes.push({shiftId:sid, shift:slbl, note:value.trim(), by:by, ts:now}); scheduleSave(); } }
+  } else if (exKey.indexOf('c_') === 0) {
+    var id = exKey.slice(2), c = (state.concierge||[]).find(function(x){return x.id===id;});
+    if (c) { if (!c.log) c.log = []; c.log.push({ts:now, by:by, note:value.trim()}); scheduleSave(); }
+  }
+}
 function pdAutoRow(exKey, content, defaultNextStep, isCarried, optional) {
   var excl = pdExcluded[exKey];
   var noteVal = pdNotes[exKey] !== undefined ? pdNotes[exKey] : '';
@@ -4182,7 +4193,7 @@ function pdAutoRow(exKey, content, defaultNextStep, isCarried, optional) {
     + 'style="flex:1;font-size:11.5px;color:var(--text);background:transparent;border:none;border-bottom:1px solid ' + borderColor + ';padding:2px 0;font-family:inherit;outline:none;min-width:0" '
     + 'oninput="pdNotes[\'' + exKey + '\']=this.value;pdSaveDraft();var lbl=this.previousElementSibling;if(lbl){lbl.textContent=this.value.trim()?\'➤ Next Action\':\'' + (optional ? '+ Note (optional)' : '✏ Update required') + '\';lbl.style.color=this.value.trim()?\'var(--accent)\':\'' + (optional ? 'var(--text3)' : 'var(--red)') + '\';};this.style.borderBottomColor=this.value.trim()?\'var(--accent)\':\'' + (optional ? 'var(--border)' : 'var(--red)') + '\'" '
     + 'onfocus="this.style.borderBottomColor=\'var(--accent)\'" '
-    + 'onblur="this.style.borderBottomColor=this.value.trim()?\'var(--accent)\':\'' + borderColor + '\'" /></div>';
+    + 'onblur="pdAutoRowSave(\'' + exKey + '\',this.value);this.style.borderBottomColor=this.value.trim()?\'var(--accent)\':\'' + borderColor + '\'" /></div>';
   var carriedBadge = (isCarried && !excl) ? '<span style="font-size:10px;background:rgba(201,164,94,0.15);color:var(--accent);border-radius:3px;padding:1px 6px;margin-right:5px;font-weight:600;white-space:nowrap">↩ carried over</span>' : '';
   return '<div class="pd-auto-row' + (excl ? ' pd-auto-excl' : '') + '" style="display:flex;align-items:flex-start;gap:6px">'
     + '<div style="flex:1' + (excl ? ';opacity:.4;text-decoration:line-through' : '') + '">' + carriedBadge + content + noteHtml + '</div>'
@@ -6771,153 +6782,10 @@ function saveAmenityCloseout(id, note) {
   scheduleSave(); renderAmenities(); toast('Booking closed out');
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TWEAK 4 — Passdown pre-generation checklist
-// ─────────────────────────────────────────────────────────────────────────────
-var _pdChecklistItems = [];
-var _pdChecklistState = {}; // key 'type|id' → { done, note }
-
 function checkPassdownReady() {
   if (!pdGetTone()) { toast('Pick a shift tone first — Quiet, Normal, or Busy'); var el = g('pd-shift-summary-block'); if(el){el.style.outline='2px solid var(--red)';setTimeout(function(){el.style.outline='';},2000);} return; }
   if (!pdGetSummary()) { toast('Add a one-line shift summary before generating'); var el2 = g('pd-summary'); if(el2){el2.focus();el2.style.borderColor='var(--red)';setTimeout(function(){el2.style.borderColor='';},2000);} return; }
-  var t = today();
-  var curShiftId = getCurrentShiftId();
-  var flagged = [];
-
-  // 1. One-time issued keys still out
-  (state.keys || []).filter(function (k) { return k.type === 'one-time' && k.status === 'issued'; }).forEach(function (k) {
-    flagged.push({ type: 'key', id: k.id, label: 'Key out — Unit ' + k.unit + ' · ' + (k.guest || k.name) });
-  });
-
-  // 2. All open / in-progress maintenance — always surfaces until resolved
-  (state.maintenance || []).filter(function (m) { return m.status === 'open' || m.status === 'in-progress'; }).forEach(function (m) {
-    flagged.push({ type: 'maint', id: m.id, label: 'Maintenance — Unit ' + m.unit + ' · ' + m.issue });
-  });
-
-  // 3. All open concierge requests — always surfaces until resolved
-  (state.concierge || []).filter(function (c) { return c.status === 'open'; }).forEach(function (c) {
-    flagged.push({ type: 'concierge', id: c.id, label: 'Concierge — Unit ' + c.unit + ' · ' + c.type });
-  });
-
-  // 4. Today's amenity bookings past end time with no closeout note
-  (state.amenities || []).filter(function (a) { return a.date === t && isCloseoutPending(a); }).forEach(function (a) {
-    flagged.push({ type: 'amenity', id: a.id, label: 'Amenity — ' + a.space + ' · ' + a.resident });
-  });
-
-  // 5. Today's moves with no passdown note
-  (state.moves || []).filter(function (m) { return !m.archivedAt && ((m.apptDate || m.date) === t); }).forEach(function (m) {
-    var key = (m.type === 'in' ? 'in_' : 'out_') + m.id;
-    if (!pdNotes[key]) flagged.push({ type: 'move', id: m.id, moveType: m.type, label: 'Move ' + (m.type === 'in' ? 'in' : 'out') + ' — Unit ' + m.unit + ' · ' + m.resident });
-  });
-
-  // 6. Guests still checked in
-  (state.guests || []).filter(function (gs) { return gs.status === 'in'; }).forEach(function (gs) {
-    flagged.push({ type: 'guest', id: gs.id, label: 'Guest still in — ' + gs.name + ' (Unit ' + gs.unit + ')' });
-  });
-
-  if (!flagged.length) { generatePassdown(); return; }
-
-  _pdChecklistItems = flagged;
-  // Preserve existing done state, init new ones
-  flagged.forEach(function (item) {
-    var k = item.type + '|' + item.id;
-    if (!_pdChecklistState[k]) _pdChecklistState[k] = { done: false, note: '' };
-  });
-  _renderPdChecklist();
-}
-
-function _renderPdChecklist() {
-  var panel = g('pd-checklist-panel'); if (!panel) return;
-  var flagged = _pdChecklistItems;
-  var doneCount = flagged.filter(function (item) { return (_pdChecklistState[item.type + '|' + item.id] || {}).done; }).length;
-  var total = flagged.length;
-  var pct = total ? Math.round(doneCount / total * 100) : 100;
-  var allDone = doneCount === total;
-
-  var html = '<div style="border:1px solid ' + (allDone ? 'var(--green)' : 'var(--amber)') + ';border-radius:var(--radius);background:' + (allDone ? 'var(--green-light)' : '#FFFBF0') + ';margin-bottom:4px">';
-  html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">';
-  html += '<span style="font-size:13px;font-weight:600;color:' + (allDone ? 'var(--green)' : 'var(--amber)') + '">' + (allDone ? '&#10003; Ready to generate' : '&#9888; Pre-Passdown Review') + '</span>';
-  html += '<span style="font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-left:auto">' + doneCount + ' / ' + total + ' reviewed</span>';
-  html += '</div>';
-  html += '<div style="padding:10px 14px">';
-  html += '<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Review open items before generating. Add a note or mark “No change this shift” for each.</div>';
-  html += '<div style="background:var(--border2);border-radius:4px;height:5px;overflow:hidden;margin-bottom:12px"><div style="height:100%;border-radius:4px;width:' + pct + '%;background:' + (allDone ? 'var(--green)' : 'var(--amber)') + ';transition:width .3s"></div></div>';
-
-  flagged.forEach(function (item) {
-    var k = item.type + '|' + item.id;
-    var st = _pdChecklistState[k] || {};
-    var isDone = st.done;
-    var inputId = 'pdci-inp-' + k.replace('|', '-');
-    html += '<div class="pd-check-item" style="opacity:' + (isDone ? '0.6' : '1') + '">';
-    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:' + (isDone ? '0' : '6px') + '">';
-    html += '<span style="font-size:12.5px;font-weight:600;flex:1">' + item.label + '</span>';
-    if (isDone) html += '<span style="font-size:10px;color:var(--green);font-weight:700;background:var(--green-light);padding:2px 8px;border-radius:20px">&#10003; ' + (st.note === 'No change this shift' ? 'Skipped' : 'Noted') + '</span>';
-    html += '</div>';
-    if (!isDone) {
-      html += '<div style="display:flex;gap:6px">';
-      html += '<input type="text" id="' + inputId + '" placeholder="Add note…" style="flex:1;font-size:12px">';
-      html += '<button class="btn btn-secondary btn-sm" onclick="_pdcNote(\'' + k + '\',\'' + inputId + '\')">Save note</button>';
-      html += '<button class="btn btn-ghost btn-sm" style="font-size:11px;color:var(--text3)" onclick="_pdcSkip(\'' + k + '\')">No change</button>';
-      html += '</div>';
-    } else if (st.note && st.note !== 'No change this shift') {
-      html += '<div style="font-size:11px;color:var(--text2);font-style:italic;margin-top:2px">' + st.note + '</div>';
-    }
-    html += '</div>';
-  });
-
-  html += '</div>'; // padding
-  html += '<div style="padding:10px 14px;border-top:1px solid var(--border2);display:flex;gap:8px;align-items:center">';
-  if (allDone) {
-    html += '<button class="btn btn-primary" onclick="generatePassdown();_pdClearChecklist()">Generate Passdown</button>';
-  } else {
-    html += '<button class="btn btn-primary" disabled style="opacity:0.45;cursor:not-allowed" title="Review all items first">Generate (review items first)</button>';
-  }
-  html += '<button class="btn btn-ghost btn-sm" style="color:var(--text3)" onclick="_pdClearChecklist()">Cancel</button>';
-  html += '</div>';
-  html += '</div>';
-
-  panel.innerHTML = html; panel.style.display = 'block';
-}
-
-function _pdcNote(k, inputId) {
-  var el = g(inputId); var note = el ? el.value.trim() : '';
-  if (!note) { toast('Enter a note first'); return; }
-  if (!_pdChecklistState[k]) _pdChecklistState[k] = {};
-  _pdChecklistState[k].done = true; _pdChecklistState[k].note = note;
-  _applyPdChecklistNote(k, note, false);
-  _renderPdChecklist();
-}
-function _pdcSkip(k) {
-  if (!_pdChecklistState[k]) _pdChecklistState[k] = {};
-  _pdChecklistState[k].done = true; _pdChecklistState[k].note = 'No change this shift';
-  _applyPdChecklistNote(k, 'No change this shift', true);
-  _renderPdChecklist();
-}
-function _applyPdChecklistNote(k, note, isSkip) {
-  var sepIdx = k.indexOf('|'); var type = k.substring(0, sepIdx); var id = k.substring(sepIdx + 1);
-  var curShiftId = getCurrentShiftId();
-  if (type === 'key' && !isSkip) {
-    var kk = (state.keys || []).find(function (x) { return x.id === id; });
-    if (kk) { if (!kk.shiftNotes) kk.shiftNotes = []; if (!kk.shiftNotes.some(function (n) { return n.shiftId === curShiftId; })) kk.shiftNotes.push({ shiftId: curShiftId, shift: getCurrentShiftLabel(), note: note, by: currentUser ? currentUser.name : '', ts: Date.now() }); }
-  } else if (type === 'maint' && !isSkip) {
-    var m = (state.maintenance || []).find(function (x) { return x.id === id; });
-    if (m) { if (!m.log) m.log = []; m.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: note }); }
-  } else if (type === 'concierge' && !isSkip) {
-    var c = (state.concierge || []).find(function (x) { return x.id === id; });
-    if (c) { if (!c.log) c.log = []; c.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: note }); }
-  } else if (type === 'amenity' && !isSkip) {
-    var a = (state.amenities || []).find(function (x) { return x.id === id; });
-    if (a) { a.closeoutNote = note; a.closeoutAt = Date.now(); }
-  } else if (type === 'move' && !isSkip) {
-    var mv = (_pdChecklistItems || []).find(function (x) { return x.type === 'move' && x.id === id; });
-    var pdKey = (mv && mv.moveType === 'out' ? 'out_' : 'in_') + id;
-    pdNotes[pdKey] = note;
-  }
-  scheduleSave();
-}
-function _pdClearChecklist() {
-  _pdChecklistItems = []; _pdChecklistState = {};
-  var panel = g('pd-checklist-panel'); if (panel) { panel.innerHTML = ''; panel.style.display = 'none'; }
+  generatePassdown();
 }
 </script>
 </body>
