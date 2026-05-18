@@ -4946,25 +4946,29 @@ function setPdTone(tone) {
 function pdGetTone() { return _pdTone; }
 function pdGetSummary() { var el = g('pd-summary'); return el ? el.value.trim() : ''; }
 
+function pdDraftKey(k) { return k + '_' + (currentUser ? currentUser.id : 'guest'); }
 function pdSaveDraft() {
   try {
-    sessionStorage.setItem('pd_draft_sections', JSON.stringify(pdSections));
-    sessionStorage.setItem('pd_draft_excluded', JSON.stringify(pdExcluded));
-    sessionStorage.setItem('pd_draft_notes', JSON.stringify(pdNotes));
-    var pol = g('pd-policy'); if (pol) sessionStorage.setItem('pd_draft_policy', pol.value);
-    var sh = g('pd-shift'); if (sh) sessionStorage.setItem('pd_draft_shift', sh.value);
-    var la = g('pd-lookahead'); if (la) sessionStorage.setItem('pd_draft_lookahead', la.value);
-    sessionStorage.setItem('pd_draft_tone', _pdTone);
-    var sumEl = g('pd-summary'); if (sumEl) sessionStorage.setItem('pd_draft_summary', sumEl.value);
+    sessionStorage.setItem(pdDraftKey('pd_draft_date'), today());
+    sessionStorage.setItem(pdDraftKey('pd_draft_sections'), JSON.stringify(pdSections));
+    sessionStorage.setItem(pdDraftKey('pd_draft_excluded'), JSON.stringify(pdExcluded));
+    sessionStorage.setItem(pdDraftKey('pd_draft_notes'), JSON.stringify(pdNotes));
+    var pol = g('pd-policy'); if (pol) sessionStorage.setItem(pdDraftKey('pd_draft_policy'), pol.value);
+    var sh = g('pd-shift'); if (sh) sessionStorage.setItem(pdDraftKey('pd_draft_shift'), sh.value);
+    var la = g('pd-lookahead'); if (la) sessionStorage.setItem(pdDraftKey('pd_draft_lookahead'), la.value);
+    sessionStorage.setItem(pdDraftKey('pd_draft_tone'), _pdTone);
+    var sumEl = g('pd-summary'); if (sumEl) sessionStorage.setItem(pdDraftKey('pd_draft_summary'), sumEl.value);
   } catch(e) {}
 }
 function pdLoadDraft() {
   try {
-    var s = sessionStorage.getItem('pd_draft_sections'); if (s) { pdSections = JSON.parse(s); if (!pdSections.thisShift) pdSections.thisShift = []; }
-    var e = sessionStorage.getItem('pd_draft_excluded'); if (e) pdExcluded = JSON.parse(e);
-    var n = sessionStorage.getItem('pd_draft_notes'); if (n) pdNotes = JSON.parse(n);
-    var tone = sessionStorage.getItem('pd_draft_tone'); if (tone) { _pdTone = tone; setTimeout(function(){ setPdTone(tone); }, 50); }
-    var sum = sessionStorage.getItem('pd_draft_summary'); if (sum) { var sumEl = g('pd-summary'); if (sumEl) sumEl.value = sum; }
+    var draftDate = sessionStorage.getItem(pdDraftKey('pd_draft_date'));
+    if (draftDate && draftDate !== today()) { pdClearDraft(); return; }
+    var s = sessionStorage.getItem(pdDraftKey('pd_draft_sections')); if (s) { pdSections = JSON.parse(s); if (!pdSections.thisShift) pdSections.thisShift = []; }
+    var e = sessionStorage.getItem(pdDraftKey('pd_draft_excluded')); if (e) pdExcluded = JSON.parse(e);
+    var n = sessionStorage.getItem(pdDraftKey('pd_draft_notes')); if (n) pdNotes = JSON.parse(n);
+    var tone = sessionStorage.getItem(pdDraftKey('pd_draft_tone')); if (tone) { _pdTone = tone; setTimeout(function(){ setPdTone(tone); }, 50); }
+    var sum = sessionStorage.getItem(pdDraftKey('pd_draft_summary')); if (sum) { var sumEl = g('pd-summary'); if (sumEl) sumEl.value = sum; }
   } catch(e) {}
 }
 function pdClearDraft() {
@@ -4974,7 +4978,7 @@ function pdClearDraft() {
   _pdTone = '';
   ['Quiet','Normal','Busy'].forEach(function(t){ var btn=g('pd-tone-'+t.toLowerCase()); if(btn){btn.style.background='';btn.style.color='';btn.style.borderColor='';} });
   var sumEl = g('pd-summary'); if (sumEl) sumEl.value = '';
-  try { ['pd_draft_sections','pd_draft_excluded','pd_draft_notes','pd_draft_policy','pd_draft_shift','pd_draft_lookahead','pd_draft_tone','pd_draft_summary'].forEach(function(k){ sessionStorage.removeItem(k); }); } catch(e) {}
+  try { ['pd_draft_date','pd_draft_sections','pd_draft_excluded','pd_draft_notes','pd_draft_policy','pd_draft_shift','pd_draft_lookahead','pd_draft_tone','pd_draft_summary'].forEach(function(k){ sessionStorage.removeItem(pdDraftKey(k)); }); } catch(e) {}
   var pv = g('pd-preview'); if (pv) pv.value = '';
   renderPassdown();
   toast('Draft cleared');
@@ -5798,7 +5802,7 @@ function reviewBeforeSend() {
   // Check 3: any "This Shift" or "Shift Notes" items logged?
   var freeItems = (pdSections.shiftNotes || []).concat(pdSections.thisShift || []);
   if (freeItems.length > 0) passes.push('Shift notes logged (' + freeItems.length + ' item' + (freeItems.length > 1 ? 's' : '') + ')');
-  else issues.push({ sev: 'warn', msg: 'No shift notes added — if anything happened during this shift not captured in the auto-blocks, it should be logged here' });
+  else issues.push({ sev: 'block', msg: 'No shift notes added — you must log at least one item in the "This Shift" section before sending. Every passdown needs to reflect what you personally observed and handled this shift.' });
 
   // Check 4: vague next actions in the preview text?
   var lines = preview.split('\n');
@@ -5816,16 +5820,22 @@ function reviewBeforeSend() {
   else passes.push('No carried-over items from earlier shifts');
 
   // Build and show modal
-  var hasBlocking = false; // we allow sending either way — just inform
+  var hasBlocking = issues.some(function(i){ return i.sev === 'block'; });
   var html = '<div style="max-height:55vh;overflow-y:auto;padding:0 2px">';
 
   if (issues.length === 0) {
     html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 0 14px"><span style="font-size:22px">✅</span><div><div style="font-weight:600;color:var(--green)">Passdown looks good</div><div style="font-size:12px;color:var(--text3)">All checks passed. You\'re ready to send.</div></div></div>';
   } else {
-    html += '<div style="margin-bottom:12px;font-size:12px;color:var(--text2)">Review these items before sending. You can send anyway — these are quality flags, not blockers.</div>';
+    if (hasBlocking) {
+      html += '<div style="margin-bottom:12px;font-size:12px;color:var(--red);font-weight:600">Fix the required item(s) below before you can send.</div>';
+    } else {
+      html += '<div style="margin-bottom:12px;font-size:12px;color:var(--text2)">Review these items before sending. You can send anyway — these are quality flags, not blockers.</div>';
+    }
     issues.forEach(function(issue) {
-      var icon = issue.sev === 'info' ? '🔵' : '⚠️';
-      html += '<div style="display:flex;gap-8px;padding:7px 10px;margin-bottom:6px;border-radius:5px;background:' + (issue.sev==='info'?'rgba(78,138,112,0.08)':'rgba(217,119,6,0.08)') + ';border:1px solid ' + (issue.sev==='info'?'rgba(78,138,112,0.2)':'rgba(217,119,6,0.2)') + '">'
+      var icon = issue.sev === 'info' ? '🔵' : (issue.sev === 'block' ? '🚫' : '⚠️');
+      var bg = issue.sev === 'info' ? 'rgba(78,138,112,0.08)' : (issue.sev === 'block' ? 'rgba(220,38,38,0.08)' : 'rgba(217,119,6,0.08)');
+      var bd = issue.sev === 'info' ? 'rgba(78,138,112,0.2)' : (issue.sev === 'block' ? 'rgba(220,38,38,0.2)' : 'rgba(217,119,6,0.2)');
+      html += '<div style="display:flex;gap-8px;padding:7px 10px;margin-bottom:6px;border-radius:5px;background:' + bg + ';border:1px solid ' + bd + '">'
         + '<span style="flex-shrink:0;margin-right:8px">' + icon + '</span>'
         + '<span style="font-size:12px;color:var(--text)">' + issue.msg + '</span></div>';
     });
@@ -5851,7 +5861,7 @@ function reviewBeforeSend() {
     + '<div class="modal-bdy">' + html + '</div>'
     + '<div class="modal-ftr">'
     + '<button class="btn btn-secondary" onclick="closeModal(\'modal-pd-review\')">Go Back &amp; Edit</button>'
-    + '<button class="btn btn-primary" onclick="closeModal(\'modal-pd-review\');sendPassdownGmail()">Send via Gmail →</button>'
+    + '<button class="btn btn-primary" ' + (hasBlocking ? 'disabled style="opacity:0.4;cursor:not-allowed" title="Fix required issues before sending"' : 'onclick="closeModal(\'modal-pd-review\');sendPassdownGmail()"') + '>Send via Gmail →</button>'
     + '</div></div>';
   openModal('modal-pd-review');
 }
@@ -7475,6 +7485,50 @@ function pinKey(k) {
   renderPinPad(false);
   if (loginPinEntry.length >= 4 && loginSelectedAccount && loginPinEntry === loginSelectedAccount.pin) { submitPin(); }
 }
+function checkCarriedItemsOnLogin() {
+  var openKeys = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued'; });
+  var openMaint = (state.maintenance||[]).filter(function(m){ return m.status==='open'||m.status==='in-progress'; });
+  var openConcierge = (state.concierge||[]).filter(function(c){ return c.status==='open'; });
+  var items = [];
+  openKeys.forEach(function(k){ items.push({ label: '🗝 Key still out — Unit ' + k.unit + ' (' + k.name + (k.guest?' / '+k.guest:'') + ')' }); });
+  openMaint.forEach(function(m){ items.push({ label: '🔧 Maintenance open — Unit ' + (m.unit||'Common Area') + ': ' + m.issue }); });
+  openConcierge.forEach(function(c){ items.push({ label: '🎭 Concierge request — Unit ' + c.unit + ': ' + c.type }); });
+  if (!items.length) return;
+  var firstName = currentUser.name.split(' ')[0];
+  var html = '<div style="font-size:13px;color:var(--text2);margin-bottom:14px">These items are still open from the previous shift. Check any you\'d like added to your to-do list for this shift.</div>'
+    + '<div style="display:flex;flex-direction:column;gap:7px;max-height:40vh;overflow-y:auto">';
+  items.forEach(function(item, i) {
+    html += '<label style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:6px;cursor:pointer">'
+      + '<input type="checkbox" data-idx="' + i + '" style="width:15px;height:15px;flex-shrink:0">'
+      + '<span style="font-size:12px;color:var(--text)">' + item.label + '</span></label>';
+  });
+  html += '</div>';
+  var ov = g('modal-login-carried');
+  if (!ov) { ov = document.createElement('div'); ov.className = 'modal-ov'; ov.id = 'modal-login-carried'; document.body.appendChild(ov); }
+  ov._carriedItems = items;
+  ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">👋 Welcome, ' + firstName + ' — Open Items from Previous Shift</span><button class="modal-close" onclick="closeModal(\'modal-login-carried\')">&#x2715;</button></div>'
+    + '<div class="modal-bdy">' + html + '</div>'
+    + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-login-carried\')">Skip</button>'
+    + '<button class="btn btn-primary" onclick="addCarriedItemsToTodos()">Add Selected to My To-Do →</button></div></div>';
+  openModal('modal-login-carried');
+}
+function addCarriedItemsToTodos() {
+  var ov = g('modal-login-carried'); if (!ov) return;
+  var checks = ov.querySelectorAll('input[type="checkbox"]:checked');
+  var added = 0;
+  if (checks.length) {
+    var todos = getCurrentTodos();
+    checks.forEach(function(cb) {
+      var idx = parseInt(cb.getAttribute('data-idx'), 10);
+      var item = ov._carriedItems[idx];
+      if (item) { todos.push({ id: uid(), text: item.label, priority: 'normal', dueDate: null, done: false, createdAt: Date.now() }); added++; }
+    });
+    setCurrentTodos(todos);
+    scheduleSave(); renderTodos(); updateBadges(); renderDash();
+  }
+  closeModal('modal-login-carried');
+  if (added) toast('Added ' + added + ' item' + (added > 1 ? 's' : '') + ' to your to-do list');
+}
 function submitPin() {
   var acct = loginSelectedAccount; if (!acct) return;
   if (loginPinEntry === acct.pin) {
@@ -7492,6 +7546,7 @@ function submitPin() {
     g('hdr-actions').innerHTML = '';
     renderDash(); updateBadges();
     toast('Welcome, ' + currentUser.name + '!');
+    setTimeout(checkCarriedItemsOnLogin, 600);
   } else {
     loginPinEntry = '';
     renderPinPad(true);
