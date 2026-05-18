@@ -5059,13 +5059,13 @@ function pdAutoRow(exKey, content, defaultNextStep, isCarried, optional) {
   var noteVal = pdNotes[exKey] !== undefined ? pdNotes[exKey] : '';
   var notePlaceholder = pdAttrEsc(defaultNextStep || 'Add a note (optional)…');
   var isEmpty = noteVal.trim() === '';
-  var isRequired = !optional && isEmpty;
-  var labelColor = isEmpty ? (optional ? 'var(--text3)' : 'var(--red)') : 'var(--accent)';
-  var labelText = isEmpty ? (optional ? '+ Note (optional)' : '✏ Update required') : '➤ Next Action';
-  var borderColor = isEmpty ? (optional ? 'var(--border)' : 'var(--red)') : 'var(--border)';
+  var isRequired = !optional && isEmpty && isCarried;
+  var labelColor = isEmpty ? (isRequired ? 'var(--red)' : 'var(--text3)') : 'var(--accent)';
+  var labelText = isEmpty ? (isRequired ? '✏ Update required' : '+ Note (optional)') : '➤ Next Action';
+  var borderColor = isEmpty ? (isRequired ? 'var(--red)' : 'var(--border)') : 'var(--border)';
   var noteHtml = excl ? '' : '<div style="display:flex;align-items:center;gap:5px;margin-top:5px"><span style="font-size:10px;font-weight:600;color:' + labelColor + ';white-space:nowrap;flex-shrink:0">' + labelText + '</span><input type="text" value="' + pdAttrEsc(noteVal) + '" placeholder="' + notePlaceholder + '" '
     + 'style="flex:1;font-size:11.5px;color:var(--text);background:transparent;border:none;border-bottom:1px solid ' + borderColor + ';padding:2px 0;font-family:inherit;outline:none;min-width:0" '
-    + 'oninput="pdNotes[\'' + exKey + '\']=this.value;pdSaveDraft();var lbl=this.previousElementSibling;if(lbl){lbl.textContent=this.value.trim()?\'➤ Next Action\':\'' + (optional ? '+ Note (optional)' : '✏ Update required') + '\';lbl.style.color=this.value.trim()?\'var(--accent)\':\'' + (optional ? 'var(--text3)' : 'var(--red)') + '\';};this.style.borderBottomColor=this.value.trim()?\'var(--accent)\':\'' + (optional ? 'var(--border)' : 'var(--red)') + '\'" '
+    + 'oninput="pdNotes[\'' + exKey + '\']=this.value;pdSaveDraft();var lbl=this.previousElementSibling;if(lbl){lbl.textContent=this.value.trim()?\'➤ Next Action\':\'' + (isRequired ? '✏ Update required' : '+ Note (optional)') + '\';lbl.style.color=this.value.trim()?\'var(--accent)\':\'' + (isRequired ? 'var(--red)' : 'var(--text3)') + '\';};this.style.borderBottomColor=this.value.trim()?\'var(--accent)\':\'' + (isRequired ? 'var(--red)' : 'var(--border)') + '\'" '
     + 'onfocus="this.style.borderBottomColor=\'var(--accent)\'" '
     + 'onblur="pdAutoRowSave(\'' + exKey + '\',this.value);this.style.borderBottomColor=this.value.trim()?\'var(--accent)\':\'' + borderColor + '\'" /></div>';
   var carriedBadge = (isCarried && !excl) ? '<span style="font-size:10px;background:rgba(201,164,94,0.15);color:var(--accent);border-radius:3px;padding:1px 6px;margin-right:5px;font-weight:600;white-space:nowrap">↩ carried over</span>' : '';
