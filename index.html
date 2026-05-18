@@ -4364,6 +4364,11 @@ function saveResident() {
     r.parking=g('rp-parking').value; r.parkingInfo=g('rp-parking-info').value.trim(); r.bike=g('rp-bike').value; r.bikeNotes=g('rp-bike-notes').value.trim(); r.storage=g('rp-storage').value; r.storageUnit=g('rp-storage-unit').value.trim(); r.blueground=bgCbS?!!bgCbS.checked:false;
     editingResidentId=null; scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile updated'); return;
   }
+  var existingForUnit = (state.residentProfiles || []).filter(function(p){ return p.unit === unit; });
+  if (existingForUnit.length) {
+    var names = existingForUnit.map(function(p){ return p.residentName; }).join(', ');
+    if (!confirm('Unit ' + unit + ' already has a profile (' + names + '). Add another profile for this unit?')) return;
+  }
   var bgCbN = g('rp-blueground');
   var entry = { id: uid(), unit: unit, residentName: name, preferredName: g('rp-preferred').value.trim(), phone: g('rp-phone').value.trim(), birthday: g('rp-birthday').value, anniversary: g('rp-anniversary').value, instructions: g('rp-instructions').value.trim(), pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), parking: g('rp-parking').value, parkingInfo: g('rp-parking-info').value.trim(), bike: g('rp-bike').value, bikeNotes: g('rp-bike-notes').value.trim(), storage: g('rp-storage').value, storageUnit: g('rp-storage-unit').value.trim(), blueground: bgCbN?!!bgCbN.checked:false, createdAt: Date.now() };
   if (!state.residentProfiles) state.residentProfiles = [];
