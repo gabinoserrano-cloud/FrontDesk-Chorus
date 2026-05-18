@@ -5086,7 +5086,9 @@ function renderPdAutoBlocks(isLead) {
   var container = g('pd-auto-blocks'); if (!container) return;
   var now = Date.now(), t = today();
   var carriedSet = getCarriedItemIds();
-  var html = '<div style="font-size:12px;background:rgba(217,119,6,0.08);color:#92400E;border:1px solid rgba(217,119,6,0.2);border-radius:6px;padding:8px 12px;margin-bottom:12px">✏ <strong>Each item below requires your update.</strong> Fill in every red "Update required" field with what happened during your shift — these pull from shared data and won\'t reflect your shift unless you fill them in.</div>';
+  var carriedCount = Object.keys(carriedSet).length;
+  var html = '<div style="font-size:12px;background:rgba(217,119,6,0.08);color:#92400E;border:1px solid rgba(217,119,6,0.2);border-radius:6px;padding:8px 12px;margin-bottom:8px">✏ <strong>Each item below requires your update.</strong> Fill in every red "Update required" field with what happened during your shift — these pull from shared data and won\'t reflect your shift unless you fill them in.</div>'
+    + (carriedCount ? '<div style="font-size:12px;background:rgba(201,164,94,0.12);color:#92400E;border:1px solid rgba(201,164,94,0.35);border-radius:6px;padding:8px 12px;margin-bottom:12px">↩ <strong>' + carriedCount + ' item' + (carriedCount > 1 ? 's' : '') + ' carried over from a previous shift</strong> — these were open before your shift started. Add your own update so the next shift knows the current status.</div>' : '');
 
   // One-time keys still out
   var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued'; });
@@ -7545,11 +7547,21 @@ function addCarriedItemsToTodos() {
   closeModal('modal-login-carried');
   if (added) toast('Added ' + added + ' item' + (added > 1 ? 's' : '') + ' to your to-do list');
 }
+function resetPassdownState() {
+  pdSections = { keysAccess: [], residentMatters: [], thisShift: [], shiftNotes: [] };
+  pdExcluded = {};
+  pdNotes = {};
+  _pdTone = '';
+  ['Quiet','Normal','Busy'].forEach(function(t){ var btn=g('pd-tone-'+t.toLowerCase()); if(btn){btn.style.background='';btn.style.color='';btn.style.borderColor='';} });
+  var sumEl = g('pd-summary'); if (sumEl) sumEl.value = '';
+  var pv = g('pd-preview'); if (pv) pv.value = '';
+}
 function submitPin() {
   var acct = loginSelectedAccount; if (!acct) return;
   if (loginPinEntry === acct.pin) {
     detachPinKeyboard();
     currentUser = { id: acct.id, name: acct.name, role: acct.role };
+    resetPassdownState();
     hideLogin();
     updateSidebarForRole();
     renderNavVisibility();
