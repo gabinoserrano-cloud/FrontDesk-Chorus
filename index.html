@@ -5157,7 +5157,9 @@ function renderPdAutoBlocks(isLead) {
       var ns = isMoveCompleted(m)
         ? ('Move-in completed' + (postPendingNs.length ? ' — ' + postPendingNs.length + ' post move-in task(s) still pending.' : ' — all tasks done.'))
         : (function(){ var pend=(m.tasks||[]).filter(function(tk){return !tk.done&&tk.cat!=='Post Move-In';}); return pend.length ? pend.length+' task(s) still pending — review checklist.' : 'All tasks complete — ready for move-in.'; }());
-      html += pdAutoRow('in_' + m.id, content, ns, !!carriedSet['in_'+m.id]);
+      var inKey = 'in_' + m.id;
+      if (isMoveCompleted(m) && pdNotes[inKey] === undefined) pdNotes[inKey] = ns;
+      html += pdAutoRow(inKey, content, ns, !!carriedSet[inKey]);
     });
     html += '</div>';
 
@@ -5174,7 +5176,9 @@ function renderPdAutoBlocks(isLead) {
       var nsOut = isMoveCompleted(m)
         ? ('Move-out completed' + (postPendingOut.length ? ' — ' + postPendingOut.length + ' post move-out task(s) still pending.' : ' — all tasks done.'))
         : 'Confirm key return and unit walk-through upon move-out.';
-      html += pdAutoRow('out_' + m.id, content, nsOut, !!carriedSet['out_'+m.id]);
+      var outKey = 'out_' + m.id;
+      if (isMoveCompleted(m) && pdNotes[outKey] === undefined) pdNotes[outKey] = nsOut;
+      html += pdAutoRow(outKey, content, nsOut, !!carriedSet[outKey]);
     });
     html += '</div>';
   }
@@ -5200,7 +5204,10 @@ function renderPdAutoBlocks(isLead) {
   if (!openC.length) html += '<div style="color:var(--text3)">None open</div>';
   else openC.forEach(function(c) {
     var content = '<strong>Unit ' + c.unit + ' – ' + c.resident + '</strong> / ' + c.type + (c.notes ? ': ' + c.notes : '');
-    html += pdAutoRow('c_' + c.id, content, 'Follow up and update status once resolved.', !!carriedSet['c_'+c.id]);
+    var defNsCon = c.nextAction || 'Follow up and update status once resolved.';
+    var cKey = 'c_' + c.id;
+    if (c.nextAction && pdNotes[cKey] === undefined) pdNotes[cKey] = c.nextAction;
+    html += pdAutoRow(cKey, content, defNsCon, !!carriedSet[cKey]);
   });
   html += '</div>';
 
@@ -5218,7 +5225,10 @@ function renderPdAutoBlocks(isLead) {
       var priLabel = m.priority.charAt(0).toUpperCase() + m.priority.slice(1);
       var content = '<strong>Unit ' + m.unit + ' – ' + m.issue + '</strong>' + woBadge + ' <span style="font-size:11px;color:' + priBadge + ';font-weight:600">' + priLabel + '</span> · ' + statusLabel;
       if (m.desc) content += '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + m.desc + '</div>';
-      html += pdAutoRow('mt_' + m.id, content, 'Escalate to maintenance or follow up on resolution status.', !!carriedSet['mt_'+m.id]);
+      var defNsMt = (m.log && m.log.length) ? 'Latest note: ' + m.log[m.log.length-1].note : 'Escalate to maintenance or follow up on resolution status.';
+      var mtKey = 'mt_' + m.id;
+      if (m.log && m.log.length && pdNotes[mtKey] === undefined) pdNotes[mtKey] = defNsMt;
+      html += pdAutoRow(mtKey, content, defNsMt, !!carriedSet[mtKey]);
     });
   }
   html += '</div>';
@@ -5801,8 +5811,9 @@ function reviewBeforeSend() {
 
   // Check 3: any "This Shift" or "Shift Notes" items logged?
   var freeItems = (pdSections.shiftNotes || []).concat(pdSections.thisShift || []);
+  var isStaffUser = currentUser && currentUser.role === 'staff';
   if (freeItems.length > 0) passes.push('Shift notes logged (' + freeItems.length + ' item' + (freeItems.length > 1 ? 's' : '') + ')');
-  else issues.push({ sev: 'block', msg: 'No shift notes added — you must log at least one item in the "This Shift" section before sending. Every passdown needs to reflect what you personally observed and handled this shift.' });
+  else issues.push({ sev: isStaffUser ? 'block' : 'warn', msg: isStaffUser ? 'No shift notes added — you must log at least one item in the "This Shift" section before sending. Every passdown needs to reflect what you personally observed and handled this shift.' : 'No shift notes added — consider logging anything from your shift not captured in the auto-blocks above.' });
 
   // Check 4: vague next actions in the preview text?
   var lines = preview.split('\n');
