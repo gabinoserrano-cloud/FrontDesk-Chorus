@@ -5105,7 +5105,7 @@ function renderPdAutoBlocks(isLead) {
   var carriedSet = getCarriedItemIds();
   var activeIds = getActiveAutoBlockIds();
   var carriedCount = activeIds.filter(function(id){ return carriedSet[id]; }).length;
-  var html = '<div style="font-size:12px;background:rgba(217,119,6,0.08);color:#92400E;border:1px solid rgba(217,119,6,0.2);border-radius:6px;padding:8px 12px;margin-bottom:8px">✏ <strong>Add your updates below.</strong> Each item pulls from shared data — your notes make the passdown specific to your shift.</div>'
+  var html = '<div style="font-size:12px;background:rgba(217,119,6,0.08);color:#92400E;border:1px solid rgba(217,119,6,0.2);border-radius:6px;padding:8px 12px;margin-bottom:8px">✏ <strong>Add your updates below.</strong> Items marked <em>↓ Add update to include</em> only appear in your passdown if you write a note — leave blank to skip them.</div>'
     + (carriedCount ? '<div style="font-size:12px;background:rgba(201,164,94,0.12);color:#92400E;border:1px solid rgba(201,164,94,0.35);border-radius:6px;padding:8px 12px;margin-bottom:12px">↩ <strong>' + carriedCount + ' item' + (carriedCount > 1 ? 's' : '') + ' carried over from a previous shift</strong> — add an update to include them in your passdown, or leave blank to skip.</div>' : '');
 
   // One-time keys still out
@@ -5123,7 +5123,7 @@ function renderPdAutoBlocks(isLead) {
       if (k.fob) content += ' / Key #' + k.fob;
       if (isOverdue) { var hrs=Math.floor(overdueMs/3600000), mins=Math.floor((overdueMs%3600000)/60000); content += ' <span style="color:var(--red);font-weight:600">⚠ ' + hrs + 'h ' + mins + 'm out</span>'; }
       var ns = 'Follow up with resident ' + k.name + ' to ensure key is returned.' + (k.notes ? ' ' + k.notes : '');
-      html += pdAutoRow('key_' + k.id, content, ns, !!carriedSet['key_'+k.id]);
+      html += pdAutoRow('key_' + k.id, content, ns, true);
     });
   }
   html += '</div>';
@@ -5227,7 +5227,7 @@ function renderPdAutoBlocks(isLead) {
     var defNsCon = c.nextAction || 'Follow up and update status once resolved.';
     var cKey = 'c_' + c.id;
     if (c.nextAction && pdNotes[cKey] === undefined) pdNotes[cKey] = c.nextAction;
-    html += pdAutoRow(cKey, content, defNsCon, !!carriedSet[cKey]);
+    html += pdAutoRow(cKey, content, defNsCon, true);
   });
   html += '</div>';
 
@@ -5248,7 +5248,7 @@ function renderPdAutoBlocks(isLead) {
       var defNsMt = (m.log && m.log.length) ? 'Latest note: ' + m.log[m.log.length-1].note : 'Escalate to maintenance or follow up on resolution status.';
       var mtKey = 'mt_' + m.id;
       if (m.log && m.log.length && pdNotes[mtKey] === undefined) pdNotes[mtKey] = defNsMt;
-      html += pdAutoRow(mtKey, content, defNsMt, !!carriedSet[mtKey]);
+      html += pdAutoRow(mtKey, content, defNsMt, true);
     });
   }
   html += '</div>';
@@ -5396,7 +5396,7 @@ function generatePassdown() {
   function isCarriedNoNote(key) { return !!(genCarriedSet[key] && (!pdNotes[key] || !pdNotes[key].trim())); }
 
   // Keys still out (skip excluded)
-  var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued' && !pdExcluded['key_'+k.id] && !isCarriedNoNote('key_'+k.id); });
+  var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued' && !pdExcluded['key_'+k.id] && !!(pdNotes['key_'+k.id] && pdNotes['key_'+k.id].trim()); });
   if (oneTimeOut.length) {
     out += '\n🗝 One-Time Keys Still Out\n';
     oneTimeOut.forEach(function(k) {
@@ -5521,7 +5521,7 @@ function generatePassdown() {
   }
 
   // Open / in-progress maintenance (skip excluded)
-  var openM = (state.maintenance||[]).filter(function(m){ return (m.status==='open'||m.status==='in-progress') && !pdExcluded['mt_'+m.id] && !isCarriedNoNote('mt_'+m.id); });
+  var openM = (state.maintenance||[]).filter(function(m){ return (m.status==='open'||m.status==='in-progress') && !pdExcluded['mt_'+m.id] && !!(pdNotes['mt_'+m.id] && pdNotes['mt_'+m.id].trim()); });
   if (openM.length) {
     out += '\n🔧 Open Maintenance\n';
     openM.forEach(function(m) {
@@ -5537,7 +5537,7 @@ function generatePassdown() {
   }
 
   // Open concierge (skip excluded)
-  var openC = (state.concierge||[]).filter(function(c){ return c.status==='open' && !pdExcluded['c_'+c.id] && !isCarriedNoNote('c_'+c.id); });
+  var openC = (state.concierge||[]).filter(function(c){ return c.status==='open' && !pdExcluded['c_'+c.id] && !!(pdNotes['c_'+c.id] && pdNotes['c_'+c.id].trim()); });
   if (openC.length) {
     out += '\n🎭 Open Concierge Requests\n';
     openC.forEach(function(c) {
@@ -5547,7 +5547,7 @@ function generatePassdown() {
   }
 
   // Flagged L&F items
-  var flaggedLAF = (state.laf || []).filter(function(i){ return i.flaggedForPassdown && !i.claimedAt && !pdExcluded['laf_'+i.id] && !isCarriedNoNote('laf_'+i.id); });
+  var flaggedLAF = (state.laf || []).filter(function(i){ return i.flaggedForPassdown && !i.claimedAt && !pdExcluded['laf_'+i.id] && !!(pdNotes['laf_'+i.id] && pdNotes['laf_'+i.id].trim()); });
   if (flaggedLAF.length) {
     out += '\n📦 Lost & Found — Follow Up\n';
     flaggedLAF.forEach(function(i) {
