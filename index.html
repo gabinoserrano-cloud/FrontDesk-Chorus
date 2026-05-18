@@ -554,6 +554,7 @@
   <div class="nav-group">
     <div class="nav-label">Management</div>
     <div class="nav-item" data-sec="team" onclick="nav(this)"><span class="icon" data-icon="users"></span><span class="nav-txt">Team Tracker</span><span style="font-size:9px;background:#4E8A70;color:#141C1C;border-radius:3px;padding:1px 4px;margin-left:4px;font-weight:700;letter-spacing:.3px">LEAD</span></div>
+    <div class="nav-item" data-sec="activity" onclick="nav(this)"><span class="icon" data-icon="activity"></span><span class="nav-txt">Activity Log</span></div>
   </div>
   <div class="nav-group">
     <div class="nav-label">System</div>
@@ -802,6 +803,7 @@
       </div>
     </div>
     <div class="section" id="section-team"><div id="team-body"></div></div>
+    <div class="section" id="section-activity"><div id="activity-body"></div></div>
     <div class="section" id="section-settings">
 
       <!-- ── Accounts & Access ── -->
@@ -1360,6 +1362,7 @@ var SVG_ICONS = {
   download:  _svg('<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'),
   alert:     _svg('<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'),
   package:   _svg('<line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>'),
+  activity:  _svg('<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>'),
 };
 function applyIcons() {
   document.querySelectorAll('[data-icon]').forEach(function(el) {
@@ -1368,14 +1371,14 @@ function applyIcons() {
   });
 }
 
-var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [] };
+var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [] };
 var teamUnlocked = false;
 
 var currentUser = null;
 var loginPinEntry = '';
 var loginSelectedAccount = null;
 var todosViewingId = null;
-var STAFF_HIDDEN = ['team', 'import', 'settings'];
+var STAFF_HIDDEN = ['team', 'activity', 'import', 'settings'];
 
 // ─── SESSION TIMEOUT ───
 var _lastActivity = Date.now();
@@ -1493,7 +1496,7 @@ function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(stat
 function loadLocal() {
   try {
     var raw = localStorage.getItem(LOCAL_KEY);
-    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], supplies: [] }, JSON.parse(raw));
+    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], supplies: [], activityLog: [] }, JSON.parse(raw));
   } catch (e) {}
 }
 function scheduleSave() { saveLocal(); clearTimeout(syncTO); syncTO = setTimeout(pushCloud, 800); }
@@ -1509,7 +1512,7 @@ async function pullCloud() {
   try {
     var row = await supaGet();
     if (row && row.data && Object.keys(row.data).length > 0) {
-      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [] }, row.data);
+      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [] }, row.data);
       saveLocal();
     } else { loadLocal(); await supaPush(state); }
     setSyncStatus('synced', 'Synced');
@@ -1522,7 +1525,7 @@ setInterval(async function () {
     if (row && row.updated_at) {
       var ts = new Date(row.updated_at).getTime();
       if (lastSyncTs && ts > lastSyncTs + 2000) {
-        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [] }, row.data);
+        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [] }, row.data);
         saveLocal(); lastSyncTs = ts;
         renderSection(curSec); updateBadges();
         setSyncStatus('synced', 'Updated'); setTimeout(function () { setSyncStatus('synced', 'Synced'); }, 2000);
@@ -1540,14 +1543,14 @@ function processImport() {
   var file = g('import-file').files[0]; if (!file) { toast('Choose a file first'); return; }
   var reader = new FileReader();
   reader.onload = function (e) {
-    try { state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [] }, JSON.parse(e.target.result)); scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported'); }
+    try { state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [] }, JSON.parse(e.target.result)); scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported'); }
     catch (err) { toast('Invalid file'); }
   };
   reader.readAsText(file);
 }
 function resetData() {
   if (!confirm('Reset ALL data? Cannot be undone.')) return;
-  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [] };
+  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [] };
   scheduleSave(); renderAll(); toast('Data reset');
 }
 
@@ -1565,13 +1568,91 @@ function toast(msg) { var e = g('toast'); e.textContent = msg; e.classList.add('
 function g(id) { return document.getElementById(id); }
 function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, parking: [], security: [] }; }
 
+// ─── ACTIVITY LOG ───
+function logActivity(section, action, desc) {
+  if (!state.activityLog) state.activityLog = [];
+  var entry = { id: uid(), ts: Date.now(), by: currentUser ? currentUser.name : 'System', byId: currentUser ? currentUser.id : null, section: section, action: action, desc: desc };
+  state.activityLog.unshift(entry);
+  if (state.activityLog.length > 1000) state.activityLog = state.activityLog.slice(0, 1000);
+}
+
+function renderActivityLog() {
+  var wrap = g('activity-body');
+  if (!wrap) return;
+  var log = state.activityLog || [];
+  var filterUser = (g('act-filter-user') || {}).value || '';
+  var filterSec = (g('act-filter-sec') || {}).value || '';
+  var filterDate = (g('act-filter-date') || {}).value || '';
+
+  var filtered = log.filter(function(e) {
+    if (filterUser && e.byId !== filterUser) return false;
+    if (filterSec && e.section !== filterSec) return false;
+    if (filterDate) {
+      var d = new Date(e.ts);
+      var ds = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      if (ds !== filterDate) return false;
+    }
+    return true;
+  });
+
+  var userOpts = '<option value="">All Team Members</option>';
+  (state.accounts || []).forEach(function(a) { userOpts += '<option value="' + a.id + '"' + (filterUser === a.id ? ' selected' : '') + '>' + a.name + '</option>'; });
+
+  var secOpts = '<option value="">All Sections</option>';
+  var secs = ['moves','maintenance','guests','keys','amenities','tours','walkthrough','laf','passdown','concierge','residents','security','supplies','todos','settings'];
+  secs.forEach(function(s) { secOpts += '<option value="' + s + '"' + (filterSec === s ? ' selected' : '') + '>' + (SEC_TITLES[s] || s) + '</option>'; });
+
+  var html = '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px">'
+    + '<select id="act-filter-user" onchange="renderActivityLog()" style="flex:1;min-width:160px">' + userOpts + '</select>'
+    + '<select id="act-filter-sec" onchange="renderActivityLog()" style="flex:1;min-width:160px">' + secOpts + '</select>'
+    + '<input type="date" id="act-filter-date" value="' + filterDate + '" onchange="renderActivityLog()" data-no-autofill style="flex:1;min-width:140px">'
+    + (filterUser || filterSec || filterDate ? '<button class="btn btn-secondary btn-sm" onclick="clearActivityFilters()">Clear</button>' : '')
+    + '</div>';
+
+  if (!filtered.length) {
+    html += '<div style="color:var(--text3);padding:32px 0;text-align:center;font-size:14px">No activity yet' + (filterUser || filterSec || filterDate ? ' matching these filters' : '') + '</div>';
+  } else {
+    html += '<div style="display:flex;flex-direction:column;gap:0">';
+    var lastDate = '';
+    filtered.forEach(function(e) {
+      var dt = new Date(e.ts);
+      var dateStr = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+      var timeStr = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      if (dateStr !== lastDate) {
+        html += '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;padding:14px 0 6px;border-bottom:1px solid var(--border);margin-bottom:2px">' + dateStr + '</div>';
+        lastDate = dateStr;
+      }
+      var secLabel = SEC_TITLES[e.section] || e.section;
+      var actionColor = e.action === 'delete' ? 'var(--red)' : e.action === 'create' ? 'var(--accent)' : 'var(--text2)';
+      html += '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'
+        + '<span style="font-size:11px;color:var(--text3);min-width:58px;padding-top:1px">' + timeStr + '</span>'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:13px;color:var(--text1)">' + (e.desc || '') + '</div>'
+        + '<div style="font-size:11px;color:var(--text3);margin-top:2px">'
+        + '<span style="color:' + actionColor + ';font-weight:600;text-transform:capitalize">' + (e.action || '') + '</span>'
+        + ' &middot; ' + secLabel
+        + ' &middot; <span style="color:var(--accent)">' + (e.by || 'Unknown') + '</span>'
+        + '</div></div></div>';
+    });
+    html += '</div>';
+  }
+  wrap.innerHTML = html;
+}
+
+function clearActivityFilters() {
+  var u = g('act-filter-user'); if (u) u.value = '';
+  var s = g('act-filter-sec'); if (s) s.value = '';
+  var d = g('act-filter-date'); if (d) d.value = '';
+  renderActivityLog();
+}
+
 // ─── SIDEBAR ───
 function toggleSidebar() { document.body.classList.toggle('sc'); localStorage.setItem('chorus-sc', document.body.classList.contains('sc') ? '1' : '0'); }
 function openMobSidebar() { g('sidebar').classList.add('mob-open'); g('sb-ov').style.display = 'block'; }
 function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov').style.display = 'none'; }
 
 // ─── NAV ───
-var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Resident Profiles', guide: 'Guide' };
+var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Resident Profiles', guide: 'Guide', activity: 'Activity Log' };
 var patrolFilter = 'amenity';
 var SEC_ACTIONS = {
   moves: '<button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
@@ -1623,7 +1704,7 @@ function mobNav(item) {
   curSec = sec; renderSection(sec);
 }
 function renderSection(sec) {
-  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, guide: renderGuide, security: renderSecurity, supplies: renderSupplies };
+  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, guide: renderGuide, security: renderSecurity, supplies: renderSupplies, activity: renderActivityLog };
   if (map[sec]) map[sec]();
 }
 function renderAll() { renderSection(curSec); updateBadges(); }
@@ -2025,6 +2106,7 @@ function saveMove() {
     m.unit = unit; m.resident = resident; m.date = date; m.type = moveType;
     m.total = total; m.notes = notes; m.apptDate = apptDate; m.apptTime = apptTime;
     editingMoveId = null;
+    logActivity('moves', 'edit', 'Updated move — Unit ' + unit + ' (' + (moveType === 'in' ? 'Move In' : 'Move Out') + ') · ' + resident);
     scheduleSave(); closeModal('modal-move'); renderMoves(); updateBadges(); renderDash();
     toast('Move updated'); return;
   }
@@ -2050,6 +2132,7 @@ function saveMove() {
       vacMatch.status = 'occupied';
     }
   }
+  logActivity('moves', 'create', 'Added move \u2014 Unit ' + unit + ' (' + (moveType === 'in' ? 'Move In' : 'Move Out') + ') \u00b7 ' + resident);
   scheduleSave(); closeModal('modal-move'); openMoveId = m.id; renderMoves(); updateBadges(); renderDash();
   ['mv-unit', 'mv-resident', 'mv-total', 'mv-notes'].forEach(function (id) { g(id).value = ''; });
   toast('Move added \u2014 welcome & follow-up call todos created');
@@ -2485,6 +2568,7 @@ function removeCoResident(moveId, coId) {
 function archiveMove(id) {
   var m = (state.moves || []).find(function (x) { return x.id === id; }); if (!m) return;
   m.archivedAt = Date.now(); if (openMoveId === id) openMoveId = null;
+  logActivity('moves', 'archive', 'Archived move — Unit ' + m.unit + ' (' + (m.type === 'in' ? 'Move In' : 'Move Out') + ') · ' + m.resident);
   scheduleSave(); renderMoves(); updateBadges(); renderDash(); toast('Archived');
   // ── Connection: Move-in archive → Resident Profiles ──
   if (m.type === 'in') {
@@ -2522,6 +2606,8 @@ function archiveMove(id) {
 }
 function deleteMove(id) {
   if (!confirm('Delete this move?')) return;
+  var m = (state.moves || []).find(function(x){ return x.id === id; });
+  logActivity('moves', 'delete', 'Deleted move' + (m ? ' — Unit ' + m.unit + ' · ' + m.resident : ''));
   state.moves = (state.moves || []).filter(function (m) { return m.id !== id; });
   if (!state.deletedMoveIds) state.deletedMoveIds = [];
   state.deletedMoveIds.push(id); if (openMoveId === id) openMoveId = null;
@@ -2671,18 +2757,18 @@ function saveConcierge() {
   if (editingConciergeId) {
     var c = (state.concierge || []).find(function(x){ return x.id===editingConciergeId; }); if (!c) return;
     var naV = g('cr-nextaction'); c.unit=unit; c.resident=resident; c.type=g('cr-type').value; c.notes=g('cr-notes').value.trim(); c.status=g('cr-status').value; c.handledBy=g('cr-handled').value.trim(); c.nextAction=naV?naV.value.trim():'';
-    editingConciergeId=null; scheduleSave(); closeModal('modal-concierge'); renderConcierge(); updateBadges(); toast('Request updated'); return;
+    editingConciergeId=null; logActivity('concierge','edit','Updated concierge request — Unit '+unit+' · '+c.type); scheduleSave(); closeModal('modal-concierge'); renderConcierge(); updateBadges(); toast('Request updated'); return;
   }
   var naVN = g('cr-nextaction');
   var cNow = Date.now(), cBy = currentUser ? currentUser.name : '';
   var cNotes = g('cr-notes').value.trim();
   var entry = { id: uid(), unit: unit, resident: resident, type: g('cr-type').value, notes: cNotes, status: g('cr-status').value, handledBy: g('cr-handled').value.trim(), nextAction: naVN?naVN.value.trim():'', addedBy: cBy, createdAt: cNow, log: cNotes ? [{ ts: cNow, by: cBy, note: cNotes }] : [] };
   if (!state.concierge) state.concierge = [];
-  state.concierge.push(entry); scheduleSave(); closeModal('modal-concierge'); renderConcierge(); updateBadges(); toast('Request logged');
+  state.concierge.push(entry); logActivity('concierge','create','Logged concierge request — Unit '+unit+' · '+entry.type); scheduleSave(); closeModal('modal-concierge'); renderConcierge(); updateBadges(); toast('Request logged');
 }
-function updateConciergeStatus(id, val) { var c = (state.concierge || []).find(function(x){ return x.id===id; }); if (c) { c.status=val; scheduleSave(); renderConcierge(); updateBadges(); } }
+function updateConciergeStatus(id, val) { var c = (state.concierge || []).find(function(x){ return x.id===id; }); if (c) { logActivity('concierge','edit','Concierge status → '+val+' — Unit '+c.unit+' · '+c.type); c.status=val; scheduleSave(); renderConcierge(); updateBadges(); } }
 function updateConciergeNextAction(id, val) { var c = (state.concierge || []).find(function(x){ return x.id===id; }); if (c) { c.nextAction=val.trim(); scheduleSave(); } }
-function deleteConcierge(id) { if (!confirm('Delete this request?')) return; state.concierge = (state.concierge || []).filter(function(c){ return c.id!==id; }); scheduleSave(); renderConcierge(); updateBadges(); toast('Deleted'); }
+function deleteConcierge(id) { if (!confirm('Delete this request?')) return; var cx=(state.concierge||[]).find(function(x){return x.id===id;}); logActivity('concierge','delete','Deleted concierge request'+(cx?' — Unit '+cx.unit+' · '+cx.type:'')); state.concierge = (state.concierge || []).filter(function(c){ return c.id!==id; }); scheduleSave(); renderConcierge(); updateBadges(); toast('Deleted'); }
 function renderConcierge() {
   var list = (state.concierge || []).slice();
   if (conciergeFilter === 'open') list = list.filter(function(c){ return c.status==='open'; });
@@ -2742,6 +2828,7 @@ function escalateConciergeToMaint(id) {
   state.maintenance.push(entry);
   if (!c.log) c.log = [];
   c.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: 'Escalated to maintenance' });
+  logActivity('concierge', 'edit', 'Escalated concierge request to maintenance — Unit ' + c.unit + ' · ' + c.type);
   scheduleSave(); renderMaint(); renderConcierge(); updateBadges(); renderDash();
   toast('Maintenance issue created from concierge request');
 }
@@ -2753,6 +2840,7 @@ function escalateSecurityToMaint(id) {
   if (!state.maintenance) state.maintenance = [];
   state.maintenance.push(entry);
   s.maintEscalated = true;
+  logActivity('security', 'edit', 'Escalated security incident to maintenance — ' + s.type + ' · ' + s.location);
   scheduleSave(); renderMaint(); renderSecurity(); updateBadges(); renderDash();
   toast('Maintenance issue created from security incident');
 }
@@ -2766,13 +2854,13 @@ function saveMaint() {
   if (editingMaintId) {
     var m = (state.maintenance||[]).find(function(x){return x.id===editingMaintId;}); if(!m) return;
     m.unit=unit; m.issue=issue; m.desc=g('mt-desc').value.trim(); m.priority=g('mt-priority').value; m.status=g('mt-status').value; m.reporter=g('mt-reporter').value.trim(); m.workorder=g('mt-workorder').checked;
-    editingMaintId=null; scheduleSave(); closeModal('modal-maint'); renderMaint(); updateBadges(); renderDash(); toast('Issue updated'); return;
+    editingMaintId=null; logActivity('maintenance', 'edit', 'Updated maintenance issue — Unit ' + unit + ' · ' + issue); scheduleSave(); closeModal('modal-maint'); renderMaint(); updateBadges(); renderDash(); toast('Issue updated'); return;
   }
   var mNow = Date.now(), mBy = currentUser ? currentUser.name : '';
   var mDesc = g('mt-desc').value.trim();
   var m = { id: uid(), unit: unit, issue: issue, desc: mDesc, priority: g('mt-priority').value, status: g('mt-status').value, reporter: g('mt-reporter').value.trim(), workorder: g('mt-workorder').checked, addedBy: mBy, createdAt: mNow, log: mDesc ? [{ ts: mNow, by: mBy, note: mDesc }] : [] };
   if (!state.maintenance) state.maintenance = [];
-  state.maintenance.push(m); scheduleSave(); closeModal('modal-maint'); renderMaint(); updateBadges(); renderDash();
+  state.maintenance.push(m); logActivity('maintenance', 'create', 'Logged maintenance issue — Unit ' + unit + ' · ' + issue); scheduleSave(); closeModal('modal-maint'); renderMaint(); updateBadges(); renderDash();
   ['mt-unit', 'mt-issue', 'mt-desc', 'mt-reporter'].forEach(function (id) { g(id).value = ''; }); toast('Issue logged');
 }
 function renderMaint() {
@@ -2826,7 +2914,7 @@ function renderMaint() {
   setBadge('badge-maint', open + inp);
 }
 function updateMaintStatus(id, val) { var m = (state.maintenance || []).find(function (x) { return x.id === id; }); if (m) { m.status = val; scheduleSave(); renderMaint(); updateBadges(); renderDash(); } }
-function deleteMaint(id) { if (!confirm('Delete?')) return; state.maintenance = (state.maintenance || []).filter(function (m) { return m.id !== id; }); scheduleSave(); renderMaint(); updateBadges(); renderDash(); toast('Deleted'); }
+function deleteMaint(id) { if (!confirm('Delete?')) return; var mx = (state.maintenance||[]).find(function(x){return x.id===id;}); logActivity('maintenance', 'delete', 'Deleted maintenance issue' + (mx ? ' — Unit ' + mx.unit + ' · ' + mx.issue : '')); state.maintenance = (state.maintenance || []).filter(function (m) { return m.id !== id; }); scheduleSave(); renderMaint(); updateBadges(); renderDash(); toast('Deleted'); }
 
 // ─── GUESTS ───
 var guestFilter = 'all';
@@ -2837,7 +2925,7 @@ function saveGuest() {
   if (editingGuestId) {
     var gst = (state.guests||[]).find(function(x){return x.id===editingGuestId;}); if(!gst) return;
     gst.name=name; gst.unit=unit; gst.host=g('gs-host').value.trim(); gst.type=g('gs-type').value; gst.status=g('gs-status').value; gst.notes=g('gs-notes').value.trim();
-    editingGuestId=null; scheduleSave(); closeModal('modal-guest'); renderGuests(); updateBadges(); toast('Guest updated'); return;
+    editingGuestId=null; logActivity('guests', 'edit', 'Updated guest — ' + name + ' · Unit ' + unit); scheduleSave(); closeModal('modal-guest'); renderGuests(); updateBadges(); toast('Guest updated'); return;
   }
   var gst = { id: uid(), name: name, unit: unit, host: g('gs-host').value.trim(), type: g('gs-type').value, status: g('gs-status').value, notes: g('gs-notes').value.trim(), checkIn: Date.now(), checkOut: null, addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
   if (!state.guests) state.guests = [];
@@ -2851,7 +2939,7 @@ function saveGuest() {
     applySupplyAdjustment('Key Cards – Blank Stock', -1, 'Issued for guest — Unit ' + unit);
     renderKeys();
   }
-  state.guests.push(gst); scheduleSave(); closeModal('modal-guest'); renderGuests(); updateBadges();
+  state.guests.push(gst); logActivity('guests', 'create', 'Logged guest — ' + name + ' · Unit ' + unit + (issueKey ? ' (key issued)' : '')); scheduleSave(); closeModal('modal-guest'); renderGuests(); updateBadges();
   ['gs-name', 'gs-unit', 'gs-host', 'gs-notes'].forEach(function (id) { g(id).value = ''; });
   if (g('guest-issue-key')) g('guest-issue-key').checked = false;
   toast(issueKey ? 'Guest logged + one-time key issued' : 'Guest logged');
@@ -2894,9 +2982,10 @@ function updateGuestStatus(id, val) {
       }
     }
   }
+  logActivity('guests', 'edit', 'Guest status → ' + val + ' — ' + gst.name + ' · Unit ' + gst.unit);
   scheduleSave(); renderGuests(); updateBadges();
 }
-function deleteGuest(id) { if (!confirm('Remove?')) return; state.guests = (state.guests || []).filter(function (gst) { return gst.id !== id; }); scheduleSave(); renderGuests(); updateBadges(); toast('Removed'); }
+function deleteGuest(id) { if (!confirm('Remove?')) return; var gx = (state.guests||[]).find(function(x){return x.id===id;}); logActivity('guests', 'delete', 'Removed guest' + (gx ? ' — ' + gx.name + ' · Unit ' + gx.unit : '')); state.guests = (state.guests || []).filter(function (gst) { return gst.id !== id; }); scheduleSave(); renderGuests(); updateBadges(); toast('Removed'); }
 
 // ─── KEYS ───
 var keyFilter = 'all';
@@ -2945,7 +3034,7 @@ function saveKey() {
         applySupplyAdjustment('Key Cards – Blank Stock', +1, 'Returned — Unit ' + k.unit + ' · ' + k.name + (currentUser ? ' · ' + currentUser.name : ''));
       }
     }
-    editingKeyId=null; scheduleSave(); closeModal('modal-key'); renderKeys(); updateBadges(); renderDash(); toast('Key updated'); return;
+    editingKeyId=null; logActivity('keys', 'edit', 'Updated key — Unit ' + unit + ' · ' + name + ' (' + type + ')'); scheduleSave(); closeModal('modal-key'); renderKeys(); updateBadges(); renderDash(); toast('Key updated'); return;
   }
   var now = Date.now();
   var issuedAt = now;
@@ -2953,7 +3042,7 @@ function saveKey() {
   var isRepl = g('ky-replacement') ? g('ky-replacement').checked : false;
   var k = { id: uid(), unit: unit, name: name, guest: guest, timeout: timeout, type: type, fob: g('ky-fob').value.trim(), status: g('ky-status').value, expiry: g('ky-expiry').value || null, notes: g('ky-notes').value.trim(), issuedAt: issuedAt, returnedAt: null, addedBy: currentUser ? currentUser.name : '', createdAt: now, company: g('ky-company')?g('ky-company').value.trim():'', workArea: g('ky-workarea')?g('ky-workarea').value.trim():'', vendorReturn: g('ky-vendor-return')?g('ky-vendor-return').value:'', isReplacement: isRepl, fee: isRepl ? 100 : 0, feeAddedToLedger: false, feeWaived: false, feeAddedAt: null, feeAddedBy: '', reachedOut: false, reachedOutAt: null };
   if (!state.keys) state.keys = [];
-  state.keys.push(k); scheduleSave(); closeModal('modal-key'); renderKeys(); updateBadges(); renderDash();
+  state.keys.push(k); logActivity('keys', 'create', 'Logged key — Unit ' + unit + ' · ' + name + ' (' + type + (isRepl ? ' · replacement' : '') + ')'); scheduleSave(); closeModal('modal-key'); renderKeys(); updateBadges(); renderDash();
   // Decrement blank key card stock when a physical key is issued
   if (k.status === 'issued' && k.type !== 'mobile') {
     applySupplyAdjustment('Key Cards – Blank Stock', -1, 'Issued — Unit ' + k.unit + ' · ' + k.name + (k.addedBy ? ' · ' + k.addedBy : ''));
@@ -3076,16 +3165,17 @@ function logKeyReturn(id) {
   k.status = 'returned'; k.returnedAt = Date.now();
   scheduleSave(); renderKeys(); updateBadges(); renderDash(); toast('Key return logged');
 }
-function deleteKey(id) { if (!confirm('Remove?')) return; state.keys = (state.keys || []).filter(function (k) { return k.id !== id; }); scheduleSave(); renderKeys(); updateBadges(); toast('Removed'); }
+function deleteKey(id) { if (!confirm('Remove?')) return; var kx=(state.keys||[]).find(function(x){return x.id===id;}); logActivity('keys','delete','Removed key'+(kx?' — Unit '+kx.unit+' · '+kx.name:'')); state.keys = (state.keys || []).filter(function (k) { return k.id !== id; }); scheduleSave(); renderKeys(); updateBadges(); toast('Removed'); }
 function markFeeToLedger(id) {
   var k = (state.keys||[]).find(function(x){return x.id===id;}); if(!k) return;
   k.feeAddedToLedger = true; k.feeAddedAt = Date.now(); k.feeAddedBy = currentUser ? currentUser.name : '';
+  logActivity('keys', 'edit', 'Marked $100 replacement fee added to ledger — Unit ' + k.unit + ' · ' + k.name);
   scheduleSave(); renderKeys(); toast('Fee marked as added to ledger');
 }
 function waiveKeyFee(id) {
   var k = (state.keys||[]).find(function(x){return x.id===id;}); if(!k) return;
   if (!confirm('Waive this fee?')) return;
-  k.feeWaived = true; scheduleSave(); renderKeys(); toast('Fee waived');
+  k.feeWaived = true; logActivity('keys', 'edit', 'Waived $100 replacement fee — Unit ' + k.unit + ' · ' + k.name); scheduleSave(); renderKeys(); toast('Fee waived');
 }
 function toggleReachedOut(id) {
   var k = (state.keys||[]).find(function(x){return x.id===id;}); if(!k) return;
@@ -3221,14 +3311,16 @@ function saveSecurity() {
   if (editingSecurityId) {
     var s=(state.security||[]).find(function(x){return x.id===editingSecurityId;}); if(!s) return;
     Object.assign(s, data); editingSecurityId=null;
+    logActivity('security', 'edit', 'Updated security incident — ' + type + ' · ' + location);
     scheduleSave(); closeModal('modal-security'); renderSecurity(); updateBadges(); toast('Incident updated');
   } else {
     if (!state.security) state.security=[];
     state.security.push(Object.assign({id:uid(), addedBy:currentUser?currentUser.name:'', createdAt:Date.now()}, data));
+    logActivity('security', 'create', 'Logged security incident — ' + type + ' · ' + location);
     scheduleSave(); closeModal('modal-security'); renderSecurity(); updateBadges(); toast('Incident logged');
   }
 }
-function deleteSecurity(id) { if(!confirm('Delete this incident?')) return; state.security=(state.security||[]).filter(function(x){return x.id!==id;}); scheduleSave(); renderSecurity(); updateBadges(); toast('Deleted'); }
+function deleteSecurity(id) { if(!confirm('Delete this incident?')) return; var sx=(state.security||[]).find(function(x){return x.id===id;}); logActivity('security','delete','Deleted security incident'+(sx?' — '+sx.type+' · '+sx.location:'')); state.security=(state.security||[]).filter(function(x){return x.id!==id;}); scheduleSave(); renderSecurity(); updateBadges(); toast('Deleted'); }
 function renderSecurity() {
   var t = today();
   var list = (state.security||[]).slice();
@@ -3280,11 +3372,11 @@ function saveAmenity() {
   if (editingAmenityId) {
     var a = (state.amenities||[]).find(function(x){return x.id===editingAmenityId;}); if(!a) return;
     a.resident=resident; a.unit=unit; a.space=space; a.date=date; a.start=g('am-start').value; a.end=g('am-end').value; a.type=g('am-type').value; a.fee=g('am-fee').value.trim(); a.notes=g('am-notes').value.trim();
-    editingAmenityId=null; scheduleSave(); closeModal('modal-amenity'); renderAmenities(); updateBadges(); renderCalendar(); toast('Booking updated'); return;
+    editingAmenityId=null; logActivity('amenities','edit','Updated amenity booking — Unit '+unit+' · '+space+' · '+fmtShort(date)); scheduleSave(); closeModal('modal-amenity'); renderAmenities(); updateBadges(); renderCalendar(); toast('Booking updated'); return;
   }
   var a = { id: uid(), resident: resident, unit: unit, space: space, date: date, start: g('am-start').value, end: g('am-end').value, type: g('am-type').value, fee: g('am-fee').value.trim(), notes: g('am-notes').value.trim(), addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
   if (!state.amenities) state.amenities = [];
-  state.amenities.push(a); scheduleSave(); closeModal('modal-amenity'); renderAmenities(); updateBadges();
+  state.amenities.push(a); logActivity('amenities','create','Added amenity booking — Unit '+unit+' · '+space+' · '+fmtShort(date)); scheduleSave(); closeModal('modal-amenity'); renderAmenities(); updateBadges();
   ['am-resident', 'am-unit', 'am-fee', 'am-notes'].forEach(function (id) { g(id).value = ''; }); clearSpaceCheckboxes(); toast('Booking added');
 }
 function renderAmenities() {
@@ -3339,7 +3431,7 @@ function renderAmenities() {
   tbody.innerHTML = html;
   setBadge('badge-amenities', (state.amenities || []).filter(function (a) { return a.date >= t; }).length);
 }
-function deleteAmenity(id) { if (!confirm('Remove?')) return; state.amenities = (state.amenities || []).filter(function (a) { return a.id !== id; }); scheduleSave(); renderAmenities(); updateBadges(); toast('Removed'); }
+function deleteAmenity(id) { if (!confirm('Remove?')) return; var ax=(state.amenities||[]).find(function(x){return x.id===id;}); logActivity('amenities','delete','Removed amenity booking'+(ax?' — Unit '+ax.unit+' · '+ax.space+' · '+fmtShort(ax.date):'')); state.amenities = (state.amenities || []).filter(function (a) { return a.id !== id; }); scheduleSave(); renderAmenities(); updateBadges(); toast('Removed'); }
 
 // ─── TOURS ───
 var tourFilter = 'all';
@@ -3369,11 +3461,11 @@ function saveTour() {
   if (editingTourId) {
     var tr = (state.tours||[]).find(function(x){return x.id===editingTourId;}); if(!tr) return;
     tr.name=name; tr.unit=g('tr-unit').value.trim(); tr.type=g('tr-type').value; tr.date=date; tr.time=g('tr-time').value; tr.contact=g('tr-contact').value.trim(); tr.notes=g('tr-notes').value.trim();
-    editingTourId=null; scheduleSave(); closeModal('modal-tour'); renderTours(); updateBadges(); toast('Tour updated'); return;
+    editingTourId=null; logActivity('tours','edit','Updated tour — '+name+' · '+fmtShort(date)); scheduleSave(); closeModal('modal-tour'); renderTours(); updateBadges(); toast('Tour updated'); return;
   }
   var tr = { id: uid(), name: name, unit: g('tr-unit').value.trim(), type: g('tr-type').value, date: date, time: g('tr-time').value, contact: g('tr-contact').value.trim(), notes: g('tr-notes').value.trim(), addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
   if (!state.tours) state.tours = [];
-  state.tours.push(tr); scheduleSave(); closeModal('modal-tour'); renderTours(); updateBadges();
+  state.tours.push(tr); logActivity('tours','create','Logged tour — '+name+' · '+fmtShort(date)+' ('+g('tr-type').value+')'); scheduleSave(); closeModal('modal-tour'); renderTours(); updateBadges();
   ['tr-name', 'tr-unit', 'tr-contact', 'tr-notes'].forEach(function (id) { g(id).value = ''; }); g('tr-time').value = ''; toast('Tour logged');
 }
 function renderTours() {
@@ -3397,7 +3489,7 @@ function renderTours() {
   tbody.innerHTML = html;
   setBadge('badge-tours', allT.filter(function (tr) { return tr.date === t; }).length);
 }
-function deleteTour(id) { if (!confirm('Delete?')) return; state.tours = (state.tours || []).filter(function (tr) { return tr.id !== id; }); scheduleSave(); renderTours(); updateBadges(); toast('Deleted'); }
+function deleteTour(id) { if (!confirm('Delete?')) return; var tx=(state.tours||[]).find(function(x){return x.id===id;}); logActivity('tours','delete','Deleted tour'+(tx?' — '+tx.name+' · '+fmtShort(tx.date):'')); state.tours = (state.tours || []).filter(function (tr) { return tr.id !== id; }); scheduleSave(); renderTours(); updateBadges(); toast('Deleted'); }
 
 // ─── WALKTHROUGH ───
 function toggleWTFloor(hdr) { hdr.parentElement.classList.toggle('open'); }
@@ -4278,11 +4370,11 @@ function saveLAF() {
   if (editingLAFId) {
     var item = (state.laf||[]).find(function(x){return x.id===editingLAFId;}); if(!item) return;
     item.date=g('lf-date').value||today(); item.time=g('lf-time').value||''; item.foundBy=g('lf-foundby').value.trim(); item.location=g('lf-location').value.trim(); item.condition=g('lf-condition').value; item.desc=desc; item.notes=g('lf-notes').value.trim();
-    editingLAFId=null; scheduleSave(); closeModal('modal-laf'); renderLAF(); updateBadges(); toast('Item updated'); return;
+    editingLAFId=null; logActivity('laf','edit','Updated L&F item — '+desc+' · '+item.location); scheduleSave(); closeModal('modal-laf'); renderLAF(); updateBadges(); toast('Item updated'); return;
   }
   var item = { id: uid(), date: g('lf-date').value || today(), time: g('lf-time').value || '', foundBy: g('lf-foundby').value.trim(), location: g('lf-location').value.trim(), condition: g('lf-condition').value, desc: desc, notes: g('lf-notes').value.trim(), claimedAt: null, claimedBy: '', claimedUnit: '', addedBy: currentUser ? currentUser.name : '', loggedAt: Date.now() };
   if (!state.laf) state.laf = [];
-  state.laf.push(item); scheduleSave(); closeModal('modal-laf'); renderLAF(); updateBadges();
+  state.laf.push(item); logActivity('laf','create','Logged L&F item — '+desc+' · '+(item.location||'unknown location')); scheduleSave(); closeModal('modal-laf'); renderLAF(); updateBadges();
   ['lf-foundby', 'lf-location', 'lf-desc', 'lf-notes', 'lf-time'].forEach(function (id) { g(id).value = ''; }); toast('Item logged');
 }
 function renderLAF() {
@@ -4314,9 +4406,9 @@ function renderLAF() {
 }
 var claimingLAFId = null;
 function claimLAF(id) { claimingLAFId = id; g('laf-claim-by').value = ''; g('laf-claim-unit').value = ''; openModal('modal-laf-claim'); setTimeout(function(){ var f=g('laf-claim-by'); if(f) f.focus(); }, 80); }
-function saveClaimLAF() { var item = (state.laf || []).find(function(x){ return x.id === claimingLAFId; }); if (!item) return; var by = g('laf-claim-by').value.trim(); if (!by) { toast('Enter who is claiming the item'); return; } item.claimedBy = by; item.claimedUnit = g('laf-claim-unit').value.trim(); item.claimedAt = Date.now(); claimingLAFId = null; scheduleSave(); closeModal('modal-laf-claim'); renderLAF(); updateBadges(); toast('Marked as claimed'); }
+function saveClaimLAF() { var item = (state.laf || []).find(function(x){ return x.id === claimingLAFId; }); if (!item) return; var by = g('laf-claim-by').value.trim(); if (!by) { toast('Enter who is claiming the item'); return; } item.claimedBy = by; item.claimedUnit = g('laf-claim-unit').value.trim(); item.claimedAt = Date.now(); logActivity('laf','edit','L&F item claimed — '+item.desc+' · by '+by+(item.claimedUnit?' Unit '+item.claimedUnit:'')); claimingLAFId = null; scheduleSave(); closeModal('modal-laf-claim'); renderLAF(); updateBadges(); toast('Marked as claimed'); }
 function toggleLAFPassdown(id) { var item = (state.laf || []).find(function(x){ return x.id === id; }); if (!item) return; item.flaggedForPassdown = !item.flaggedForPassdown; scheduleSave(); renderLAF(); toast(item.flaggedForPassdown ? 'Flagged for passdown' : 'Removed from passdown'); }
-function deleteLAF(id) { if (!confirm('Remove?')) return; state.laf = (state.laf || []).filter(function (i) { return i.id !== id; }); scheduleSave(); renderLAF(); updateBadges(); toast('Removed'); }
+function deleteLAF(id) { if (!confirm('Remove?')) return; var lx=(state.laf||[]).find(function(x){return x.id===id;}); logActivity('laf','delete','Removed L&F item'+(lx?' — '+lx.desc:'')); state.laf = (state.laf || []).filter(function (i) { return i.id !== id; }); scheduleSave(); renderLAF(); updateBadges(); toast('Removed'); }
 
 // ─── RESIDENT PROFILES / VIP NOTES / PTE ───
 var residentsFilter = 'all', editingResidentId = null;
@@ -4362,7 +4454,7 @@ function saveResident() {
     var bgCbS = g('rp-blueground');
     r.unit=unit; r.residentName=name; r.preferredName=g('rp-preferred').value.trim(); r.phone=g('rp-phone').value.trim(); r.birthday=g('rp-birthday').value; r.anniversary=g('rp-anniversary').value; r.instructions=g('rp-instructions').value.trim(); r.pte=g('rp-pte').value; r.notes=g('rp-notes').value.trim();
     r.parking=g('rp-parking').value; r.parkingInfo=g('rp-parking-info').value.trim(); r.bike=g('rp-bike').value; r.bikeNotes=g('rp-bike-notes').value.trim(); r.storage=g('rp-storage').value; r.storageUnit=g('rp-storage-unit').value.trim(); r.blueground=bgCbS?!!bgCbS.checked:false;
-    editingResidentId=null; scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile updated'); return;
+    editingResidentId=null; logActivity('residents','edit','Updated resident profile — Unit '+unit+' · '+name); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile updated'); return;
   }
   var existingForUnit = (state.residentProfiles || []).filter(function(p){ return p.unit === unit; });
   if (existingForUnit.length) {
@@ -4372,9 +4464,9 @@ function saveResident() {
   var bgCbN = g('rp-blueground');
   var entry = { id: uid(), unit: unit, residentName: name, preferredName: g('rp-preferred').value.trim(), phone: g('rp-phone').value.trim(), birthday: g('rp-birthday').value, anniversary: g('rp-anniversary').value, instructions: g('rp-instructions').value.trim(), pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), parking: g('rp-parking').value, parkingInfo: g('rp-parking-info').value.trim(), bike: g('rp-bike').value, bikeNotes: g('rp-bike-notes').value.trim(), storage: g('rp-storage').value, storageUnit: g('rp-storage-unit').value.trim(), blueground: bgCbN?!!bgCbN.checked:false, createdAt: Date.now() };
   if (!state.residentProfiles) state.residentProfiles = [];
-  state.residentProfiles.push(entry); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile saved');
+  state.residentProfiles.push(entry); logActivity('residents','create','Added resident profile — Unit '+unit+' · '+name); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile saved');
 }
-function deleteResident(id) { if (!confirm('Remove this profile?')) return; state.residentProfiles = (state.residentProfiles || []).filter(function(r){ return r.id!==id; }); scheduleSave(); renderResidents(); toast('Removed'); }
+function deleteResident(id) { if (!confirm('Remove this profile?')) return; var rx=(state.residentProfiles||[]).find(function(x){return x.id===id;}); logActivity('residents','delete','Removed resident profile'+(rx?' — Unit '+rx.unit+' · '+rx.residentName:'')); state.residentProfiles = (state.residentProfiles || []).filter(function(r){ return r.id!==id; }); scheduleSave(); renderResidents(); toast('Removed'); }
 
 // ─── SUPPLIES ───
 var editingSupplyId = null;
@@ -4574,7 +4666,7 @@ function saveSupply() {
   } else {
     state.supplies.push({ id: uid(), name: name, cat: cat, unit: unit, qty: qty, lowAt: lowAt, notes: notes, updatedAt: Date.now(), updatedBy: by });
   }
-  checkSupplyLowStockTodos(); scheduleSave(); closeModal('modal-supply'); renderSupplies(); updateBadges(); if(curSec==='todos') renderTodos(); toast(editingSupplyId ? 'Item updated' : 'Item added');
+  logActivity('supplies', editingSupplyId ? 'edit' : 'create', (editingSupplyId ? 'Updated' : 'Added') + ' supply item — ' + name + ' · qty ' + qty); checkSupplyLowStockTodos(); scheduleSave(); closeModal('modal-supply'); renderSupplies(); updateBadges(); if(curSec==='todos') renderTodos(); toast(editingSupplyId ? 'Item updated' : 'Item added');
 }
 
 function checkSupplyLowStockTodos() {
@@ -4632,6 +4724,7 @@ function adjustSupply(id, delta) {
   s.qty = Math.max(0, prevQty + delta);
   s.updatedAt = Date.now(); s.updatedBy = by;
   s.log.push({ ts: Date.now(), by: by, delta: delta, prevQty: prevQty, newQty: s.qty, note: 'Manual adjustment' });
+  logActivity('supplies','edit',(delta>0?'Increased':'Decreased')+' supply qty — '+s.name+' · '+prevQty+' → '+s.qty);
   checkSupplyLowStockTodos(); scheduleSave(); renderSupplies(); updateBadges(); renderDash(); if(curSec==='todos') renderTodos();
 }
 
@@ -6737,6 +6830,7 @@ var TOGGLEABLE_SECTIONS = [
   { id: 'concierge', label: 'Concierge Log' },
   { id: 'residents', label: 'Resident Profiles' },
   { id: 'team', label: 'Team Tracker' },
+  { id: 'activity', label: 'Activity Log' },
   { id: 'calendar', label: 'Calendar' },
   { id: 'import', label: 'Import Center' },
   { id: 'guide', label: 'Guide' }
