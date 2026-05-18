@@ -5509,7 +5509,7 @@ function generatePassdown() {
       var latestNote = (m.log && m.log.length) ? m.log[m.log.length-1].note : (m.desc || '');
       out += 'Unit ' + m.unit + ' – ' + m.issue + prioTag + woTag + ' (' + statusStr + ')\n';
       if (latestNote) out += 'Update: ' + latestNote + '\n';
-      var defNsM = m.status === 'in-progress' ? 'In progress — monitor and update next shift.' : 'Pending — follow up with maintenance team.';
+      var defNsM = (m.log && m.log.length) ? 'Latest note: ' + m.log[m.log.length-1].note : (m.status === 'in-progress' ? 'In progress — monitor and update next shift.' : 'Pending — follow up with maintenance team.');
       out += 'Next Step: ' + pdNote('mt_'+m.id, defNsM) + '\n';
     });
   }
@@ -5781,6 +5781,11 @@ function savePassdown() {
 function copyPassdown() {
   var preview = g('pd-preview').value;
   if (!preview || !preview.trim()) { toast('Generate passdown first'); return; }
+  var isStaffUser = currentUser && currentUser.role === 'staff';
+  if (isStaffUser) {
+    var freeItems = (pdSections.shiftNotes || []).concat(pdSections.thisShift || []);
+    if (!freeItems.length) { toast('Add at least one shift note before copying — go back and fill in the Shift Notes section'); return; }
+  }
   if (navigator.share) navigator.share({ text: preview }).catch(function () {});
   else navigator.clipboard.writeText(preview).then(function () { toast('Copied'); }).catch(function () { toast('Copy failed'); });
 }
