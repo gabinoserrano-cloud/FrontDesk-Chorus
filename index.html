@@ -1882,7 +1882,12 @@ function openModal(id) {
   g(id).classList.add('open');
   g(id).querySelectorAll('input[type=date]').forEach(function (f) { if (!f.value && !f.hasAttribute('data-no-autofill')) f.value = today(); });
 }
-function closeModal(id) { g(id).classList.remove('open'); }
+function closeModal(id) {
+  g(id).classList.remove('open');
+  if (curSec === 'passdown' && ['modal-maint','modal-concierge','modal-key','modal-amenity','modal-security'].indexOf(id) !== -1) {
+    setTimeout(function(){ renderPdAutoBlocks(currentUser && currentUser.role === 'admin'); }, 150);
+  }
+}
 document.addEventListener('click', function (e) { if (e.target.classList.contains('modal-ov')) e.target.classList.remove('open'); });
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape') document.querySelectorAll('.modal-ov.open').forEach(function (m) { m.classList.remove('open'); }); });
 
@@ -5038,6 +5043,16 @@ function getActiveAutoBlockIds() {
   return ids;
 }
 function pdAttrEsc(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function pdAutoRowEditFn(exKey) {
+  if (exKey.indexOf('mt_') === 0) return 'openEditMaint(\'' + exKey.slice(3) + '\')';
+  if (exKey.indexOf('c_') === 0) return 'openEditConcierge(\'' + exKey.slice(2) + '\')';
+  if (exKey.indexOf('key_') === 0) return 'openEditKey(\'' + exKey.slice(4) + '\')';
+  if (exKey.indexOf('in_') === 0) return 'openEditMove(\'' + exKey.slice(3) + '\')';
+  if (exKey.indexOf('out_') === 0) return 'openEditMove(\'' + exKey.slice(4) + '\')';
+  if (exKey.indexOf('am_') === 0) return 'openEditAmenity(\'' + exKey.slice(3) + '\')';
+  if (exKey.indexOf('sec_') === 0) return 'openEditSecurity(\'' + exKey.slice(4) + '\')';
+  return '';
+}
 function pdAutoRowSave(exKey, value) {
   pdNotes[exKey] = value; pdSaveDraft();
   if (!value.trim()) return;
@@ -5068,9 +5083,11 @@ function pdAutoRow(exKey, content, defaultNextStep, isCarried, optional) {
     + 'oninput="pdNotes[\'' + exKey + '\']=this.value;pdSaveDraft();var lbl=this.previousElementSibling;if(lbl){lbl.textContent=this.value.trim()?\'➤ Next Action\':\'' + (isRequired ? '✏ Update required' : '+ Note (optional)') + '\';lbl.style.color=this.value.trim()?\'var(--accent)\':\'' + (isRequired ? 'var(--red)' : 'var(--text3)') + '\';};this.style.borderBottomColor=this.value.trim()?\'var(--accent)\':\'' + (isRequired ? 'var(--red)' : 'var(--border)') + '\'" '
     + 'onfocus="this.style.borderBottomColor=\'var(--accent)\'" '
     + 'onblur="pdAutoRowSave(\'' + exKey + '\',this.value);this.style.borderBottomColor=this.value.trim()?\'var(--accent)\':\'' + borderColor + '\'" /></div>';
+  var editFn = isCarried ? pdAutoRowEditFn(exKey) : '';
+  var editBtn = (isCarried && editFn && !excl) ? '<button onclick="' + editFn + '" style="font-size:10px;color:var(--accent);background:none;border:1px solid var(--accent);border-radius:3px;cursor:pointer;padding:1px 7px;margin-left:6px;white-space:nowrap;flex-shrink:0">✏ Edit record</button>' : '';
   var carriedBadge = (isCarried && !excl) ? '<span style="font-size:10px;background:rgba(201,164,94,0.15);color:var(--accent);border-radius:3px;padding:1px 6px;margin-right:5px;font-weight:600;white-space:nowrap">↩ carried over</span>' : '';
-  return '<div class="pd-auto-row' + (excl ? ' pd-auto-excl' : '') + '" style="display:flex;align-items:flex-start;gap:6px">'
-    + '<div style="flex:1' + (excl ? ';opacity:.4;text-decoration:line-through' : '') + '">' + carriedBadge + content + noteHtml + '</div>'
+  return '<div class="pd-auto-row' + (excl ? ' pd-auto-excl' : '') + '" data-pd-key="' + exKey + '" style="display:flex;align-items:flex-start;gap:6px">'
+    + '<div style="flex:1' + (excl ? ';opacity:.4;text-decoration:line-through' : '') + '">' + carriedBadge + content + (editBtn ? '<div style="display:flex;align-items:center;margin-top:4px">' + editBtn + '</div>' : '') + noteHtml + '</div>'
     + '<button onclick="pdToggleExclude(\'' + exKey + '\')" title="' + (excl ? 'Re-include' : 'Exclude from passdown') + '" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:13px;padding:0;color:var(--text3);line-height:1">'
     + (excl ? '<span style="color:var(--accent)">＋</span>' : '–') + '</button>'
     + '</div>';
@@ -7927,6 +7944,14 @@ function saveAmenityCloseout(id, note) {
 function checkPassdownReady() {
   if (!pdGetTone()) { toast('Pick a shift tone first — Quiet, Normal, or Busy'); var el = g('pd-shift-summary-block'); if(el){el.style.outline='2px solid var(--red)';setTimeout(function(){el.style.outline='';},2000);} return; }
   if (!pdGetSummary()) { toast('Add a one-line shift summary before generating'); var el2 = g('pd-summary'); if(el2){el2.focus();el2.style.borderColor='var(--red)';setTimeout(function(){el2.style.borderColor='';},2000);} return; }
+  var carriedSet = getCarriedItemIds();
+  var missingUpdates = Object.keys(carriedSet).filter(function(key){ return !pdNotes[key] || !pdNotes[key].trim(); });
+  if (missingUpdates.length) {
+    toast(missingUpdates.length + ' carried item' + (missingUpdates.length > 1 ? 's need' : ' needs') + ' an update before you can generate');
+    var firstRow = document.querySelector('[data-pd-key="' + missingUpdates[0] + '"]');
+    if (firstRow) { firstRow.scrollIntoView({ behavior: 'smooth', block: 'center' }); firstRow.style.outline = '2px solid var(--red)'; setTimeout(function(){ firstRow.style.outline = ''; }, 2500); }
+    return;
+  }
   generatePassdown();
 }
 </script>
