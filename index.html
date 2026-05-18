@@ -7949,6 +7949,14 @@ function saveAmenityCloseout(id, note) {
 function checkPassdownReady() {
   if (!pdGetTone()) { toast('Pick a shift tone first — Quiet, Normal, or Busy'); var el = g('pd-shift-summary-block'); if(el){el.style.outline='2px solid var(--red)';setTimeout(function(){el.style.outline='';},2000);} return; }
   if (!pdGetSummary()) { toast('Add a one-line shift summary before generating'); var el2 = g('pd-summary'); if(el2){el2.focus();el2.style.borderColor='var(--red)';setTimeout(function(){el2.style.borderColor='';},2000);} return; }
+  var carriedSet = getCarriedItemIds();
+  var missingUpdates = Object.keys(carriedSet).filter(function(key){ return !pdNotes[key] || !pdNotes[key].trim(); });
+  if (missingUpdates.length) {
+    toast(missingUpdates.length + ' carried item' + (missingUpdates.length > 1 ? 's need' : ' needs') + ' an update before you can generate');
+    var firstRow = document.querySelector('[data-pd-key="' + missingUpdates[0] + '"]');
+    if (firstRow) { firstRow.scrollIntoView({ behavior: 'smooth', block: 'center' }); firstRow.style.outline = '2px solid var(--red)'; setTimeout(function(){ firstRow.style.outline = ''; }, 2500); }
+    return;
+  }
   generatePassdown();
 }
 </script>
