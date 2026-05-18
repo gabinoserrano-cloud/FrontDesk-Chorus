@@ -7521,6 +7521,8 @@ function pinKey(k) {
   if (loginPinEntry.length >= 4 && loginSelectedAccount && loginPinEntry === loginSelectedAccount.pin) { submitPin(); }
 }
 function checkCarriedItemsOnLogin() {
+  var shownKey = 'carried_shown_' + (currentUser ? currentUser.id : '') + '_' + today();
+  try { if (sessionStorage.getItem(shownKey)) return; sessionStorage.setItem(shownKey, '1'); } catch(e) {}
   var openKeys = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued'; });
   var openMaint = (state.maintenance||[]).filter(function(m){ return m.status==='open'||m.status==='in-progress'; });
   var openConcierge = (state.concierge||[]).filter(function(c){ return c.status==='open'; });
