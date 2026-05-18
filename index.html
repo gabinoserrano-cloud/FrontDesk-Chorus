@@ -584,7 +584,7 @@
   </div>
   <div id="content">
     <div class="section active" id="section-dashboard">
-      <div class="search-wrap"><span class="search-icon">&#128269;</span><input type="text" placeholder="Search residents, units..." oninput="dashSearch(this.value)" id="dash-search-input"><div id="dash-results"></div></div>
+      <div class="search-wrap"><span class="search-icon">&#128269;</span><input type="text" placeholder="Search residents, units, keys..." oninput="dashSearch(this.value)" onkeydown="if(event.key==='Enter'){var f=document.querySelector('#dash-results .sr-item');if(f)f.click();}" id="dash-search-input"><div id="dash-results"></div></div>
       <div id="dash-body"></div>
     </div>
     <div class="section" id="section-moves">
@@ -1192,6 +1192,15 @@
     <div class="fg"><label>Notes (optional)</label><textarea id="lf-notes" rows="3"></textarea></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-laf')">Cancel</button><button class="btn btn-primary" onclick="saveLAF()">Log Item</button></div>
+</div></div>
+
+<div class="modal-ov" id="modal-laf-claim"><div class="modal" style="max-width:420px">
+  <div class="modal-hdr"><span class="modal-title">Mark Item Claimed</span><button class="modal-close" onclick="closeModal('modal-laf-claim')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <div class="fg"><label>Claimed By</label><input id="laf-claim-by" type="text" placeholder="Name of person picking up"></div>
+    <div class="fg"><label>Unit # <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="laf-claim-unit" type="text" placeholder="e.g. 804"></div>
+  </div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-laf-claim')">Cancel</button><button class="btn btn-primary" onclick="saveClaimLAF()">Mark Claimed</button></div>
 </div></div>
 
 <div class="modal-ov" id="modal-unit"><div class="modal">
@@ -1843,11 +1852,15 @@ function dashSearch(q) {
   var res = g('dash-results');
   if (!q.trim()) { res.style.display = 'none'; return; }
   var ql = q.toLowerCase(), results = [];
-  (state.moves || []).filter(function (m) { return (m.resident || '').toLowerCase().includes(ql) || (m.unit || '').toLowerCase().includes(ql); }).forEach(function (m) { results.push({ label: m.resident + ' - Unit ' + m.unit, sub: (m.type === 'in' ? 'Move In' : 'Move Out') + ' - ' + fmtShort(m.date), sec: 'moves' }); });
-  (state.guests || []).filter(function (gst) { return (gst.name || '').toLowerCase().includes(ql) || (gst.unit || '').toLowerCase().includes(ql); }).forEach(function (gst) { results.push({ label: gst.name + ' (Guest)', sub: 'Unit ' + gst.unit + ' - ' + gst.status, sec: 'guests' }); });
+  (state.moves || []).filter(function (m) { return (m.resident || '').toLowerCase().includes(ql) || (m.unit || '').toLowerCase().includes(ql); }).forEach(function (m) { results.push({ label: m.resident + ' — Unit ' + m.unit, sub: (m.type === 'in' ? 'Move In' : 'Move Out') + ' · ' + fmtShort(m.date), sec: 'moves' }); });
+  (state.guests || []).filter(function (gst) { return (gst.name || '').toLowerCase().includes(ql) || (gst.unit || '').toLowerCase().includes(ql); }).forEach(function (gst) { results.push({ label: gst.name + ' (Guest)', sub: 'Unit ' + gst.unit + ' · ' + gst.status, sec: 'guests' }); });
+  (state.residentProfiles || []).filter(function (r) { return (r.residentName || '').toLowerCase().includes(ql) || (r.preferredName || '').toLowerCase().includes(ql) || (r.unit || '').toLowerCase().includes(ql); }).forEach(function (r) { results.push({ label: (r.residentName || 'Resident') + ' — Unit ' + r.unit, sub: 'Resident Profile' + (r.preferredName ? ' · "' + r.preferredName + '"' : ''), sec: 'residents' }); });
+  (state.keys || []).filter(function (k) { return (k.name || '').toLowerCase().includes(ql) || (k.unit || '').toLowerCase().includes(ql) || (k.fob || '').toLowerCase().includes(ql); }).forEach(function (k) { results.push({ label: k.name + ' — Unit ' + k.unit, sub: 'Key Tracker · ' + k.type + ' · ' + k.status, sec: 'keys' }); });
+  (state.maintenance || []).filter(function (m) { return (m.unit || '').toLowerCase().includes(ql) || (m.issue || '').toLowerCase().includes(ql); }).forEach(function (m) { results.push({ label: m.issue + ' — Unit ' + m.unit, sub: 'Maintenance · ' + m.status, sec: 'maintenance' }); });
+  (state.concierge || []).filter(function (c) { return (c.resident || '').toLowerCase().includes(ql) || (c.unit || '').toLowerCase().includes(ql); }).forEach(function (c) { results.push({ label: c.resident + ' — Unit ' + c.unit, sub: 'Concierge · ' + c.type + ' · ' + c.status, sec: 'concierge' }); });
   if (!results.length) { res.innerHTML = '<div class="sr-item text-3">No results</div>'; res.style.display = ''; return; }
   var html = '';
-  results.slice(0, 6).forEach(function (r) { html += '<div class="sr-item" onclick="navToSearch(\'' + r.sec + '\')"><div class="text-sm font-600">' + r.label + '</div><div class="text-xs text-3">' + r.sub + '</div></div>'; });
+  results.slice(0, 8).forEach(function (r) { html += '<div class="sr-item" onclick="navToSearch(\'' + r.sec + '\')"><div class="text-sm font-600">' + r.label + '</div><div class="text-xs text-3">' + r.sub + '</div></div>'; });
   res.innerHTML = html; res.style.display = '';
 }
 function navToSearch(sec) { g('dash-results').style.display = 'none'; g('dash-search-input').value = ''; var item = document.querySelector('.nav-item[data-sec="' + sec + '"]'); if (item) nav(item); }
@@ -2177,6 +2190,7 @@ function toggleTaskExtra(taskId) {
 
 function renderMoves() {
   var t = today();
+  var isStaffUser = currentUser && currentUser.role === 'staff';
   var maa = g('moves-admin-actions');
   if (maa) maa.style.display = (currentUser && currentUser.role === 'staff') ? 'none' : '';
   var list = (state.moves || []).slice();
@@ -2333,7 +2347,7 @@ function renderMoves() {
         var pct = tot ? Math.round(dn / tot * 100) : 0;
         var bc = pct < 30 ? 'var(--red)' : pct < 70 ? 'var(--amber)' : 'var(--green)';
         var isOpen = m.id === openMoveId;
-        var archBtn = !m.archivedAt ? '<button class="btn btn-secondary btn-xs" onclick="archiveMove(\'' + m.id + '\')">Archive</button>' : '';
+        var archBtn = (!m.archivedAt && !isStaffUser) ? '<button class="btn btn-secondary btn-xs" onclick="archiveMove(\'' + m.id + '\')">Archive</button>' : '';
         html += '<div class="move-card ' + (isOpen ? 'expanded' : '') + '" id="mc-' + m.id + '">';
         html += '<div class="mc-hdr" onclick="toggleCL(\'' + m.id + '\')">';
         html += '<span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'IN' : 'OUT') + '</span>';
@@ -2478,10 +2492,10 @@ function archiveMove(id) {
     if (!alreadyHasProfile) {
       if (confirm('Create resident profile for ' + m.resident + ', Unit ' + m.unit + '?')) {
         if (!state.residentProfiles) state.residentProfiles = [];
-        state.residentProfiles.push({ id: uid(), unit: m.unit, name: m.resident, leaseStart: m.date, phone: '', email: '', notes: 'Moved in ' + fmtShort(m.date), pte: 'not-set', tags: [], vip: false, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' });
+        state.residentProfiles.push({ id: uid(), unit: m.unit, residentName: m.resident, preferredName: '', phone: '', notes: 'Moved in ' + fmtShort(m.date), pte: 'not-set', birthday: '', anniversary: '', instructions: '', parking: 'none', parkingInfo: '', bike: 'none', bikeNotes: '', storage: 'none', storageUnit: '', blueground: false, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' });
         if (m.coResidents && m.coResidents.length) {
           m.coResidents.forEach(function(cr) {
-            state.residentProfiles.push({ id: uid(), unit: m.unit, name: cr.name, leaseStart: m.date, phone: '', email: '', notes: 'Co-resident — moved in ' + fmtShort(m.date), pte: 'not-set', tags: [], vip: false, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' });
+            state.residentProfiles.push({ id: uid(), unit: m.unit, residentName: cr.name, preferredName: '', phone: '', notes: 'Co-resident — moved in ' + fmtShort(m.date), pte: 'not-set', birthday: '', anniversary: '', instructions: '', parking: 'none', parkingInfo: '', bike: 'none', bikeNotes: '', storage: 'none', storageUnit: '', blueground: false, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' });
           });
         }
         scheduleSave(); toast('Resident profile created');
@@ -4298,7 +4312,9 @@ function renderLAF() {
   tbody.innerHTML = html;
   setBadge('badge-laf', (state.laf || []).filter(function (i) { return !i.claimedAt; }).length);
 }
-function claimLAF(id) { var item = (state.laf || []).find(function (x) { return x.id === id; }); if (!item) return; var by = prompt('Claimed by:'); if (by === null) return; var unit = prompt('Unit # (optional):') || ''; item.claimedBy = by.trim(); item.claimedUnit = unit.trim(); item.claimedAt = Date.now(); scheduleSave(); renderLAF(); updateBadges(); toast('Claimed'); }
+var claimingLAFId = null;
+function claimLAF(id) { claimingLAFId = id; g('laf-claim-by').value = ''; g('laf-claim-unit').value = ''; openModal('modal-laf-claim'); setTimeout(function(){ var f=g('laf-claim-by'); if(f) f.focus(); }, 80); }
+function saveClaimLAF() { var item = (state.laf || []).find(function(x){ return x.id === claimingLAFId; }); if (!item) return; var by = g('laf-claim-by').value.trim(); if (!by) { toast('Enter who is claiming the item'); return; } item.claimedBy = by; item.claimedUnit = g('laf-claim-unit').value.trim(); item.claimedAt = Date.now(); claimingLAFId = null; scheduleSave(); closeModal('modal-laf-claim'); renderLAF(); updateBadges(); toast('Marked as claimed'); }
 function toggleLAFPassdown(id) { var item = (state.laf || []).find(function(x){ return x.id === id; }); if (!item) return; item.flaggedForPassdown = !item.flaggedForPassdown; scheduleSave(); renderLAF(); toast(item.flaggedForPassdown ? 'Flagged for passdown' : 'Removed from passdown'); }
 function deleteLAF(id) { if (!confirm('Remove?')) return; state.laf = (state.laf || []).filter(function (i) { return i.id !== id; }); scheduleSave(); renderLAF(); updateBadges(); toast('Removed'); }
 
