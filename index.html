@@ -5074,13 +5074,13 @@ function pdAutoRow(exKey, content, defaultNextStep, isCarried, optional) {
   var noteVal = pdNotes[exKey] !== undefined ? pdNotes[exKey] : '';
   var notePlaceholder = pdAttrEsc(defaultNextStep || 'Add a note (optional)…');
   var isEmpty = noteVal.trim() === '';
-  var isRequired = !optional && isEmpty && isCarried;
-  var labelColor = isEmpty ? (isRequired ? 'var(--red)' : 'var(--text3)') : 'var(--accent)';
-  var labelText = isEmpty ? (isRequired ? '✏ Update required' : '+ Note (optional)') : '➤ Next Action';
-  var borderColor = isEmpty ? (isRequired ? 'var(--red)' : 'var(--border)') : 'var(--border)';
+  var isPrompt = isCarried && !optional && isEmpty;
+  var labelColor = isEmpty ? (isPrompt ? '#92400E' : 'var(--text3)') : 'var(--accent)';
+  var labelText = isEmpty ? (isPrompt ? '↓ Add update to include' : '+ Note (optional)') : '➤ Next Action';
+  var borderColor = isEmpty ? (isPrompt ? 'rgba(201,164,94,0.6)' : 'var(--border)') : 'var(--border)';
   var noteHtml = excl ? '' : '<div style="display:flex;align-items:center;gap:5px;margin-top:5px"><span style="font-size:10px;font-weight:600;color:' + labelColor + ';white-space:nowrap;flex-shrink:0">' + labelText + '</span><input type="text" value="' + pdAttrEsc(noteVal) + '" placeholder="' + notePlaceholder + '" '
     + 'style="flex:1;font-size:11.5px;color:var(--text);background:transparent;border:none;border-bottom:1px solid ' + borderColor + ';padding:2px 0;font-family:inherit;outline:none;min-width:0" '
-    + 'oninput="pdNotes[\'' + exKey + '\']=this.value;pdSaveDraft();var lbl=this.previousElementSibling;if(lbl){lbl.textContent=this.value.trim()?\'➤ Next Action\':\'' + (isRequired ? '✏ Update required' : '+ Note (optional)') + '\';lbl.style.color=this.value.trim()?\'var(--accent)\':\'' + (isRequired ? 'var(--red)' : 'var(--text3)') + '\';};this.style.borderBottomColor=this.value.trim()?\'var(--accent)\':\'' + (isRequired ? 'var(--red)' : 'var(--border)') + '\'" '
+    + 'oninput="pdNotes[\'' + exKey + '\']=this.value;pdSaveDraft();var lbl=this.previousElementSibling;if(lbl){lbl.textContent=this.value.trim()?\'➤ Next Action\':\'' + (isPrompt ? '↓ Add update to include' : '+ Note (optional)') + '\';lbl.style.color=this.value.trim()?\'var(--accent)\':\'' + (isPrompt ? '\'#92400E\'' : 'var(--text3)') + '\';};this.style.borderBottomColor=this.value.trim()?\'var(--accent)\':\'' + (isPrompt ? 'rgba(201,164,94,0.6)' : 'var(--border)') + '\'" '
     + 'onfocus="this.style.borderBottomColor=\'var(--accent)\'" '
     + 'onblur="pdAutoRowSave(\'' + exKey + '\',this.value);this.style.borderBottomColor=this.value.trim()?\'var(--accent)\':\'' + borderColor + '\'" /></div>';
   var editFn = isCarried ? pdAutoRowEditFn(exKey) : '';
@@ -5103,9 +5103,10 @@ function renderPdAutoBlocks(isLead) {
   var container = g('pd-auto-blocks'); if (!container) return;
   var now = Date.now(), t = today();
   var carriedSet = getCarriedItemIds();
-  var carriedCount = Object.keys(carriedSet).length;
-  var html = '<div style="font-size:12px;background:rgba(217,119,6,0.08);color:#92400E;border:1px solid rgba(217,119,6,0.2);border-radius:6px;padding:8px 12px;margin-bottom:8px">✏ <strong>Each item below requires your update.</strong> Fill in every red "Update required" field with what happened during your shift — these pull from shared data and won\'t reflect your shift unless you fill them in.</div>'
-    + (carriedCount ? '<div style="font-size:12px;background:rgba(201,164,94,0.12);color:#92400E;border:1px solid rgba(201,164,94,0.35);border-radius:6px;padding:8px 12px;margin-bottom:12px">↩ <strong>' + carriedCount + ' item' + (carriedCount > 1 ? 's' : '') + ' carried over from a previous shift</strong> — these were open before your shift started. Add your own update so the next shift knows the current status.</div>' : '');
+  var activeIds = getActiveAutoBlockIds();
+  var carriedCount = activeIds.filter(function(id){ return carriedSet[id]; }).length;
+  var html = '<div style="font-size:12px;background:rgba(217,119,6,0.08);color:#92400E;border:1px solid rgba(217,119,6,0.2);border-radius:6px;padding:8px 12px;margin-bottom:8px">✏ <strong>Add your updates below.</strong> Each item pulls from shared data — your notes make the passdown specific to your shift.</div>'
+    + (carriedCount ? '<div style="font-size:12px;background:rgba(201,164,94,0.12);color:#92400E;border:1px solid rgba(201,164,94,0.35);border-radius:6px;padding:8px 12px;margin-bottom:12px">↩ <strong>' + carriedCount + ' item' + (carriedCount > 1 ? 's' : '') + ' carried over from a previous shift</strong> — add an update to include them in your passdown, or leave blank to skip.</div>' : '');
 
   // One-time keys still out
   var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued'; });
@@ -5391,9 +5392,11 @@ function generatePassdown() {
   var now = Date.now();
   var tmrwG = (function(){ var d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
   function dayLbl(d) { if(d===t) return 'Today'; if(d===tmrwG) return 'Tomorrow'; return fmtShort(d); }
+  var genCarriedSet = getCarriedItemIds();
+  function isCarriedNoNote(key) { return !!(genCarriedSet[key] && (!pdNotes[key] || !pdNotes[key].trim())); }
 
   // Keys still out (skip excluded)
-  var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued' && !pdExcluded['key_'+k.id]; });
+  var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued' && !pdExcluded['key_'+k.id] && !isCarriedNoNote('key_'+k.id); });
   if (oneTimeOut.length) {
     out += '\n🗝 One-Time Keys Still Out\n';
     oneTimeOut.forEach(function(k) {
@@ -5414,12 +5417,12 @@ function generatePassdown() {
     var maxDate = maxD.toISOString().split('T')[0];
     var moves = state.moves||[];
     var shiftIns = moves.filter(function(m){
-      if (m.type!=='in' || m.archivedAt || pdExcluded['in_'+m.id]) return false;
+      if (m.type!=='in' || m.archivedAt || pdExcluded['in_'+m.id] || isCarriedNoNote('in_'+m.id)) return false;
       var apptD = m.apptDate || m.date;
       return apptD === t && pdInShift(m.apptTime, shift);
     }).sort(function(a,b){ return (a.apptDate||a.date).localeCompare(b.apptDate||b.date); });
     var upcomingIns = isLead ? moves.filter(function(m){
-      if (m.type!=='in' || m.archivedAt || pdExcluded['in_'+m.id]) return false;
+      if (m.type!=='in' || m.archivedAt || pdExcluded['in_'+m.id] || isCarriedNoNote('in_'+m.id)) return false;
       var apptD = m.apptDate || m.date;
       return apptD > t && apptD <= maxDate;
     }).sort(function(a,b){ return (a.apptDate||a.date).localeCompare(b.apptDate||b.date); }) : [];
@@ -5446,12 +5449,12 @@ function generatePassdown() {
       });
     }
     var shiftOuts = moves.filter(function(m){
-      if (m.type!=='out' || m.archivedAt || pdExcluded['out_'+m.id]) return false;
+      if (m.type!=='out' || m.archivedAt || pdExcluded['out_'+m.id] || isCarriedNoNote('out_'+m.id)) return false;
       var apptD = m.apptDate || m.date;
       return apptD === t && pdInShift(m.apptTime, shift);
     }).sort(function(a,b){ return (a.apptDate||a.date).localeCompare(b.apptDate||b.date); });
     var upcomingOuts = isLead ? moves.filter(function(m){
-      if (m.type!=='out' || m.archivedAt || pdExcluded['out_'+m.id]) return false;
+      if (m.type!=='out' || m.archivedAt || pdExcluded['out_'+m.id] || isCarriedNoNote('out_'+m.id)) return false;
       var apptD = m.apptDate || m.date;
       return apptD > t && apptD <= maxDate;
     }).sort(function(a,b){ return (a.apptDate||a.date).localeCompare(b.apptDate||b.date); }) : [];
@@ -5501,10 +5504,10 @@ function generatePassdown() {
   var maxD2 = new Date(); maxD2.setDate(maxD2.getDate() + la2);
   var maxDate2 = maxD2.toISOString().split('T')[0];
   var shiftAm = (state.amenities||[]).filter(function(a){
-    return a.date===t && pdInShift(a.start, shift) && !pdExcluded['am_'+a.id];
+    return a.date===t && pdInShift(a.start, shift) && !pdExcluded['am_'+a.id] && !isCarriedNoNote('am_'+a.id);
   }).sort(function(a,b){ return (a.start||'').localeCompare(b.start||''); });
   var upcomingAm = isLead ? (state.amenities||[]).filter(function(a){
-    return a.date>t && a.date<=maxDate2 && !pdExcluded['am_'+a.id];
+    return a.date>t && a.date<=maxDate2 && !pdExcluded['am_'+a.id] && !isCarriedNoNote('am_'+a.id);
   }).sort(function(a,b){ return a.date.localeCompare(b.date)||(a.start||'').localeCompare(b.start||''); }) : [];
   var allAm = shiftAm.concat(upcomingAm);
   if (allAm.length) {
@@ -5518,7 +5521,7 @@ function generatePassdown() {
   }
 
   // Open / in-progress maintenance (skip excluded)
-  var openM = (state.maintenance||[]).filter(function(m){ return (m.status==='open'||m.status==='in-progress') && !pdExcluded['mt_'+m.id]; });
+  var openM = (state.maintenance||[]).filter(function(m){ return (m.status==='open'||m.status==='in-progress') && !pdExcluded['mt_'+m.id] && !isCarriedNoNote('mt_'+m.id); });
   if (openM.length) {
     out += '\n🔧 Open Maintenance\n';
     openM.forEach(function(m) {
@@ -5534,7 +5537,7 @@ function generatePassdown() {
   }
 
   // Open concierge (skip excluded)
-  var openC = (state.concierge||[]).filter(function(c){ return c.status==='open' && !pdExcluded['c_'+c.id]; });
+  var openC = (state.concierge||[]).filter(function(c){ return c.status==='open' && !pdExcluded['c_'+c.id] && !isCarriedNoNote('c_'+c.id); });
   if (openC.length) {
     out += '\n🎭 Open Concierge Requests\n';
     openC.forEach(function(c) {
@@ -5544,7 +5547,7 @@ function generatePassdown() {
   }
 
   // Flagged L&F items
-  var flaggedLAF = (state.laf || []).filter(function(i){ return i.flaggedForPassdown && !i.claimedAt && !pdExcluded['laf_'+i.id]; });
+  var flaggedLAF = (state.laf || []).filter(function(i){ return i.flaggedForPassdown && !i.claimedAt && !pdExcluded['laf_'+i.id] && !isCarriedNoNote('laf_'+i.id); });
   if (flaggedLAF.length) {
     out += '\n📦 Lost & Found — Follow Up\n';
     flaggedLAF.forEach(function(i) {
@@ -5575,7 +5578,7 @@ function generatePassdown() {
   }
 
   // Security incidents
-  var secGen = (state.security||[]).filter(function(s){ return (s.date===t || s.status==='monitoring') && !pdExcluded['sec_'+s.id]; });
+  var secGen = (state.security||[]).filter(function(s){ return (s.date===t || s.status==='monitoring') && !pdExcluded['sec_'+s.id] && !isCarriedNoNote('sec_'+s.id); });
   if (secGen.length) {
     out += '\n🛡 Incidents\n';
     secGen.forEach(function(s) {
@@ -7946,14 +7949,6 @@ function saveAmenityCloseout(id, note) {
 function checkPassdownReady() {
   if (!pdGetTone()) { toast('Pick a shift tone first — Quiet, Normal, or Busy'); var el = g('pd-shift-summary-block'); if(el){el.style.outline='2px solid var(--red)';setTimeout(function(){el.style.outline='';},2000);} return; }
   if (!pdGetSummary()) { toast('Add a one-line shift summary before generating'); var el2 = g('pd-summary'); if(el2){el2.focus();el2.style.borderColor='var(--red)';setTimeout(function(){el2.style.borderColor='';},2000);} return; }
-  var carriedSet = getCarriedItemIds();
-  var missingUpdates = Object.keys(carriedSet).filter(function(key){ return !pdNotes[key] || !pdNotes[key].trim(); });
-  if (missingUpdates.length) {
-    toast(missingUpdates.length + ' carried item' + (missingUpdates.length > 1 ? 's need' : ' needs') + ' an update before you can generate');
-    var firstRow = document.querySelector('[data-pd-key="' + missingUpdates[0] + '"]');
-    if (firstRow) { firstRow.scrollIntoView({ behavior: 'smooth', block: 'center' }); firstRow.style.outline = '2px solid var(--red)'; setTimeout(function(){ firstRow.style.outline = ''; }, 2500); }
-    return;
-  }
   generatePassdown();
 }
 </script>
