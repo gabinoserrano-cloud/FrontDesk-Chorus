@@ -1247,6 +1247,7 @@
     <div style="padding:4px 0 2px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="rp-blueground"> <span>&#128309; <strong>Blueground Unit</strong> — Managed by Blueground</span></label></div>
     <div class="fr"><div class="fg"><label>Preferred Name / Nickname</label><input id="rp-preferred" type="text" placeholder="e.g. Mike"></div><div class="fg"><label>Phone (optional)</label><input id="rp-phone" type="text"></div></div>
     <div class="fr"><div class="fg"><label>Birthday</label><input id="rp-birthday" type="date" data-no-autofill></div><div class="fg"><label>Lease Anniversary</label><input id="rp-anniversary" type="date" data-no-autofill></div></div>
+    <div class="fr"><div class="fg"><label>&#128246; WiFi Expiration Date</label><input id="rp-wifi-expiry" type="date" data-no-autofill></div><div class="fg" id="rp-wifi-hint" style="display:flex;align-items:flex-end;padding-bottom:6px;font-size:12px;color:var(--text3)"></div></div>
     <div class="fg"><label>Special Instructions</label><textarea id="rp-instructions" rows="3" placeholder='e.g. "Always call before buzzing", "Do not leave packages at door"'></textarea></div>
     <div class="fg"><label>&#128230; PTE — Permission to Enter (Packages)</label><select id="rp-pte"><option value="not-set">Not Set</option><option value="granted">Granted — OK to enter for package delivery</option><option value="denied">Denied — Do NOT enter unit</option></select></div>
     <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
@@ -1973,6 +1974,19 @@ function renderDash() {
   if (needsAppt.length) {
     html += '<div class="needs-appt-alert"><div class="na-title">&#128197; ' + needsAppt.length + ' Move-In' + (needsAppt.length > 1 ? 's' : '') + ' Need an Appointment</div>';
     needsAppt.slice(0,4).forEach(function (m) { html += '<div class="tight-row"><strong>Unit ' + m.unit + '</strong> - ' + m.resident + ' - Lease starts ' + fmtShort(m.date) + ' <button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="openEditMove(\'' + m.id + '\')">Schedule</button></div>'; });
+    html += '</div>';
+  }
+  var wifiDue = getWifiRenewals();
+  if (wifiDue.length) {
+    var wt2 = today();
+    html += '<div style="background:#fffbeb;border:1px solid rgba(201,164,94,0.45);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px">';
+    html += '<div style="font-size:12px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">&#128246; WiFi Renewals — ' + wifiDue.length + ' resident' + (wifiDue.length > 1 ? 's' : '') + ' need' + (wifiDue.length === 1 ? 's' : '') + ' activation</div>';
+    wifiDue.forEach(function(r) {
+      var expired = r.wifiExpiry < wt2;
+      var daysLeft = Math.round((new Date(r.wifiExpiry+'T00:00:00') - new Date(wt2+'T00:00:00')) / 86400000);
+      var label = expired ? '<span style="color:var(--red);font-weight:600">EXPIRED ' + fmtShort(r.wifiExpiry) + '</span>' : '<span style="color:#92400E">Expires ' + fmtShort(r.wifiExpiry) + (daysLeft === 0 ? ' (today)' : ' (' + daysLeft + 'd)') + '</span>';
+      html += '<div class="tight-row"><strong>Unit ' + r.unit + '</strong> — ' + r.residentName + ' &nbsp;' + label + '<button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="navToSec(\'residents\');setTimeout(function(){openEditResident(\'' + r.id + '\')},150)">Renew</button></div>';
+    });
     html += '</div>';
   }
   html += '<div class="dash-grid">';
@@ -4524,7 +4538,8 @@ var residentsFilter = 'all', editingResidentId = null;
 function filterResidents(f, item) { residentsFilter = f; document.querySelectorAll('#section-residents .sub-tab').forEach(function(t){ t.classList.remove('active'); }); item.classList.add('active'); renderResidents(); }
 function openAddResident() {
   editingResidentId = null;
-  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-birthday','rp-anniversary','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-birthday','rp-anniversary','rp-wifi-expiry','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  var wh = g('rp-wifi-hint'); if (wh) wh.innerHTML = '';
   g('rp-pte').value = 'not-set';
   g('rp-parking').value = 'none';
   g('rp-bike').value = 'none';
@@ -4552,6 +4567,17 @@ function openEditResident(id) {
   g('rp-storage').value = r.storage || 'none';
   g('rp-storage-unit').value = r.storageUnit || '';
   var bgCb = g('rp-blueground'); if (bgCb) bgCb.checked = !!r.blueground;
+  var wifiField = g('rp-wifi-expiry'), wifiHint = g('rp-wifi-hint');
+  var t0 = today();
+  var warn3 = new Date(); warn3.setDate(warn3.getDate() + 3); var warn3s = warn3.toISOString().split('T')[0];
+  if (r.wifiExpiry && r.wifiExpiry <= warn3s) {
+    var auto12 = new Date(); auto12.setFullYear(auto12.getFullYear() + 1); var auto12s = auto12.toISOString().split('T')[0];
+    if (wifiField) wifiField.value = auto12s;
+    if (wifiHint) wifiHint.innerHTML = r.wifiExpiry < t0 ? '<span style="color:var(--red)">&#9888; Expired ' + fmtShort(r.wifiExpiry) + ' — confirm new date to resolve</span>' : '<span style="color:#92400E">&#9650; Expiring soon — confirm new date to resolve</span>';
+  } else {
+    if (wifiField) wifiField.value = r.wifiExpiry || '';
+    if (wifiHint) wifiHint.innerHTML = '';
+  }
   setModalMode('modal-resident-title','modal-resident-savebtn','Edit Profile','Save Changes');
   openModal('modal-resident');
 }
@@ -4562,7 +4588,7 @@ function saveResident() {
     var r = (state.residentProfiles || []).find(function(x){ return x.id===editingResidentId; }); if (!r) return;
     var _rb = Object.assign({}, r);
     var bgCbS = g('rp-blueground');
-    r.unit=unit; r.residentName=name; r.preferredName=g('rp-preferred').value.trim(); r.phone=g('rp-phone').value.trim(); r.birthday=g('rp-birthday').value; r.anniversary=g('rp-anniversary').value; r.instructions=g('rp-instructions').value.trim(); r.pte=g('rp-pte').value; r.notes=g('rp-notes').value.trim();
+    r.unit=unit; r.residentName=name; r.preferredName=g('rp-preferred').value.trim(); r.phone=g('rp-phone').value.trim(); r.birthday=g('rp-birthday').value; r.anniversary=g('rp-anniversary').value; r.instructions=g('rp-instructions').value.trim(); r.pte=g('rp-pte').value; r.notes=g('rp-notes').value.trim(); r.wifiExpiry=g('rp-wifi-expiry').value||'';
     r.parking=g('rp-parking').value; r.parkingInfo=g('rp-parking-info').value.trim(); r.bike=g('rp-bike').value; r.bikeNotes=g('rp-bike-notes').value.trim(); r.storage=g('rp-storage').value; r.storageUnit=g('rp-storage-unit').value.trim(); r.blueground=bgCbS?!!bgCbS.checked:false;
     pushUndo({ sec: 'residents', type: 'EDIT', id: r.id, before: _rb, after: Object.assign({}, r), label: 'profile edit — Unit ' + unit });
     editingResidentId=null; logActivity('residents','edit','Updated resident profile — Unit '+unit+' · '+name); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile updated'); return;
@@ -4573,7 +4599,7 @@ function saveResident() {
     if (!confirm('Unit ' + unit + ' already has a profile (' + names + '). Add another profile for this unit?')) return;
   }
   var bgCbN = g('rp-blueground');
-  var entry = { id: uid(), unit: unit, residentName: name, preferredName: g('rp-preferred').value.trim(), phone: g('rp-phone').value.trim(), birthday: g('rp-birthday').value, anniversary: g('rp-anniversary').value, instructions: g('rp-instructions').value.trim(), pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), parking: g('rp-parking').value, parkingInfo: g('rp-parking-info').value.trim(), bike: g('rp-bike').value, bikeNotes: g('rp-bike-notes').value.trim(), storage: g('rp-storage').value, storageUnit: g('rp-storage-unit').value.trim(), blueground: bgCbN?!!bgCbN.checked:false, createdAt: Date.now() };
+  var entry = { id: uid(), unit: unit, residentName: name, preferredName: g('rp-preferred').value.trim(), phone: g('rp-phone').value.trim(), birthday: g('rp-birthday').value, anniversary: g('rp-anniversary').value, instructions: g('rp-instructions').value.trim(), pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), wifiExpiry: g('rp-wifi-expiry').value||'', parking: g('rp-parking').value, parkingInfo: g('rp-parking-info').value.trim(), bike: g('rp-bike').value, bikeNotes: g('rp-bike-notes').value.trim(), storage: g('rp-storage').value, storageUnit: g('rp-storage-unit').value.trim(), blueground: bgCbN?!!bgCbN.checked:false, createdAt: Date.now() };
   if (!state.residentProfiles) state.residentProfiles = [];
   state.residentProfiles.push(entry); pushUndo({ sec: 'residents', type: 'ADD', id: entry.id, data: Object.assign({}, entry), label: 'add profile — Unit ' + unit }); logActivity('residents','create','Added resident profile — Unit '+unit+' · '+name); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile saved');
 }
@@ -4895,6 +4921,12 @@ function renderResidents() {
     var dates = [];
     if (r.birthday) dates.push('&#127874; Birthday: ' + fmtShort(r.birthday));
     if (r.anniversary) dates.push('&#127981; Lease anniversary: ' + fmtShort(r.anniversary));
+    if (r.wifiExpiry) {
+      var wt = today(), wd3 = new Date(); wd3.setDate(wd3.getDate()+3); var wd3s = wd3.toISOString().split('T')[0];
+      if (r.wifiExpiry < wt) dates.push('<span style="color:var(--red);font-weight:600">&#128246; WiFi EXPIRED ' + fmtShort(r.wifiExpiry) + '</span>');
+      else if (r.wifiExpiry <= wd3s) dates.push('<span style="color:#92400E;font-weight:600">&#128246; WiFi expires ' + fmtShort(r.wifiExpiry) + '</span>');
+      else dates.push('&#128246; WiFi expires ' + fmtShort(r.wifiExpiry));
+    }
     if (dates.length) html += '<div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.8">' + dates.join('<br>') + '</div>';
     if (r.instructions) html += '<div style="font-size:12px;background:var(--bg);border-radius:5px;padding:6px 8px;margin-top:8px;color:var(--text2);line-height:1.5"><strong>Instructions:</strong> ' + r.instructions + '</div>';
     var credBadges = [];
@@ -4908,6 +4940,11 @@ function renderResidents() {
   });
   html += '</div>';
   grid.innerHTML = html;
+}
+
+function getWifiRenewals() {
+  var wd3 = new Date(); wd3.setDate(wd3.getDate()+3); var wd3s = wd3.toISOString().split('T')[0];
+  return (state.residentProfiles||[]).filter(function(r){ return r.wifiExpiry && r.wifiExpiry <= wd3s; }).sort(function(a,b){ return a.wifiExpiry < b.wifiExpiry ? -1 : 1; });
 }
 
 // ─── PASSDOWN ───
@@ -7950,7 +7987,8 @@ function checkPassdownReady() {
   if (!pdGetTone()) { toast('Pick a shift tone first — Quiet, Normal, or Busy'); var el = g('pd-shift-summary-block'); if(el){el.style.outline='2px solid var(--red)';setTimeout(function(){el.style.outline='';},2000);} return; }
   if (!pdGetSummary()) { toast('Add a one-line shift summary before generating'); var el2 = g('pd-summary'); if(el2){el2.focus();el2.style.borderColor='var(--red)';setTimeout(function(){el2.style.borderColor='';},2000);} return; }
   var carriedSet = getCarriedItemIds();
-  var missingUpdates = Object.keys(carriedSet).filter(function(key){ return !pdNotes[key] || !pdNotes[key].trim(); });
+  var activeIds = getActiveAutoBlockIds();
+  var missingUpdates = activeIds.filter(function(key){ return carriedSet[key] && (!pdNotes[key] || !pdNotes[key].trim()); });
   if (missingUpdates.length) {
     toast(missingUpdates.length + ' carried item' + (missingUpdates.length > 1 ? 's need' : ' needs') + ' an update before you can generate');
     var firstRow = document.querySelector('[data-pd-key="' + missingUpdates[0] + '"]');
