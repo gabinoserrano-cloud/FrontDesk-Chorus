@@ -1501,7 +1501,7 @@ function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(stat
 function loadLocal() {
   try {
     var raw = localStorage.getItem(LOCAL_KEY);
-    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], supplies: [], activityLog: [] }, JSON.parse(raw));
+    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], supplies: [], activityLog: [], parking: [], security: [] }, JSON.parse(raw));
   } catch (e) {}
 }
 function scheduleSave() { saveLocal(); clearTimeout(syncTO); syncTO = setTimeout(pushCloud, 800); }
@@ -1517,7 +1517,7 @@ async function pullCloud() {
   try {
     var row = await supaGet();
     if (row && row.data && Object.keys(row.data).length > 0) {
-      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [] }, row.data);
+      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [], parking: [], security: [] }, row.data);
       saveLocal();
     } else { loadLocal(); await supaPush(state); }
     setSyncStatus('synced', 'Synced');
@@ -1530,7 +1530,7 @@ setInterval(async function () {
     if (row && row.updated_at) {
       var ts = new Date(row.updated_at).getTime();
       if (lastSyncTs && ts > lastSyncTs + 2000) {
-        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [] }, row.data);
+        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [], parking: [], security: [] }, row.data);
         saveLocal(); lastSyncTs = ts;
         renderSection(curSec); updateBadges();
         setSyncStatus('synced', 'Updated'); setTimeout(function () { setSyncStatus('synced', 'Synced'); }, 2000);
@@ -1561,6 +1561,7 @@ function resetData() {
 
 // ─── UTILS ───
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function esc(s) { return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function today() {
   var d = new Date();
   var yr = d.getFullYear();
@@ -1585,7 +1586,7 @@ function _secStateKey(sec) {
 
 function pushUndo(cmd) {
   undoStack.push(cmd);
-  if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+  if (undoStack.length > UNDO_LIMIT) { undoStack.shift(); toast('Undo history full — oldest action can no longer be undone'); }
   redoStack = [];
   updateUndoButtons();
 }
@@ -1597,7 +1598,8 @@ function _applyUndoCmd(cmd, inverse) {
     if (cmd.type === 'ADD') {
       state[key] = arr.filter(function(x) { return x.id !== cmd.id; });
     } else if (cmd.type === 'DELETE') {
-      state[key] = [cmd.data].concat(arr);
+      var alreadyExists = arr.some(function(x) { return x.id === cmd.id; });
+      state[key] = alreadyExists ? arr : [cmd.data].concat(arr);
     } else {
       var obj = arr.find(function(x) { return x.id === cmd.id; });
       if (obj) Object.assign(obj, cmd.before);
@@ -1948,7 +1950,7 @@ function renderDash() {
   var turnoverReady = active.filter(function (m) {
     if (m.type !== 'out') return false;
     var tasks = m.tasks || [];
-    return tasks.length > 0 && tasks.every(function (tk) { return tk.done; });
+    return tasks.length > 0 && tasks.every(function (tk) { return tk.done === true; });
   });
   html += '<div class="stat-grid">';
   html += '<div class="stat-card stat-clickable" onclick="navToMoves(\'today\')"><div class="stat-num">' + todayM.length + '</div><div class="stat-lbl">Moves Today</div></div>';
@@ -1968,12 +1970,12 @@ function renderDash() {
   html += '</div>';
   if (tights.length) {
     html += '<div class="tight-alert"><div class="ta-title">Tight Turnovers - ' + tights.length + ' unit' + (tights.length > 1 ? 's' : '') + ' need attention</div>';
-    tights.forEach(function (tt) { html += '<div class="tight-row">Unit ' + tt.unit + ': <strong>' + tt.outRes + '</strong> out ' + fmtShort(tt.outDate) + ' &rarr; <strong>' + tt.inRes + '</strong> in ' + fmtShort(tt.inDate) + ' <span class="pill pill-' + (tt.gap <= 2 ? 'high' : 'medium') + '">' + tt.gap + 'd gap</span></div>'; });
+    tights.forEach(function (tt) { html += '<div class="tight-row">Unit ' + esc(tt.unit) + ': <strong>' + esc(tt.outRes) + '</strong> out ' + fmtShort(tt.outDate) + ' &rarr; <strong>' + esc(tt.inRes) + '</strong> in ' + fmtShort(tt.inDate) + ' <span class="pill pill-' + (tt.gap <= 2 ? 'high' : 'medium') + '">' + tt.gap + 'd gap</span></div>'; });
     html += '</div>';
   }
   if (needsAppt.length) {
     html += '<div class="needs-appt-alert"><div class="na-title">&#128197; ' + needsAppt.length + ' Move-In' + (needsAppt.length > 1 ? 's' : '') + ' Need an Appointment</div>';
-    needsAppt.slice(0,4).forEach(function (m) { html += '<div class="tight-row"><strong>Unit ' + m.unit + '</strong> - ' + m.resident + ' - Lease starts ' + fmtShort(m.date) + ' <button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="openEditMove(\'' + m.id + '\')">Schedule</button></div>'; });
+    needsAppt.slice(0,4).forEach(function (m) { html += '<div class="tight-row"><strong>Unit ' + esc(m.unit) + '</strong> - ' + esc(m.resident) + ' - Lease starts ' + fmtShort(m.date) + ' <button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="openEditMove(\'' + m.id + '\')">Schedule</button></div>'; });
     html += '</div>';
   }
   var wifiDue = getWifiRenewals();
@@ -1983,9 +1985,9 @@ function renderDash() {
     html += '<div style="font-size:12px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">&#128246; WiFi Renewals — ' + wifiDue.length + ' resident' + (wifiDue.length > 1 ? 's' : '') + ' need' + (wifiDue.length === 1 ? 's' : '') + ' activation</div>';
     wifiDue.forEach(function(r) {
       var expired = r.wifiExpiry < wt2;
-      var daysLeft = Math.round((new Date(r.wifiExpiry+'T00:00:00') - new Date(wt2+'T00:00:00')) / 86400000);
+      var daysLeft = Math.floor((new Date(r.wifiExpiry+'T00:00:00') - new Date(wt2+'T00:00:00')) / 86400000);
       var label = expired ? '<span style="color:var(--red);font-weight:600">EXPIRED ' + fmtShort(r.wifiExpiry) + '</span>' : '<span style="color:#92400E">Expires ' + fmtShort(r.wifiExpiry) + (daysLeft === 0 ? ' (today)' : ' (' + daysLeft + 'd)') + '</span>';
-      html += '<div class="tight-row"><strong>Unit ' + r.unit + '</strong> — ' + r.residentName + ' &nbsp;' + label + '<button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="navToSec(\'residents\');setTimeout(function(){openEditResident(\'' + r.id + '\')},150)">Renew</button></div>';
+      html += '<div class="tight-row"><strong>Unit ' + esc(r.unit) + '</strong> — ' + esc(r.residentName) + ' &nbsp;' + label + '<button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="navToSec(\'residents\');setTimeout(function(){openEditResident(\'' + r.id + '\')},150)">Renew</button></div>';
     });
     html += '</div>';
   }
@@ -2109,7 +2111,7 @@ function onApptChange() {
   if (!date || !time) { msgEl.innerHTML = ''; return; }
   var conflicts = checkApptConflict(date, time, editingMoveId);
   if (conflicts) {
-    msgEl.innerHTML = '<div class="conflict-warn">&#9888; Conflict: ' + conflicts.map(function(c){ return 'Unit ' + c.unit + ' (' + c.resident + ') at ' + fmtTime(c.apptTime) + ')'; }).join(', ') + ' — elevator/dock already booked.</div>';
+    msgEl.innerHTML = '<div class="conflict-warn">&#9888; Conflict: ' + conflicts.map(function(c){ return 'Unit ' + esc(c.unit) + ' (' + esc(c.resident) + ') at ' + fmtTime(c.apptTime) + ')'; }).join(', ') + ' — elevator/dock already booked.</div>';
   } else {
     msgEl.innerHTML = '<span style="color:var(--green);font-size:12px">&#10003; No conflicts — time slot is available</span>';
   }
@@ -2117,7 +2119,8 @@ function onApptChange() {
 
 function fmtTime(t) {
   if (!t) return '';
-  var parts = t.split(':'); var h = parseInt(parts[0]), m = parseInt(parts[1]||0);
+  var parts = t.trim().split(':'); var h = parseInt(parts[0]), m = parseInt(parts[1]||0);
+  if (isNaN(h) || isNaN(m)) return '';
   var h12 = h > 12 ? h-12 : (h===0?12:h), ampm = h < 12 ? 'am' : 'pm';
   return h12 + ':' + (m < 10 ? '0'+m : m) + ampm;
 }
@@ -2382,7 +2385,7 @@ function renderMoves() {
   else if (moveFilter === 'out') list = list.filter(function (m) {
     if (m.type !== 'out' || m.archivedAt) return false;
     var tasks = m.tasks || [];
-    if (tasks.length > 0 && tasks.every(function (tk) { return tk.done; })) return false;
+    if (tasks.length > 0 && tasks.every(function (tk) { return tk.done === true; })) return false;
     return true;
   });
   else if (moveFilter === 'today') list = list.filter(function (m) { return m.date === t && !m.archivedAt; });
@@ -2390,7 +2393,7 @@ function renderMoves() {
     list = list.filter(function (m) {
       if (m.type !== 'in' || m.archivedAt) return false;
       var nonPost = (m.tasks || []).filter(function (tk) { return tk.cat !== 'Post Move-In'; });
-      var allNonPostDone = nonPost.length > 0 && nonPost.every(function (tk) { return tk.done; });
+      var allNonPostDone = nonPost.length > 0 && nonPost.every(function (tk) { return tk.done === true; });
       var hasIncompletePost = (m.tasks || []).some(function (tk) { return tk.cat === 'Post Move-In' && !tk.done; });
       return allNonPostDone && hasIncompletePost;
     });
@@ -2400,8 +2403,7 @@ function renderMoves() {
       if (m.type !== 'out' || m.archivedAt) return false;
       var tasks = m.tasks || [];
       if (!tasks.length) return false;
-      // All tasks must be done
-      if (!tasks.every(function (tk) { return tk.done; })) return false;
+      if (!tasks.every(function (tk) { return tk.done === true; })) return false;
       // If any key-return task exists, it must also be checked (already covered by allDone above)
       return true;
     });
@@ -2491,16 +2493,16 @@ function renderMoves() {
             apptBadge = '<span class="appt-badge has-appt">&#10003; ' + fmtShort(m.apptDate) + (m.apptTime ? ' ' + fmtTime(m.apptTime) : '') + '</span>';
           }
         }
-        rows += '<td><span class="mono font-600">' + m.unit + '</span></td>';
-        var coResNames = (m.coResidents || []).map(function(c){ return c.name; }).join(', ');
-        rows += '<td><div class="font-600">' + m.resident + '</div>'
+        rows += '<td><span class="mono font-600">' + esc(m.unit) + '</span></td>';
+        var coResNames = (m.coResidents || []).map(function(c){ return esc(c.name); }).join(', ');
+        rows += '<td><div class="font-600">' + esc(m.resident) + '</div>'
           + (coResNames ? '<div class="text-xs text-3">+ ' + coResNames + '</div>' : '')
           + (m.date === t && m.type === 'in' ? '<div class="text-xs" style="color:var(--accent)">Lease starts today</div>' : '') + '</td>';
         rows += '<td class="mono text-sm">' + fmtShort(m.date) + '</td>';
         rows += '<td><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'Move In' : 'Move Out') + '</span></td>';
         rows += '<td>' + apptBadge + '</td>';
-        rows += '<td class="mono text-sm">' + (m.total ? '$' + m.total : '-') + '</td>';
-        rows += '<td class="text-sm text-2" style="max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (m.notes || '-') + '</td>';
+        rows += '<td class="mono text-sm">' + (m.total ? '$' + esc(m.total) : '-') + '</td>';
+        rows += '<td class="text-sm text-2" style="max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (m.notes ? esc(m.notes) : '-') + '</td>';
         if (moveShowLogged) rows += '<td class="text-xs text-3">' + fmtByTag(m.addedBy, m.createdAt) + '</td>';
         rows += '<td><div class="flex gap-4" style="justify-content:flex-end;align-items:center">';
         rows += pct === 100 ? '<span class="pill pill-resolved" style="font-size:10px">Done</span>' : '<div style="width:40px"><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div><div class="text-xs text-3 mono" style="text-align:right;margin-top:2px">' + dn + '/' + tot + '</div></div>';
@@ -2531,8 +2533,8 @@ function renderMoves() {
         html += '<div class="move-card ' + (isOpen ? 'expanded' : '') + '" id="mc-' + m.id + '">';
         html += '<div class="mc-hdr" onclick="toggleCL(\'' + m.id + '\')">';
         html += '<span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'IN' : 'OUT') + '</span>';
-        var mcCoRes = (m.coResidents || []).map(function(c){ return c.name; }).join(', ');
-        html += '<div class="mc-meta"><div class="mc-name">' + m.resident + (mcCoRes ? ' <span style="font-weight:400;font-size:12px;color:var(--text3)">+ ' + mcCoRes + '</span>' : '') + '</div>' + (m.addedBy ? '<div class="text-xs text-3">by ' + m.addedBy + '</div>' : '');
+        var mcCoRes = (m.coResidents || []).map(function(c){ return esc(c.name); }).join(', ');
+        html += '<div class="mc-meta"><div class="mc-name">' + esc(m.resident) + (mcCoRes ? ' <span style="font-weight:400;font-size:12px;color:var(--text3)">+ ' + mcCoRes + '</span>' : '') + '</div>' + (m.addedBy ? '<div class="text-xs text-3">by ' + esc(m.addedBy) + '</div>' : '');
         var mcApptLine = '';
         if (!m.apptDate) {
           mcApptLine = '<div class="appt-badge no-appt" style="margin-top:4px;display:inline-flex">No appointment yet</div>';
@@ -2542,7 +2544,7 @@ function renderMoves() {
             ? '<div class="appt-badge conflict" style="margin-top:4px;display:inline-flex">&#9888; Elevator conflict</div>'
             : '<div class="appt-badge has-appt" style="margin-top:4px;display:inline-flex">Appt: ' + fmtShort(m.apptDate) + (m.apptTime ? ' ' + fmtTime(m.apptTime) : '') + '</div>';
         }
-        html += '<div class="mc-sub">Unit ' + m.unit + ' - Lease: ' + fmtShort(m.date) + (m.date === t && m.type === 'in' ? ' (today)' : '') + '</div>';
+        html += '<div class="mc-sub">Unit ' + esc(m.unit) + ' - Lease: ' + fmtShort(m.date) + (m.date === t && m.type === 'in' ? ' (today)' : '') + '</div>';
         html += mcApptLine;
         html += '<div class="prog-wrap" style="margin-top:5px"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div>';
         html += '<div class="text-xs text-3 mono" style="margin-top:2px">' + dn + '/' + tot + ' tasks</div></div>';
@@ -2721,7 +2723,7 @@ function renderTightTurnovers() {
   outs.forEach(function (out) { var mi = ins.find(function (i) { return i.unit === out.unit && (i.apptDate || i.date) > (out.apptDate || out.date); }); if (mi) { var outD = out.apptDate || out.date, inD = mi.apptDate || mi.date; var gap = Math.round((new Date(inD + 'T12:00:00') - new Date(outD + 'T12:00:00')) / 86400000); if (gap >= 0 && gap <= 5) tights.push({ unit: out.unit, outRes: out.resident, outDate: outD, inRes: mi.resident, inDate: inD, gap: gap }); } });
   if (!tights.length) { panel.style.display = 'none'; return; }
   panel.style.display = '';
-  body.innerHTML = tights.map(function (tt) { return '<div class="tight-row"><strong>Unit ' + tt.unit + '</strong>: ' + tt.outRes + ' out ' + fmtShort(tt.outDate) + ' &rarr; ' + tt.inRes + ' in ' + fmtShort(tt.inDate) + ' <span class="pill pill-' + (tt.gap <= 2 ? 'high' : 'medium') + '">' + tt.gap + 'd gap</span></div>'; }).join('');
+  body.innerHTML = tights.map(function (tt) { return '<div class="tight-row"><strong>Unit ' + esc(tt.unit) + '</strong>: ' + esc(tt.outRes) + ' out ' + fmtShort(tt.outDate) + ' &rarr; ' + esc(tt.inRes) + ' in ' + fmtShort(tt.inDate) + ' <span class="pill pill-' + (tt.gap <= 2 ? 'high' : 'medium') + '">' + tt.gap + 'd gap</span></div>'; }).join('');
 }
 function generatePassdownFromMoves() { var item = document.querySelector('.nav-item[data-sec="passdown"]'); if (item) nav(item); setTimeout(autoGeneratePassdown, 100); }
 
@@ -2891,10 +2893,10 @@ function renderConcierge() {
     var logCount = log.length;
     var logBtnLabel = logCount > 1 ? '&#128221; ' + logCount + ' updates' : '&#128221; Log';
     html += '<tr>';
-    html += '<td class="mono font-600">' + c.unit + '</td>';
-    html += '<td>' + c.resident + byTag + '</td>';
-    html += '<td><span class="pill" style="background:var(--accent-light);color:var(--accent);font-size:10px">' + c.type + '</span></td>';
-    html += '<td style="max-width:160px;white-space:normal;font-size:12px;color:var(--text2)">' + (c.notes || '—') + '</td>';
+    html += '<td class="mono font-600">' + esc(c.unit) + '</td>';
+    html += '<td>' + esc(c.resident) + byTag + '</td>';
+    html += '<td><span class="pill" style="background:var(--accent-light);color:var(--accent);font-size:10px">' + esc(c.type) + '</span></td>';
+    html += '<td style="max-width:160px;white-space:normal;font-size:12px;color:var(--text2)">' + (c.notes ? esc(c.notes) : '—') + '</td>';
     html += '<td style="max-width:180px"><input type="text" value="' + (c.nextAction||'').replace(/"/g,'&quot;') + '" placeholder="Add next action…" style="width:100%;font-size:11.5px;border:none;border-bottom:1px dashed var(--border);background:transparent;padding:2px 0;color:' + (c.nextAction?'var(--text)':'var(--text3)') + ';outline:none;font-family:inherit" onblur="updateConciergeNextAction(\'' + c.id + '\',this.value)" onfocus="this.style.borderBottomColor=\'var(--accent)\'" onblur="updateConciergeNextAction(\'' + c.id + '\',this.value);this.style.borderBottomColor=\'var(--border)\'"></td>';
     html += '<td><select class="ie-sel" onchange="updateConciergeStatus(\'' + c.id + '\',this.value)"><option value="open"' + (c.status==='open'?' selected':'') + '>Open</option><option value="completed"' + (c.status==='completed'?' selected':'') + '>Completed</option></select></td>';
     html += '<td class="text-xs text-2">' + (c.handledBy || '—') + '</td>';
@@ -4915,9 +4917,9 @@ function renderResidents() {
     var pte = r.pte || 'not-set';
     var borderStyle = r.blueground ? 'border:1px solid #93c5fd;' : 'border:1px solid var(--border);';
     html += '<div style="background:var(--surface);' + borderStyle + 'border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)">';
-    html += '<div class="flex items-center gap-8 mb-8"><span class="unit-num" style="font-size:15px">Unit ' + r.unit + '</span><span class="pte-badge ' + pteClass[pte] + '">' + pteLabel[pte] + '</span>' + (r.blueground ? '<span style="font-size:10px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600;margin-left:auto">&#128309; Blueground</span>' : '') + '</div>';
-    html += '<div style="font-weight:600;font-size:14px">' + r.residentName + (r.preferredName ? ' <span style="font-weight:400;color:var(--text3);font-size:12px">(' + r.preferredName + ')</span>' : '') + '</div>';
-    if (r.phone) html += '<div style="font-size:12px;color:var(--text3);margin-top:2px">&#128222; ' + r.phone + '</div>';
+    html += '<div class="flex items-center gap-8 mb-8"><span class="unit-num" style="font-size:15px">Unit ' + esc(r.unit) + '</span><span class="pte-badge ' + pteClass[pte] + '">' + pteLabel[pte] + '</span>' + (r.blueground ? '<span style="font-size:10px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600;margin-left:auto">&#128309; Blueground</span>' : '') + '</div>';
+    html += '<div style="font-weight:600;font-size:14px">' + esc(r.residentName) + (r.preferredName ? ' <span style="font-weight:400;color:var(--text3);font-size:12px">(' + esc(r.preferredName) + ')</span>' : '') + '</div>';
+    if (r.phone) html += '<div style="font-size:12px;color:var(--text3);margin-top:2px">&#128222; ' + esc(r.phone) + '</div>';
     var dates = [];
     if (r.birthday) dates.push('&#127874; Birthday: ' + fmtShort(r.birthday));
     if (r.anniversary) dates.push('&#127981; Lease anniversary: ' + fmtShort(r.anniversary));
@@ -4928,13 +4930,13 @@ function renderResidents() {
       else dates.push('&#128246; WiFi expires ' + fmtShort(r.wifiExpiry));
     }
     if (dates.length) html += '<div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.8">' + dates.join('<br>') + '</div>';
-    if (r.instructions) html += '<div style="font-size:12px;background:var(--bg);border-radius:5px;padding:6px 8px;margin-top:8px;color:var(--text2);line-height:1.5"><strong>Instructions:</strong> ' + r.instructions + '</div>';
+    if (r.instructions) html += '<div style="font-size:12px;background:var(--bg);border-radius:5px;padding:6px 8px;margin-top:8px;color:var(--text2);line-height:1.5"><strong>Instructions:</strong> ' + esc(r.instructions) + '</div>';
     var credBadges = [];
-    if (r.parking === 'yes') credBadges.push('<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 6px;font-weight:600">&#128664; Parking' + (r.parkingInfo ? ': ' + r.parkingInfo : '') + '</span>');
-    if (r.bike && r.bike !== 'none') credBadges.push('<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 6px;font-weight:600">&#128690; Bike ×' + r.bike + (r.bikeNotes ? ': ' + r.bikeNotes : '') + '</span>');
-    if (r.storage === 'yes') credBadges.push('<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 6px;font-weight:600">&#128230; Storage' + (r.storageUnit ? ' ' + r.storageUnit : '') + '</span>');
+    if (r.parking === 'yes') credBadges.push('<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 6px;font-weight:600">&#128664; Parking' + (r.parkingInfo ? ': ' + esc(r.parkingInfo) : '') + '</span>');
+    if (r.bike && r.bike !== 'none') credBadges.push('<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 6px;font-weight:600">&#128690; Bike ×' + esc(r.bike) + (r.bikeNotes ? ': ' + esc(r.bikeNotes) : '') + '</span>');
+    if (r.storage === 'yes') credBadges.push('<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 6px;font-weight:600">&#128230; Storage' + (r.storageUnit ? ' ' + esc(r.storageUnit) : '') + '</span>');
     if (credBadges.length) html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">' + credBadges.join('') + '</div>';
-    if (r.notes) html += '<div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.4"><em>' + r.notes + '</em></div>';
+    if (r.notes) html += '<div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.4"><em>' + esc(r.notes) + '</em></div>';
     html += '<div class="flex gap-4 mt-10"><button class="btn btn-ghost btn-xs" onclick="openEditResident(\'' + r.id + '\')">&#9998; Edit</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteResident(\'' + r.id + '\')">&#215;</button></div>';
     html += '</div>';
   });
@@ -5260,7 +5262,7 @@ function renderPdAutoBlocks(isLead) {
   html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🎭 Open Concierge Requests</div>';
   if (!openC.length) html += '<div style="color:var(--text3)">None open</div>';
   else openC.forEach(function(c) {
-    var content = '<strong>Unit ' + c.unit + ' – ' + c.resident + '</strong> / ' + c.type + (c.notes ? ': ' + c.notes : '');
+    var content = '<strong>Unit ' + esc(c.unit) + ' – ' + esc(c.resident) + '</strong> / ' + esc(c.type) + (c.notes ? ': ' + esc(c.notes) : '');
     var defNsCon = c.nextAction || 'Follow up and update status once resolved.';
     var cKey = 'c_' + c.id;
     if (c.nextAction && pdNotes[cKey] === undefined) pdNotes[cKey] = c.nextAction;
