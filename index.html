@@ -686,9 +686,11 @@
     </div>
     <div class="section" id="section-residents">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterResidents('all',this)">All Profiles</div><div class="sub-tab" onclick="filterResidents('pte-granted',this)">&#9989; PTE Granted</div><div class="sub-tab" onclick="filterResidents('pte-denied',this)">&#128683; PTE Denied</div><div class="sub-tab" onclick="filterResidents('pte-not-set',this)">PTE Not Set</div><div class="sub-tab" onclick="filterResidents('blueground',this)">&#128309; Blueground</div></div>
+      <div style="margin:8px 0"><input id="residents-search" type="text" placeholder="&#128269; Search by name or unit…" oninput="searchResidents(this.value)" style="width:100%;max-width:320px;font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text)"></div>
+      <div id="residents-missing-banner"></div>
       <div id="residents-pte-banner" style="display:none;margin-bottom:10px;padding:10px 14px;background:#fffbeb;border:1px solid #fcd34d;border-radius:var(--radius);font-size:13px;color:#92400e"><strong>&#128230; Package Team:</strong> This view shows PTE (Permission to Enter) status per unit. Always check before entering a unit for package delivery.</div>
       <div class="stat-grid" id="residents-stats"></div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Resident Profiles &amp; VIP Notes</span><span class="card-count" id="residents-count">0 profiles</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddResident()">+ Add Profile</button></div><div id="residents-grid" style="padding:12px 14px"></div></div>
+      <div class="card"><div class="card-hdr" style="flex-wrap:wrap;gap:6px"><span class="card-title">Resident Profiles &amp; VIP Notes</span><span class="card-count" id="residents-count">0 profiles</span><div style="display:flex;align-items:center;gap:4px;margin-left:auto"><span style="font-size:11px;color:var(--text3)">Sort:</span><button data-sort="unit" class="btn btn-xs btn-secondary" onclick="sortResidents('unit')" style="background:var(--accent);color:#fff;border-color:var(--accent)">Unit</button><button data-sort="floor" class="btn btn-xs btn-secondary" onclick="sortResidents('floor')">Floor</button><button data-sort="name" class="btn btn-xs btn-secondary" onclick="sortResidents('name')">Name</button><button data-sort="recent" class="btn btn-xs btn-secondary" onclick="sortResidents('recent')">Recent</button></div><button class="btn btn-primary btn-sm" onclick="openAddResident()">+ Add Profile</button></div><div id="residents-grid" style="padding:12px 14px"></div></div>
     </div>
     <div class="section" id="section-passdown">
       <div class="two-col">
@@ -1280,6 +1282,19 @@
       </div>
     </div>
     <div class="fg"><label>Additional Notes</label><textarea id="rp-notes" rows="3" placeholder="VIP notes, preferences, anything the team should know..."></textarea></div>
+    <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Pets &amp; Vehicles</div>
+      <div class="fr">
+        <div class="fg">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px;font-size:13px"><input type="checkbox" id="rp-has-pet"> Has Pet(s)</label>
+          <input id="rp-pet-notes" type="text" placeholder="e.g. Golden retriever named Max">
+        </div>
+        <div class="fg">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px;font-size:13px"><input type="checkbox" id="rp-has-vehicle"> Has Vehicle</label>
+          <input id="rp-vehicle-info" type="text" placeholder="e.g. Blue Tesla Model 3, ABC-1234">
+        </div>
+      </div>
+    </div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-resident')">Cancel</button><button class="btn btn-primary" id="modal-resident-savebtn" onclick="saveResident()">Save Profile</button></div>
 </div></div>
@@ -2354,6 +2369,9 @@ function buildCL(m, filterCat) {
     html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTask(\'' + m.id + '\',\'' + t.id + '\',this.checked)">';
     // Editable task text
     html += '<input type="text" class="cl-text-input ' + (t.done ? 'done' : '') + '" value="' + (t.text || t.label || '').replace(/"/g, '&quot;') + '" onblur="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'text\',this.value)" onclick="event.stopPropagation()">';
+    // Quantity field (always visible)
+    html += '<span style="font-size:11px;color:var(--text3);flex-shrink:0;margin:0 1px">&#215;</span>';
+    html += '<input type="text" value="' + (t.qty||'').replace(/"/g,'&quot;') + '" placeholder="qty" title="Quantity / amount needed" style="width:46px;font-size:12px;text-align:center;border:1px solid var(--border2);border-radius:4px;padding:2px 4px;background:var(--surface);color:var(--text);flex-shrink:0;opacity:' + (t.qty ? '1' : '0.4') + '" onclick="event.stopPropagation()" onfocus="this.style.opacity=\'1\'" onblur="this.style.opacity=this.value?\'1\':\'0.4\';updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'qty\',this.value)">';
     // Completed by/at tag
     if (t.done && (t.completedBy || t.completedAt)) {
       var doneTag = '';
@@ -2746,16 +2764,14 @@ function archiveMove(id) {
   if (m.type === 'in') {
     var alreadyHasProfile = (state.residentProfiles || []).some(function(p) { return p.unit === m.unit; });
     if (!alreadyHasProfile) {
-      if (confirm('Create resident profile for ' + m.resident + ', Unit ' + m.unit + '?')) {
-        if (!state.residentProfiles) state.residentProfiles = [];
-        state.residentProfiles.push({ id: uid(), unit: m.unit, residentName: m.resident, preferredName: '', phone: '', notes: 'Moved in ' + fmtShort(m.date), pte: 'not-set', birthday: '', anniversary: '', instructions: '', parking: 'none', parkingInfo: '', bike: 'none', bikeNotes: '', storage: 'none', storageUnit: '', blueground: false, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' });
-        if (m.coResidents && m.coResidents.length) {
-          m.coResidents.forEach(function(cr) {
-            state.residentProfiles.push({ id: uid(), unit: m.unit, residentName: cr.name, preferredName: '', phone: '', notes: 'Co-resident — moved in ' + fmtShort(m.date), pte: 'not-set', birthday: '', anniversary: '', instructions: '', parking: 'none', parkingInfo: '', bike: 'none', bikeNotes: '', storage: 'none', storageUnit: '', blueground: false, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' });
-          });
-        }
-        scheduleSave(); toast('Resident profile created');
+      if (!state.residentProfiles) state.residentProfiles = [];
+      if (m.coResidents && m.coResidents.length) {
+        m.coResidents.forEach(function(cr) {
+          state.residentProfiles.push({ id: uid(), unit: m.unit, residentName: cr.name, preferredName: '', phone: '', notes: 'Co-resident — moved in ' + fmtShort(m.date), pte: 'not-set', instructions: '', parking: 'none', parkingInfo: '', bike: 'none', bikeNotes: '', storage: 'none', storageUnit: '', blueground: false, hasPet: false, petNotes: '', hasVehicle: false, vehicleInfo: '', createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' });
+        });
+        scheduleSave();
       }
+      openAddResidentFromMove(m);
     }
     // Ensure vacant unit is marked occupied on archive
     var vacUnit = (state.units || []).find(function(u){ return u.unit === m.unit; });
@@ -2966,7 +2982,9 @@ function renderConcierge() {
     var logBtnLabel = logCount > 1 ? '&#128221; ' + logCount + ' updates' : '&#128221; Log';
     html += '<tr>';
     html += '<td class="mono font-600">' + esc(c.unit) + '</td>';
-    html += '<td>' + esc(c.resident) + byTag + '</td>';
+    var cProf = (state.residentProfiles||[]).find(function(p){ return p.unit===c.unit; });
+    var cPte = cProf && cProf.pte==='granted' ? ' <span style="font-size:9px;background:#dcfce7;color:#166534;border-radius:3px;padding:1px 5px;font-weight:600;vertical-align:middle">PTE ✓</span>' : cProf && cProf.pte==='denied' ? ' <span style="font-size:9px;background:#fde8e8;color:var(--red);border-radius:3px;padding:1px 5px;font-weight:600;vertical-align:middle">NO PTE</span>' : '';
+    html += '<td>' + esc(c.resident) + cPte + byTag + '</td>';
     html += '<td><span class="pill" style="background:var(--accent-light);color:var(--accent);font-size:10px">' + esc(c.type) + '</span></td>';
     html += '<td style="max-width:160px;white-space:normal;font-size:12px;color:var(--text2)">' + (c.notes ? esc(c.notes) : '—') + '</td>';
     html += '<td style="max-width:180px"><input type="text" value="' + (c.nextAction||'').replace(/"/g,'&quot;') + '" placeholder="Add next action…" style="width:100%;font-size:11.5px;border:none;border-bottom:1px dashed var(--border);background:transparent;padding:2px 0;color:' + (c.nextAction?'var(--text)':'var(--text3)') + ';outline:none;font-family:inherit" onblur="updateConciergeNextAction(\'' + c.id + '\',this.value)" onfocus="this.style.borderBottomColor=\'var(--accent)\'" onblur="updateConciergeNextAction(\'' + c.id + '\',this.value);this.style.borderBottomColor=\'var(--border)\'"></td>';
@@ -4517,7 +4535,12 @@ function renderTodos() {
       clTasks.push({ task: t, move: m });
     });
   });
-  clTasks.sort(function (a, b) { return a.task.dueDate.localeCompare(b.task.dueDate); });
+  clTasks.sort(function (a, b) {
+    if (a.task.dueDate && b.task.dueDate) return a.task.dueDate.localeCompare(b.task.dueDate);
+    if (a.task.dueDate) return -1;
+    if (b.task.dueDate) return 1;
+    return 0;
+  });
   var totalPending = pending + clTasks.length;
   var cnt = g('todos-count'); if (cnt) cnt.textContent = totalPending + ' pending';
   var list = g('todos-list'); if (!list) return;
@@ -4544,10 +4567,10 @@ function renderTodos() {
     clTasks.forEach(function (entry) {
       var t = entry.task, m = entry.move;
       var due = '<span class="todo-due">Due: ' + fmtShort(t.dueDate) + '</span>';
-      html += '<div class="todo-item">';
-      html += '<span style="width:16px;height:16px;border:1.5px solid var(--border);border-radius:3px;flex-shrink:0;display:inline-block"></span>';
+      html += '<div class="todo-item ' + (t.done ? 'done' : '') + '">';
+      html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTask(\'' + m.id + '\',\'' + t.id + '\',this.checked);renderTodos()">';
       html += '<div style="flex:1;min-width:0">';
-      html += '<div class="todo-text">' + t.text + '</div>';
+      html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + t.text + '</div>';
       html += '<div class="todo-meta">' + due + '<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:4px;padding:1px 5px">'
         + 'Unit ' + m.unit + ' \u00b7 ' + m.resident.split(' ')[0] + '</span></div>';
       html += '</div>';
@@ -4614,12 +4637,31 @@ function toggleLAFPassdown(id) { var item = (state.laf || []).find(function(x){ 
 function deleteLAF(id) { if (!confirm('Remove?')) return; var lx=(state.laf||[]).find(function(x){return x.id===id;}); if (lx) pushUndo({ sec: 'laf', type: 'DELETE', id: id, data: Object.assign({}, lx), label: 'delete L&F — ' + lx.desc }); logActivity('laf','delete','Removed L&F item'+(lx?' — '+lx.desc:'')); state.laf = (state.laf || []).filter(function (i) { return i.id !== id; }); scheduleSave(); renderLAF(); updateBadges(); toast('Removed'); }
 
 // ─── RESIDENT PROFILES / VIP NOTES / PTE ───
-var residentsFilter = 'all', editingResidentId = null;
+var residentsFilter = 'all', residentsSort = 'unit', residentsSearch = '', editingResidentId = null;
 // ===== [RESIDENT PROFILES] ===================================================
 function filterResidents(f, item) { residentsFilter = f; document.querySelectorAll('#section-residents .sub-tab').forEach(function(t){ t.classList.remove('active'); }); item.classList.add('active'); renderResidents(); }
+function sortResidents(s) { residentsSort = s; document.querySelectorAll('#section-residents [data-sort]').forEach(function(b){ var on=b.dataset.sort===s; b.style.background=on?'var(--accent)':''; b.style.color=on?'#fff':''; b.style.borderColor=on?'var(--accent)':''; }); renderResidents(); }
+function searchResidents(val) { residentsSearch = val.toLowerCase(); renderResidents(); }
+function openAddResidentFromMoveId(moveId) {
+  var m = (state.moves || []).find(function(x){ return x.id === moveId; });
+  if (m) openAddResidentFromMove(m);
+}
+function openAddResidentFromMove(m) {
+  editingResidentId = null;
+  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-birthday','rp-anniversary','rp-wifi-expiry','rp-lease-start','rp-lease-end','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit','rp-pet-notes','rp-vehicle-info'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  var wh = g('rp-wifi-hint'); if (wh) wh.innerHTML = '';
+  g('rp-pte').value = 'not-set'; g('rp-parking').value = 'none'; g('rp-bike').value = 'none'; g('rp-storage').value = 'none';
+  ['rp-m2m','rp-blueground','rp-has-pet','rp-has-vehicle'].forEach(function(id){ var el=g(id); if(el) el.checked=false; });
+  g('rp-unit').value = m.unit || '';
+  g('rp-name').value = m.resident || '';
+  var lsf = g('rp-lease-start'); if (lsf && m.date) lsf.value = m.date;
+  var notesEl = g('rp-notes'); if (notesEl) notesEl.value = 'Moved in ' + fmtShort(m.date);
+  setModalMode('modal-resident-title','modal-resident-savebtn','Create Resident Profile','Save Profile');
+  openModal('modal-resident');
+}
 function openAddResident() {
   editingResidentId = null;
-  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-birthday','rp-anniversary','rp-wifi-expiry','rp-lease-start','rp-lease-end','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-birthday','rp-anniversary','rp-wifi-expiry','rp-lease-start','rp-lease-end','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit','rp-pet-notes','rp-vehicle-info'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
   var wh = g('rp-wifi-hint'); if (wh) wh.innerHTML = '';
   var m2m = g('rp-m2m'); if (m2m) m2m.checked = false;
   g('rp-pte').value = 'not-set';
@@ -4627,6 +4669,8 @@ function openAddResident() {
   g('rp-bike').value = 'none';
   g('rp-storage').value = 'none';
   var bgCb = g('rp-blueground'); if (bgCb) bgCb.checked = false;
+  var hasPetCb = g('rp-has-pet'); if (hasPetCb) hasPetCb.checked = false;
+  var hasVehCb = g('rp-has-vehicle'); if (hasVehCb) hasVehCb.checked = false;
   setModalMode('modal-resident-title','modal-resident-savebtn','Add Resident Profile','Save Profile');
   openModal('modal-resident');
 }
@@ -4649,6 +4693,10 @@ function openEditResident(id) {
   g('rp-storage').value = r.storage || 'none';
   g('rp-storage-unit').value = r.storageUnit || '';
   var bgCb = g('rp-blueground'); if (bgCb) bgCb.checked = !!r.blueground;
+  var hasPetCbE = g('rp-has-pet'); if (hasPetCbE) hasPetCbE.checked = !!r.hasPet;
+  var hasVehCbE = g('rp-has-vehicle'); if (hasVehCbE) hasVehCbE.checked = !!r.hasVehicle;
+  var petNF = g('rp-pet-notes'); if (petNF) petNF.value = r.petNotes || '';
+  var vehIF = g('rp-vehicle-info'); if (vehIF) vehIF.value = r.vehicleInfo || '';
   var lsf = g('rp-lease-start'); if (lsf) lsf.value = r.leaseStart || '';
   var lef = g('rp-lease-end'); if (lef) lef.value = r.leaseEnd || '';
   var m2m = g('rp-m2m'); if (m2m) m2m.checked = !!r.monthToMonth;
@@ -4675,6 +4723,7 @@ function saveResident() {
     var bgCbS = g('rp-blueground');
     r.unit=unit; r.residentName=name; r.preferredName=g('rp-preferred').value.trim(); r.phone=g('rp-phone').value.trim(); r.birthday=g('rp-birthday').value; r.anniversary=g('rp-anniversary').value; r.instructions=g('rp-instructions').value.trim(); r.pte=g('rp-pte').value; r.notes=g('rp-notes').value.trim(); r.wifiExpiry=g('rp-wifi-expiry').value||''; r.leaseStart=g('rp-lease-start').value||''; r.leaseEnd=g('rp-lease-end').value||''; r.monthToMonth=!!(g('rp-m2m')&&g('rp-m2m').checked);
     r.parking=g('rp-parking').value; r.parkingInfo=g('rp-parking-info').value.trim(); r.bike=g('rp-bike').value; r.bikeNotes=g('rp-bike-notes').value.trim(); r.storage=g('rp-storage').value; r.storageUnit=g('rp-storage-unit').value.trim(); r.blueground=bgCbS?!!bgCbS.checked:false;
+    r.hasPet=!!(g('rp-has-pet')&&g('rp-has-pet').checked); r.petNotes=g('rp-pet-notes')?g('rp-pet-notes').value.trim():''; r.hasVehicle=!!(g('rp-has-vehicle')&&g('rp-has-vehicle').checked); r.vehicleInfo=g('rp-vehicle-info')?g('rp-vehicle-info').value.trim():'';
     pushUndo({ sec: 'residents', type: 'EDIT', id: r.id, before: _rb, after: Object.assign({}, r), label: 'profile edit — Unit ' + unit });
     editingResidentId=null; logActivity('residents','edit','Updated resident profile — Unit '+unit+' · '+name); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile updated'); return;
   }
@@ -4684,7 +4733,7 @@ function saveResident() {
     if (!confirm('Unit ' + unit + ' already has a profile (' + names + '). Add another profile for this unit?')) return;
   }
   var bgCbN = g('rp-blueground');
-  var entry = { id: uid(), unit: unit, residentName: name, preferredName: g('rp-preferred').value.trim(), phone: g('rp-phone').value.trim(), birthday: g('rp-birthday').value, anniversary: g('rp-anniversary').value, instructions: g('rp-instructions').value.trim(), pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), wifiExpiry: g('rp-wifi-expiry').value||'', leaseStart: g('rp-lease-start').value||'', leaseEnd: g('rp-lease-end').value||'', monthToMonth: !!(g('rp-m2m')&&g('rp-m2m').checked), parking: g('rp-parking').value, parkingInfo: g('rp-parking-info').value.trim(), bike: g('rp-bike').value, bikeNotes: g('rp-bike-notes').value.trim(), storage: g('rp-storage').value, storageUnit: g('rp-storage-unit').value.trim(), blueground: bgCbN?!!bgCbN.checked:false, createdAt: Date.now() };
+  var entry = { id: uid(), unit: unit, residentName: name, preferredName: g('rp-preferred').value.trim(), phone: g('rp-phone').value.trim(), birthday: g('rp-birthday').value, anniversary: g('rp-anniversary').value, instructions: g('rp-instructions').value.trim(), pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), wifiExpiry: g('rp-wifi-expiry').value||'', leaseStart: g('rp-lease-start').value||'', leaseEnd: g('rp-lease-end').value||'', monthToMonth: !!(g('rp-m2m')&&g('rp-m2m').checked), parking: g('rp-parking').value, parkingInfo: g('rp-parking-info').value.trim(), bike: g('rp-bike').value, bikeNotes: g('rp-bike-notes').value.trim(), storage: g('rp-storage').value, storageUnit: g('rp-storage-unit').value.trim(), blueground: bgCbN?!!bgCbN.checked:false, hasPet: !!(g('rp-has-pet')&&g('rp-has-pet').checked), petNotes: g('rp-pet-notes')?g('rp-pet-notes').value.trim():'', hasVehicle: !!(g('rp-has-vehicle')&&g('rp-has-vehicle').checked), vehicleInfo: g('rp-vehicle-info')?g('rp-vehicle-info').value.trim():'', createdAt: Date.now() };
   if (!state.residentProfiles) state.residentProfiles = [];
   state.residentProfiles.push(entry); pushUndo({ sec: 'residents', type: 'ADD', id: entry.id, data: Object.assign({}, entry), label: 'add profile — Unit ' + unit }); logActivity('residents','create','Added resident profile — Unit '+unit+' · '+name); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile saved');
 }
@@ -4983,7 +5032,33 @@ function renderResidents() {
   else if (residentsFilter === 'pte-denied') list = list.filter(function(r){ return r.pte==='denied'; });
   else if (residentsFilter === 'pte-not-set') list = list.filter(function(r){ return !r.pte || r.pte==='not-set'; });
   else if (residentsFilter === 'blueground') list = list.filter(function(r){ return !!r.blueground; });
-  list.sort(function(a,b){ return parseInt(a.unit)-parseInt(b.unit); });
+  if (residentsSearch) list = list.filter(function(r){ var q=residentsSearch; return (r.residentName||'').toLowerCase().includes(q)||(r.preferredName||'').toLowerCase().includes(q)||(r.unit||'').toLowerCase().includes(q); });
+  if (residentsSort === 'floor') {
+    list.sort(function(a,b){ var fa=Math.floor(parseInt(a.unit||0)/100),fb=Math.floor(parseInt(b.unit||0)/100); return fa!==fb?fa-fb:parseInt(a.unit)-parseInt(b.unit); });
+  } else if (residentsSort === 'name') {
+    list.sort(function(a,b){ var na=(a.preferredName||a.residentName||'').toLowerCase(),nb=(b.preferredName||b.residentName||'').toLowerCase(); return na<nb?-1:na>nb?1:0; });
+  } else if (residentsSort === 'recent') {
+    list.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+  } else {
+    list.sort(function(a,b){ return parseInt(a.unit)-parseInt(b.unit); });
+  }
+  var missingBanner = g('residents-missing-banner');
+  if (missingBanner) {
+    var archivedIns = (state.moves||[]).filter(function(mv){ return mv.type==='in' && mv.archivedAt; });
+    var missing = archivedIns.filter(function(mv){
+      var hasLaterOut = (state.moves||[]).some(function(mo){ return mo.type==='out' && mo.unit===mv.unit && mo.archivedAt && mo.archivedAt > mv.archivedAt; });
+      if (hasLaterOut) return false;
+      return !(state.residentProfiles||[]).some(function(p){ return p.unit===mv.unit; });
+    });
+    if (missing.length) {
+      var mbHtml = '<div style="margin-bottom:10px;padding:10px 14px;background:#fef9c3;border:1px solid #fcd34d;border-radius:var(--radius);font-size:13px;color:#854d0e"><strong>&#9888; Missing profiles:</strong> ';
+      mbHtml += missing.map(function(mv){ return '<span style="margin-left:8px">' + esc(mv.resident) + ' &middot; Unit ' + esc(mv.unit) + ' <button class="btn btn-xs btn-secondary" style="margin-left:4px" onclick="openAddResidentFromMoveId(\'' + mv.id + '\')">Create</button></span>'; }).join('');
+      mbHtml += '</div>';
+      missingBanner.innerHTML = mbHtml;
+    } else {
+      missingBanner.innerHTML = '';
+    }
+  }
   var banner = g('residents-pte-banner');
   if (banner) banner.style.display = (residentsFilter==='pte-granted'||residentsFilter==='pte-denied') ? '' : 'none';
   var granted = (state.residentProfiles||[]).filter(function(r){ return r.pte==='granted'; }).length;
@@ -5003,7 +5078,7 @@ function renderResidents() {
     html += '<div style="background:var(--surface);' + borderStyle + 'border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)">';
     html += '<div class="flex items-center gap-8 mb-8"><span class="unit-num" style="font-size:15px">Unit ' + esc(r.unit) + '</span><span class="pte-badge ' + pteClass[pte] + '">' + pteLabel[pte] + '</span>' + (r.blueground ? '<span style="font-size:10px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600;margin-left:auto">&#128309; Blueground</span>' : '') + '</div>';
     html += '<div style="font-weight:600;font-size:14px">' + esc(r.residentName) + (r.preferredName ? ' <span style="font-weight:400;color:var(--text3);font-size:12px">(' + esc(r.preferredName) + ')</span>' : '') + '</div>';
-    if (r.phone) html += '<div style="font-size:12px;color:var(--text3);margin-top:2px">&#128222; ' + esc(r.phone) + '</div>';
+    if (r.phone) html += '<div style="font-size:12px;color:var(--text3);margin-top:2px">&#128222; <a href="tel:' + esc(r.phone) + '" style="color:inherit;text-decoration:none">' + esc(r.phone) + '</a></div>';
     var dates = [];
     if (r.birthday) dates.push('&#127874; Birthday: ' + fmtShort(r.birthday));
     if (r.anniversary) dates.push('&#127981; Lease anniversary: ' + fmtShort(r.anniversary));
@@ -5029,6 +5104,8 @@ function renderResidents() {
     if (r.parking === 'yes') credBadges.push('<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 6px;font-weight:600">&#128664; Parking' + (r.parkingInfo ? ': ' + esc(r.parkingInfo) : '') + '</span>');
     if (r.bike && r.bike !== 'none') credBadges.push('<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 6px;font-weight:600">&#128690; Bike ×' + esc(r.bike) + (r.bikeNotes ? ': ' + esc(r.bikeNotes) : '') + '</span>');
     if (r.storage === 'yes') credBadges.push('<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 6px;font-weight:600">&#128230; Storage' + (r.storageUnit ? ' ' + esc(r.storageUnit) : '') + '</span>');
+    if (r.hasPet) credBadges.push('<span style="font-size:10px;background:#fef9c3;color:#854d0e;border-radius:3px;padding:1px 6px;font-weight:600">&#128062; Pet' + (r.petNotes ? ': ' + esc(r.petNotes) : '') + '</span>');
+    if (r.hasVehicle) credBadges.push('<span style="font-size:10px;background:#f0fdf4;color:#166534;border-radius:3px;padding:1px 6px;font-weight:600">&#128663; Vehicle' + (r.vehicleInfo ? ': ' + esc(r.vehicleInfo) : '') + '</span>');
     if (credBadges.length) html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">' + credBadges.join('') + '</div>';
     if (r.notes) html += '<div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.4"><em>' + esc(r.notes) + '</em></div>';
     html += '<div class="flex gap-4 mt-10"><button class="btn btn-ghost btn-xs" onclick="openEditResident(\'' + r.id + '\')">&#9998; Edit</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteResident(\'' + r.id + '\')">&#215;</button></div>';
