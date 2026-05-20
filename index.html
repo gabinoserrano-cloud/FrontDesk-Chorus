@@ -1315,6 +1315,43 @@
 <div id="toast"></div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ╔══════════════════════════════════════════════════════════════════════════╗
+// ║  FrontDesk Chorus — index.html                                          ║
+// ║  Single-file dashboard for Chorus SF front desk operations              ║
+// ╠══════════════════════════════════════════════════════════════════════════╣
+// ║  FILE MAP  (Cmd+G / Ctrl+G to jump to line)                            ║
+// ║                                                                         ║
+// ║  ~1318   Supabase Config                                                ║
+// ║  ~1339   App State & Globals                                            ║
+// ║  ~1565   Core Utilities  (uid, esc, today, fmtShort, toast, g)         ║
+// ║  ~1589   Undo System & Activity Log                                     ║
+// ║  ~1730   Navigation & Routing                                           ║
+// ║  ~1886   Modal & Badge Utilities                                        ║
+// ║  ~1927   Dashboard                                                      ║
+// ║  ~2059   Move-Ins / Move-Outs                                           ║
+// ║  ~2752   Vacant Units                                                   ║
+// ║  ~2848   Concierge Log                                                  ║
+// ║  ~2969   Maintenance                                                    ║
+// ║  ~3179   Key Tracker                                                    ║
+// ║  ~3406   Security Incidents                                             ║
+// ║  ~3518   Amenity Bookings                                               ║
+// ║  ~3609   Tours                                                          ║
+// ║  ~3664   Patrol & Walk-Through                                          ║
+// ║  ~4417   To-Do List                                                     ║
+// ║  ~4520   Lost & Found                                                   ║
+// ║  ~4640   Supplies                                                       ║
+// ║  ~4915   Resident Profiles                                              ║
+// ║  ~5068   Daily Passdown Builder                                         ║
+// ║  ~6060   Passdown History                                               ║
+// ║  ~6281   Calendar                                                       ║
+// ║  ~6862   Property Guide                                                 ║
+// ║  ~6902   Team & Staff                                                   ║
+// ║  ~7200   Settings                                                       ║
+// ║  ~7777   Login / Auth                                                   ║
+// ║  ~7969   App Initialization                                             ║
+// ╚══════════════════════════════════════════════════════════════════════════╝
+
+// ===== [SUPABASE CONFIG] =====================================================
 // ─── SUPABASE CONFIG ───
 var SUPA_URL = 'https://adovwmwpvwomljggscge.supabase.co';
 var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkb3Z3bXdwdndvbWxqZ2dzY2dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNzkxNjcsImV4cCI6MjA5MDg1NTE2N30.dZgl3jEL1FbBSe_gM3LN9Tc3wGGmsf_Bq6YaKJf4dyk';
@@ -1336,6 +1373,7 @@ async function supaPush(d) {
   });
   if (!res.ok) throw new Error('push ' + res.status);
 }
+// ===== [APP STATE & GLOBALS] =================================================
 function setSyncStatus(cls, msg) {
   var dot = g('sync-dot'), lbl = g('sync-label');
   if (dot) dot.className = 'sync-dot ' + cls;
@@ -1562,6 +1600,7 @@ function resetData() {
 }
 
 // ─── UTILS ───
+// ===== [CORE UTILITIES] ======================================================
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function esc(s) { return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function today() {
@@ -1586,6 +1625,7 @@ function _secStateKey(sec) {
   return sec;
 }
 
+// ===== [UNDO SYSTEM & ACTIVITY LOG] ==========================================
 function pushUndo(cmd) {
   undoStack.push(cmd);
   if (undoStack.length > UNDO_LIMIT) { undoStack.shift(); toast('Undo history full — oldest action can no longer be undone'); }
@@ -1727,6 +1767,7 @@ function clearActivityFilters() {
 }
 
 // ─── SIDEBAR ───
+// ===== [NAVIGATION & ROUTING] ================================================
 function toggleSidebar() { document.body.classList.toggle('sc'); localStorage.setItem('chorus-sc', document.body.classList.contains('sc') ? '1' : '0'); }
 function openMobSidebar() { g('sidebar').classList.add('mob-open'); g('sb-ov').style.display = 'block'; }
 function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov').style.display = 'none'; }
@@ -1883,6 +1924,7 @@ function loadTestData() {
 }
 
 // ─── MODAL ───
+// ===== [MODAL & BADGE UTILITIES] =============================================
 function openModal(id) {
   g(id).classList.add('open');
   g(id).querySelectorAll('input[type=date]').forEach(function (f) { if (!f.value && !f.hasAttribute('data-no-autofill')) f.value = today(); });
@@ -1924,6 +1966,7 @@ function setBadge(id, n) { var e = g(id); if (!e) return; e.textContent = n; e.c
 function setMBadge(id, n) { var e = g(id); if (!e) return; e.textContent = n; e.classList.toggle('vis', n > 0); }
 
 // ─── DASHBOARD ───
+// ===== [DASHBOARD] ===========================================================
 function renderDash() {
   var t = today(), moves = state.moves || [];
   var active = moves.filter(function (m) { return !m.archivedAt; });
@@ -2056,6 +2099,7 @@ function dashSearch(q) {
   res.innerHTML = html; res.style.display = '';
 }
 function navToSearch(sec) { g('dash-results').style.display = 'none'; g('dash-search-input').value = ''; var item = document.querySelector('.nav-item[data-sec="' + sec + '"]'); if (item) nav(item); }
+// ===== [MOVE-INS / MOVE-OUTS] ================================================
 function navToMoves(filter) {
   var item = document.querySelector('.nav-item[data-sec="moves"]');
   if (!item) return;
@@ -2845,6 +2889,7 @@ function deleteUnit(id) { if (!confirm('Remove this unit?')) return; state.units
 
 // ─── CONCIERGE LOG ───
 var conciergeFilter = 'all', editingConciergeId = null;
+// ===== [CONCIERGE LOG] =======================================================
 function filterConcierge(f, item) { conciergeFilter = f; document.querySelectorAll('#section-concierge .sub-tab').forEach(function(t){ t.classList.remove('active'); }); item.classList.add('active'); renderConcierge(); }
 function openAddConcierge() {
   editingConciergeId = null;
@@ -2966,6 +3011,7 @@ function escalateSecurityToMaint(id) {
 
 // ─── MAINTENANCE ───
 var maintFilter = 'all';
+// ===== [MAINTENANCE] =========================================================
 function filterMaint(f, item) { maintFilter = f; document.querySelectorAll('#section-maintenance .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderMaint(); }
 function saveMaint() {
   var unit = g('mt-unit').value.trim(), issue = g('mt-issue').value.trim();
@@ -3176,6 +3222,7 @@ function saveKey() {
   }
   ['ky-unit', 'ky-name', 'ky-fob', 'ky-notes', 'ky-guest', 'ky-timeout'].forEach(function (id) { var el=g(id); if(el) el.value=''; }); g('ky-expiry').value = ''; toast('Key logged');
 }
+// ===== [KEY TRACKER] =========================================================
 function renderKeys() {
   var list = (state.keys || []).slice();
   if (keyFilter === 'issued') list = list.filter(function (k) { return k.status === 'issued'; });
@@ -3403,6 +3450,7 @@ function renderParking() {
 
 // ─── SECURITY LOG ───
 var securityFilter = 'all', editingSecurityId = null;
+// ===== [SECURITY INCIDENTS] ==================================================
 function filterSecurity(f, item) { securityFilter = f; document.querySelectorAll('#section-security .sub-tab').forEach(function(t){t.classList.remove('active');}); item.classList.add('active'); renderSecurity(); }
 function secTypeChange() { var v=g('sec-type').value; var w=g('sec-other-wrap'); if(w) w.style.display=v==='Other'?'':'none'; }
 function openAddSecurity() {
@@ -3515,6 +3563,7 @@ function saveAmenity() {
   state.amenities.push(a); pushUndo({ sec: 'amenities', type: 'ADD', id: a.id, data: Object.assign({}, a), label: 'add booking — Unit ' + unit }); logActivity('amenities','create','Added amenity booking — Unit '+unit+' · '+space+' · '+fmtShort(date)); scheduleSave(); closeModal('modal-amenity'); renderAmenities(); updateBadges();
   ['am-resident', 'am-unit', 'am-fee', 'am-notes'].forEach(function (id) { g(id).value = ''; }); clearSpaceCheckboxes(); toast('Booking added');
 }
+// ===== [AMENITY BOOKINGS] ====================================================
 function renderAmenities() {
   var list = (state.amenities || []).slice(), t = today();
   if (amenityFilter === 'today') list = list.filter(function (a) { return a.date === t; });
@@ -4414,6 +4463,7 @@ function openAddTodoFromBar() {
   openAddTodoModal(date, text, pri);
 }
 
+// ===== [TO-DO LIST] ==========================================================
 function renderTodos() {
   // Admin user-switcher
   var switcherEl = g('todos-user-switcher');
@@ -4517,6 +4567,7 @@ function saveLAF() {
   state.laf.push(item); pushUndo({ sec: 'laf', type: 'ADD', id: item.id, data: Object.assign({}, item), label: 'add L&F — ' + desc }); logActivity('laf','create','Logged L&F item — '+desc+' · '+(item.location||'unknown location')); scheduleSave(); closeModal('modal-laf'); renderLAF(); updateBadges();
   ['lf-foundby', 'lf-location', 'lf-desc', 'lf-notes', 'lf-time'].forEach(function (id) { g(id).value = ''; }); toast('Item logged');
 }
+// ===== [LOST & FOUND] ========================================================
 function renderLAF() {
   var list = (state.laf || []).slice();
   if (lafFilter === 'unclaimed') list = list.filter(function (i) { return !i.claimedAt; });
@@ -4552,6 +4603,7 @@ function deleteLAF(id) { if (!confirm('Remove?')) return; var lx=(state.laf||[])
 
 // ─── RESIDENT PROFILES / VIP NOTES / PTE ───
 var residentsFilter = 'all', editingResidentId = null;
+// ===== [RESIDENT PROFILES] ===================================================
 function filterResidents(f, item) { residentsFilter = f; document.querySelectorAll('#section-residents .sub-tab').forEach(function(t){ t.classList.remove('active'); }); item.classList.add('active'); renderResidents(); }
 function openAddResident() {
   editingResidentId = null;
@@ -4637,6 +4689,7 @@ function filterSupplies(view, el) {
   renderSupplies();
 }
 
+// ===== [SUPPLIES] ============================================================
 function renderSupplies() {
   if (!state.supplies || state.supplies.length === 0) {
     state.supplies = DEFAULT_SUPPLIES.map(function(d) {
@@ -5065,6 +5118,7 @@ function pdToggleExclude(key) {
   renderPdAutoBlocks(currentUser && currentUser.role === 'admin');
 }
 
+// ===== [DAILY PASSDOWN BUILDER] ==============================================
 function renderPassdown() {
   pdLoadDraft();
   var isLead = currentUser && currentUser.role === 'admin';
@@ -5175,6 +5229,12 @@ function pdAutoRowSave(exKey, value) {
     if (lf) { if (!lf.passdownNotes) lf.passdownNotes = []; lf.passdownNotes.push(entry); scheduleSave(); }
   }
 }
+// Passdown include logic — two intentional patterns:
+//   pdHasNote(key)       → opt-in sections (maintenance, concierge, keys, security, L&F)
+//                          Item only appears in passdown if a note was written.
+//   isCarriedNoNote(key) → scheduled sections (moves, amenities, outstanding keys)
+//                          New items always included; carried-over items only if updated.
+function pdHasNote(key) { return !!(pdNotes[key] && pdNotes[key].trim()); }
 function pdYouBadge(obj) {
   if (!currentUser || !obj || !obj.addedBy) return '';
   return obj.addedBy === currentUser.name
@@ -5223,6 +5283,7 @@ function isMoveCompleted(m) {
 
 function renderPdAutoBlocks(isLead) {
   var container = g('pd-auto-blocks'); if (!container) return;
+  try {
   var now = Date.now(), t = today();
   var carriedSet = getCarriedItemIds();
   var activeIds = getActiveAutoBlockIds();
@@ -5439,7 +5500,13 @@ function renderPdAutoBlocks(isLead) {
     html += '</div>';
   }
 
-  container.innerHTML = html;
+    container.innerHTML = html;
+  } catch(e) {
+    console.error('[passdown] renderPdAutoBlocks error:', e);
+    container.innerHTML = '<div style="padding:16px;color:var(--red);border:1px solid rgba(220,38,38,0.2);border-radius:8px;text-align:center">'
+      + '⚠ Could not load passdown builder — please refresh the page.'
+      + '<div style="font-size:11px;color:var(--text3);margin-top:4px">' + e.message + '</div></div>';
+  }
 }
 
 function renderPdFreeSections(isLead) {
@@ -5645,7 +5712,7 @@ function generatePassdown() {
   }
 
   // Open concierge (skip excluded)
-  var openC = (state.concierge||[]).filter(function(c){ return c.status==='open' && !pdExcluded['c_'+c.id] && !!(pdNotes['c_'+c.id] && pdNotes['c_'+c.id].trim()); });
+  var openC = (state.concierge||[]).filter(function(c){ return c.status==='open' && !pdExcluded['c_'+c.id] && pdHasNote('c_'+c.id); });
   if (openC.length) {
     out += '\n🎭 Open Concierge Requests\n';
     openC.forEach(function(c) {
@@ -5655,7 +5722,7 @@ function generatePassdown() {
   }
 
   // Keys still out (skip excluded)
-  var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued' && !pdExcluded['key_'+k.id] && !!(pdNotes['key_'+k.id] && pdNotes['key_'+k.id].trim()); });
+  var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued' && !pdExcluded['key_'+k.id] && pdHasNote('key_'+k.id); });
   if (oneTimeOut.length) {
     out += '\n🗝 One-Time Keys Still Out\n';
     oneTimeOut.forEach(function(k) {
@@ -5670,7 +5737,7 @@ function generatePassdown() {
   }
 
   // Open / in-progress maintenance (skip excluded)
-  var openM = (state.maintenance||[]).filter(function(m){ return (m.status==='open'||m.status==='in-progress') && !pdExcluded['mt_'+m.id] && !!(pdNotes['mt_'+m.id] && pdNotes['mt_'+m.id].trim()); });
+  var openM = (state.maintenance||[]).filter(function(m){ return (m.status==='open'||m.status==='in-progress') && !pdExcluded['mt_'+m.id] && pdHasNote('mt_'+m.id); });
   if (openM.length) {
     out += '\n🔧 Open Maintenance\n';
     openM.forEach(function(m) {
@@ -5686,7 +5753,7 @@ function generatePassdown() {
   }
 
   // Security incidents
-  var secGen = (state.security||[]).filter(function(s){ return (s.date===t || s.status==='monitoring') && !pdExcluded['sec_'+s.id] && !!(pdNotes['sec_'+s.id] && pdNotes['sec_'+s.id].trim()); });
+  var secGen = (state.security||[]).filter(function(s){ return (s.date===t || s.status==='monitoring') && !pdExcluded['sec_'+s.id] && pdHasNote('sec_'+s.id); });
   if (secGen.length) {
     out += '\n🛡 Incidents\n';
     secGen.forEach(function(s) {
@@ -5698,7 +5765,7 @@ function generatePassdown() {
   }
 
   // Flagged L&F items
-  var flaggedLAF = (state.laf || []).filter(function(i){ return i.flaggedForPassdown && !i.claimedAt && !pdExcluded['laf_'+i.id] && !!(pdNotes['laf_'+i.id] && pdNotes['laf_'+i.id].trim()); });
+  var flaggedLAF = (state.laf || []).filter(function(i){ return i.flaggedForPassdown && !i.claimedAt && !pdExcluded['laf_'+i.id] && pdHasNote('laf_'+i.id); });
   if (flaggedLAF.length) {
     out += '\n📦 Lost & Found — Follow Up\n';
     flaggedLAF.forEach(function(i) {
@@ -6057,6 +6124,7 @@ function getAllPassdowns(limitHours) {
   }
   return all.sort(function(a,b){ return b.createdAt - a.createdAt; });
 }
+// ===== [PASSDOWN HISTORY] ====================================================
 function renderPassdownHistory() {
   var histEl = g('pd-history'); if (!histEl) return;
   var isAdmin = !currentUser || currentUser.role === 'admin';
@@ -6278,6 +6346,7 @@ function saveTodoModal() {
 
 // ─── CALENDAR ───
 var calMode = 'week', calOffset = 0;
+// ===== [CALENDAR] ============================================================
 function setCalView(mode) { calMode = mode; calOffset = 0; renderCalendar(); }
 function calNav(dir) { if (dir === 0) calOffset = 0; else calOffset += dir; renderCalendar(); }
 
@@ -6859,6 +6928,7 @@ var GUIDE_DATA = [
     html:'<div class="guide-note">🔒 Visible to Admin (Lead) users only.</div><h4>How It Works</h4><p>The Import Center lets you bulk-import data from screenshots using Claude AI. This is useful for migrating move lists, maintenance logs, or calendar data from EliseAI, Excel, or other tools.</p><h4>Steps</h4><ul><li>Take a screenshot of your data source (calendar, spreadsheet, move list).</li><li>Paste it into <a href="https://claude.ai" target="_blank">claude.ai</a> along with the prompt shown in the Import Center.</li><li>Claude returns a JSON block — copy it.</li><li>Paste the JSON into the import field and click Import.</li></ul><div class="guide-tip">💡 The Import Center also has a <strong>Reset All Data</strong> option — use with extreme caution. This permanently deletes all records in the dashboard.</div>' }
 ];
 
+// ===== [PROPERTY GUIDE] ======================================================
 function renderGuide() {
   var container = g('guide-body');
   if (!container) return;
@@ -6899,6 +6969,7 @@ function isValidTaskList(list) { return Array.isArray(list) && list.length > 0 &
 function getCustomInTasks() { return isValidTaskList(state.customInTasks) ? state.customInTasks : DEFAULT_IN_TASKS.slice(); }
 function getCustomOutTasks() { return isValidTaskList(state.customOutTasks) ? state.customOutTasks : DEFAULT_OUT_TASKS.slice(); }
 
+// ===== [TEAM & STAFF] ========================================================
 function renderTeam() {
   var el = g('team-body'); if (!el) return;
   var pin = state.teampin || '';
@@ -7197,6 +7268,7 @@ function toggleStaffNavSection(sec, visible) {
   scheduleSave(); renderNavVisibility();
 }
 
+// ===== [SETTINGS] ============================================================
 function renderSettings() {
   var isAdmin = !currentUser || currentUser.role === 'admin';
   var acctCard = g('settings-accounts-card');
@@ -7774,6 +7846,7 @@ function resetPassdownState() {
   var sumEl = g('pd-summary'); if (sumEl) sumEl.value = '';
   var pv = g('pd-preview'); if (pv) pv.value = '';
 }
+// ===== [LOGIN / AUTH] ========================================================
 function submitPin() {
   var acct = loginSelectedAccount; if (!acct) return;
   if (loginPinEntry === acct.pin) {
@@ -7966,6 +8039,7 @@ function deleteAccount(id) {
 }
 
 // ─── INIT ───
+// ===== [APP INITIALIZATION] ==================================================
 async function init() {
   applyIcons();
   if (localStorage.getItem('chorus-sc') === '1') document.body.classList.add('sc');
