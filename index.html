@@ -5110,6 +5110,11 @@ function getActiveAutoBlockIds() {
     var apptD = m.apptDate || m.date, exKey = (m.type==='in'?'in_':'out_')+m.id;
     if (pdExcluded[exKey]) return;
     if ((apptD===t && pdInShift(m.apptTime, shift)) || (isLead && apptD>t && apptD<=maxDate)) ids.push(exKey);
+    // Outstanding key returns (past move-outs with unchecked key task)
+    if (m.type==='out' && !pdExcluded['keys_out_'+m.id] && m.date<=t && apptD<=t) {
+      var keyTask = (m.tasks||[]).find(function(tk){ return tk.cat==='Keys & Access' && /unit keys/i.test(tk.text); });
+      if (keyTask && !keyTask.done) ids.push('keys_out_'+m.id);
+    }
   });
   (state.amenities||[]).forEach(function(a) {
     var exKey = 'am_'+a.id; if (pdExcluded[exKey]) return;
@@ -5127,6 +5132,7 @@ function pdAutoRowEditFn(exKey) {
   if (exKey.indexOf('key_') === 0) return 'openEditKey(\'' + exKey.slice(4) + '\')';
   if (exKey.indexOf('in_') === 0) return 'openEditMove(\'' + exKey.slice(3) + '\')';
   if (exKey.indexOf('out_') === 0) return 'openEditMove(\'' + exKey.slice(4) + '\')';
+  if (exKey.indexOf('keys_out_') === 0) return 'openEditMove(\'' + exKey.slice(9) + '\')';
   if (exKey.indexOf('am_') === 0) return 'openEditAmenity(\'' + exKey.slice(3) + '\')';
   if (exKey.indexOf('sec_') === 0) return 'openEditSecurity(\'' + exKey.slice(4) + '\')';
   return '';
@@ -5186,26 +5192,6 @@ function renderPdAutoBlocks(isLead) {
   var html = '<div style="font-size:12px;background:rgba(100,116,139,0.07);color:#475569;border:1px solid rgba(100,116,139,0.18);border-radius:6px;padding:8px 12px;margin-bottom:8px;line-height:1.5">✏ Items marked <em>↓ Add update to include</em> only appear in your passdown if you write a note — leave blank to skip.</div>'
     + (carriedCount ? '<div style="font-size:12px;background:rgba(59,130,246,0.08);color:#1e40af;border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:8px 12px;margin-bottom:12px">↩ <strong>' + carriedCount + ' item' + (carriedCount > 1 ? 's' : '') + ' carried over from a previous shift</strong> — add an update below to include in your passdown, or leave blank to skip.</div>' : '');
 
-  // One-time keys still out
-  var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued'; });
-  html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🗝 One-Time Keys Still Out</div>';
-  if (!oneTimeOut.length) {
-    html += '<div style="color:var(--text3)">None currently out</div>';
-  } else {
-    oneTimeOut.forEach(function(k) {
-      var overdueMs = k.issuedAt ? now - k.issuedAt : 0;
-      var isOverdue = overdueMs >= 2*3600000;
-      var content = '<strong>Unit ' + k.unit + ' – ' + k.name + '</strong>';
-      if (k.guest) content += ' / Guest: ' + k.guest;
-      if (k.timeout) content += ' / Out: ' + fmtTime(k.timeout);
-      if (k.fob) content += ' / Key #' + k.fob;
-      if (isOverdue) { var hrs=Math.floor(overdueMs/3600000), mins=Math.floor((overdueMs%3600000)/60000); content += ' <span style="color:var(--red);font-weight:600">⚠ ' + hrs + 'h ' + mins + 'm out</span>'; }
-      var ns = 'Follow up with resident ' + k.name + ' to ensure key is returned.' + (k.notes ? ' ' + k.notes : '');
-      html += pdAutoRow('key_' + k.id, content, ns, true);
-    });
-  }
-  html += '</div>';
-
   var shift = g('pd-shift') ? g('pd-shift').value : 'PM';
   var la = isLead ? pdGetLookahead() : 0;
   var maxD = new Date(); maxD.setDate(maxD.getDate() + la);
@@ -5240,7 +5226,16 @@ function renderPdAutoBlocks(isLead) {
   var allIns = shiftMoveIns.concat(upcomingIns);
   var allOuts = shiftMoveOuts.concat(upcomingOuts);
 
-  if (isLead || shiftMoveIns.length || shiftMoveOuts.length) {
+  // Outstanding key returns: past move-outs where key collection task is still unchecked
+  var outstandingKeyMoves = moves.filter(function(m) {
+    if (m.type !== 'out' || m.archivedAt) return false;
+    var apptD = m.apptDate || m.date;
+    if (m.date > t || apptD > t) return false;
+    var keyTask = (m.tasks || []).find(function(tk){ return tk.cat === 'Keys & Access' && /unit keys/i.test(tk.text); });
+    return keyTask && !keyTask.done;
+  });
+
+  if (isLead || shiftMoveIns.length || shiftMoveOuts.length || outstandingKeyMoves.length) {
     html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🚛 Move-Ins (' + allIns.length + ')</div>';
     if (!allIns.length) html += '<div style="color:var(--text3)">None today' + (isLead ? ' or upcoming' : '') + '</div>';
     else allIns.forEach(function(m) {
@@ -5261,9 +5256,10 @@ function renderPdAutoBlocks(isLead) {
     });
     html += '</div>';
 
-    html += '<div class="pd-auto-block"><div class="pd-auto-hdr">📦 Move-Outs (' + allOuts.length + ')</div>';
-    if (!allOuts.length) html += '<div style="color:var(--text3)">None today' + (isLead ? ' or upcoming' : '') + '</div>';
-    else allOuts.forEach(function(m) {
+    var outHeaderCount = allOuts.length + outstandingKeyMoves.length;
+    html += '<div class="pd-auto-block"><div class="pd-auto-hdr">📦 Move-Outs (' + outHeaderCount + ')</div>';
+    if (!allOuts.length && !outstandingKeyMoves.length) html += '<div style="color:var(--text3)">None today' + (isLead ? ' or upcoming' : '') + '</div>';
+    allOuts.forEach(function(m) {
       var apptD = m.apptDate || m.date;
       var tag = apptD !== t ? '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>' : '';
       var content = tag + '<strong>Unit ' + m.unit + ' – ' + m.resident + '</strong>';
@@ -5278,6 +5274,17 @@ function renderPdAutoBlocks(isLead) {
       if (isMoveCompleted(m) && pdNotes[outKey] === undefined) pdNotes[outKey] = nsOut;
       html += pdAutoRow(outKey, content, nsOut, !!carriedSet[outKey]);
     });
+    if (outstandingKeyMoves.length) {
+      if (allOuts.length) html += '<div style="height:4px"></div>';
+      outstandingKeyMoves.forEach(function(m) {
+        var koKey = 'keys_out_' + m.id;
+        var content = '<strong>Unit ' + m.unit + ' – ' + m.resident + '</strong>'
+          + ' <span style="font-size:10px;background:rgba(217,119,6,0.12);color:#92400E;border:1px solid rgba(217,119,6,0.3);border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:600">⚠ Keys not collected</span>'
+          + ' | Lease ended: ' + dayLblAuto(m.date)
+          + (m.apptDate ? ' | Move appt: ' + dayLblAuto(m.apptDate) : '');
+        html += pdAutoRow(koKey, content, 'Keys not yet collected — follow up with resident to confirm return.', !!carriedSet[koKey]);
+      });
+    }
     html += '</div>';
   }
 
@@ -5307,6 +5314,26 @@ function renderPdAutoBlocks(isLead) {
     if (c.nextAction && pdNotes[cKey] === undefined) pdNotes[cKey] = c.nextAction;
     html += pdAutoRow(cKey, content, defNsCon, true);
   });
+  html += '</div>';
+
+  // One-time keys still out
+  var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued'; });
+  html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🗝 One-Time Keys Still Out</div>';
+  if (!oneTimeOut.length) {
+    html += '<div style="color:var(--text3)">None currently out</div>';
+  } else {
+    oneTimeOut.forEach(function(k) {
+      var overdueMs = k.issuedAt ? now - k.issuedAt : 0;
+      var isOverdue = overdueMs >= 2*3600000;
+      var content = '<strong>Unit ' + k.unit + ' – ' + k.name + '</strong>';
+      if (k.guest) content += ' / Guest: ' + k.guest;
+      if (k.timeout) content += ' / Out: ' + fmtTime(k.timeout);
+      if (k.fob) content += ' / Key #' + k.fob;
+      if (isOverdue) { var hrs=Math.floor(overdueMs/3600000), mins=Math.floor((overdueMs%3600000)/60000); content += ' <span style="color:var(--red);font-weight:600">⚠ ' + hrs + 'h ' + mins + 'm out</span>'; }
+      var ns = 'Follow up with resident ' + k.name + ' to ensure key is returned.' + (k.notes ? ' ' + k.notes : '');
+      html += pdAutoRow('key_' + k.id, content, ns, true);
+    });
+  }
   html += '</div>';
 
   // Open / in-progress maintenance items
@@ -5481,21 +5508,6 @@ function generatePassdown() {
   var genCarriedSet = getCarriedItemIds();
   function isCarriedNoNote(key) { return !!(genCarriedSet[key] && (!pdNotes[key] || !pdNotes[key].trim())); }
 
-  // Keys still out (skip excluded)
-  var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued' && !pdExcluded['key_'+k.id] && !!(pdNotes['key_'+k.id] && pdNotes['key_'+k.id].trim()); });
-  if (oneTimeOut.length) {
-    out += '\n🗝 One-Time Keys Still Out\n';
-    oneTimeOut.forEach(function(k) {
-      var overdueMs = k.issuedAt ? now - k.issuedAt : 0;
-      var isOverdue = overdueMs >= 2*3600000;
-      out += 'Unit ' + k.unit + ' – ' + k.name + (k.guest ? ' / Guest: ' + k.guest : '') + '\n';
-      out += 'Key issued' + (k.timeout ? ' at ' + fmtTime(k.timeout) : '') + (k.fob ? ' (Key #' + k.fob + ')' : '');
-      if (isOverdue) { var hrs=Math.floor(overdueMs/3600000), mins=Math.floor((overdueMs%3600000)/60000); out += ' — ⚠ OVERDUE ' + hrs + 'h ' + mins + 'm'; }
-      var defNs = 'Follow up with resident ' + k.name + ' to ensure key is returned.' + (k.notes ? ' ' + k.notes : '');
-      out += '\nNext Step: ' + pdNote('key_'+k.id, defNs) + '\n';
-    });
-  }
-
   // Move-Ins / Move-Outs (lead: today + upcoming; staff: today only)
   {
     var la = isLead ? pdGetLookahead() : 0;
@@ -5545,7 +5557,15 @@ function generatePassdown() {
       return apptD > t && apptD <= maxDate;
     }).sort(function(a,b){ return (a.apptDate||a.date).localeCompare(b.apptDate||b.date); }) : [];
     var allOuts = shiftOuts.concat(upcomingOuts);
-    if (allOuts.length) {
+    // Outstanding key returns: past move-outs where key task is still unchecked
+    var outstandingKeys = (state.moves || []).filter(function(m) {
+      if (m.type !== 'out' || m.archivedAt || pdExcluded['keys_out_'+m.id] || isCarriedNoNote('keys_out_'+m.id)) return false;
+      var apptD = m.apptDate || m.date;
+      if (m.date > t || apptD > t) return false;
+      var keyTask = (m.tasks || []).find(function(tk){ return tk.cat === 'Keys & Access' && /unit keys/i.test(tk.text); });
+      return keyTask && !keyTask.done;
+    });
+    if (allOuts.length || outstandingKeys.length) {
       out += '\n📦 Move-Outs\n';
       allOuts.forEach(function(m) {
         var apptD = m.apptDate || m.date;
@@ -5563,26 +5583,12 @@ function generatePassdown() {
           out += '\nNext Step: ' + pdNote('out_'+m.id, defNsOut) + '\n';
         }
       });
+      outstandingKeys.forEach(function(m) {
+        out += 'Unit ' + m.unit + ' – ' + m.resident + ' ⚠ Keys not collected\n';
+        out += 'Lease ended: ' + dayLbl(m.date) + (m.apptDate ? ' | Move appt: ' + dayLbl(m.apptDate) : '') + '\n';
+        out += 'Next Step: ' + pdNote('keys_out_'+m.id, 'Keys not yet collected — follow up with resident to confirm return.') + '\n';
+      });
     }
-  }
-
-  // Outstanding keys — move-out lease ended, appointment passed, key task still unchecked
-  var outstandingKeys = (state.moves || []).filter(function(m) {
-    if (m.type !== 'out' || m.archivedAt || pdExcluded['keys_out_'+m.id]) return false;
-    var leaseEnd = m.date;
-    var apptD = m.apptDate || m.date;
-    if (leaseEnd > t) return false; // lease hasn't ended yet
-    if (apptD > t) return false;    // appointment hasn't happened yet
-    var keyTask = (m.tasks || []).find(function(tk){ return tk.cat === 'Keys & Access' && /unit keys/i.test(tk.text); });
-    return keyTask && !keyTask.done;
-  });
-  if (outstandingKeys.length) {
-    out += '\n🗝 Outstanding Key Returns\n';
-    outstandingKeys.forEach(function(m) {
-      out += 'Unit ' + m.unit + ' — ' + m.resident + '\n';
-      out += 'Lease ended: ' + dayLbl(m.date) + (m.apptDate ? ' | Move appt was: ' + dayLbl(m.apptDate) : '') + '\n';
-      out += 'Next Step: ' + pdNote('keys_out_'+m.id, 'Keys not yet collected — follow up with resident to confirm return.') + '\n';
-    });
   }
 
   // Amenity bookings (skip excluded)
@@ -5606,6 +5612,31 @@ function generatePassdown() {
     });
   }
 
+  // Open concierge (skip excluded)
+  var openC = (state.concierge||[]).filter(function(c){ return c.status==='open' && !pdExcluded['c_'+c.id] && !!(pdNotes['c_'+c.id] && pdNotes['c_'+c.id].trim()); });
+  if (openC.length) {
+    out += '\n🎭 Open Concierge Requests\n';
+    openC.forEach(function(c) {
+      var defNsC = c.nextAction || 'Follow up and update status once resolved.';
+      out += 'Unit ' + c.unit + ' – ' + c.resident + '\n' + c.type + (c.notes ? ': ' + c.notes : '') + '\nNext Action: ' + pdNote('c_'+c.id, defNsC) + '\n';
+    });
+  }
+
+  // Keys still out (skip excluded)
+  var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued' && !pdExcluded['key_'+k.id] && !!(pdNotes['key_'+k.id] && pdNotes['key_'+k.id].trim()); });
+  if (oneTimeOut.length) {
+    out += '\n🗝 One-Time Keys Still Out\n';
+    oneTimeOut.forEach(function(k) {
+      var overdueMs = k.issuedAt ? now - k.issuedAt : 0;
+      var isOverdue = overdueMs >= 2*3600000;
+      out += 'Unit ' + k.unit + ' – ' + k.name + (k.guest ? ' / Guest: ' + k.guest : '') + '\n';
+      out += 'Key issued' + (k.timeout ? ' at ' + fmtTime(k.timeout) : '') + (k.fob ? ' (Key #' + k.fob + ')' : '');
+      if (isOverdue) { var hrs=Math.floor(overdueMs/3600000), mins=Math.floor((overdueMs%3600000)/60000); out += ' — ⚠ OVERDUE ' + hrs + 'h ' + mins + 'm'; }
+      var defNs = 'Follow up with resident ' + k.name + ' to ensure key is returned.' + (k.notes ? ' ' + k.notes : '');
+      out += '\nNext Step: ' + pdNote('key_'+k.id, defNs) + '\n';
+    });
+  }
+
   // Open / in-progress maintenance (skip excluded)
   var openM = (state.maintenance||[]).filter(function(m){ return (m.status==='open'||m.status==='in-progress') && !pdExcluded['mt_'+m.id] && !!(pdNotes['mt_'+m.id] && pdNotes['mt_'+m.id].trim()); });
   if (openM.length) {
@@ -5622,13 +5653,15 @@ function generatePassdown() {
     });
   }
 
-  // Open concierge (skip excluded)
-  var openC = (state.concierge||[]).filter(function(c){ return c.status==='open' && !pdExcluded['c_'+c.id] && !!(pdNotes['c_'+c.id] && pdNotes['c_'+c.id].trim()); });
-  if (openC.length) {
-    out += '\n🎭 Open Concierge Requests\n';
-    openC.forEach(function(c) {
-      var defNsC = c.nextAction || 'Follow up and update status once resolved.';
-      out += 'Unit ' + c.unit + ' – ' + c.resident + '\n' + c.type + (c.notes ? ': ' + c.notes : '') + '\nNext Action: ' + pdNote('c_'+c.id, defNsC) + '\n';
+  // Security incidents
+  var secGen = (state.security||[]).filter(function(s){ return (s.date===t || s.status==='monitoring') && !pdExcluded['sec_'+s.id] && !isCarriedNoNote('sec_'+s.id); });
+  if (secGen.length) {
+    out += '\n🛡 Incidents\n';
+    secGen.forEach(function(s) {
+      out += s.type + ' — ' + s.location + (s.time ? ' at ' + fmtTime(s.time) : '') + '\n';
+      out += 'Handled by: ' + s.handledBy + ' | Status: ' + (s.status==='monitoring'?'⚠ Monitoring':'✓ Resolved') + '\n';
+      if (s.notes) out += 'Notes: ' + s.notes + '\n';
+      out += 'Next Step: ' + pdNote('sec_'+s.id, s.status==='monitoring'?'Continue monitoring — update next shift.':'Resolved — no further action unless situation changes.') + '\n';
     });
   }
 
@@ -5640,38 +5673,6 @@ function generatePassdown() {
       var days = i.loggedAt ? Math.floor((Date.now() - i.loggedAt) / 86400000) : 0;
       out += i.desc + (i.location ? ' — found at ' + i.location : '') + ' (' + days + 'd ago)\n';
       out += 'Next Step: ' + pdNote('laf_'+i.id, 'Follow up on this item — contact resident or arrange for disposal if expired.') + '\n';
-    });
-  }
-
-  // Free-entry sections
-  function writeSec(emoji, label, key) {
-    var items = pdSections[key]||[]; if (!items.length) return;
-    out += '\n' + emoji + ' ' + label + '\n';
-    items.forEach(function(item) {
-      var hdr = [(item.unit ? 'Unit ' + item.unit : ''), item.resident].filter(Boolean).join(' – ');
-      if (hdr) out += hdr + '\n';
-      out += item.desc + '\n';
-      if (item.nextStep) out += 'Next Step: ' + item.nextStep + '\n';
-    });
-  }
-  if (isLead) {
-    writeSec('📋', 'This Shift', 'thisShift');
-    writeSec('🔑', 'Keys / Access', 'keysAccess');
-    writeSec('👤', 'Resident Matters', 'residentMatters');
-    writeSec('📢', 'Policy Reminders', 'policyReminders');
-  } else {
-    writeSec('📋', 'This Shift', 'shiftNotes');
-  }
-
-  // Security incidents
-  var secGen = (state.security||[]).filter(function(s){ return (s.date===t || s.status==='monitoring') && !pdExcluded['sec_'+s.id] && !isCarriedNoNote('sec_'+s.id); });
-  if (secGen.length) {
-    out += '\n🛡 Incidents\n';
-    secGen.forEach(function(s) {
-      out += s.type + ' — ' + s.location + (s.time ? ' at ' + fmtTime(s.time) : '') + '\n';
-      out += 'Handled by: ' + s.handledBy + ' | Status: ' + (s.status==='monitoring'?'⚠ Monitoring':'✓ Resolved') + '\n';
-      if (s.notes) out += 'Notes: ' + s.notes + '\n';
-      out += 'Next Step: ' + pdNote('sec_'+s.id, s.status==='monitoring'?'Continue monitoring — update next shift.':'Resolved — no further action unless situation changes.') + '\n';
     });
   }
 
@@ -5694,6 +5695,26 @@ function generatePassdown() {
         out += 'Next Step: ' + pdNote('fee_'+k.id, 'Add $25 non-return fee to resident ledger.') + '\n';
       }
     });
+  }
+
+  // Free-entry sections
+  function writeSec(emoji, label, key) {
+    var items = pdSections[key]||[]; if (!items.length) return;
+    out += '\n' + emoji + ' ' + label + '\n';
+    items.forEach(function(item) {
+      var hdr = [(item.unit ? 'Unit ' + item.unit : ''), item.resident].filter(Boolean).join(' – ');
+      if (hdr) out += hdr + '\n';
+      out += item.desc + '\n';
+      if (item.nextStep) out += 'Next Step: ' + item.nextStep + '\n';
+    });
+  }
+  if (isLead) {
+    writeSec('📋', 'This Shift', 'thisShift');
+    writeSec('🔑', 'Keys / Access', 'keysAccess');
+    writeSec('👤', 'Resident Matters', 'residentMatters');
+    writeSec('📢', 'Policy Reminders', 'policyReminders');
+  } else {
+    writeSec('📋', 'This Shift', 'shiftNotes');
   }
 
   // Sign-off
