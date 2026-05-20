@@ -5026,25 +5026,25 @@ function pdGetSummary() { var el = g('pd-summary'); return el ? el.value.trim() 
 function pdDraftKey(k) { return k + '_' + (currentUser ? currentUser.id : 'guest'); }
 function pdSaveDraft() {
   try {
-    sessionStorage.setItem(pdDraftKey('pd_draft_date'), today());
-    sessionStorage.setItem(pdDraftKey('pd_draft_sections'), JSON.stringify(pdSections));
-    sessionStorage.setItem(pdDraftKey('pd_draft_excluded'), JSON.stringify(pdExcluded));
-    sessionStorage.setItem(pdDraftKey('pd_draft_notes'), JSON.stringify(pdNotes));
-    var sh = g('pd-shift'); if (sh) sessionStorage.setItem(pdDraftKey('pd_draft_shift'), sh.value);
-    var la = g('pd-lookahead'); if (la) sessionStorage.setItem(pdDraftKey('pd_draft_lookahead'), la.value);
-    sessionStorage.setItem(pdDraftKey('pd_draft_tone'), _pdTone);
-    var sumEl = g('pd-summary'); if (sumEl) sessionStorage.setItem(pdDraftKey('pd_draft_summary'), sumEl.value);
+    localStorage.setItem(pdDraftKey('pd_draft_date'), today());
+    localStorage.setItem(pdDraftKey('pd_draft_sections'), JSON.stringify(pdSections));
+    localStorage.setItem(pdDraftKey('pd_draft_excluded'), JSON.stringify(pdExcluded));
+    localStorage.setItem(pdDraftKey('pd_draft_notes'), JSON.stringify(pdNotes));
+    var sh = g('pd-shift'); if (sh) localStorage.setItem(pdDraftKey('pd_draft_shift'), sh.value);
+    var la = g('pd-lookahead'); if (la) localStorage.setItem(pdDraftKey('pd_draft_lookahead'), la.value);
+    localStorage.setItem(pdDraftKey('pd_draft_tone'), _pdTone);
+    var sumEl = g('pd-summary'); if (sumEl) localStorage.setItem(pdDraftKey('pd_draft_summary'), sumEl.value);
   } catch(e) {}
 }
 function pdLoadDraft() {
   try {
-    var draftDate = sessionStorage.getItem(pdDraftKey('pd_draft_date'));
+    var draftDate = localStorage.getItem(pdDraftKey('pd_draft_date'));
     if (draftDate && draftDate !== today()) { pdClearDraft(); return; }
-    var s = sessionStorage.getItem(pdDraftKey('pd_draft_sections')); if (s) { pdSections = JSON.parse(s); if (!pdSections.thisShift) pdSections.thisShift = []; if (!pdSections.policyReminders) pdSections.policyReminders = []; }
-    var e = sessionStorage.getItem(pdDraftKey('pd_draft_excluded')); if (e) pdExcluded = JSON.parse(e);
-    var n = sessionStorage.getItem(pdDraftKey('pd_draft_notes')); if (n) pdNotes = JSON.parse(n);
-    var tone = sessionStorage.getItem(pdDraftKey('pd_draft_tone')); if (tone) { _pdTone = tone; setTimeout(function(){ setPdTone(tone); }, 50); }
-    var sum = sessionStorage.getItem(pdDraftKey('pd_draft_summary')); if (sum) { var sumEl = g('pd-summary'); if (sumEl) sumEl.value = sum; }
+    var s = localStorage.getItem(pdDraftKey('pd_draft_sections')); if (s) { pdSections = JSON.parse(s); if (!pdSections.thisShift) pdSections.thisShift = []; if (!pdSections.policyReminders) pdSections.policyReminders = []; }
+    var e = localStorage.getItem(pdDraftKey('pd_draft_excluded')); if (e) pdExcluded = JSON.parse(e);
+    var n = localStorage.getItem(pdDraftKey('pd_draft_notes')); if (n) pdNotes = JSON.parse(n);
+    var tone = localStorage.getItem(pdDraftKey('pd_draft_tone')); if (tone) { _pdTone = tone; setTimeout(function(){ setPdTone(tone); }, 50); }
+    var sum = localStorage.getItem(pdDraftKey('pd_draft_summary')); if (sum) { var sumEl = g('pd-summary'); if (sumEl) sumEl.value = sum; }
   } catch(e) {}
 }
 function pdClearDraft() {
@@ -5054,7 +5054,7 @@ function pdClearDraft() {
   _pdTone = '';
   ['Quiet','Normal','Busy'].forEach(function(t){ var btn=g('pd-tone-'+t.toLowerCase()); if(btn){btn.style.background='';btn.style.color='';btn.style.borderColor='';} });
   var sumEl = g('pd-summary'); if (sumEl) sumEl.value = '';
-  try { ['pd_draft_date','pd_draft_sections','pd_draft_excluded','pd_draft_notes','pd_draft_shift','pd_draft_lookahead','pd_draft_tone','pd_draft_summary'].forEach(function(k){ sessionStorage.removeItem(pdDraftKey(k)); }); } catch(e) {}
+  try { ['pd_draft_date','pd_draft_sections','pd_draft_excluded','pd_draft_notes','pd_draft_shift','pd_draft_lookahead','pd_draft_tone','pd_draft_summary'].forEach(function(k){ localStorage.removeItem(pdDraftKey(k)); }); } catch(e) {}
   var pv = g('pd-preview'); if (pv) pv.value = '';
   renderPassdown();
   toast('Draft cleared');
@@ -5072,7 +5072,7 @@ function renderPassdown() {
   if (laWrap) laWrap.style.display = isLead ? '' : 'none';
   // Restore shift/lookahead from draft
   try {
-    var sh = sessionStorage.getItem(pdDraftKey('pd_draft_shift'));
+    var sh = localStorage.getItem(pdDraftKey('pd_draft_shift'));
     var shEl = g('pd-shift');
     if (shEl) {
       if (sh) { shEl.value = sh; } else {
@@ -5080,7 +5080,7 @@ function renderPassdown() {
         shEl.value = hr >= 7 && hr < 15 ? 'AM' : hr >= 15 && hr < 23 ? 'PM' : 'Overnight';
       }
     }
-    var la = sessionStorage.getItem(pdDraftKey('pd_draft_lookahead')); if (la && g('pd-lookahead')) g('pd-lookahead').value = la;
+    var la = localStorage.getItem(pdDraftKey('pd_draft_lookahead')); if (la && g('pd-lookahead')) g('pd-lookahead').value = la;
   } catch(e) {}
   renderPdAutoBlocks(isLead);
   renderPdFreeSections(isLead);
@@ -5089,6 +5089,11 @@ function renderPassdown() {
 
 function pdGetLookahead() {
   var el = g('pd-lookahead'); return el ? parseInt(el.value) : 1;
+}
+function pdGetMaxDate(isLead) {
+  var la = isLead ? pdGetLookahead() : 0;
+  var d = new Date(); d.setDate(d.getDate() + la);
+  return d.toISOString().split('T')[0];
 }
 
 function getCarriedItemIds() {
@@ -5142,16 +5147,49 @@ function pdAutoRowSave(exKey, value) {
   if (!value.trim()) return;
   var now = Date.now(), by = currentUser ? currentUser.name : '';
   var sid = getCurrentShiftId(), slbl = getCurrentShiftLabel();
+  var entry = { ts: now, by: by, note: value.trim(), shiftId: sid, shift: slbl };
   if (exKey.indexOf('mt_') === 0) {
     var id = exKey.slice(3), m = (state.maintenance||[]).find(function(x){return x.id===id;});
     if (m) { if (!m.log) m.log = []; m.log.push({ts:now, by:by, note:value.trim()}); scheduleSave(); }
   } else if (exKey.indexOf('key_') === 0) {
     var id = exKey.slice(4), k = (state.keys||[]).find(function(x){return x.id===id;});
-    if (k) { if (!k.shiftNotes) k.shiftNotes = []; if (!k.shiftNotes.some(function(n){return n.shiftId===sid;})) { k.shiftNotes.push({shiftId:sid, shift:slbl, note:value.trim(), by:by, ts:now}); scheduleSave(); } }
+    if (k) { if (!k.shiftNotes) k.shiftNotes = []; if (!k.shiftNotes.some(function(n){return n.shiftId===sid;})) { k.shiftNotes.push(entry); scheduleSave(); } }
   } else if (exKey.indexOf('c_') === 0) {
     var id = exKey.slice(2), c = (state.concierge||[]).find(function(x){return x.id===id;});
     if (c) { if (!c.log) c.log = []; c.log.push({ts:now, by:by, note:value.trim()}); scheduleSave(); }
+  } else if (exKey.indexOf('in_') === 0 || exKey.indexOf('out_') === 0) {
+    var id = exKey.indexOf('in_') === 0 ? exKey.slice(3) : exKey.slice(4);
+    var mv = (state.moves||[]).find(function(x){return x.id===id;});
+    if (mv) { if (!mv.passdownNotes) mv.passdownNotes = []; mv.passdownNotes.push(entry); scheduleSave(); }
+  } else if (exKey.indexOf('keys_out_') === 0) {
+    var id = exKey.slice(9), mv = (state.moves||[]).find(function(x){return x.id===id;});
+    if (mv) { if (!mv.passdownNotes) mv.passdownNotes = []; mv.passdownNotes.push(entry); scheduleSave(); }
+  } else if (exKey.indexOf('am_') === 0) {
+    var id = exKey.slice(3), a = (state.amenities||[]).find(function(x){return x.id===id;});
+    if (a) { if (!a.passdownNotes) a.passdownNotes = []; a.passdownNotes.push(entry); scheduleSave(); }
+  } else if (exKey.indexOf('sec_') === 0) {
+    var id = exKey.slice(4), s = (state.security||[]).find(function(x){return x.id===id;});
+    if (s) { if (!s.log) s.log = []; s.log.push({ts:now, by:by, note:value.trim()}); scheduleSave(); }
+  } else if (exKey.indexOf('laf_') === 0) {
+    var id = exKey.slice(4), lf = (state.laf||[]).find(function(x){return x.id===id;});
+    if (lf) { if (!lf.passdownNotes) lf.passdownNotes = []; lf.passdownNotes.push(entry); scheduleSave(); }
   }
+}
+function pdYouBadge(obj) {
+  if (!currentUser || !obj || !obj.addedBy) return '';
+  return obj.addedBy === currentUser.name
+    ? '<span style="font-size:9px;background:rgba(34,197,94,0.1);color:#16a34a;border:1px solid rgba(34,197,94,0.25);border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:600;white-space:nowrap">you</span>'
+    : '';
+}
+function pdAutoRowInput(input, exKey, isPrompt) {
+  pdNotes[exKey] = input.value;
+  pdSaveDraft();
+  var lbl = input.previousElementSibling;
+  if (lbl) {
+    lbl.textContent = input.value.trim() ? '➤ Next Action' : (isPrompt ? '↓ Add update to include' : '+ Note (optional)');
+    lbl.style.color = input.value.trim() ? 'var(--accent)' : (isPrompt ? '#92400E' : 'var(--text3)');
+  }
+  input.style.borderBottomColor = input.value.trim() ? 'var(--accent)' : (isPrompt ? 'rgba(201,164,94,0.6)' : 'var(--border)');
 }
 function pdAutoRow(exKey, content, defaultNextStep, isCarried, optional) {
   var excl = pdExcluded[exKey];
@@ -5164,7 +5202,7 @@ function pdAutoRow(exKey, content, defaultNextStep, isCarried, optional) {
   var borderColor = isEmpty ? (isPrompt ? 'rgba(201,164,94,0.6)' : 'var(--border)') : 'var(--border)';
   var noteHtml = excl ? '' : '<div style="display:flex;align-items:center;gap:5px;margin-top:5px"><span style="font-size:10px;font-weight:600;color:' + labelColor + ';white-space:nowrap;flex-shrink:0">' + labelText + '</span><input type="text" value="' + pdAttrEsc(noteVal) + '" placeholder="' + notePlaceholder + '" '
     + 'style="flex:1;font-size:11.5px;color:var(--text);background:transparent;border:none;border-bottom:1px solid ' + borderColor + ';padding:2px 0;font-family:inherit;outline:none;min-width:0" '
-    + 'oninput="pdNotes[\'' + exKey + '\']=this.value;pdSaveDraft();var lbl=this.previousElementSibling;if(lbl){lbl.textContent=this.value.trim()?\'➤ Next Action\':\'' + (isPrompt ? '↓ Add update to include' : '+ Note (optional)') + '\';lbl.style.color=this.value.trim()?\'var(--accent)\':\'' + (isPrompt ? '\'#92400E\'' : 'var(--text3)') + '\';};this.style.borderBottomColor=this.value.trim()?\'var(--accent)\':\'' + (isPrompt ? 'rgba(201,164,94,0.6)' : 'var(--border)') + '\'" '
+    + 'oninput="pdAutoRowInput(this,\'' + exKey + '\',' + (isPrompt ? 'true' : 'false') + ')" '
     + 'onfocus="this.style.borderBottomColor=\'var(--accent)\'" '
     + 'onblur="pdAutoRowSave(\'' + exKey + '\',this.value);this.style.borderBottomColor=this.value.trim()?\'var(--accent)\':\'' + borderColor + '\'" /></div>';
   var editFn = isCarried ? pdAutoRowEditFn(exKey) : '';
@@ -5193,9 +5231,7 @@ function renderPdAutoBlocks(isLead) {
     + (carriedCount ? '<div style="font-size:12px;background:rgba(59,130,246,0.08);color:#1e40af;border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:8px 12px;margin-bottom:12px">↩ <strong>' + carriedCount + ' item' + (carriedCount > 1 ? 's' : '') + ' carried over from a previous shift</strong> — add an update below to include in your passdown, or leave blank to skip.</div>' : '');
 
   var shift = g('pd-shift') ? g('pd-shift').value : 'PM';
-  var la = isLead ? pdGetLookahead() : 0;
-  var maxD = new Date(); maxD.setDate(maxD.getDate() + la);
-  var maxDate = maxD.toISOString().split('T')[0];
+  var maxDate = pdGetMaxDate(isLead);
   var tmrw = (function(){ var d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
   function dayLblAuto(d) { if(d===t) return 'Today'; if(d===tmrw) return 'Tomorrow'; return fmtShort(d); }
   var moves = state.moves||[];
@@ -5241,7 +5277,7 @@ function renderPdAutoBlocks(isLead) {
     else allIns.forEach(function(m) {
       var apptD = m.apptDate || m.date;
       var tag = apptD !== t ? '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>' : '';
-      var content = tag + '<strong>Unit ' + m.unit + ' – ' + m.resident + '</strong>';
+      var content = tag + '<strong>Unit ' + m.unit + ' – ' + m.resident + '</strong>' + pdYouBadge(m);
       if (isMoveCompleted(m)) content += ' <span style="font-size:10px;background:#D1FAE5;color:#065F46;border-radius:3px;padding:1px 5px;margin-left:2px">✓ Completed</span>';
       content += ' | Lease: ' + dayLblAuto(m.date);
       if (m.apptDate) { content += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); } else content += ' <span style="font-size:10px;background:var(--amber-light);color:var(--amber);border-radius:3px;padding:1px 5px">No Appt</span>';
@@ -5262,7 +5298,7 @@ function renderPdAutoBlocks(isLead) {
     allOuts.forEach(function(m) {
       var apptD = m.apptDate || m.date;
       var tag = apptD !== t ? '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>' : '';
-      var content = tag + '<strong>Unit ' + m.unit + ' – ' + m.resident + '</strong>';
+      var content = tag + '<strong>Unit ' + m.unit + ' – ' + m.resident + '</strong>' + pdYouBadge(m);
       if (isMoveCompleted(m)) content += ' <span style="font-size:10px;background:#D1FAE5;color:#065F46;border-radius:3px;padding:1px 5px;margin-left:2px">✓ Completed</span>';
       content += ' | Lease end: ' + dayLblAuto(m.date);
       if (m.apptDate) { content += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); } else content += ' <span style="font-size:10px;background:var(--amber-light);color:var(--amber);border-radius:3px;padding:1px 5px">No Appt</span>';
@@ -5296,7 +5332,7 @@ function renderPdAutoBlocks(isLead) {
   if (!allAm.length) html += '<div style="color:var(--text3)">None today' + (isLead ? ' or upcoming' : '') + '</div>';
   else allAm.forEach(function(a) {
     var tag = a.date!==t ? '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(a.date) + '</span>' : '';
-    var content = tag + '<strong>' + a.space + '</strong> – ' + a.resident + ' (Unit ' + a.unit + ')';
+    var content = tag + '<strong>' + a.space + '</strong> – ' + a.resident + ' (Unit ' + a.unit + ')' + pdYouBadge(a);
     if (a.start) content += ' ' + fmtTime(a.start) + (a.end ? '–' + fmtTime(a.end) : '');
     if (a.notes) content += ' | ' + a.notes;
     html += pdAutoRow('am_' + a.id, content, 'Confirm booking details and ensure space is prepared.', !!carriedSet['am_'+a.id]);
@@ -5308,7 +5344,7 @@ function renderPdAutoBlocks(isLead) {
   html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🎭 Open Concierge Requests</div>';
   if (!openC.length) html += '<div style="color:var(--text3)">None open</div>';
   else openC.forEach(function(c) {
-    var content = '<strong>Unit ' + esc(c.unit) + ' – ' + esc(c.resident) + '</strong> / ' + esc(c.type) + (c.notes ? ': ' + esc(c.notes) : '');
+    var content = '<strong>Unit ' + esc(c.unit) + ' – ' + esc(c.resident) + '</strong>' + pdYouBadge(c) + ' / ' + esc(c.type) + (c.notes ? ': ' + esc(c.notes) : '');
     var defNsCon = c.nextAction || 'Follow up and update status once resolved.';
     var cKey = 'c_' + c.id;
     if (c.nextAction && pdNotes[cKey] === undefined) pdNotes[cKey] = c.nextAction;
@@ -5348,7 +5384,7 @@ function renderPdAutoBlocks(isLead) {
       var woBadge = m.workorder ? ' <span style="font-size:10px;font-weight:600;background:rgba(34,197,94,0.12);color:#16a34a;border:1px solid rgba(34,197,94,0.25);border-radius:4px;padding:1px 6px">WO Filed</span>' : '';
       var statusLabel = { open: 'Open', 'in-progress': 'In Progress' }[m.status] || m.status;
       var priLabel = m.priority.charAt(0).toUpperCase() + m.priority.slice(1);
-      var content = '<strong>Unit ' + m.unit + ' – ' + m.issue + '</strong>' + woBadge + ' <span style="font-size:11px;color:' + priBadge + ';font-weight:600">' + priLabel + '</span> · ' + statusLabel;
+      var content = '<strong>Unit ' + m.unit + ' – ' + m.issue + '</strong>' + pdYouBadge(m) + woBadge + ' <span style="font-size:11px;color:' + priBadge + ';font-weight:600">' + priLabel + '</span> · ' + statusLabel;
       if (m.desc) content += '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + m.desc + '</div>';
       var defNsMt = (m.log && m.log.length) ? 'Latest note: ' + m.log[m.log.length-1].note : 'Escalate to maintenance or follow up on resolution status.';
       var mtKey = 'mt_' + m.id;
@@ -5363,7 +5399,7 @@ function renderPdAutoBlocks(isLead) {
   if (secIncidents.length) {
     html += '<div class="pd-auto-block" style="border-color:rgba(220,38,38,0.3)"><div class="pd-auto-hdr" style="color:#dc2626">🛡 Incidents</div>';
     secIncidents.forEach(function(s) {
-      var content = '<strong>' + s.type + '</strong> — ' + s.location;
+      var content = '<strong>' + s.type + '</strong>' + pdYouBadge(s) + ' — ' + s.location;
       if (s.time) content += ' at ' + fmtTime(s.time);
       content += ' | Handled by: ' + s.handledBy;
       if (s.status==='monitoring') content += ' <span style="font-size:10px;background:rgba(217,119,6,0.12);color:#92400E;border-radius:3px;padding:1px 5px;font-weight:600">Monitoring</span>';
@@ -5510,9 +5546,7 @@ function generatePassdown() {
 
   // Move-Ins / Move-Outs (lead: today + upcoming; staff: today only)
   {
-    var la = isLead ? pdGetLookahead() : 0;
-    var maxD = new Date(); maxD.setDate(maxD.getDate() + la);
-    var maxDate = maxD.toISOString().split('T')[0];
+    var maxDate = pdGetMaxDate(isLead);
     var moves = state.moves||[];
     var shiftIns = moves.filter(function(m){
       if (m.type!=='in' || m.archivedAt || pdExcluded['in_'+m.id] || isCarriedNoNote('in_'+m.id)) return false;
@@ -5592,9 +5626,7 @@ function generatePassdown() {
   }
 
   // Amenity bookings (skip excluded)
-  var la2 = isLead ? pdGetLookahead() : 0;
-  var maxD2 = new Date(); maxD2.setDate(maxD2.getDate() + la2);
-  var maxDate2 = maxD2.toISOString().split('T')[0];
+  var maxDate2 = pdGetMaxDate(isLead);
   var shiftAm = (state.amenities||[]).filter(function(a){
     return a.date===t && pdInShift(a.start, shift) && !pdExcluded['am_'+a.id] && !isCarriedNoNote('am_'+a.id);
   }).sort(function(a,b){ return (a.start||'').localeCompare(b.start||''); });
@@ -5654,7 +5686,7 @@ function generatePassdown() {
   }
 
   // Security incidents
-  var secGen = (state.security||[]).filter(function(s){ return (s.date===t || s.status==='monitoring') && !pdExcluded['sec_'+s.id] && !isCarriedNoNote('sec_'+s.id); });
+  var secGen = (state.security||[]).filter(function(s){ return (s.date===t || s.status==='monitoring') && !pdExcluded['sec_'+s.id] && !!(pdNotes['sec_'+s.id] && pdNotes['sec_'+s.id].trim()); });
   if (secGen.length) {
     out += '\n🛡 Incidents\n';
     secGen.forEach(function(s) {
