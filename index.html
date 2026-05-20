@@ -698,7 +698,7 @@
             <div class="card-body">
               <div class="fr mb-8">
                 <div class="fg" style="margin-bottom:0"><label>Shift</label>
-                  <select id="pd-shift" onchange="pdSaveDraft()"><option value="AM">AM</option><option value="PM" selected>PM</option><option value="Overnight">Overnight</option></select>
+                  <select id="pd-shift" onchange="pdSaveDraft()"><option value="AM">AM</option><option value="PM">PM</option><option value="Overnight">Overnight</option></select>
                 </div>
                 <div class="fg" style="margin-bottom:0;display:none" id="pd-lookahead-wrap"><label>Look ahead</label>
                   <select id="pd-lookahead" onchange="renderPdAutoBlocks(true);pdSaveDraft()"><option value="1">Today + Tomorrow</option><option value="2">Today + 2 days</option></select>
@@ -4983,7 +4983,7 @@ function getLeaseExpirations() {
 }
 
 // ─── PASSDOWN ───
-var pdSections = { keysAccess: [], residentMatters: [], thisShift: [], shiftNotes: [] };
+var pdSections = { keysAccess: [], residentMatters: [], thisShift: [], shiftNotes: [], policyReminders: [] };
 var pdExcluded = {};
 var pdNotes = {};
 var pdEditingSection = null;
@@ -5030,7 +5030,6 @@ function pdSaveDraft() {
     sessionStorage.setItem(pdDraftKey('pd_draft_sections'), JSON.stringify(pdSections));
     sessionStorage.setItem(pdDraftKey('pd_draft_excluded'), JSON.stringify(pdExcluded));
     sessionStorage.setItem(pdDraftKey('pd_draft_notes'), JSON.stringify(pdNotes));
-    var pol = g('pd-policy'); if (pol) sessionStorage.setItem(pdDraftKey('pd_draft_policy'), pol.value);
     var sh = g('pd-shift'); if (sh) sessionStorage.setItem(pdDraftKey('pd_draft_shift'), sh.value);
     var la = g('pd-lookahead'); if (la) sessionStorage.setItem(pdDraftKey('pd_draft_lookahead'), la.value);
     sessionStorage.setItem(pdDraftKey('pd_draft_tone'), _pdTone);
@@ -5041,7 +5040,7 @@ function pdLoadDraft() {
   try {
     var draftDate = sessionStorage.getItem(pdDraftKey('pd_draft_date'));
     if (draftDate && draftDate !== today()) { pdClearDraft(); return; }
-    var s = sessionStorage.getItem(pdDraftKey('pd_draft_sections')); if (s) { pdSections = JSON.parse(s); if (!pdSections.thisShift) pdSections.thisShift = []; }
+    var s = sessionStorage.getItem(pdDraftKey('pd_draft_sections')); if (s) { pdSections = JSON.parse(s); if (!pdSections.thisShift) pdSections.thisShift = []; if (!pdSections.policyReminders) pdSections.policyReminders = []; }
     var e = sessionStorage.getItem(pdDraftKey('pd_draft_excluded')); if (e) pdExcluded = JSON.parse(e);
     var n = sessionStorage.getItem(pdDraftKey('pd_draft_notes')); if (n) pdNotes = JSON.parse(n);
     var tone = sessionStorage.getItem(pdDraftKey('pd_draft_tone')); if (tone) { _pdTone = tone; setTimeout(function(){ setPdTone(tone); }, 50); }
@@ -5049,13 +5048,13 @@ function pdLoadDraft() {
   } catch(e) {}
 }
 function pdClearDraft() {
-  pdSections = { keysAccess: [], residentMatters: [], thisShift: [], shiftNotes: [] };
+  pdSections = { keysAccess: [], residentMatters: [], thisShift: [], shiftNotes: [], policyReminders: [] };
   pdExcluded = {};
   pdNotes = {};
   _pdTone = '';
   ['Quiet','Normal','Busy'].forEach(function(t){ var btn=g('pd-tone-'+t.toLowerCase()); if(btn){btn.style.background='';btn.style.color='';btn.style.borderColor='';} });
   var sumEl = g('pd-summary'); if (sumEl) sumEl.value = '';
-  try { ['pd_draft_date','pd_draft_sections','pd_draft_excluded','pd_draft_notes','pd_draft_policy','pd_draft_shift','pd_draft_lookahead','pd_draft_tone','pd_draft_summary'].forEach(function(k){ sessionStorage.removeItem(pdDraftKey(k)); }); } catch(e) {}
+  try { ['pd_draft_date','pd_draft_sections','pd_draft_excluded','pd_draft_notes','pd_draft_shift','pd_draft_lookahead','pd_draft_tone','pd_draft_summary'].forEach(function(k){ sessionStorage.removeItem(pdDraftKey(k)); }); } catch(e) {}
   var pv = g('pd-preview'); if (pv) pv.value = '';
   renderPassdown();
   toast('Draft cleared');
@@ -5073,8 +5072,15 @@ function renderPassdown() {
   if (laWrap) laWrap.style.display = isLead ? '' : 'none';
   // Restore shift/lookahead from draft
   try {
-    var sh = sessionStorage.getItem('pd_draft_shift'); if (sh && g('pd-shift')) g('pd-shift').value = sh;
-    var la = sessionStorage.getItem('pd_draft_lookahead'); if (la && g('pd-lookahead')) g('pd-lookahead').value = la;
+    var sh = sessionStorage.getItem(pdDraftKey('pd_draft_shift'));
+    var shEl = g('pd-shift');
+    if (shEl) {
+      if (sh) { shEl.value = sh; } else {
+        var hr = new Date().getHours();
+        shEl.value = hr >= 7 && hr < 15 ? 'AM' : hr >= 15 && hr < 23 ? 'PM' : 'Overnight';
+      }
+    }
+    var la = sessionStorage.getItem(pdDraftKey('pd_draft_lookahead')); if (la && g('pd-lookahead')) g('pd-lookahead').value = la;
   } catch(e) {}
   renderPdAutoBlocks(isLead);
   renderPdFreeSections(isLead);
@@ -5177,8 +5183,8 @@ function renderPdAutoBlocks(isLead) {
   var carriedSet = getCarriedItemIds();
   var activeIds = getActiveAutoBlockIds();
   var carriedCount = activeIds.filter(function(id){ return carriedSet[id]; }).length;
-  var html = '<div style="font-size:12px;background:rgba(217,119,6,0.08);color:#92400E;border:1px solid rgba(217,119,6,0.2);border-radius:6px;padding:8px 12px;margin-bottom:8px">✏ <strong>Add your updates below.</strong> Items marked <em>↓ Add update to include</em> only appear in your passdown if you write a note — leave blank to skip them.</div>'
-    + (carriedCount ? '<div style="font-size:12px;background:rgba(201,164,94,0.12);color:#92400E;border:1px solid rgba(201,164,94,0.35);border-radius:6px;padding:8px 12px;margin-bottom:12px">↩ <strong>' + carriedCount + ' item' + (carriedCount > 1 ? 's' : '') + ' carried over from a previous shift</strong> — add an update to include them in your passdown, or leave blank to skip.</div>' : '');
+  var html = '<div style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.5;padding:0 2px">✏ Items marked <em>↓ Add update to include</em> only appear in your passdown if you write a note — leave blank to skip.</div>'
+    + (carriedCount ? '<div style="font-size:12px;background:rgba(59,130,246,0.08);color:#1e40af;border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:8px 12px;margin-bottom:12px">↩ <strong>' + carriedCount + ' item' + (carriedCount > 1 ? 's' : '') + ' carried over from a previous shift</strong> — add an update below to include in your passdown, or leave blank to skip.</div>' : '');
 
   // One-time keys still out
   var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued'; });
@@ -5378,21 +5384,19 @@ function renderPdFreeSections(isLead) {
   var secs = isLead
     ? [{ key:'thisShift', emoji:'📋', label:'This Shift', hint:'Cover: resident interactions, escalations, resolved issues, after-hours calls, anything unusual. Do not repeat items already in the auto-blocks. Routine daily deliveries are handled by the package concierge team — only note exceptions.' },
        { key:'keysAccess', emoji:'🔑', label:'Keys / Access' },
-       { key:'residentMatters', emoji:'👤', label:'Resident Matters' }]
+       { key:'residentMatters', emoji:'👤', label:'Resident Matters' },
+       { key:'policyReminders', emoji:'📢', label:'Policy Reminders', adminOnly: true }]
     : [{ key:'shiftNotes', emoji:'📋', label:'This Shift', hint:'Cover: resident interactions, noise complaints, resolved maintenance, after-hours calls, anything unusual. Do not repeat items already in the auto-blocks. Routine daily deliveries are handled by the package concierge team — only note exceptions (missed delivery requiring a callback, special handling, or a complaint).' }];
   var html = '';
   secs.forEach(function(s) {
-    html += '<div class="pd-sec-block"><div class="pd-sec-hdr"><span class="pd-sec-lbl">' + s.emoji + ' ' + s.label + '</span>'
+    var lbl = s.adminOnly
+      ? s.emoji + ' ' + s.label + ' <span style="font-size:10px;font-weight:400;color:var(--text3)">(lead only)</span>'
+      : s.emoji + ' ' + s.label;
+    html += '<div class="pd-sec-block"><div class="pd-sec-hdr"><span class="pd-sec-lbl">' + lbl + '</span>'
       + '<button class="btn btn-ghost btn-xs" onclick="openPdItem(\'' + s.key + '\')">+ Add Item</button></div>'
       + (s.hint ? '<div style="font-size:11px;color:var(--text3);margin:-2px 0 8px;line-height:1.5">' + s.hint + '</div>' : '')
       + '<div id="pd-items-' + s.key + '">' + renderPdItemsHtml(s.key) + '</div></div>';
   });
-  if (isLead) {
-    var savedPolicy = '';
-    try { savedPolicy = sessionStorage.getItem('pd_draft_policy') || ''; } catch(e) {}
-    html += '<div class="pd-sec-block"><div class="pd-sec-hdr"><span class="pd-sec-lbl">📢 Policy Reminders <span style="font-size:10px;font-weight:400;color:var(--text3)">(lead only)</span></span></div>'
-      + '<textarea id="pd-policy" rows="2" placeholder="e.g. Smoking policy reminder, package policy..." style="width:100%;font-size:12px" oninput="pdSaveDraft()">' + savedPolicy + '</textarea></div>';
-  }
   container.innerHTML = html;
 }
 
@@ -5416,29 +5420,39 @@ function refreshPdItems(secKey) {
 
 function openPdItem(secKey) {
   pdEditingSection = secKey;
+  var isPolicy = secKey === 'policyReminders';
   var ov = g('modal-pd-item');
   if (!ov) {
     ov = document.createElement('div');
     ov.className = 'modal-ov'; ov.id = 'modal-pd-item';
-    ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Add Item</span><button class="modal-close" onclick="closeModal(\'modal-pd-item\')">&#x2715;</button></div>'
+    ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title" id="pdi-modal-title">Add Item</span><button class="modal-close" onclick="closeModal(\'modal-pd-item\')">&#x2715;</button></div>'
       + '<div class="modal-bdy">'
-      + '<div class="fr"><div class="fg"><label>Unit # <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input type="text" id="pdi-unit" placeholder="e.g. 619"></div><div class="fg"><label>Resident Name <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input type="text" id="pdi-resident"></div></div>'
-      + '<div class="fg"><label>Description</label><textarea id="pdi-desc" rows="2" placeholder="What happened / what is the situation?"></textarea></div>'
-      + '<div class="fg"><label>Next Step</label><input type="text" id="pdi-nextstep" placeholder="What needs to happen next?"></div>'
+      + '<div class="fr" id="pdi-unit-row"><div class="fg"><label>Unit # <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input type="text" id="pdi-unit" placeholder="e.g. 619"></div><div class="fg"><label>Resident Name <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input type="text" id="pdi-resident"></div></div>'
+      + '<div class="fg"><label id="pdi-desc-label">Description</label><textarea id="pdi-desc" rows="2" placeholder="What happened / what is the situation?"></textarea></div>'
+      + '<div class="fg" id="pdi-nextstep-row"><label>Next Step</label><input type="text" id="pdi-nextstep" placeholder="What needs to happen next?"></div>'
       + '</div>'
       + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-pd-item\')">Cancel</button><button class="btn btn-primary" onclick="savePdItem()">Add Item</button></div></div>';
     document.body.appendChild(ov);
   }
   ['pdi-unit','pdi-resident','pdi-desc','pdi-nextstep'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  // Adapt modal for policy reminders: no unit/resident, no required next step
+  var titleEl = g('pdi-modal-title'), unitRow = g('pdi-unit-row'), nsRow = g('pdi-nextstep-row'), descLbl = g('pdi-desc-label');
+  if (titleEl) titleEl.textContent = isPolicy ? 'Add Policy Reminder' : 'Add Item';
+  if (unitRow) unitRow.style.display = isPolicy ? 'none' : '';
+  if (nsRow) nsRow.style.display = isPolicy ? 'none' : '';
+  if (descLbl) descLbl.textContent = isPolicy ? 'Reminder' : 'Description';
+  var descEl = g('pdi-desc');
+  if (descEl) descEl.placeholder = isPolicy ? 'e.g. Smoking policy reminder, package pickup after 30 days...' : 'What happened / what is the situation?';
   openModal('modal-pd-item');
 }
 
 function savePdItem() {
-  var desc = (g('pdi-desc').value||'').trim(), nextStep = (g('pdi-nextstep').value||'').trim();
-  if (!desc) { toast('Description is required'); return; }
-  if (!nextStep) { toast('Next Step is required'); return; }
+  var isPolicy = pdEditingSection === 'policyReminders';
+  var desc = (g('pdi-desc').value||'').trim(), nextStep = (g('pdi-nextstep') ? (g('pdi-nextstep').value||'').trim() : '');
+  if (!desc) { toast(isPolicy ? 'Reminder text is required' : 'Description is required'); return; }
+  if (!isPolicy && !nextStep) { toast('Next Step is required'); return; }
   if (!pdSections[pdEditingSection]) pdSections[pdEditingSection] = [];
-  pdSections[pdEditingSection].push({ unit: (g('pdi-unit').value||'').trim(), resident: (g('pdi-resident').value||'').trim(), desc: desc, nextStep: nextStep });
+  pdSections[pdEditingSection].push({ unit: isPolicy ? '' : (g('pdi-unit').value||'').trim(), resident: isPolicy ? '' : (g('pdi-resident').value||'').trim(), desc: desc, nextStep: nextStep });
   closeModal('modal-pd-item');
   refreshPdItems(pdEditingSection);
   pdSaveDraft();
@@ -5636,15 +5650,15 @@ function generatePassdown() {
     items.forEach(function(item) {
       var hdr = [(item.unit ? 'Unit ' + item.unit : ''), item.resident].filter(Boolean).join(' – ');
       if (hdr) out += hdr + '\n';
-      out += item.desc + '\nNext Step: ' + item.nextStep + '\n';
+      out += item.desc + '\n';
+      if (item.nextStep) out += 'Next Step: ' + item.nextStep + '\n';
     });
   }
   if (isLead) {
     writeSec('📋', 'This Shift', 'thisShift');
     writeSec('🔑', 'Keys / Access', 'keysAccess');
     writeSec('👤', 'Resident Matters', 'residentMatters');
-    var policy = g('pd-policy') ? (g('pd-policy').value||'').trim() : '';
-    if (policy) out += '\n📢 Policy Reminder\n' + policy + '\n';
+    writeSec('📢', 'Policy Reminders', 'policyReminders');
   } else {
     writeSec('📋', 'This Shift', 'shiftNotes');
   }
@@ -7699,7 +7713,7 @@ function addCarriedItemsToTodos() {
   if (added) toast('Added ' + added + ' item' + (added > 1 ? 's' : '') + ' to your to-do list');
 }
 function resetPassdownState() {
-  pdSections = { keysAccess: [], residentMatters: [], thisShift: [], shiftNotes: [] };
+  pdSections = { keysAccess: [], residentMatters: [], thisShift: [], shiftNotes: [], policyReminders: [] };
   pdExcluded = {};
   pdNotes = {};
   _pdTone = '';
@@ -8078,6 +8092,12 @@ function saveAmenityCloseout(id, note) {
 function checkPassdownReady() {
   if (!pdGetTone()) { toast('Pick a shift tone first — Quiet, Normal, or Busy'); var el = g('pd-shift-summary-block'); if(el){el.style.outline='2px solid var(--red)';setTimeout(function(){el.style.outline='';},2000);} return; }
   if (!pdGetSummary()) { toast('Add a one-line shift summary before generating'); var el2 = g('pd-summary'); if(el2){el2.focus();el2.style.borderColor='var(--red)';setTimeout(function(){el2.style.borderColor='';},2000);} return; }
+  var isStaff = currentUser && currentUser.role === 'staff';
+  if (isStaff && !(pdSections.shiftNotes && pdSections.shiftNotes.length)) {
+    toast('Add at least one item to This Shift before generating — write what you observed on your shift');
+    var el3 = g('pd-items-shiftNotes'); if (el3) { el3.style.outline='2px solid var(--red)'; setTimeout(function(){ el3.style.outline=''; }, 2500); }
+    return;
+  }
   var carriedSet = getCarriedItemIds();
   var activeIds = getActiveAutoBlockIds();
   var missingUpdates = activeIds.filter(function(key){ return carriedSet[key] && (!pdNotes[key] || !pdNotes[key].trim()); });
