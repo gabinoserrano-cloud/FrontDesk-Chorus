@@ -717,7 +717,7 @@
               <div id="pd-free-sections"></div>
               <div class="flex gap-8 mt-12" style="flex-wrap:wrap">
                 <button class="btn btn-primary" onclick="checkPassdownReady()">Generate</button>
-                <button class="btn btn-secondary" onclick="savePassdown()">Save</button>
+                <button class="btn btn-secondary" onclick="savePassdown()">Save Draft</button>
                 <button class="btn btn-ghost" onclick="copyPassdown()">Copy</button>
                 <button class="btn btn-secondary" onclick="reviewBeforeSend()">&#9993; Review &amp; Send</button>
                 <button class="btn btn-ghost" style="margin-left:auto;color:var(--text3);font-size:12px" onclick="pdClearDraft()">Clear draft</button>
@@ -833,6 +833,18 @@
             </select>
             <button class="btn btn-primary btn-sm" onclick="saveSessionTimeout()">Save</button>
           </div>
+        </div>
+      </div>
+
+      <div class="card mb-12">
+        <div class="card-hdr"><span class="card-title">&#9993; Passdown Delivery</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Default recipients used when opening Gmail from Review &amp; Send. Separate multiple emails with commas.</p>
+          <div class="fg">
+            <label>Default To Recipients</label>
+            <input type="text" id="passdown-recips" placeholder="chorus-all@alignrealestate.com">
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="savePassdownDeliverySettings()">Save</button>
         </div>
       </div>
 
@@ -1416,7 +1428,7 @@ function applyIcons() {
   });
 }
 
-var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [] };
+var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [] };
 var teamUnlocked = false;
 
 var currentUser = null;
@@ -1541,7 +1553,7 @@ function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(stat
 function loadLocal() {
   try {
     var raw = localStorage.getItem(LOCAL_KEY);
-    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], supplies: [], activityLog: [], parking: [], security: [] }, JSON.parse(raw));
+    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], supplies: [], activityLog: [], parking: [], security: [] }, JSON.parse(raw));
   } catch (e) {}
 }
 function scheduleSave() { saveLocal(); clearTimeout(syncTO); syncTO = setTimeout(pushCloud, 800); }
@@ -1557,7 +1569,7 @@ async function pullCloud() {
   try {
     var row = await supaGet();
     if (row && row.data && Object.keys(row.data).length > 0) {
-      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [], parking: [], security: [] }, row.data);
+      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [], parking: [], security: [] }, row.data);
       saveLocal();
     } else { loadLocal(); await supaPush(state); }
     setSyncStatus('synced', 'Synced');
@@ -1570,7 +1582,7 @@ setInterval(async function () {
     if (row && row.updated_at) {
       var ts = new Date(row.updated_at).getTime();
       if (lastSyncTs && ts > lastSyncTs + 2000) {
-        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [], parking: [], security: [] }, row.data);
+        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [], parking: [], security: [] }, row.data);
         saveLocal(); lastSyncTs = ts;
         renderSection(curSec); updateBadges();
         setSyncStatus('synced', 'Updated'); setTimeout(function () { setSyncStatus('synced', 'Synced'); }, 2000);
@@ -1588,14 +1600,14 @@ function processImport() {
   var file = g('import-file').files[0]; if (!file) { toast('Choose a file first'); return; }
   var reader = new FileReader();
   reader.onload = function (e) {
-    try { state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [] }, JSON.parse(e.target.result)); scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported'); }
+    try { state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [] }, JSON.parse(e.target.result)); scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported'); }
     catch (err) { toast('Invalid file'); }
   };
   reader.readAsText(file);
 }
 function resetData() {
   if (!confirm('Reset ALL data? Cannot be undone.')) return;
-  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [] };
+  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [] };
   scheduleSave(); renderAll(); toast('Data reset');
 }
 
@@ -1613,7 +1625,7 @@ function today() {
 function fmtShort(d) { if (!d) return '-'; return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
 function toast(msg) { var e = g('toast'); e.textContent = msg; e.classList.add('show'); setTimeout(function () { e.classList.remove('show'); }, 2500); }
 function g(id) { return document.getElementById(id); }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, parking: [], security: [] }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, parking: [], security: [] }; }
 
 // ─── UNDO / REDO ───
 var undoStack = [];
@@ -5996,15 +6008,42 @@ function _legacyAutoGenerate() {
   pd += '\n-\n' + sigName2 + ' | ' + sigRole2 + ' | Chorus - SF';
   g('pd-preview').value = pd;
 }
-function savePassdown() {
+function getPassdownSettings() {
+  if (!state.passdownSettings) state.passdownSettings = {};
+  if (state.passdownSettings.recipients == null) state.passdownSettings.recipients = 'chorus-all@alignrealestate.com';
+  return state.passdownSettings;
+}
+function getPassdownRecipientString() {
+  return (getPassdownSettings().recipients || '').trim();
+}
+function savePassdownRecord(status) {
   var preview = g('pd-preview').value;
-  if (!preview || !preview.trim()) { toast('Generate passdown first'); return; }
+  if (!preview || !preview.trim()) return null;
   var shift = g('pd-shift') ? g('pd-shift').value : '';
   var uid2 = currentUser ? currentUser.id : '__legacy__';
   if (!state.userPassdowns) state.userPassdowns = {};
   if (!state.userPassdowns[uid2]) state.userPassdowns[uid2] = [];
-  state.userPassdowns[uid2].unshift({ id: uid(), date: today(), shift: shift, text: preview, itemIds: getActiveAutoBlockIds(), createdAt: Date.now() });
-  scheduleSave(); renderPassdownHistory(); toast('Saved');
+  var nowTs = Date.now();
+  var rec = {
+    id: uid(),
+    date: today(),
+    shift: shift,
+    text: preview,
+    itemIds: getActiveAutoBlockIds(),
+    createdAt: nowTs,
+    status: status || 'draft',
+    sentAt: status === 'sent' ? nowTs : null,
+    recipients: status === 'sent' ? getPassdownRecipientString() : '',
+    acknowledgedBy: {}
+  };
+  state.userPassdowns[uid2].unshift(rec);
+  scheduleSave(); renderPassdownHistory();
+  return rec;
+}
+function savePassdown() {
+  if (!g('pd-preview').value.trim()) { toast('Generate passdown first'); return; }
+  savePassdownRecord('draft');
+  toast('Draft saved');
 }
 function copyPassdown() {
   var preview = g('pd-preview').value;
@@ -6020,10 +6059,14 @@ function copyPassdown() {
 function sendPassdownGmail() {
   var shiftEl = g('pd-shift'); var shift = shiftEl ? shiftEl.value.toUpperCase() : 'AM';
   var preview = g('pd-preview').value;
+  if (!preview || !preview.trim()) { toast('Generate the passdown first, then send'); return; }
+  var sentRecord = savePassdownRecord('sent');
   var d = new Date(); var dateStr = (d.getMonth()+1)+'.'+d.getDate()+'.'+d.getFullYear();
+  var to = encodeURIComponent(getPassdownRecipientString());
   var subject = encodeURIComponent(dateStr + ' ' + shift + ' Front Desk Passdown');
   var body = encodeURIComponent(preview);
-  window.open('https://mail.google.com/mail/?view=cm&to=&su=' + subject + '&body=' + body, '_blank');
+  window.open('https://mail.google.com/mail/?view=cm&to=' + to + '&su=' + subject + '&body=' + body, '_blank');
+  toast(sentRecord ? 'Saved as sent — Gmail opened' : 'Gmail opened');
 }
 
 function reviewBeforeSend() {
@@ -6124,6 +6167,47 @@ function getAllPassdowns(limitHours) {
   }
   return all.sort(function(a,b){ return b.createdAt - a.createdAt; });
 }
+function findPassdownRecord(id, authorId) {
+  if (authorId && state.userPassdowns && state.userPassdowns[authorId]) {
+    return state.userPassdowns[authorId].find(function(p){ return p.id === id; }) || null;
+  }
+  var upd = state.userPassdowns || {};
+  var found = null;
+  Object.keys(upd).some(function(uid2) {
+    found = (upd[uid2] || []).find(function(p){ return p.id === id; }) || null;
+    return !!found;
+  });
+  return found;
+}
+function checkPassdownAcknowledgementOnLogin() {
+  if (!currentUser) return;
+  var carriedModal = g('modal-login-carried');
+  if (carriedModal && carriedModal.classList.contains('open')) { setTimeout(checkPassdownAcknowledgementOnLogin, 1200); return; }
+  var cutoff = Date.now() - 12 * 3600000;
+  var pending = getAllPassdowns().filter(function(p) {
+    return p.status === 'sent'
+      && p.sentAt >= cutoff
+      && p.authorId !== currentUser.id
+      && !(p.acknowledgedBy && p.acknowledgedBy[currentUser.id]);
+  })[0];
+  if (!pending) return;
+  var ov = g('modal-pd-ack');
+  if (!ov) { ov = document.createElement('div'); ov.className = 'modal-ov'; ov.id = 'modal-pd-ack'; document.body.appendChild(ov); }
+  ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Review Last Passdown</span><button class="modal-close" onclick="closeModal(\'modal-pd-ack\')">&#x2715;</button></div>'
+    + '<div class="modal-bdy">'
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Sent by <strong>' + esc(pending.authorName || 'Front Desk') + '</strong> · ' + esc(pending.shift || '') + ' · ' + fmtShort(pending.date) + '</div>'
+    + '<pre style="white-space:pre-wrap;max-height:46vh;overflow:auto;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;font-family:var(--mono);font-size:11px;color:var(--text);line-height:1.45">' + esc(pending.text) + '</pre>'
+    + '</div><div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-pd-ack\')">Review later</button>'
+    + '<button class="btn btn-primary" onclick="acknowledgePassdown(\'' + esc(pending.id) + '\',\'' + esc(pending.authorId || '') + '\')">Got it — I reviewed this</button></div></div>';
+  openModal('modal-pd-ack');
+}
+function acknowledgePassdown(id, authorId) {
+  var rec = findPassdownRecord(id, authorId);
+  if (!rec || !currentUser) return;
+  if (!rec.acknowledgedBy) rec.acknowledgedBy = {};
+  rec.acknowledgedBy[currentUser.id] = { name: currentUser.name, at: Date.now() };
+  scheduleSave(); renderPassdownHistory(); closeModal('modal-pd-ack'); toast('Passdown acknowledged');
+}
 // ===== [PASSDOWN HISTORY] ====================================================
 function renderPassdownHistory() {
   var histEl = g('pd-history'); if (!histEl) return;
@@ -6134,8 +6218,16 @@ function renderPassdownHistory() {
   pds.forEach(function (p) {
     var canDelete = isAdmin || (currentUser && p.authorId === currentUser.id);
     var authorBadge = p.authorName ? '<span class="by-tag" style="margin-left:6px">by ' + p.authorName + '</span>' : '';
+    var statusBadge = p.status === 'sent'
+      ? '<span class="by-tag" style="margin-left:6px;background:rgba(34,197,94,0.12);color:#166534">Sent</span>'
+      : '<span class="by-tag" style="margin-left:6px;background:rgba(100,116,139,0.10);color:#475569">Draft</span>';
+    var ackObj = p.acknowledgedBy || {};
+    var ackCount = Object.keys(ackObj).length;
+    var ackBadge = p.status === 'sent'
+      ? '<span class="by-tag" style="margin-left:6px;background:rgba(59,130,246,0.08);color:#1e40af">Read ' + ackCount + '</span>'
+      : '';
     html += '<div class="phi"><div class="phi-hdr" onclick="this.parentElement.classList.toggle(\'open\')">'
-      + '<span class="font-600">' + fmtShort(p.date) + ' - ' + p.shift + '</span>' + authorBadge
+      + '<span class="font-600">' + fmtShort(p.date) + ' - ' + p.shift + '</span>' + authorBadge + statusBadge + ackBadge
       + '<div class="flex gap-4" style="margin-left:auto">'
       + '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();copyPD(\'' + p.id + '\')">Copy</button>'
       + (canDelete ? '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();editPD(\'' + p.id + '\')">Edit</button>' : '')
@@ -6904,7 +6996,7 @@ var GUIDE_DATA = [
     html:'<h4>What It Stores</h4><p>Per-unit profiles with: resident name, preferred/nickname, phone number, birthday, lease anniversary, special instructions, PTE (Permission to Enter) status, and general notes.</p><h4>PTE Status</h4><ul><li><strong>Granted</strong> — resident has authorized entry for maintenance or staff</li><li><strong>Denied</strong> — resident does not authorize entry without prior notice</li><li><strong>Not Set</strong> — no preference on file yet</li></ul><h4>Package Team Banner</h4><p>A highlighted banner at the top of Resident Profiles surfaces any residents with special package delivery instructions — a quick reference for the package team without digging through individual profiles.</p><h4>Tabs</h4><p>Profiles are grouped by PTE status: All, PTE Granted, PTE Denied, Not Set. The count in each tab updates live.</p>' },
 
   { id:'g-passdown', icon:'📋', title:'Daily Passdown', keywords:'passdown shift generate preview save copy history build draft am pm overnight lead staff next step move key amenity concierge edit exclude override',
-    html:'<h4>Overview</h4><p>The Daily Passdown section lets you build, preview, and save shift handoff notes. The left column is the <strong>Build</strong> panel; the right column is <strong>Passdown History</strong>.</p><h4>Selecting a Shift</h4><p>Choose AM, PM, or Overnight from the Shift dropdown. This filters auto-populated items to only show entries relevant to that shift\'s time window.</p><h4>Auto-Populated Blocks</h4><p>These pull live data automatically — no manual entry needed:</p><ul><li>🗝 <strong>One-Time Keys Still Out</strong> — any keys currently in "issued" status</li><li>🗝 <strong>Outstanding Key Returns</strong> — move-outs whose lease has ended and key collection task is still unchecked</li><li>🚛 <strong>Move-Ins</strong> — today\'s move-ins for this shift (admins also see upcoming days)</li><li>📦 <strong>Move-Outs</strong> — today\'s move-outs for this shift (admins also see upcoming)</li><li>🎉 <strong>Amenity Bookings</strong> — today\'s bookings during the selected shift window</li><li>🎭 <strong>Open Concierge Requests</strong> — all open requests regardless of shift</li><li>📦 <strong>L&amp;F Follow Up</strong> — lost &amp; found items manually flagged for passdown</li><li>💳 <strong>Charges to Add to Ledger</strong> — replacement key cards ($100) and unreturned one-time keys ($25) with outstanding fees</li></ul><p>Completed moves (appointment passed + all main tasks done) show a green <strong>✓ Completed</strong> badge automatically.</p><h4>Editing Next Steps in the Draft</h4><p>Every auto-block item has an editable <strong>Next step…</strong> field below it. The field is pre-filled with a smart default. Click it and type to override — your custom text carries into the generated passdown when you click Generate. Leave it as-is to use the default.</p><h4>Excluding Items</h4><p>Click the <strong>–</strong> button on any item to exclude it from the passdown. The item grays out with a strikethrough. Click <strong>＋</strong> to re-include it. Exclusions persist while the draft is active.</p><h4>Look Ahead <span style="font-size:10px;font-weight:400;color:var(--text3)">(admin only)</span></h4><p>Set to "Today + Tomorrow" or "Today + 2 days" to pull upcoming moves and amenities into the passdown for advance notice.</p><h4>Free-Entry Sections</h4><p>These sections are for items you add manually:</p><ul><li><strong>Admin users:</strong> 🔑 Keys / Access, 🅿️ Parking, 👤 Resident Matters, 📢 Policy Reminders</li><li><strong>Staff users:</strong> 📝 Shift Notes</li></ul><p>Click <strong>+ Add Item</strong> in any section, fill in the form (unit, resident, description, next step), and save. Items appear as cards and can be removed with ×.</p><h4>Generating</h4><p>Click <strong>Generate</strong> to build the formatted passdown text in the Preview area. The preview is a fully editable textarea — type freely to add context, adjust wording, or remove anything before saving.</p><h4>Saving &amp; Copying</h4><ul><li><strong>Save</strong> — saves the passdown to History, attributed to your account</li><li><strong>Copy</strong> — copies the text to your clipboard for pasting into email or Slack</li><li><strong>Clear draft</strong> — resets all build blocks and clears the preview</li></ul><h4>Passdown History</h4><p>Saved passdowns appear on the right. Admins see all staff passdowns; staff see the last 48 hours. Each entry can be expanded, copied, edited (loads it back into the preview for revision), or deleted (author or admin only).</p><div class="guide-tip">💡 Clicking <strong>Passdown</strong> from the Move Ins / Outs section jumps here with today\'s moves already loaded.</div>' },
+    html:'<h4>Overview</h4><p>The Daily Passdown section lets you build, preview, and save shift handoff notes. The left column is the <strong>Build</strong> panel; the right column is <strong>Passdown History</strong>.</p><h4>Selecting a Shift</h4><p>Choose AM, PM, or Overnight from the Shift dropdown. This filters auto-populated items to only show entries relevant to that shift\'s time window.</p><h4>Auto-Populated Blocks</h4><p>These pull live data automatically — no manual entry needed:</p><ul><li>🗝 <strong>One-Time Keys Still Out</strong> — any keys currently in "issued" status</li><li>🗝 <strong>Outstanding Key Returns</strong> — move-outs whose lease has ended and key collection task is still unchecked</li><li>🚛 <strong>Move-Ins</strong> — today\'s move-ins for this shift (admins also see upcoming days)</li><li>📦 <strong>Move-Outs</strong> — today\'s move-outs for this shift (admins also see upcoming)</li><li>🎉 <strong>Amenity Bookings</strong> — today\'s bookings during the selected shift window</li><li>🎭 <strong>Open Concierge Requests</strong> — all open requests regardless of shift</li><li>📦 <strong>L&amp;F Follow Up</strong> — lost &amp; found items manually flagged for passdown</li><li>💳 <strong>Charges to Add to Ledger</strong> — replacement key cards ($100) and unreturned one-time keys ($25) with outstanding fees</li></ul><p>Completed moves (appointment passed + all main tasks done) show a green <strong>✓ Completed</strong> badge automatically.</p><h4>Editing Next Steps in the Draft</h4><p>Every auto-block item has an editable <strong>Next step…</strong> field below it. The field is pre-filled with a smart default. Click it and type to override — your custom text carries into the generated passdown when you click Generate. Leave it as-is to use the default.</p><h4>Excluding Items</h4><p>Click the <strong>–</strong> button on any item to exclude it from the passdown. The item grays out with a strikethrough. Click <strong>＋</strong> to re-include it. Exclusions persist while the draft is active.</p><h4>Look Ahead <span style="font-size:10px;font-weight:400;color:var(--text3)">(admin only)</span></h4><p>Set to "Today + Tomorrow" or "Today + 2 days" to pull upcoming moves and amenities into the passdown for advance notice.</p><h4>Free-Entry Sections</h4><p>These sections are for items you add manually:</p><ul><li><strong>Admin users:</strong> 🔑 Keys / Access, 🅿️ Parking, 👤 Resident Matters, 📢 Policy Reminders</li><li><strong>Staff users:</strong> 📝 Shift Notes</li></ul><p>Click <strong>+ Add Item</strong> in any section, fill in the form (unit, resident, description, next step), and save. Items appear as cards and can be removed with ×.</p><h4>Generating</h4><p>Click <strong>Generate</strong> to build the formatted passdown text in the Preview area. The preview is a fully editable textarea — type freely to add context, adjust wording, or remove anything before saving.</p><h4>Saving &amp; Sending</h4><ul><li><strong>Save Draft</strong> — saves the passdown to History as a draft, attributed to your account</li><li><strong>Review &amp; Send</strong> — runs quality checks, saves the passdown as sent, and opens Gmail with default recipients</li><li><strong>Copy</strong> — copies the text to your clipboard for pasting elsewhere</li><li><strong>Clear draft</strong> — resets all build blocks and clears the preview</li></ul><h4>Passdown History</h4><p>Passdowns appear on the right with Draft/Sent and read-count badges. Admins see all staff passdowns; staff see the last 48 hours. Each entry can be expanded, copied, edited (loads it back into the preview for revision), or deleted (author or admin only).</p><div class="guide-tip">💡 Clicking <strong>Passdown</strong> from the Move Ins / Outs section jumps here with today\'s moves already loaded.</div>' },
 
   { id:'g-todos', icon:'✅', title:'To-Do List', keywords:'todo to do task personal list pending done completed admin view all team switch user',
     html:'<h4>Personal To-Dos</h4><p>Each logged-in user has their own private to-do list. Other staff cannot see your items — only admins can view all lists.</p><h4>Adding an Item</h4><p>Click <strong>+ Add To-Do</strong>, type the task, and save. The badge on the nav item shows your pending count.</p><h4>Completing Items</h4><p>Check the checkbox next to any item to mark it done. Click <strong>Clear Completed</strong> to remove all done items at once.</p><h4>Admin: View All <span style="font-size:10px;font-weight:400;color:var(--text3)">(admin only)</span></h4><p>A user-switcher dropdown appears at the top of the To-Do List for admins. Switch to any team member to view (but not edit) their list — useful for shift coverage and handoffs.</p>' },
@@ -7293,8 +7385,16 @@ function renderSettings() {
     var opt = sto.querySelector('option[value="' + saved + '"]');
     if (opt) sto.value = saved; else sto.value = '30';
   }
+  var pr = g('passdown-recips');
+  if (pr) pr.value = getPassdownRecipientString();
 }
 
+function savePassdownDeliverySettings() {
+  var el = g('passdown-recips'); if (!el) return;
+  getPassdownSettings().recipients = el.value.trim();
+  scheduleSave();
+  toast('Passdown delivery settings saved');
+}
 
 function renderPatrolPinSettings() {
   var el = g('patrol-pin-settings-body'); if (!el) return;
@@ -7866,6 +7966,7 @@ function submitPin() {
     renderDash(); updateBadges();
     toast('Welcome, ' + currentUser.name + '!');
     setTimeout(checkCarriedItemsOnLogin, 600);
+    setTimeout(checkPassdownAcknowledgementOnLogin, 1200);
   } else {
     loginPinEntry = '';
     renderPinPad(true);
