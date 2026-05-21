@@ -206,7 +206,7 @@
   .cl-due{font-size:10px;color:var(--accent);font-family:'DM Mono',monospace;flex-shrink:0}
   .cl-text-input{flex:1;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);padding:2px 4px;border-radius:4px;outline:none;min-width:0}
   .cl-text-input:hover,.cl-text-input:focus{background:var(--accent-light)}
-  .cl-text-input.done{text-decoration:line-through;color:var(--text3)}
+  .cl-text-input.done{text-decoration:line-through;color:var(--text2);opacity:0.6}
   .cl-due-input{width:110px;flex-shrink:0;border:none;background:transparent;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);padding:2px 4px;border-radius:4px;outline:none;cursor:pointer}
   .cl-due-input:hover,.cl-due-input:focus{background:var(--accent-light)}
   .cl-due-input::-webkit-calendar-picker-indicator{opacity:0.5;cursor:pointer}
@@ -371,7 +371,7 @@
   /* TASK INLINE EDIT INPUTS */
   .cl-text-input{border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;flex:1;padding:2px 5px;border-radius:4px;min-width:0;cursor:text}
   .cl-text-input:hover,.cl-text-input:focus{background:var(--accent-light)}
-  .cl-text-input.done{text-decoration:line-through;color:var(--text3)}
+  .cl-text-input.done{text-decoration:line-through;color:var(--text2);opacity:0.6}
   .cl-due-input{border:1px solid transparent;background:transparent;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);outline:none;width:110px;flex-shrink:0;padding:1px 3px;border-radius:4px;cursor:pointer}
   .cl-due-input:hover,.cl-due-input:focus{border-color:var(--accent);background:var(--accent-light)}
   .cl-due-input::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer}
@@ -2674,9 +2674,12 @@ function toggleCL(id) {
 function toggleTask(moveId, taskId, checked) {
   var m = (state.moves || []).find(function (x) { return x.id === moveId; }); if (!m) return;
   var t = (m.tasks || []).find(function (x) { return x.id === taskId; }); if (!t) return;
+  var tasksBefore = JSON.parse(JSON.stringify(m.tasks));
   t.done = checked;
   if (checked) { t.completedBy = currentUser ? currentUser.name : ''; t.completedAt = Date.now(); }
   else { t.completedBy = null; t.completedAt = null; }
+  var tasksAfter = JSON.parse(JSON.stringify(m.tasks));
+  pushUndo({ sec: 'moves', type: 'EDIT', id: m.id, before: { tasks: tasksBefore }, after: { tasks: tasksAfter }, label: (checked ? 'check' : 'uncheck') + ' task — ' + (t.text || 'task') });
   // ── Supply integration ──
   var supLink = TASK_SUPPLY_MAP[t.text];
   if (supLink) {
