@@ -546,6 +546,7 @@
     <div class="nav-item" data-sec="tours" onclick="nav(this)"><span class="icon" data-icon="mappin"></span><span class="nav-txt">Tour Log</span><span class="badge" id="badge-tours"></span></div>
     <div class="nav-item" data-sec="concierge" onclick="nav(this)"><span class="icon" data-icon="bell"></span><span class="nav-txt">Concierge Log</span><span class="badge" id="badge-concierge"></span></div>
     <div class="nav-item" data-sec="residents" onclick="nav(this)"><span class="icon" data-icon="user"></span><span class="nav-txt">Resident Profiles</span></div>
+    <div class="nav-item" data-sec="templates" onclick="nav(this)"><span class="icon" data-icon="message-square"></span><span class="nav-txt">Message Templates</span></div>
   </div>
   <div class="nav-group">
     <div class="nav-label">Shift</div>
@@ -990,6 +991,14 @@
       </div>
       <div id="cal-body"></div>
     </div>
+    <div class="section" id="section-templates">
+      <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="tmpl-search" placeholder="&#128269; Search templates…" style="flex:1;min-width:180px;max-width:320px" oninput="renderTemplates()">
+        <div id="tmpl-cat-filters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      </div>
+      <div id="tmpl-body"></div>
+    </div>
+
     <div class="section" id="section-guide">
       <div class="guide-wrap">
         <input type="text" id="guide-search" class="guide-search" placeholder="&#128269; Search the guide — try &quot;passdown&quot;, &quot;keys&quot;, &quot;staff&quot;…" oninput="filterGuide(this.value)">
@@ -1328,6 +1337,26 @@
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-supply')">Cancel</button><button class="btn btn-primary" onclick="saveSupply()">Save Item</button></div>
 </div></div>
 
+<div class="modal-ov" id="modal-template"><div class="modal" style="max-width:520px">
+  <div class="modal-hdr"><span class="modal-title" id="modal-template-title">Add Template</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-template')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <div class="fg"><label>Title</label><input id="tmpl-title" type="text" placeholder="e.g. Package ready for pickup"></div>
+    <div class="fg"><label>Category</label>
+      <select id="tmpl-cat">
+        <option>Packages</option>
+        <option>Noise</option>
+        <option>Maintenance</option>
+        <option>Lease</option>
+        <option>Guest Policy</option>
+        <option>Move In / Out</option>
+        <option>General</option>
+      </select>
+    </div>
+    <div class="fg"><label>Message</label><textarea id="tmpl-body" rows="7" placeholder="Type the full message text here…" style="resize:vertical"></textarea></div>
+  </div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-template')">Cancel</button><button class="btn btn-primary" onclick="saveTemplate()">Save</button></div>
+</div></div>
+
 <div class="modal-ov" id="modal-help"><div class="modal" style="max-width:560px">
   <div class="modal-hdr"><span class="modal-title" id="modal-help-title">Section Guide</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-help')">&#x2715;</button></div>
   <div class="modal-bdy guide-card-body" id="modal-help-body" style="font-size:13px;line-height:1.7;max-height:70vh;overflow-y:auto"></div>
@@ -1447,6 +1476,8 @@ var SVG_ICONS = {
   alert:     _svg('<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'),
   package:   _svg('<line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>'),
   activity:  _svg('<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>'),
+  'alert-triangle': _svg('<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'),
+  'message-square': _svg('<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>'),
 };
 function applyIcons() {
   document.querySelectorAll('[data-icon]').forEach(function(el) {
@@ -1455,7 +1486,7 @@ function applyIcons() {
   });
 }
 
-var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [] };
+var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [], templates: [] };
 var teamUnlocked = false;
 
 var currentUser = null;
@@ -1580,7 +1611,7 @@ function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(stat
 function loadLocal() {
   try {
     var raw = localStorage.getItem(LOCAL_KEY);
-    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], supplies: [], activityLog: [], parking: [], security: [] }, JSON.parse(raw));
+    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], supplies: [], activityLog: [], parking: [], security: [], templates: [] }, JSON.parse(raw));
   } catch (e) {}
 }
 function scheduleSave() { saveLocal(); clearTimeout(syncTO); syncTO = setTimeout(pushCloud, 800); }
@@ -1596,7 +1627,7 @@ async function pullCloud() {
   try {
     var row = await supaGet();
     if (row && row.data && Object.keys(row.data).length > 0) {
-      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [], parking: [], security: [] }, row.data);
+      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [], parking: [], security: [], templates: [] }, row.data);
       saveLocal();
     } else { loadLocal(); await supaPush(state); }
     setSyncStatus('synced', 'Synced');
@@ -1609,7 +1640,7 @@ setInterval(async function () {
     if (row && row.updated_at) {
       var ts = new Date(row.updated_at).getTime();
       if (lastSyncTs && ts > lastSyncTs + 2000) {
-        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [], parking: [], security: [] }, row.data);
+        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [], parking: [], security: [], templates: [] }, row.data);
         saveLocal(); lastSyncTs = ts;
         renderSection(curSec); updateBadges();
         setSyncStatus('synced', 'Updated'); setTimeout(function () { setSyncStatus('synced', 'Synced'); }, 2000);
@@ -1812,7 +1843,7 @@ function openMobSidebar() { g('sidebar').classList.add('mob-open'); g('sb-ov').s
 function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov').style.display = 'none'; }
 
 // ─── NAV ───
-var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Resident Profiles', guide: 'Guide', activity: 'Activity Log' };
+var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Resident Profiles', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log' };
 var patrolFilter = 'amenity';
 var SEC_ACTIONS = {
   moves: '<button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
@@ -1827,13 +1858,15 @@ var SEC_ACTIONS = {
   concierge: '<button class="btn btn-primary btn-sm" onclick="openAddConcierge()">+ Log Request</button>',
   residents: '<button class="btn btn-primary btn-sm" onclick="openAddResident()">+ Add Profile</button>',
   passdown: '',
-  todos: ''
+  todos: '',
+  templates: '<button class="btn btn-primary btn-sm" onclick="openAddTemplate()">+ Add Template</button>'
 };
 var curSec = 'dashboard';
 var SEC_HELP = { passdown: 'g-passdown', concierge: 'g-concierge', moves: 'g-moves', keys: 'g-keys' };
+var STAFF_NO_ADD = ['moves', 'templates'];
 function getSecActions(sec) {
   var isStaff = currentUser && currentUser.role === 'staff';
-  if (isStaff && (sec === 'moves')) return helpBtn(sec);
+  if (isStaff && STAFF_NO_ADD.indexOf(sec) !== -1) return helpBtn(sec);
   var base = SEC_ACTIONS[sec] || '';
   return base + helpBtn(sec);
 }
@@ -1870,7 +1903,7 @@ function mobNav(item) {
   curSec = sec; renderSection(sec);
 }
 function renderSection(sec) {
-  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, guide: renderGuide, security: renderSecurity, supplies: renderSupplies, activity: renderActivityLog };
+  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, templates: renderTemplates, guide: renderGuide, security: renderSecurity, supplies: renderSupplies, activity: renderActivityLog };
   if (map[sec]) map[sec]();
 }
 function renderAll() { renderSection(curSec); updateBadges(); }
@@ -7418,6 +7451,7 @@ var TOGGLEABLE_SECTIONS = [
   { id: 'tours', label: 'Tour Log' },
   { id: 'concierge', label: 'Concierge Log' },
   { id: 'residents', label: 'Resident Profiles' },
+  { id: 'templates', label: 'Message Templates' },
   { id: 'passdown', label: 'Daily Passdown' },
   { id: 'todos', label: 'To-Do List' },
   { id: 'calendar', label: 'Calendar' },
@@ -8491,6 +8525,160 @@ function checkPassdownReady() {
     return;
   }
   generatePassdown();
+}
+
+// ===== [MESSAGE TEMPLATES] ====================================================
+var tmplActiveCat = 'All';
+var editingTemplateId = null;
+var TMPL_CATS = ['Packages','Noise','Maintenance','Lease','Guest Policy','Move In / Out','General'];
+
+function renderTemplates() {
+  var isAdmin = currentUser && currentUser.role === 'admin';
+  var searchEl = g('tmpl-search');
+  var q = searchEl ? searchEl.value.toLowerCase() : '';
+  var list = (state.templates || []).slice();
+
+  // Build category filter pills once
+  var catWrap = g('tmpl-cat-filters');
+  if (catWrap && !catWrap.dataset.built) {
+    catWrap.dataset.built = '1';
+    ['All'].concat(TMPL_CATS).forEach(function(c) {
+      var btn = document.createElement('button');
+      btn.className = 'sub-tab' + (tmplActiveCat === c ? ' active' : '');
+      btn.textContent = c;
+      btn.onclick = function() { tmplSetCat(c); };
+      catWrap.appendChild(btn);
+    });
+  }
+
+  if (tmplActiveCat !== 'All') list = list.filter(function(t) { return t.category === tmplActiveCat; });
+  if (q) list = list.filter(function(t) { return (t.title + ' ' + t.body + ' ' + t.category).toLowerCase().indexOf(q) !== -1; });
+
+  var body = g('tmpl-body'); if (!body) return;
+
+  if (!list.length) {
+    var isEmpty = !(state.templates && state.templates.length);
+    body.innerHTML = '<div style="text-align:center;padding:48px 24px;color:var(--text3)">'
+      + (isEmpty ? '<p style="font-size:15px;font-weight:500;color:var(--text2);margin-bottom:8px">No templates yet</p><p style="font-size:13px">Add your first template using the button above.</p>'
+                 : '<p style="font-size:14px">No templates match your search.</p>')
+      + '</div>';
+    return;
+  }
+
+  // Group in TMPL_CATS order
+  var grouped = {};
+  list.forEach(function(t) { if (!grouped[t.category]) grouped[t.category] = []; grouped[t.category].push(t); });
+  var orderedCats = tmplActiveCat === 'All'
+    ? TMPL_CATS.filter(function(c) { return grouped[c] && grouped[c].length; })
+    : [tmplActiveCat];
+
+  var html = '';
+  orderedCats.forEach(function(cat) {
+    var items = grouped[cat]; if (!items || !items.length) return;
+    if (tmplActiveCat === 'All') {
+      html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:4px 2px 8px'
+        + (html ? ';margin-top:18px;border-top:1px solid var(--border2)' : '') + '">' + esc(cat) + '</div>';
+    }
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin-bottom:4px">';
+    items.forEach(function(t) {
+      html += '<div class="card" style="cursor:default">'
+        + '<div style="padding:12px 14px 10px">'
+        +   '<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:6px">'
+        +     '<span style="font-size:13px;font-weight:600;flex:1;line-height:1.4">' + esc(t.title) + '</span>'
+        +     (isAdmin ? '<button class="btn btn-ghost btn-xs" title="Edit" onclick="editTemplate(\'' + t.id + '\')" style="flex-shrink:0;padding:2px 7px">&#9998;</button>' : '')
+        +     (isAdmin ? '<button class="btn btn-ghost btn-xs" title="Delete" onclick="deleteTemplate(\'' + t.id + '\')" style="flex-shrink:0;padding:2px 7px;color:var(--red)">&times;</button>' : '')
+        +   '</div>'
+        +   '<div id="tmpl-prev-' + t.id + '" style="font-size:12px;color:var(--text2);line-height:1.65;white-space:pre-wrap;max-height:74px;overflow:hidden;position:relative">'
+        +     esc(t.body)
+        +     '<div class="tmpl-fade" style="position:absolute;bottom:0;left:0;right:0;height:26px;background:linear-gradient(transparent,var(--surface))"></div>'
+        +   '</div>'
+        + '</div>'
+        + '<div style="padding:8px 14px;border-top:1px solid var(--border2);display:flex;align-items:center;gap:6px">'
+        +   '<span style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;flex:1">' + esc(t.category) + '</span>'
+        +   '<button class="btn btn-ghost btn-xs" id="tmpl-exp-' + t.id + '" onclick="tmplExpand(\'' + t.id + '\')">Expand</button>'
+        +   '<button class="btn btn-secondary btn-xs" onclick="tmplCopy(\'' + t.id + '\')">&#128203; Copy</button>'
+        + '</div>'
+        + '</div>';
+    });
+    html += '</div>';
+  });
+  body.innerHTML = html;
+}
+
+function tmplSetCat(cat) {
+  tmplActiveCat = cat;
+  var catWrap = g('tmpl-cat-filters');
+  if (catWrap) catWrap.querySelectorAll('.sub-tab').forEach(function(b) { b.classList.toggle('active', b.textContent === cat); });
+  renderTemplates();
+}
+
+function tmplExpand(id) {
+  var prev = g('tmpl-prev-' + id), btn = g('tmpl-exp-' + id); if (!prev || !btn) return;
+  var on = prev.dataset.exp === '1';
+  prev.style.maxHeight = on ? '74px' : '';
+  prev.dataset.exp = on ? '0' : '1';
+  btn.textContent = on ? 'Expand' : 'Collapse';
+  var fade = prev.querySelector('.tmpl-fade'); if (fade) fade.style.display = on ? '' : 'none';
+}
+
+function tmplCopy(id) {
+  var t = (state.templates || []).find(function(x) { return x.id === id; }); if (!t) return;
+  var done = function() { toast('Copied to clipboard'); };
+  var fail = function() {
+    var ta = document.createElement('textarea');
+    ta.value = t.body; ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch(e) { toast('Copy failed — try selecting manually'); }
+    document.body.removeChild(ta);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(t.body).then(done).catch(fail);
+  } else { fail(); }
+}
+
+function openAddTemplate() {
+  editingTemplateId = null;
+  g('modal-template-title').textContent = 'Add Template';
+  ['tmpl-title','tmpl-body'].forEach(function(id) { g(id).value = ''; });
+  g('tmpl-cat').value = 'General';
+  openModal('modal-template');
+  setTimeout(function() { g('tmpl-title').focus(); }, 80);
+}
+
+function editTemplate(id) {
+  var t = (state.templates || []).find(function(x) { return x.id === id; }); if (!t) return;
+  editingTemplateId = id;
+  g('modal-template-title').textContent = 'Edit Template';
+  g('tmpl-title').value = t.title;
+  g('tmpl-cat').value = t.category;
+  g('tmpl-body').value = t.body;
+  openModal('modal-template');
+  setTimeout(function() { g('tmpl-title').focus(); }, 80);
+}
+
+function saveTemplate() {
+  var title = g('tmpl-title').value.trim();
+  var cat   = g('tmpl-cat').value;
+  var body  = g('tmpl-body').value.trim();
+  if (!title) { toast('Enter a title'); g('tmpl-title').focus(); return; }
+  if (!body)  { toast('Enter the message text'); g('tmpl-body').focus(); return; }
+  if (!state.templates) state.templates = [];
+  if (editingTemplateId) {
+    var t = state.templates.find(function(x) { return x.id === editingTemplateId; });
+    if (t) { t.title = title; t.category = cat; t.body = body; t.updatedAt = Date.now(); t.updatedBy = currentUser ? currentUser.name : ''; }
+  } else {
+    state.templates.push({ id: uid(), title: title, category: cat, body: body, addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() });
+  }
+  scheduleSave(); closeModal('modal-template'); renderTemplates();
+  toast(editingTemplateId ? 'Template updated' : 'Template saved');
+  editingTemplateId = null;
+}
+
+function deleteTemplate(id) {
+  var t = (state.templates || []).find(function(x) { return x.id === id; }); if (!t) return;
+  if (!confirm('Delete "' + t.title + '"?')) return;
+  state.templates = state.templates.filter(function(x) { return x.id !== id; });
+  scheduleSave(); renderTemplates(); toast('Template deleted');
 }
 
 // ─── SIDEBAR COLLAPSE TOOLTIPS ───────────────────────────────────────────────
