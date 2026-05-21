@@ -2,17 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chorus — Front Desk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garant:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#F5F8F6;--surface:#FFFFFF;--surface2:#EAF0EB;--border:rgba(20,28,28,0.10);--border2:rgba(20,28,28,0.06);
-    --text:#141C1C;--text2:#3D5248;--text3:#7A9E80;
-    --accent:#4E8A70;--accent-light:rgba(78,138,112,0.12);--accent2:#3A6E58;
-    --green:#4A7A2A;--green-light:#ECF2DC;--red:#963030;--red-light:#FAEBEB;
-    --amber:#9E6300;--amber-light:#FBF0DC;--purple:#6044B2;--purple-light:#ECEAFA;
+    --bg:#F4F0EA;--surface:#FFFFFF;--surface2:#EDE8E1;--border:rgba(26,20,10,0.12);--border2:rgba(26,20,10,0.06);
+    --text:#1A2632;--text2:#455D6E;--text3:#8EA2AE;
+    --accent:#1A5C3E;--accent-light:rgba(26,92,62,0.10);--accent2:#155030;--primary:#1A5C3E;
+    --green:#1A6640;--green-light:#E2EFE8;--red:#C03535;--red-light:#FAEBEB;
+    --amber:#B57020;--amber-light:#FBF0DC;--purple:#6044B2;--purple-light:#ECEAFA;
     --sidebar-w:220px;--header-h:54px;--radius:6px;
     --font-serif:'Cormorant Garant',Georgia,serif;--font-mono:'DM Mono',monospace;
     --shadow:0 1px 4px rgba(26,24,20,0.07),0 1px 2px rgba(26,24,20,0.04);
@@ -23,7 +23,7 @@
   body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;display:flex;height:100vh;overflow:hidden}
 
   /* SIDEBAR */
-  #sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:#141C1C;border-right:0.5px solid rgba(78,138,112,0.18);display:flex;flex-direction:column;height:100vh;overflow-y:auto;overflow-x:hidden;z-index:200;transition:width .22s ease,min-width .22s ease,transform .22s ease;flex-shrink:0}
+  #sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:#0D1B2A;border-right:0.5px solid rgba(255,255,255,0.09);display:flex;flex-direction:column;height:100vh;overflow-y:auto;overflow-x:hidden;z-index:200;transition:width .22s ease,min-width .22s ease,transform .22s ease;flex-shrink:0}
   body.sc #sidebar{width:52px;min-width:52px}
   body.sc .sb-logo .bldg,body.sc .sb-logo .sub,body.sc .sb-logo .date-chip,body.sc .nav-label,body.sc .nav-item .nav-txt,body.sc .badge,body.sc .footer-btn span:not(:first-child),body.sc .save-status{display:none}
   body.sc .nav-item{justify-content:center;padding:10px 0}
@@ -41,28 +41,28 @@
     body.sc #sidebar .sb-logo{padding:18px 16px 14px;display:block}
     body.sc #sidebar .sb-footer{padding:10px 10px 14px;align-items:stretch}
   }
-  .sb-logo{padding:18px 16px 14px;border-bottom:0.5px solid rgba(78,138,112,0.18)}
+  .sb-logo{padding:18px 16px 14px;border-bottom:0.5px solid rgba(255,255,255,0.09)}
   .sb-logo .bldg{font-size:16px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;font-family:var(--font-serif);color:#F0EBE0}
   .sb-logo .sub{font-size:10px;color:rgba(255,255,255,0.32);margin-top:2px;font-family:var(--font-mono);letter-spacing:.4px}
-  .sb-logo .date-chip{display:inline-block;margin-top:8px;background:rgba(78,138,112,0.16);color:#4E8A70;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;font-family:var(--font-mono)}
+  .sb-logo .date-chip{display:inline-block;margin-top:8px;background:rgba(26,92,62,0.25);color:#7ECBA0;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;font-family:var(--font-mono)}
   .nav-group{padding:10px 0 4px}
-  .nav-label{font-size:9.5px;font-weight:600;color:rgba(78,138,112,0.40);text-transform:uppercase;letter-spacing:1px;padding:0 14px 4px;white-space:nowrap;overflow:hidden}
+  .nav-label{font-size:9.5px;font-weight:600;color:rgba(148,185,215,0.45);text-transform:uppercase;letter-spacing:1px;padding:0 14px 4px;white-space:nowrap;overflow:hidden}
   .nav-item{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;color:rgba(255,255,255,0.46);font-size:13px;font-weight:400;border-left:2px solid transparent;transition:all .12s;position:relative;user-select:none;white-space:nowrap}
   .nav-item:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.80)}
-  .nav-item.active{background:rgba(78,138,112,0.13);color:#4E8A70;border-left-color:#4E8A70;font-weight:500}
+  .nav-item.active{background:rgba(255,255,255,0.10);color:#FFFFFF;border-left-color:#1A5C3E;font-weight:500}
   .nav-item .icon{width:16px;text-align:center;font-size:14px;flex-shrink:0}
-  .badge{margin-left:auto;background:#4E8A70;color:#141C1C;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;font-family:var(--font-mono);min-width:18px;text-align:center;display:none}
+  .badge{margin-left:auto;background:#1A5C3E;color:#FFFFFF;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;font-family:var(--font-mono);min-width:18px;text-align:center;display:none}
   .badge.vis{display:block}
   .badge.badge-red{background:var(--red);color:#fff}
-  .sb-footer{margin-top:auto;padding:10px 10px 14px;border-top:0.5px solid rgba(78,138,112,0.18);display:flex;flex-direction:column;gap:4px}
+  .sb-footer{margin-top:auto;padding:10px 10px 14px;border-top:0.5px solid rgba(255,255,255,0.09);display:flex;flex-direction:column;gap:4px}
   .footer-btn{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:var(--radius);font-size:11.5px;color:rgba(255,255,255,0.38);cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;width:100%;text-align:left;transition:background .1s;white-space:nowrap}
   .footer-btn:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.75)}
   .save-status{font-size:10px;color:rgba(255,255,255,0.24);padding:0 8px 4px;font-family:var(--font-mono);white-space:nowrap;overflow:hidden}
   .sync-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;background:rgba(255,255,255,0.25)}
-  .sync-dot.synced{background:#6DBB5A}.sync-dot.syncing{background:#4E8A70;animation:pulse 1s infinite}.sync-dot.error{background:#E05A5A}
+  .sync-dot.synced{background:#6DBB5A}.sync-dot.syncing{background:#1A5C3E;animation:pulse 1s infinite}.sync-dot.error{background:#E05A5A}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
   #sidebar-wrap{position:relative;display:flex;flex-shrink:0}
-  #collapse-btn{position:absolute;top:16px;right:-13px;width:26px;height:26px;border-radius:50%;background:#141C1C;border:0.5px solid rgba(78,138,112,0.28);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:201;box-shadow:0 2px 8px rgba(0,0,0,0.35);font-size:11px;color:rgba(255,255,255,0.50);transition:transform .22s;flex-shrink:0}
+  #collapse-btn{position:absolute;top:16px;right:-13px;width:26px;height:26px;border-radius:50%;background:#0D1B2A;border:0.5px solid rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:201;box-shadow:0 2px 8px rgba(0,0,0,0.35);font-size:11px;color:rgba(255,255,255,0.50);transition:transform .22s;flex-shrink:0}
   body.sc #collapse-btn{transform:scaleX(-1)}
   @media(max-width:700px){#collapse-btn{display:none}}
 
@@ -495,21 +495,22 @@
   /* LEAD badge in nav */
   .nav-item [style*="background:var(--accent)"]{color:#141C1C!important}
   /* Stat card tints */
-  .stat-card.green{background:#ECF2DC;border-color:#C2DDA0}
+  .stat-card.green{background:#E2EFE8;border-color:#A8D4B8}
   .stat-card.red{background:#FAEBEB;border-color:#F0BFBF}
-  /* LOGIN OVERLAY — dark charcoal */
-  #login-overlay{background:#0E0D0C}
-  .login-box{background:#1E2A2A;border:0.5px solid rgba(78,138,112,0.24);box-shadow:0 24px 64px rgba(0,0,0,0.55)}
+  /* LOGIN OVERLAY — deep navy */
+  #login-overlay{background:#080F18}
+  .login-box{background:#0D1B2A;border:0.5px solid rgba(255,255,255,0.12);box-shadow:0 24px 64px rgba(0,0,0,0.60)}
   .login-logo{font-family:var(--font-serif);font-size:22px;font-weight:600;color:#F0EBE0;letter-spacing:.4px}
   .login-sub{color:rgba(255,255,255,0.38)}
-  .acct-btn{background:#242018;border:0.5px solid rgba(78,138,112,0.18);color:rgba(255,255,255,0.78)}
-  .acct-btn:hover{background:rgba(78,138,112,0.14);border-color:#4E8A70;color:#4E8A70}
-  .acct-avatar{background:rgba(78,138,112,0.18);color:#4E8A70}
+  .acct-btn{background:#122030;border:0.5px solid rgba(255,255,255,0.10);color:rgba(255,255,255,0.78)}
+  .acct-btn:hover{background:rgba(26,92,62,0.18);border-color:#1A5C3E;color:#7ECBA0}
+  .acct-avatar{background:rgba(26,92,62,0.22);color:#7ECBA0}
   .acct-role-tag{color:rgba(255,255,255,0.28)}
-  .pin-dot{border-color:rgba(78,138,112,0.32)}
-  .pin-dot.filled{background:#4E8A70;border-color:#4E8A70}
-  .pin-key{background:#242018;border:0.5px solid rgba(78,138,112,0.16);color:rgba(255,255,255,0.78)}
-  .pin-key:hover{background:rgba(78,138,112,0.16);color:#4E8A70}
+  .pin-dot{border-color:rgba(255,255,255,0.22)}
+  .pin-dot.filled{background:#1A5C3E;border-color:#1A5C3E}
+  .pin-key{background:#122030;border:0.5px solid rgba(255,255,255,0.10);color:rgba(255,255,255,0.78)}
+  .pin-key:hover{background:rgba(26,92,62,0.18);color:#7ECBA0}
+  @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
@@ -574,12 +575,12 @@
     <button class="footer-btn" id="footer-reset" style="color:var(--red)" onclick="resetData()"><span class="icon" data-icon="alert"></span><span>Reset Data</span></button>
   </div>
 </nav>
-<div id="collapse-btn" onclick="toggleSidebar()" title="Collapse">&#8249;</div>
+<button id="collapse-btn" onclick="toggleSidebar()" aria-label="Collapse sidebar">&#8249;</button>
 </div><!-- /sidebar-wrap -->
 
 <div id="main">
   <div id="header">
-    <button id="mob-menu" onclick="openMobSidebar()">&#9776;</button>
+    <button id="mob-menu" onclick="openMobSidebar()" aria-label="Open menu">&#9776;</button>
     <div class="hdr-title" id="hdr-title">Dashboard</div>
     <div style="display:flex;gap:4px;margin-left:auto;margin-right:8px">
       <button id="btn-undo" onclick="applyUndo()" title="Undo (⌘Z)" class="btn btn-ghost btn-sm" disabled style="opacity:0.35;font-size:15px;padding:3px 8px;line-height:1">↩</button>
@@ -1002,7 +1003,7 @@
 
 <!-- MODALS -->
 <div class="modal-ov" id="modal-move"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="move-modal-title">Add Move</span><button class="modal-close" onclick="closeModal('modal-move')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="move-modal-title">Add Move</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-move')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Unit #</label><input id="mv-unit" type="text" placeholder="e.g. 1204"></div><div class="fg"><label>Type</label><select id="mv-type" onchange="updateMoveModalLabels()"><option value="in">Move In</option><option value="out">Move Out</option></select></div></div>
     <div class="fg"><label>Resident Name</label><input id="mv-resident" type="text"></div>
@@ -1021,7 +1022,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-task"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="modal-task-title">Add Task</span><button class="modal-close" onclick="closeModal('modal-task')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-task-title">Add Task</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-task')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fg"><label>Task Description</label><input id="task-text" type="text" placeholder="e.g. Confirm move time with resident"></div>
     <div class="fr"><div class="fg"><label>Category</label><select id="task-cat"><option>Pre Move-In</option><option>Move In</option><option>Move Out</option><option>Keys &amp; Access</option><option>Parking</option><option>Elevator</option><option>Post Move-In</option><option>General</option></select></div><div class="fg"><label>Due Date (optional)</label><input id="task-due" type="date" data-no-autofill></div></div>
@@ -1030,7 +1031,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-maint"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="modal-maint-title">Log Maintenance Issue</span><button class="modal-close" onclick="closeModal('modal-maint')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-maint-title">Log Maintenance Issue</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-maint')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Unit / Location</label><input id="mt-unit" type="text" placeholder="e.g. 804 or Lobby"></div><div class="fg"><label>Issue Type</label><input id="mt-issue" type="text" placeholder="e.g. HVAC, Plumbing"></div></div>
     <div class="fg"><label>Description</label><textarea id="mt-desc" rows="4"></textarea></div>
@@ -1042,7 +1043,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-guest"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="modal-guest-title">Log Guest / Visitor</span><button class="modal-close" onclick="closeModal('modal-guest')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-guest-title">Log Guest / Visitor</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-guest')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fg"><label>Guest Name</label><input id="gs-name" type="text"></div>
     <div class="fr"><div class="fg"><label>Visiting Unit #</label><input id="gs-unit" type="text"></div><div class="fg"><label>Host Resident</label><input id="gs-host" type="text"></div></div>
@@ -1054,7 +1055,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-key"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="modal-key-title">Log Key / Access</span><button class="modal-close" onclick="closeModal('modal-key')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-key-title">Log Key / Access</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-key')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Unit #</label><input id="ky-unit" type="text"></div><div class="fg"><label>Resident Name</label><input id="ky-name" type="text" placeholder="Unit resident"></div></div>
     <div class="fr"><div class="fg"><label>Key Type</label><select id="ky-type" onchange="keyTypeChange()"><option value="resident">Resident Key Fob</option><option value="joiner">Joiner Key</option><option value="one-time">One-Time Key</option><option value="vendor">Vendor Card</option><option value="mobile">Mobile Key</option></select></div><div class="fg"><label>Key # / Card ID</label><input id="ky-fob" type="text"></div></div>
@@ -1078,7 +1079,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-security"><div class="modal" style="max-width:500px">
-  <div class="modal-hdr"><span class="modal-title" id="modal-security-title">Log Incident</span><button class="modal-close" onclick="closeModal('modal-security')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-security-title">Log Incident</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-security')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Date</label><input id="sec-date" type="date"></div><div class="fg"><label>Time</label><input id="sec-time" type="time"></div></div>
     <div class="fg"><label>Incident Type</label>
@@ -1119,7 +1120,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-parking"><div class="modal" style="max-width:520px">
-  <div class="modal-hdr"><span class="modal-title" id="modal-parking-title">Add Parking Credential</span><button class="modal-close" onclick="closeModal('modal-parking')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-parking-title">Add Parking Credential</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-parking')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Unit #</label><input id="pk-unit" type="text"></div><div class="fg"><label>Resident Name</label><input id="pk-resident" type="text"></div></div>
     <div class="fr"><div class="fg"><label>Monthly Fee ($)</label><input id="pk-fee" type="number" placeholder="e.g. 150" min="0"></div><div class="fg"><label>Start Date</label><input id="pk-start" type="date" data-no-autofill></div></div>
@@ -1144,7 +1145,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-todo"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="modal-todo-title">Edit To-Do</span><button class="modal-close" onclick="closeModal('modal-todo')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-todo-title">Edit To-Do</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-todo')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fg"><label>Task</label><input id="td-text" type="text" placeholder="What needs to be done?"></div>
     <div class="fg"><label>For / Note <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="td-note" type="text" placeholder="e.g. Unit 802, follow-up on maintenance request..."></div>
@@ -1157,7 +1158,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-amenity"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="modal-amenity-title">Add Amenity Booking</span><button class="modal-close" onclick="closeModal('modal-amenity')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-amenity-title">Add Amenity Booking</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-amenity')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Resident Name</label><input id="am-resident" type="text"></div><div class="fg"><label>Unit #</label><input id="am-unit" type="text"></div></div>
     <div class="fg"><label>Amenity Space(s) <span style="font-size:10px;color:var(--text3);font-weight:400">(select all that apply)</span></label><div id="am-space-wrap" style="border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;display:grid;grid-template-columns:1fr 1fr;gap:5px 14px;font-size:12.5px;background:var(--bg)">
@@ -1182,7 +1183,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-tour"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="modal-tour-title">Log Tour</span><button class="modal-close" onclick="closeModal('modal-tour')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-tour-title">Log Tour</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-tour')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Prospect Name</label><input id="tr-name" type="text"></div><div class="fg"><label>Unit(s) Shown</label><input id="tr-unit" type="text" placeholder="e.g. 804, 1102" oninput="showTourUnitInfo()"><div id="tr-unit-info" style="margin-top:4px;font-size:11px;color:var(--accent);font-weight:500;line-height:1.5"></div></div></div>
     <div class="fr"><div class="fg"><label>Tour Type</label><select id="tr-type"><option value="sgt">SGT (Self-Guided)</option><option value="guided">Guided</option></select></div><div class="fg"><label>Date</label><input id="tr-date" type="date"></div></div>
@@ -1193,7 +1194,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-flag"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title">Flag an Issue</span><button class="modal-close" onclick="closeModal('modal-flag')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title">Flag an Issue</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-flag')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fg"><label>Location</label><input id="fl-location" type="text" placeholder="e.g. 3rd Floor Terrace, Lobby"></div>
     <div class="fg"><label>Description</label><textarea id="fl-desc" rows="4"></textarea></div>
@@ -1203,7 +1204,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-laf"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="modal-laf-title">Log Lost &amp; Found Item</span><button class="modal-close" onclick="closeModal('modal-laf')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-laf-title">Log Lost &amp; Found Item</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-laf')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Date Found</label><input id="lf-date" type="date"></div><div class="fg"><label>Time Found</label><input id="lf-time" type="time"></div></div>
     <div class="fr"><div class="fg"><label>Found By</label><input id="lf-foundby" type="text"></div><div class="fg"><label>Location</label><input id="lf-location" type="text"></div></div>
@@ -1215,7 +1216,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-laf-claim"><div class="modal" style="max-width:420px">
-  <div class="modal-hdr"><span class="modal-title">Mark Item Claimed</span><button class="modal-close" onclick="closeModal('modal-laf-claim')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title">Mark Item Claimed</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-laf-claim')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fg"><label>Claimed By</label><input id="laf-claim-by" type="text" placeholder="Name of person picking up"></div>
     <div class="fg"><label>Unit # <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="laf-claim-unit" type="text" placeholder="e.g. 804"></div>
@@ -1224,7 +1225,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-unit"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="modal-unit-title">Add Unit</span><button class="modal-close" onclick="closeModal('modal-unit')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-unit-title">Add Unit</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-unit')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Unit #</label><input id="un-unit" type="text" placeholder="e.g. 1204"></div><div class="fg"><label>Floor</label><input id="un-floor" type="text" placeholder="e.g. 12"></div></div>
     <div class="fr"><div class="fg"><label>Bed / Bath</label><input id="un-bed" type="text" placeholder="e.g. 1BD/1BA"></div><div class="fg"><label>Sq Ft</label><input id="un-sqft" type="text" placeholder="e.g. 650"></div></div>
@@ -1243,7 +1244,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-concierge"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="modal-concierge-title">Log Concierge Request</span><button class="modal-close" onclick="closeModal('modal-concierge')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-concierge-title">Log Concierge Request</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-concierge')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Unit #</label><input id="cr-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Resident Name</label><input id="cr-resident" type="text"></div></div>
     <div class="fg"><label>Request Type</label><select id="cr-type"><option value="Dry Cleaning">Dry Cleaning</option><option value="Package Hold">Package Hold</option><option value="Parking Credentials">Parking Credentials</option><option value="Other">Other</option></select></div>
@@ -1255,7 +1256,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-resident"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="modal-resident-title">Add Resident Profile</span><button class="modal-close" onclick="closeModal('modal-resident')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-resident-title">Add Resident Profile</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-resident')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Unit #</label><input id="rp-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Resident Name</label><input id="rp-name" type="text"></div></div>
     <div style="padding:4px 0 2px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="rp-blueground"> <span>&#128309; <strong>Blueground Unit</strong> — Managed by Blueground</span></label></div>
@@ -1300,13 +1301,13 @@
 </div></div>
 
 <div class="modal-ov" id="modal-import"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title">Import Backup</span><button class="modal-close" onclick="closeModal('modal-import')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title">Import Backup</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-import')">&#x2715;</button></div>
   <div class="modal-bdy"><p style="font-size:13px;color:var(--text2);margin-bottom:12px">Upload a previously exported JSON backup. This will <strong>replace</strong> all current data.</p><div class="fg"><label>Select JSON File</label><input type="file" id="import-file" accept=".json"></div></div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-import')">Cancel</button><button class="btn btn-primary" onclick="processImport()">Import</button></div>
 </div></div>
 
 <div class="modal-ov" id="modal-supply"><div class="modal" style="max-width:440px">
-  <div class="modal-hdr"><span class="modal-title" id="modal-supply-title">Add Supply Item</span><button class="modal-close" onclick="closeModal('modal-supply')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-supply-title">Add Supply Item</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-supply')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fg"><label>Item Name</label><input id="sup-name" type="text" placeholder="e.g. Printer Paper"></div>
     <div class="fr">
@@ -1339,7 +1340,7 @@
   </div>
   <div class="cal-pop-body" id="cal-pop-body"></div>
 </div>
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ╔══════════════════════════════════════════════════════════════════════════╗
@@ -3948,7 +3949,7 @@ function openAddCheckpoint() {
     var ov = document.createElement('div');
     ov.className = 'modal-ov'; ov.id = 'modal-add-cp';
     ov.innerHTML = '<div class="modal">'
-      + '<div class="modal-hdr"><span class="modal-title" id="add-cp-title">Add Checkpoint</span><button class="modal-close" onclick="closeModal(\'modal-add-cp\')">&#x2715;</button></div>'
+      + '<div class="modal-hdr"><span class="modal-title" id="add-cp-title">Add Checkpoint</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-add-cp\')">&#x2715;</button></div>'
       + '<div class="modal-bdy">'
       + '<div class="fg"><label>Checkpoint Name</label><input type="text" id="cp-name" placeholder="e.g. Main Lobby, Pool Deck, Rooftop"></div>'
       + '<div class="fg"><label>Location / Floor</label><input type="text" id="cp-location" placeholder="e.g. 1st Floor, 28th Floor"></div>'
@@ -4021,7 +4022,7 @@ function openManualScan() {
     var ov = document.createElement('div');
     ov.className = 'modal-ov'; ov.id = 'modal-manual-scan';
     ov.innerHTML = '<div class="modal">'
-      + '<div class="modal-hdr"><span class="modal-title">Manual Patrol Log</span><button class="modal-close" onclick="closeModal(\'modal-manual-scan\')">&#x2715;</button></div>'
+      + '<div class="modal-hdr"><span class="modal-title">Manual Patrol Log</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-manual-scan\')">&#x2715;</button></div>'
       + '<div class="modal-bdy" id="manual-scan-bdy"></div>'
       + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-manual-scan\')">Cancel</button><button class="btn btn-primary" id="manual-scan-save">Log Entry</button></div>'
       + '</div>';
@@ -4090,7 +4091,7 @@ function openQRPrintSelector() {
     var ov = document.createElement('div');
     ov.className = 'modal-ov'; ov.id = 'modal-qr-select';
     ov.innerHTML = '<div class="modal">'
-      + '<div class="modal-hdr"><span class="modal-title">Select Checkpoints to Print</span><button class="modal-close" onclick="closeModal(\'modal-qr-select\')">&#x2715;</button></div>'
+      + '<div class="modal-hdr"><span class="modal-title">Select Checkpoints to Print</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-qr-select\')">&#x2715;</button></div>'
       + '<div class="modal-bdy" id="qr-select-bdy"></div>'
       + '<div class="modal-ftr">'
       + '<button class="btn btn-secondary" onclick="closeModal(\'modal-qr-select\')">Cancel</button>'
@@ -5644,7 +5645,7 @@ function openPdItem(secKey) {
   if (!ov) {
     ov = document.createElement('div');
     ov.className = 'modal-ov'; ov.id = 'modal-pd-item';
-    ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title" id="pdi-modal-title">Add Item</span><button class="modal-close" onclick="closeModal(\'modal-pd-item\')">&#x2715;</button></div>'
+    ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title" id="pdi-modal-title">Add Item</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-pd-item\')">&#x2715;</button></div>'
       + '<div class="modal-bdy">'
       + '<div class="fr" id="pdi-unit-row"><div class="fg"><label>Unit # <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input type="text" id="pdi-unit" placeholder="e.g. 619"></div><div class="fg"><label>Resident Name <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input type="text" id="pdi-resident"></div></div>'
       + '<div class="fg"><label id="pdi-desc-label">Description</label><textarea id="pdi-desc" rows="2" placeholder="What happened / what is the situation?"></textarea></div>'
@@ -6221,7 +6222,7 @@ function reviewBeforeSend() {
     ov.className = 'modal-ov'; ov.id = 'modal-pd-review';
     document.body.appendChild(ov);
   }
-  ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Review Before Sending</span><button class="modal-close" onclick="closeModal(\'modal-pd-review\')">&#x2715;</button></div>'
+  ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Review Before Sending</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-pd-review\')">&#x2715;</button></div>'
     + '<div class="modal-bdy">' + html + '</div>'
     + '<div class="modal-ftr">'
     + '<button class="btn btn-secondary" onclick="closeModal(\'modal-pd-review\')">Go Back &amp; Edit</button>'
@@ -6270,7 +6271,7 @@ function checkPassdownAcknowledgementOnLogin() {
   if (!pending) return;
   var ov = g('modal-pd-ack');
   if (!ov) { ov = document.createElement('div'); ov.className = 'modal-ov'; ov.id = 'modal-pd-ack'; document.body.appendChild(ov); }
-  ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Review Last Passdown</span><button class="modal-close" onclick="closeModal(\'modal-pd-ack\')">&#x2715;</button></div>'
+  ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Review Last Passdown</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-pd-ack\')">&#x2715;</button></div>'
     + '<div class="modal-bdy">'
     + '<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Sent by <strong>' + esc(pending.authorName || 'Front Desk') + '</strong> · ' + esc(pending.shift || '') + ' · ' + fmtShort(pending.date) + '</div>'
     + '<pre style="white-space:pre-wrap;max-height:46vh;overflow:auto;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;font-family:var(--mono);font-size:11px;color:var(--text);line-height:1.45">' + esc(pending.text) + '</pre>'
@@ -7312,7 +7313,7 @@ function openTeamEntryModal(entry) {
     var ov = document.createElement('div');
     ov.className = 'modal-ov'; ov.id = 'modal-team-entry';
     ov.innerHTML = '<div class="modal">'
-      + '<div class="modal-hdr"><span class="modal-title" id="team-entry-modal-title">Log Team Entry</span><button class="modal-close" onclick="closeModal(\'modal-team-entry\')">&#x2715;</button></div>'
+      + '<div class="modal-hdr"><span class="modal-title" id="team-entry-modal-title">Log Team Entry</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-team-entry\')">&#x2715;</button></div>'
       + '<div class="modal-bdy" id="team-entry-bdy"></div>'
       + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-team-entry\')">Cancel</button><button class="btn btn-primary" id="team-entry-save-btn" onclick="saveTeamEntry()">Save Entry</button></div>'
       + '</div>';
@@ -7965,7 +7966,7 @@ function checkCarriedItemsOnLogin() {
   var ov = g('modal-login-carried');
   if (!ov) { ov = document.createElement('div'); ov.className = 'modal-ov'; ov.id = 'modal-login-carried'; document.body.appendChild(ov); }
   ov._carriedItems = carriedItems;
-  ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">👋 Welcome back, ' + esc(firstName) + '</span><button class="modal-close" onclick="closeModal(\'modal-login-carried\')">&#x2715;</button></div>'
+  ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">👋 Welcome back, ' + esc(firstName) + '</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-login-carried\')">&#x2715;</button></div>'
     + '<div class="modal-bdy" style="max-height:70vh;overflow-y:auto">' + html + '</div>'
     + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-login-carried\')">Skip for now</button>'
     + '<button class="btn btn-primary" onclick="addCarriedItemsToTodos()">Add Selected to My To-Do →</button></div></div>';
@@ -8144,7 +8145,7 @@ function editAccount(id) {
   if (!ov) {
     ov = document.createElement('div');
     ov.className = 'modal-ov'; ov.id = 'modal-edit-account';
-    ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Edit Account</span><button class="modal-close" onclick="closeModal(\'modal-edit-account\')">&#x2715;</button></div>'
+    ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Edit Account</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-edit-account\')">&#x2715;</button></div>'
       + '<div class="modal-bdy" id="edit-account-bdy"></div>'
       + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-edit-account\')">Cancel</button><button class="btn btn-primary" id="ea-save-btn">Save Changes</button></div></div>';
     document.body.appendChild(ov);
@@ -8182,7 +8183,7 @@ function openAddAccount() {
   if (!ov) {
     ov = document.createElement('div');
     ov.className = 'modal-ov'; ov.id = 'modal-add-account';
-    ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Add Team Member</span><button class="modal-close" onclick="closeModal(\'modal-add-account\')">&#x2715;</button></div>'
+    ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Add Team Member</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-add-account\')">&#x2715;</button></div>'
       + '<div class="modal-bdy" id="add-account-bdy"></div>'
       + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-add-account\')">Cancel</button><button class="btn btn-primary" onclick="saveNewAccount()">Add Account</button></div></div>';
     document.body.appendChild(ov);
