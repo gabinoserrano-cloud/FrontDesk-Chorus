@@ -707,6 +707,7 @@
                   <select id="pd-lookahead" onchange="renderPdAutoBlocks(true);pdSaveDraft()"><option value="1">Today + Tomorrow</option><option value="2">Today + 2 days</option></select>
                 </div>
               </div>
+              <div id="pd-tips-wrap"></div>
               <div id="pd-shift-summary-block" style="margin-bottom:12px;padding:12px 14px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border)">
                 <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Shift Summary <span style="color:var(--red);font-weight:400;font-size:10px;text-transform:none;letter-spacing:0">Required before generating</span></div>
                 <div style="display:flex;gap:6px;margin-bottom:8px" id="pd-tone-btns">
@@ -848,6 +849,11 @@
             <input type="text" id="passdown-recips" placeholder="chorus-all@alignrealestate.com">
           </div>
           <button class="btn btn-primary btn-sm" onclick="savePassdownDeliverySettings()">Save</button>
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border2)">
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Passdown Tips</div>
+            <p style="font-size:12px;color:var(--text3);margin-bottom:8px">Shows the quick-start guide the next time you open the Passdown section.</p>
+            <button class="btn btn-secondary btn-sm" onclick="resetPdTips()">&#8635; Show passdown tips again</button>
+          </div>
         </div>
       </div>
 
@@ -1261,7 +1267,6 @@
     <div class="fr"><div class="fg"><label>Unit #</label><input id="rp-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Resident Name</label><input id="rp-name" type="text"></div></div>
     <div style="padding:4px 0 2px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="rp-blueground"> <span>&#128309; <strong>Blueground Unit</strong> — Managed by Blueground</span></label></div>
     <div class="fr"><div class="fg"><label>Preferred Name / Nickname</label><input id="rp-preferred" type="text" placeholder="e.g. Mike"></div><div class="fg"><label>Phone (optional)</label><input id="rp-phone" type="text"></div></div>
-    <div class="fr"><div class="fg"><label>Birthday</label><input id="rp-birthday" type="date" data-no-autofill></div><div class="fg"><label>Lease Anniversary</label><input id="rp-anniversary" type="date" data-no-autofill></div></div>
     <div class="fr"><div class="fg"><label>&#128246; WiFi Expiration Date</label><input id="rp-wifi-expiry" type="date" data-no-autofill></div><div class="fg" id="rp-wifi-hint" style="display:flex;align-items:flex-end;padding-bottom:6px;font-size:12px;color:var(--text3)"></div></div>
     <div class="fr"><div class="fg"><label>&#128203; Lease Start Date</label><input id="rp-lease-start" type="date" data-no-autofill></div><div class="fg"><label>Lease End Date</label><input id="rp-lease-end" type="date" data-no-autofill></div></div>
     <div style="padding:2px 0 4px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="rp-m2m"> <span>Month-to-month (no fixed end date)</span></label></div>
@@ -1321,6 +1326,12 @@
     <div class="fg"><label>Notes (optional)</label><input id="sup-notes" type="text" placeholder="Any notes about this item"></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-supply')">Cancel</button><button class="btn btn-primary" onclick="saveSupply()">Save Item</button></div>
+</div></div>
+
+<div class="modal-ov" id="modal-help"><div class="modal" style="max-width:560px">
+  <div class="modal-hdr"><span class="modal-title" id="modal-help-title">Section Guide</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-help')">&#x2715;</button></div>
+  <div class="modal-bdy guide-card-body" id="modal-help-body" style="font-size:13px;line-height:1.7;max-height:70vh;overflow-y:auto"></div>
+  <div class="modal-ftr"><button class="btn btn-primary" onclick="closeModal('modal-help')">Got it</button></div>
 </div></div>
 
 <div id="login-overlay">
@@ -1819,10 +1830,16 @@ var SEC_ACTIONS = {
   todos: ''
 };
 var curSec = 'dashboard';
+var SEC_HELP = { passdown: 'g-passdown', concierge: 'g-concierge', moves: 'g-moves', keys: 'g-keys' };
 function getSecActions(sec) {
   var isStaff = currentUser && currentUser.role === 'staff';
-  if (isStaff && (sec === 'moves')) return '';
-  return SEC_ACTIONS[sec] || '';
+  if (isStaff && (sec === 'moves')) return helpBtn(sec);
+  var base = SEC_ACTIONS[sec] || '';
+  return base + helpBtn(sec);
+}
+function helpBtn(sec) {
+  if (!SEC_HELP[sec]) return '';
+  return '<button class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:13px;color:var(--text3)" title="How to use this section" onclick="showSectionHelp(\'' + SEC_HELP[sec] + '\')">?</button>';
 }
 function nav(item) {
   var sec = item.dataset.sec;
@@ -2005,6 +2022,7 @@ function renderDash() {
   var wEnd = d7.toISOString().split('T')[0];
   var weekM = active.filter(function (m) { return m.date >= t && m.date <= wEnd; });
   var openMt = (state.maintenance || []).filter(function (m) { return m.status !== 'resolved'; });
+  var openConcierge = (state.concierge || []).filter(function (c) { return c.status === 'open'; });
   var issuedK = (state.keys || []).filter(function (k) { return k.status === 'issued'; });
   var pendTd = getCurrentTodos().filter(function (t2) { return !t2.done; });
   var unclLAF = (state.laf || []).filter(function (i) { return !i.claimedAt; });
@@ -2028,6 +2046,7 @@ function renderDash() {
   html += '<div class="stat-grid">';
   html += '<div class="stat-card stat-clickable" onclick="navToMoves(\'today\')"><div class="stat-num">' + todayM.length + '</div><div class="stat-lbl">Moves Today</div></div>';
   html += '<div class="stat-card stat-clickable" onclick="navToMoves(\'all\')"><div class="stat-num">' + weekM.length + '</div><div class="stat-lbl">Next 7 Days</div></div>';
+  html += '<div class="stat-card stat-clickable ' + (openConcierge.length > 0 ? 'accent' : '') + '" onclick="navToSec(\'concierge\')"><div class="stat-num">' + openConcierge.length + '</div><div class="stat-lbl">Open Requests</div></div>';
   html += '<div class="stat-card stat-clickable ' + (openMt.length > 0 ? 'red' : '') + '" onclick="navToSec(\'maintenance\')"><div class="stat-num">' + openMt.length + '</div><div class="stat-lbl">Open Maintenance</div></div>';
   html += '<div class="stat-card stat-clickable ' + (issuedK.length > 0 ? 'accent' : '') + '" onclick="navToSec(\'keys\')"><div class="stat-num">' + issuedK.length + '</div><div class="stat-lbl">Keys Out</div></div>';
   html += '<div class="stat-card stat-clickable" onclick="navToSec(\'todos\')"><div class="stat-num">' + pendTd.length + '</div><div class="stat-lbl">Pending To-Dos</div></div>';
@@ -2777,6 +2796,18 @@ function archiveMove(id) {
     // Ensure vacant unit is marked occupied on archive
     var vacUnit = (state.units || []).find(function(u){ return u.unit === m.unit; });
     if (vacUnit && vacUnit.status !== 'occupied') { vacUnit.status = 'occupied'; scheduleSave(); }
+  }
+  // ── Connection: Move-out archive → offer to archive Resident Profile ──
+  if (m.type === 'out') {
+    var profile = (state.residentProfiles || []).find(function(p) { return p.unit === m.unit && !p.archivedAt; });
+    if (profile) {
+      if (confirm('Archive the resident profile for ' + profile.residentName + ' (Unit ' + m.unit + ')?\n\nTheir info will be saved in history but removed from the active profiles list.')) {
+        profile.archivedAt = Date.now();
+        profile.moveOutAt = Date.now();
+        scheduleSave();
+        toast('Profile archived for ' + profile.residentName);
+      }
+    }
   }
   // ── Connection: Move-out archive → return to Vacant Units ──
   if (m.type === 'out') {
@@ -4649,7 +4680,7 @@ function openAddResidentFromMoveId(moveId) {
 }
 function openAddResidentFromMove(m) {
   editingResidentId = null;
-  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-birthday','rp-anniversary','rp-wifi-expiry','rp-lease-start','rp-lease-end','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit','rp-pet-notes','rp-vehicle-info'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-wifi-expiry','rp-lease-start','rp-lease-end','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit','rp-pet-notes','rp-vehicle-info'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
   var wh = g('rp-wifi-hint'); if (wh) wh.innerHTML = '';
   g('rp-pte').value = 'not-set'; g('rp-parking').value = 'none'; g('rp-bike').value = 'none'; g('rp-storage').value = 'none';
   ['rp-m2m','rp-blueground','rp-has-pet','rp-has-vehicle'].forEach(function(id){ var el=g(id); if(el) el.checked=false; });
@@ -4662,7 +4693,7 @@ function openAddResidentFromMove(m) {
 }
 function openAddResident() {
   editingResidentId = null;
-  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-birthday','rp-anniversary','rp-wifi-expiry','rp-lease-start','rp-lease-end','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit','rp-pet-notes','rp-vehicle-info'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-wifi-expiry','rp-lease-start','rp-lease-end','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit','rp-pet-notes','rp-vehicle-info'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
   var wh = g('rp-wifi-hint'); if (wh) wh.innerHTML = '';
   var m2m = g('rp-m2m'); if (m2m) m2m.checked = false;
   g('rp-pte').value = 'not-set';
@@ -4682,8 +4713,6 @@ function openEditResident(id) {
   g('rp-name').value = r.residentName || '';
   g('rp-preferred').value = r.preferredName || '';
   g('rp-phone').value = r.phone || '';
-  g('rp-birthday').value = r.birthday || '';
-  g('rp-anniversary').value = r.anniversary || '';
   g('rp-instructions').value = r.instructions || '';
   g('rp-pte').value = r.pte || 'not-set';
   g('rp-notes').value = r.notes || '';
@@ -4722,7 +4751,7 @@ function saveResident() {
     var r = (state.residentProfiles || []).find(function(x){ return x.id===editingResidentId; }); if (!r) return;
     var _rb = Object.assign({}, r);
     var bgCbS = g('rp-blueground');
-    r.unit=unit; r.residentName=name; r.preferredName=g('rp-preferred').value.trim(); r.phone=g('rp-phone').value.trim(); r.birthday=g('rp-birthday').value; r.anniversary=g('rp-anniversary').value; r.instructions=g('rp-instructions').value.trim(); r.pte=g('rp-pte').value; r.notes=g('rp-notes').value.trim(); r.wifiExpiry=g('rp-wifi-expiry').value||''; r.leaseStart=g('rp-lease-start').value||''; r.leaseEnd=g('rp-lease-end').value||''; r.monthToMonth=!!(g('rp-m2m')&&g('rp-m2m').checked);
+    r.unit=unit; r.residentName=name; r.preferredName=g('rp-preferred').value.trim(); r.phone=g('rp-phone').value.trim(); r.instructions=g('rp-instructions').value.trim(); r.pte=g('rp-pte').value; r.notes=g('rp-notes').value.trim(); r.wifiExpiry=g('rp-wifi-expiry').value||''; r.leaseStart=g('rp-lease-start').value||''; r.leaseEnd=g('rp-lease-end').value||''; r.monthToMonth=!!(g('rp-m2m')&&g('rp-m2m').checked);
     r.parking=g('rp-parking').value; r.parkingInfo=g('rp-parking-info').value.trim(); r.bike=g('rp-bike').value; r.bikeNotes=g('rp-bike-notes').value.trim(); r.storage=g('rp-storage').value; r.storageUnit=g('rp-storage-unit').value.trim(); r.blueground=bgCbS?!!bgCbS.checked:false;
     r.hasPet=!!(g('rp-has-pet')&&g('rp-has-pet').checked); r.petNotes=g('rp-pet-notes')?g('rp-pet-notes').value.trim():''; r.hasVehicle=!!(g('rp-has-vehicle')&&g('rp-has-vehicle').checked); r.vehicleInfo=g('rp-vehicle-info')?g('rp-vehicle-info').value.trim():'';
     pushUndo({ sec: 'residents', type: 'EDIT', id: r.id, before: _rb, after: Object.assign({}, r), label: 'profile edit — Unit ' + unit });
@@ -4734,7 +4763,7 @@ function saveResident() {
     if (!confirm('Unit ' + unit + ' already has a profile (' + names + '). Add another profile for this unit?')) return;
   }
   var bgCbN = g('rp-blueground');
-  var entry = { id: uid(), unit: unit, residentName: name, preferredName: g('rp-preferred').value.trim(), phone: g('rp-phone').value.trim(), birthday: g('rp-birthday').value, anniversary: g('rp-anniversary').value, instructions: g('rp-instructions').value.trim(), pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), wifiExpiry: g('rp-wifi-expiry').value||'', leaseStart: g('rp-lease-start').value||'', leaseEnd: g('rp-lease-end').value||'', monthToMonth: !!(g('rp-m2m')&&g('rp-m2m').checked), parking: g('rp-parking').value, parkingInfo: g('rp-parking-info').value.trim(), bike: g('rp-bike').value, bikeNotes: g('rp-bike-notes').value.trim(), storage: g('rp-storage').value, storageUnit: g('rp-storage-unit').value.trim(), blueground: bgCbN?!!bgCbN.checked:false, hasPet: !!(g('rp-has-pet')&&g('rp-has-pet').checked), petNotes: g('rp-pet-notes')?g('rp-pet-notes').value.trim():'', hasVehicle: !!(g('rp-has-vehicle')&&g('rp-has-vehicle').checked), vehicleInfo: g('rp-vehicle-info')?g('rp-vehicle-info').value.trim():'', createdAt: Date.now() };
+  var entry = { id: uid(), unit: unit, residentName: name, preferredName: g('rp-preferred').value.trim(), phone: g('rp-phone').value.trim(), instructions: g('rp-instructions').value.trim(), pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), wifiExpiry: g('rp-wifi-expiry').value||'', leaseStart: g('rp-lease-start').value||'', leaseEnd: g('rp-lease-end').value||'', monthToMonth: !!(g('rp-m2m')&&g('rp-m2m').checked), parking: g('rp-parking').value, parkingInfo: g('rp-parking-info').value.trim(), bike: g('rp-bike').value, bikeNotes: g('rp-bike-notes').value.trim(), storage: g('rp-storage').value, storageUnit: g('rp-storage-unit').value.trim(), blueground: bgCbN?!!bgCbN.checked:false, hasPet: !!(g('rp-has-pet')&&g('rp-has-pet').checked), petNotes: g('rp-pet-notes')?g('rp-pet-notes').value.trim():'', hasVehicle: !!(g('rp-has-vehicle')&&g('rp-has-vehicle').checked), vehicleInfo: g('rp-vehicle-info')?g('rp-vehicle-info').value.trim():'', createdAt: Date.now() };
   if (!state.residentProfiles) state.residentProfiles = [];
   state.residentProfiles.push(entry); pushUndo({ sec: 'residents', type: 'ADD', id: entry.id, data: Object.assign({}, entry), label: 'add profile — Unit ' + unit }); logActivity('residents','create','Added resident profile — Unit '+unit+' · '+name); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile saved');
 }
@@ -5028,7 +5057,7 @@ function deleteSupply(id) {
 }
 
 function renderResidents() {
-  var list = (state.residentProfiles || []).slice();
+  var list = (state.residentProfiles || []).filter(function(r){ return !r.archivedAt; });
   if (residentsFilter === 'pte-granted') list = list.filter(function(r){ return r.pte==='granted'; });
   else if (residentsFilter === 'pte-denied') list = list.filter(function(r){ return r.pte==='denied'; });
   else if (residentsFilter === 'pte-not-set') list = list.filter(function(r){ return !r.pte || r.pte==='not-set'; });
@@ -5062,11 +5091,12 @@ function renderResidents() {
   }
   var banner = g('residents-pte-banner');
   if (banner) banner.style.display = (residentsFilter==='pte-granted'||residentsFilter==='pte-denied') ? '' : 'none';
-  var granted = (state.residentProfiles||[]).filter(function(r){ return r.pte==='granted'; }).length;
-  var denied = (state.residentProfiles||[]).filter(function(r){ return r.pte==='denied'; }).length;
-  var notset = (state.residentProfiles||[]).filter(function(r){ return !r.pte||r.pte==='not-set'; }).length;
-  var bgCount = (state.residentProfiles||[]).filter(function(r){ return !!r.blueground; }).length;
-  g('residents-stats').innerHTML = '<div class="stat-card green"><div class="stat-num">' + granted + '</div><div class="stat-lbl">PTE Granted</div></div><div class="stat-card red"><div class="stat-num">' + denied + '</div><div class="stat-lbl">PTE Denied</div></div><div class="stat-card"><div class="stat-num">' + notset + '</div><div class="stat-lbl">PTE Not Set</div></div><div class="stat-card" style="border-left:3px solid #3b82f6"><div class="stat-num">' + bgCount + '</div><div class="stat-lbl">Blueground</div></div><div class="stat-card"><div class="stat-num">' + (state.residentProfiles||[]).length + '</div><div class="stat-lbl">Total Profiles</div></div>';
+  var activeProfiles = (state.residentProfiles||[]).filter(function(r){ return !r.archivedAt; });
+  var granted = activeProfiles.filter(function(r){ return r.pte==='granted'; }).length;
+  var denied = activeProfiles.filter(function(r){ return r.pte==='denied'; }).length;
+  var notset = activeProfiles.filter(function(r){ return !r.pte||r.pte==='not-set'; }).length;
+  var bgCount = activeProfiles.filter(function(r){ return !!r.blueground; }).length;
+  g('residents-stats').innerHTML = '<div class="stat-card green"><div class="stat-num">' + granted + '</div><div class="stat-lbl">PTE Granted</div></div><div class="stat-card red"><div class="stat-num">' + denied + '</div><div class="stat-lbl">PTE Denied</div></div><div class="stat-card"><div class="stat-num">' + notset + '</div><div class="stat-lbl">PTE Not Set</div></div><div class="stat-card" style="border-left:3px solid #3b82f6"><div class="stat-num">' + bgCount + '</div><div class="stat-lbl">Blueground</div></div><div class="stat-card"><div class="stat-num">' + activeProfiles.length + '</div><div class="stat-lbl">Total Profiles</div></div>';
   var cnt = g('residents-count'); if (cnt) cnt.textContent = list.length + ' profiles';
   var grid = g('residents-grid');
   if (!list.length) { grid.innerHTML = '<div class="text-3 text-sm">' + (residentsFilter === 'blueground' ? 'No Blueground profiles yet. Add a profile and check the Blueground box.' : 'No profiles yet. Add a profile to track resident preferences, important dates, and PTE status.') + '</div>'; return; }
@@ -5079,10 +5109,8 @@ function renderResidents() {
     html += '<div style="background:var(--surface);' + borderStyle + 'border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)">';
     html += '<div class="flex items-center gap-8 mb-8"><span class="unit-num" style="font-size:15px">Unit ' + esc(r.unit) + '</span><span class="pte-badge ' + pteClass[pte] + '">' + pteLabel[pte] + '</span>' + (r.blueground ? '<span style="font-size:10px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600;margin-left:auto">&#128309; Blueground</span>' : '') + '</div>';
     html += '<div style="font-weight:600;font-size:14px">' + esc(r.residentName) + (r.preferredName ? ' <span style="font-weight:400;color:var(--text3);font-size:12px">(' + esc(r.preferredName) + ')</span>' : '') + '</div>';
-    if (r.phone) html += '<div style="font-size:12px;color:var(--text3);margin-top:2px">&#128222; <a href="tel:' + esc(r.phone) + '" style="color:inherit;text-decoration:none">' + esc(r.phone) + '</a></div>';
+    if (r.phone) html += '<div style="font-size:12px;color:var(--text3);margin-top:2px">&#128222; ' + esc(r.phone) + '</div>';
     var dates = [];
-    if (r.birthday) dates.push('&#127874; Birthday: ' + fmtShort(r.birthday));
-    if (r.anniversary) dates.push('&#127981; Lease anniversary: ' + fmtShort(r.anniversary));
     if (r.wifiExpiry) {
       var wt = today(), wd3 = new Date(); wd3.setDate(wd3.getDate()+3); var wd3s = wd3.toISOString().split('T')[0];
       if (r.wifiExpiry < wt) dates.push('<span style="color:var(--red);font-weight:600">&#128246; WiFi EXPIRED ' + fmtShort(r.wifiExpiry) + '</span>');
@@ -5212,6 +5240,28 @@ function pdToggleExclude(key) {
 function renderPassdown() {
   pdLoadDraft();
   var isLead = currentUser && currentUser.role === 'admin';
+  var tipsWrap = g('pd-tips-wrap');
+  if (tipsWrap) {
+    var uid_ = currentUser ? currentUser.id : 'anon';
+    var dismissed = false;
+    try { dismissed = !!localStorage.getItem('pd_tips_dismissed_' + uid_); } catch(e) {}
+    if (!dismissed) {
+      tipsWrap.innerHTML = '<div style="background:var(--accent-light);border:1px solid rgba(26,92,62,0.18);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;font-size:13px;line-height:1.65">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
+        + '<strong style="color:var(--accent);font-size:11px;text-transform:uppercase;letter-spacing:.6px">How the passdown works</strong>'
+        + '<button onclick="dismissPdTips()" style="background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:0 2px;line-height:1" title="Dismiss">&#x2715;</button>'
+        + '</div>'
+        + '<ul style="color:var(--text2);padding-left:16px;margin:0">'
+        + '<li style="margin-bottom:4px"><strong>Auto-blocks</strong> pull live data — keys out, today\'s moves, amenity bookings, and open concierge requests. No manual entry needed.</li>'
+        + '<li style="margin-bottom:4px">Each item has an editable <strong>Next step</strong> field. Leave it as-is or type to override before generating.</li>'
+        + '<li style="margin-bottom:4px">Click <strong>&ndash;</strong> on any item to exclude it. Click <strong>＋</strong> to re-include.</li>'
+        + '<li>Fill in the <strong>Shift Summary</strong>, then click <strong>Generate &rarr; Review &amp; Send</strong> or <strong>Save Draft</strong>.</li>'
+        + '</ul>'
+        + '</div>';
+    } else {
+      tipsWrap.innerHTML = '';
+    }
+  }
   var laWrap = g('pd-lookahead-wrap');
   if (laWrap) laWrap.style.display = isLead ? '' : 'none';
   // Restore shift/lookahead from draft
@@ -7472,6 +7522,23 @@ function savePassdownDeliverySettings() {
   getPassdownSettings().recipients = el.value.trim();
   scheduleSave();
   toast('Passdown delivery settings saved');
+}
+function dismissPdTips() {
+  var uid_ = currentUser ? currentUser.id : 'anon';
+  try { localStorage.setItem('pd_tips_dismissed_' + uid_, '1'); } catch(e) {}
+  var wrap = g('pd-tips-wrap'); if (wrap) wrap.innerHTML = '';
+}
+function resetPdTips() {
+  var uid_ = currentUser ? currentUser.id : 'anon';
+  try { localStorage.removeItem('pd_tips_dismissed_' + uid_); } catch(e) {}
+  toast('Passdown tips will show on your next visit to the Passdown section');
+}
+function showSectionHelp(guideId) {
+  var entry = GUIDE_DATA.find(function(s) { return s.id === guideId; });
+  if (!entry) return;
+  var title = g('modal-help-title'); if (title) title.textContent = entry.title;
+  var body = g('modal-help-body'); if (body) body.innerHTML = entry.html;
+  openModal('modal-help');
 }
 
 function renderPatrolPinSettings() {
