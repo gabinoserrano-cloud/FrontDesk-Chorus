@@ -7577,10 +7577,7 @@ var PROP_DEFAULTS = {
   address: '30 Otis St',
   management: 'Align Real Estate',
   phone: '(415) 707-3030',
-  hours: '9am–6pm',
-  valetEmail: 'valet@parkmobile.io',
-  wifiEmail: 'support@wavebroadband.com',
-  wifiPhone: '1-844-691-7687'
+  hours: '24/7'
 };
 function getPropertyConfig() {
   return Object.assign({}, PROP_DEFAULTS, state.propertyConfig || {});
@@ -7596,14 +7593,11 @@ function renderAboutCard() {
   var pc = getPropertyConfig();
   var isAdmin = !currentUser || currentUser.role === 'admin';
   var editBtn = isAdmin ? '<button class="btn btn-ghost btn-xs ml-auto" onclick="editAboutCard()">&#9998; Edit</button>' : '';
-  var valetRow = pc.valetEmail ? '<div>Valet: <a href="mailto:' + esc(pc.valetEmail) + '">' + esc(pc.valetEmail) + '</a></div>' : '';
-  var wifiRow = pc.wifiEmail ? '<div>WiFi Support: <a href="mailto:' + esc(pc.wifiEmail) + '">' + esc(pc.wifiEmail) + '</a>' + (pc.wifiPhone ? ' &middot; ' + esc(pc.wifiPhone) : '') + '</div>' : '';
   el.innerHTML = '<div class="card-hdr"><span class="card-title">&#127960; Property Info</span>' + editBtn + '</div>'
     + '<div class="card-body" style="font-size:13px;color:var(--text2);line-height:1.8">'
     + '<div><strong>' + esc(pc.name) + ' Front Desk Hub</strong></div>'
     + '<div>' + esc(pc.address) + ' &middot; Managed by ' + esc(pc.management) + '</div>'
-    + '<div style="margin-top:8px">Front Desk: ' + esc(pc.phone) + ' &middot; Hours ' + esc(pc.hours) + '</div>'
-    + valetRow + wifiRow
+    + '<div style="margin-top:8px">Front Desk: ' + esc(pc.phone) + ' &middot; ' + esc(pc.hours) + '</div>'
     + '</div>';
 }
 function editAboutCard() {
@@ -7619,17 +7613,14 @@ function editAboutCard() {
     + field('Address', 'address', 'e.g. 30 Otis St')
     + field('Management Company', 'management', 'e.g. Align Real Estate')
     + field('Front Desk Phone', 'phone', 'e.g. (415) 707-3030')
-    + field('Front Desk Hours', 'hours', 'e.g. 9am–6pm')
-    + field('Valet Email (optional)', 'valetEmail', '')
-    + field('WiFi Support Email (optional)', 'wifiEmail', '')
-    + field('WiFi Support Phone (optional)', 'wifiPhone', '')
+    + field('Front Desk Hours', 'hours', 'e.g. 24/7')
     + '<div style="display:flex;gap:8px;margin-top:4px">'
     + '<button class="btn btn-primary btn-sm" onclick="savePropertyConfig()">Save</button>'
     + '<button class="btn btn-ghost btn-sm" onclick="renderAboutCard()">Cancel</button>'
     + '</div></div>';
 }
 function savePropertyConfig() {
-  var keys = ['name','address','management','phone','hours','valetEmail','wifiEmail','wifiPhone'];
+  var keys = ['name','address','management','phone','hours'];
   var cfg = {};
   keys.forEach(function(k) { var el = g('pc-' + k); cfg[k] = el ? el.value.trim() : (getPropertyConfig()[k] || ''); });
   if (!cfg.name) { toast('Property name cannot be blank'); return; }
