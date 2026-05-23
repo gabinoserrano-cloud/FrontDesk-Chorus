@@ -521,8 +521,8 @@
 <div id="sidebar-wrap">
 <nav id="sidebar">
   <div class="sb-logo">
-    <div class="bldg">Chorus SF</div>
-    <div class="sub">30 Otis St &middot; Front Desk</div>
+    <div class="bldg" id="sb-bldg-name">Chorus SF</div>
+    <div class="sub" id="sb-bldg-sub">30 Otis St &middot; Front Desk</div>
     <div class="date-chip" id="today-chip"></div>
   </div>
   <div class="nav-group">
@@ -818,14 +818,8 @@
     <div class="section" id="section-settings">
 
       <!-- ── About ── -->
-      <div class="card mb-12">
-        <div class="card-body" style="font-size:13px;color:var(--text2);line-height:1.8">
-          <div><strong>Chorus SF Front Desk Hub</strong></div>
-          <div>30 Otis St &middot; Managed by Align Real Estate</div>
-          <div style="margin-top:8px">Front Desk: (415) 707-3030 &middot; Hours 9am&ndash;6pm</div>
-          <div>Valet: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b8dbd0d7cacdcbf8cdd6d1ccdddccbdec8d9cad3d1d6df96dbd7d5">[email&#160;protected]</a></div>
-          <div>WiFi Support: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="592b362f3c2b2a2c2929362b2d193b38303a3637373c3a2d773a3634">[email&#160;protected]</a> &middot; 1-844-691-7687</div>
-        </div>
+      <div class="card mb-12" id="about-card">
+        <div id="about-card-inner"></div>
       </div>
 
       <!-- ── Appearance (all users) ── -->
@@ -1525,7 +1519,7 @@ function applyIcons() {
   });
 }
 
-var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [], templates: [] };
+var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [], templates: [], propertyConfig: {} };
 var teamUnlocked = false;
 
 var currentUser = null;
@@ -1729,7 +1723,7 @@ function today() {
 function fmtShort(d) { if (!d) return '-'; return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
 function toast(msg) { var e = g('toast'); e.textContent = msg; e.classList.add('show'); setTimeout(function () { e.classList.remove('show'); }, 2500); }
 function g(id) { return document.getElementById(id); }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, parking: [], security: [] }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, parking: [], security: [], propertyConfig: {} }; }
 
 // ─── UNDO / REDO ───
 var undoStack = [];
@@ -4180,7 +4174,8 @@ function printQRSheet(selectedIds) {
       + (cp.location ? '<div class="qr-sub">' + cp.location + '</div>' : '')
       + '</div>';
   });
-  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>30 Otis \u2014 Patrol Checkpoints</title>'
+  var _pc = getPropertyConfig();
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + _pc.name + ' \u2014 Patrol Checkpoints</title>'
     + '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Georgia,serif;padding:24px;background:#fff;color:#111}'
     + '.hdr{font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:#aaa;margin-bottom:20px}'
     + '.grid{display:flex;flex-wrap:wrap;gap:16px}'
@@ -4189,7 +4184,7 @@ function printQRSheet(selectedIds) {
     + '.qr-sub{font-size:10px;color:#999;margin-top:3px}'
     + '@media print{body{padding:12px}.grid{gap:10px}}</style>'
     + '</head><body>'
-    + '<div class="hdr">30 Otis St \u2014 Staff Checkpoint Reference \u2014 Confidential</div>'
+    + '<div class="hdr">' + _pc.address + ' \u2014 Staff Checkpoint Reference \u2014 Confidential</div>'
     + '<div class="grid">' + cards + '</div>'
     + '</body></html>');
   win.document.close();
@@ -4290,7 +4285,7 @@ function showScanOverlay(checkpointId) {
   var staff = (state.teamstaff || []);
   var remembered = localStorage.getItem('chorus-patrol-name') || '';
   var hdr = '<div style="font-size:22px;margin-bottom:10px">&#128737;</div>'
-    + '<div style="font-size:10px;letter-spacing:1px;color:var(--text3);text-transform:uppercase;margin-bottom:6px">30 Otis \u2014 Staff Check-in</div>'
+    + '<div style="font-size:10px;letter-spacing:1px;color:var(--text3);text-transform:uppercase;margin-bottom:6px">' + getPropertyConfig().name + ' \u2014 Staff Check-in</div>'
     + '<div style="font-size:20px;font-weight:600;margin-bottom:3px">' + cpName + '</div>'
     + (cpLoc ? '<div style="font-size:13px;color:var(--text2);margin-bottom:18px">' + cpLoc + '</div>' : '<div style="margin-bottom:18px"></div>');
   var content = '';
@@ -7576,6 +7571,76 @@ function toggleStaffNavSection(sec, visible) {
   scheduleSave(); renderNavVisibility();
 }
 
+// ===== [PROPERTY CONFIG] =====================================================
+var PROP_DEFAULTS = {
+  name: 'Chorus SF',
+  address: '30 Otis St',
+  management: 'Align Real Estate',
+  phone: '(415) 707-3030',
+  hours: '9am–6pm',
+  valetEmail: 'valet@parkmobile.io',
+  wifiEmail: 'support@wavebroadband.com',
+  wifiPhone: '1-844-691-7687'
+};
+function getPropertyConfig() {
+  return Object.assign({}, PROP_DEFAULTS, state.propertyConfig || {});
+}
+function updatePropertyUI() {
+  var pc = getPropertyConfig();
+  var nm = g('sb-bldg-name'); if (nm) nm.textContent = pc.name;
+  var sub = g('sb-bldg-sub'); if (sub) sub.textContent = pc.address + ' · Front Desk';
+  document.title = pc.name + ' — Front Desk';
+}
+function renderAboutCard() {
+  var el = g('about-card-inner'); if (!el) return;
+  var pc = getPropertyConfig();
+  var isAdmin = !currentUser || currentUser.role === 'admin';
+  var editBtn = isAdmin ? '<button class="btn btn-ghost btn-xs ml-auto" onclick="editAboutCard()">&#9998; Edit</button>' : '';
+  var valetRow = pc.valetEmail ? '<div>Valet: <a href="mailto:' + esc(pc.valetEmail) + '">' + esc(pc.valetEmail) + '</a></div>' : '';
+  var wifiRow = pc.wifiEmail ? '<div>WiFi Support: <a href="mailto:' + esc(pc.wifiEmail) + '">' + esc(pc.wifiEmail) + '</a>' + (pc.wifiPhone ? ' &middot; ' + esc(pc.wifiPhone) : '') + '</div>' : '';
+  el.innerHTML = '<div class="card-hdr"><span class="card-title">&#127960; Property Info</span>' + editBtn + '</div>'
+    + '<div class="card-body" style="font-size:13px;color:var(--text2);line-height:1.8">'
+    + '<div><strong>' + esc(pc.name) + ' Front Desk Hub</strong></div>'
+    + '<div>' + esc(pc.address) + ' &middot; Managed by ' + esc(pc.management) + '</div>'
+    + '<div style="margin-top:8px">Front Desk: ' + esc(pc.phone) + ' &middot; Hours ' + esc(pc.hours) + '</div>'
+    + valetRow + wifiRow
+    + '</div>';
+}
+function editAboutCard() {
+  var el = g('about-card-inner'); if (!el) return;
+  var pc = getPropertyConfig();
+  function field(label, key, placeholder) {
+    return '<div class="fg"><label style="font-size:12px">' + label + '</label>'
+      + '<input type="text" id="pc-' + key + '" value="' + esc(pc[key] || '') + '" placeholder="' + placeholder + '"></div>';
+  }
+  el.innerHTML = '<div class="card-hdr"><span class="card-title">&#127960; Edit Property Info</span></div>'
+    + '<div class="card-body">'
+    + field('Property Name', 'name', 'e.g. Chorus SF')
+    + field('Address', 'address', 'e.g. 30 Otis St')
+    + field('Management Company', 'management', 'e.g. Align Real Estate')
+    + field('Front Desk Phone', 'phone', 'e.g. (415) 707-3030')
+    + field('Front Desk Hours', 'hours', 'e.g. 9am–6pm')
+    + field('Valet Email (optional)', 'valetEmail', '')
+    + field('WiFi Support Email (optional)', 'wifiEmail', '')
+    + field('WiFi Support Phone (optional)', 'wifiPhone', '')
+    + '<div style="display:flex;gap:8px;margin-top:4px">'
+    + '<button class="btn btn-primary btn-sm" onclick="savePropertyConfig()">Save</button>'
+    + '<button class="btn btn-ghost btn-sm" onclick="renderAboutCard()">Cancel</button>'
+    + '</div></div>';
+}
+function savePropertyConfig() {
+  var keys = ['name','address','management','phone','hours','valetEmail','wifiEmail','wifiPhone'];
+  var cfg = {};
+  keys.forEach(function(k) { var el = g('pc-' + k); cfg[k] = el ? el.value.trim() : (getPropertyConfig()[k] || ''); });
+  if (!cfg.name) { toast('Property name cannot be blank'); return; }
+  if (!cfg.address) { toast('Address cannot be blank'); return; }
+  state.propertyConfig = cfg;
+  scheduleSave();
+  updatePropertyUI();
+  renderAboutCard();
+  toast('Property info saved');
+}
+
 // ===== [SETTINGS] ============================================================
 function renderSettings() {
   var isAdmin = !currentUser || currentUser.role === 'admin';
@@ -7588,6 +7653,7 @@ function renderSettings() {
   if (adminOnly) adminOnly.style.display = isAdmin ? '' : 'none';
   var yourAcctCard = g('settings-your-account-card');
   if (yourAcctCard) yourAcctCard.style.display = isStaff ? '' : 'none';
+  renderAboutCard();
   renderDisplaySettings();
   if (isAdmin) renderTeamAccounts();
   renderTaskList('in');
@@ -8315,7 +8381,7 @@ function checkFirstLoginWelcome() {
   if (!ov) { ov = document.createElement('div'); ov.className = 'modal-ov'; ov.id = 'modal-welcome'; document.body.appendChild(ov); }
   ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Welcome to the Dashboard</span><button class="modal-close" aria-label="Close" onclick="closeWelcomeModal(false)">&#x2715;</button></div>'
     + '<div class="modal-bdy">'
-    + '<p style="font-size:14px;margin-bottom:12px">Hi <strong>' + esc(firstName) + '</strong> — welcome to the Chorus SF Front Desk Hub.</p>'
+    + '<p style="font-size:14px;margin-bottom:12px">Hi <strong>' + esc(firstName) + '</strong> — welcome to the ' + esc(getPropertyConfig().name) + ' Front Desk Hub.</p>'
     + '<p style="font-size:13px;color:var(--text2);margin-bottom:10px">Here\'s how to get started:</p>'
     + '<ul style="font-size:13px;color:var(--text2);padding-left:16px;line-height:1.8;margin-bottom:14px">'
     + '<li>Log items in the right section as they happen during your shift</li>'
@@ -8574,6 +8640,7 @@ async function init() {
   try { var params = new URLSearchParams(window.location.search); pendingScanId = params.get('scan'); } catch(e) {}
   await pullCloud();
   migrateTaskUpdatesV2();
+  updatePropertyUI();
   lastSyncTs = Date.now();
   if (pendingScanId) {
     // Page opened via QR code — hide the dashboard entirely until after the scan
