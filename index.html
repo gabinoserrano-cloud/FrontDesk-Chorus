@@ -8164,8 +8164,11 @@ function closeWelcomeModal(fromButton) {
     if (dontShow && dontShow.checked) {
       try { localStorage.setItem('welcome_seen_' + currentUser.id, '1'); } catch(e) {}
     }
+    closeModal('modal-welcome');
+    nav('guide');
+  } else {
+    closeModal('modal-welcome');
   }
-  closeModal('modal-welcome');
 }
 
 // ===== [LOGIN / AUTH] ========================================================
