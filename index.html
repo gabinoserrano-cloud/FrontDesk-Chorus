@@ -2250,8 +2250,8 @@ function updateMoveModalLabels() {
 function buildTimeSlots() {
   var sel = g('mv-appt-time'); if (!sel) return;
   sel.innerHTML = '<option value="">— No appointment yet —</option>';
-  var hour = 8, min = 0;
-  while (hour < 17 || (hour === 17 && min === 30)) {
+  var hour = 6, min = 0;
+  while (hour < 21) {
     var h12 = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
     var ampm = hour < 12 ? 'am' : 'pm';
     var label = h12 + ':' + (min === 0 ? '00' : min) + ampm;
@@ -2415,6 +2415,10 @@ function saveMove() {
   scheduleSave(); closeModal('modal-move'); openMoveId = m.id; renderMoves(); updateBadges(); renderDash();
   ['mv-unit', 'mv-resident', 'mv-total', 'mv-notes'].forEach(function (id) { g(id).value = ''; });
   toast('Move added \u2014 welcome & follow-up call todos created');
+  if (moveType === 'in') {
+    var alreadyHasProfile = (state.residentProfiles || []).some(function(p){ return p.unit === m.unit && !p.archivedAt; });
+    if (!alreadyHasProfile) setTimeout(function(){ openAddResidentFromMove(m); }, 400);
+  }
 }
 function filterMoves(f, item) { moveFilter = f; document.querySelectorAll('#moves-tabs .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderMoves(); }
 function toggleMoveLogged() {
@@ -2452,7 +2456,12 @@ function buildCL(m, filterCat) {
       + cr.name
       + '<button onclick="event.stopPropagation();removeCoResident(\'' + m.id + '\',\'' + cr.id + '\')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;line-height:1;padding:0 0 0 2px" title="Remove">&times;</button></span>';
   });
-  html += '<button class="btn btn-ghost btn-xs" style="font-size:11px" onclick="event.stopPropagation();addCoResident(\'' + m.id + '\')">+ Roommate</button>';
+  html += '<button class="btn btn-ghost btn-xs" style="font-size:11px" id="coadd-btn-' + m.id + '" onclick="event.stopPropagation();openCoResidentInput(\'' + m.id + '\')">+ Roommate</button>';
+  html += '<span id="coadd-form-' + m.id + '" style="display:none;align-items:center;gap:4px">';
+  html += '<input type="text" id="coadd-input-' + m.id + '" placeholder="Roommate name" style="font-size:11px;padding:2px 6px;border:1px solid var(--border2);border-radius:4px;background:var(--surface);color:var(--text);width:130px" onkeydown="if(event.key===\'Enter\'){addCoResident(\'' + m.id + '\',this.value);}" onclick="event.stopPropagation()">';
+  html += '<button class="btn btn-primary btn-xs" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();addCoResident(\'' + m.id + '\',document.getElementById(\'coadd-input-' + m.id + '\').value)">Add</button>';
+  html += '<button class="btn btn-ghost btn-xs" style="font-size:11px;padding:2px 5px" onclick="event.stopPropagation();closeCoResidentInput(\'' + m.id + '\')">&#x2715;</button>';
+  html += '</span>';
   if (totalResidents > 1) html += '<span style="font-size:11px;color:var(--text3);margin-left:auto">' + totalResidents + ' residents total</span>';
   html += '</div></div>';
   if (!tasks.length) { html += '<div class="text-3 text-sm" style="padding:8px 0">No tasks yet.</div>'; return html; }
@@ -2462,9 +2471,12 @@ function buildCL(m, filterCat) {
     html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTask(\'' + m.id + '\',\'' + t.id + '\',this.checked)">';
     // Editable task text
     html += '<input type="text" class="cl-text-input ' + (t.done ? 'done' : '') + '" value="' + (t.text || t.label || '').replace(/"/g, '&quot;') + '" onblur="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'text\',this.value)" onclick="event.stopPropagation()">';
-    // Quantity field (always visible)
-    html += '<span style="font-size:11px;color:var(--text3);flex-shrink:0;margin:0 1px">&#215;</span>';
-    html += '<input type="text" value="' + (t.qty||'').replace(/"/g,'&quot;') + '" placeholder="qty" title="Quantity / amount needed" style="width:46px;font-size:12px;text-align:center;border:1px solid var(--border2);border-radius:4px;padding:2px 4px;background:var(--surface);color:var(--text);flex-shrink:0;opacity:' + (t.qty ? '1' : '0.4') + '" onclick="event.stopPropagation()" onfocus="this.style.opacity=\'1\'" onblur="this.style.opacity=this.value?\'1\':\'0.4\';updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'qty\',this.value)">';
+    // Quantity field (only for key tasks)
+    var isKeyQtyTask = (t.text === 'Prepare Unit Key(s)' || t.text === 'Prepare Unit Mail Key(s)');
+    if (isKeyQtyTask) {
+      html += '<span style="font-size:11px;color:var(--text3);flex-shrink:0;margin:0 2px" title="Number of keys to prepare">&#215;</span>';
+      html += '<input type="text" value="' + (t.qty||'').replace(/"/g,'&quot;') + '" placeholder="# keys" title="Number of keys (1 per leaseholder)" style="width:52px;font-size:12px;text-align:center;border:1px solid var(--border2);border-radius:4px;padding:2px 4px;background:var(--surface);color:var(--text);flex-shrink:0;opacity:' + (t.qty ? '1' : '0.4') + '" onclick="event.stopPropagation()" onfocus="this.style.opacity=\'1\'" onblur="this.style.opacity=this.value?\'1\':\'0.4\';updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'qty\',this.value)">';
+    }
     // Completed by/at tag
     if (t.done && (t.completedBy || t.completedAt)) {
       var doneTag = '';
@@ -2484,7 +2496,7 @@ function buildCL(m, filterCat) {
     // ··· button
     html += '<button class="btn btn-ghost btn-xs" style="padding:1px 5px;flex-shrink:0" title="More options" onclick="event.stopPropagation();toggleTaskExtra(\'' + t.id + '\')">···</button>';
     // Delete button
-    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);padding:1px 5px;flex-shrink:0" onclick="deleteTask(\'' + m.id + '\',\'' + t.id + '\')">x</button>';
+    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);padding:1px 5px;flex-shrink:0" onclick="deleteTask(\'' + m.id + '\',\'' + t.id + '\')">&#x2715;</button>';
     html += '</div>';
     // Note textarea (hidden by default)
     html += '<div id="task-note-' + t.id + '" style="display:none;padding:0 4px 4px 28px" onclick="event.stopPropagation()">';
@@ -2690,7 +2702,7 @@ function renderMoves() {
         rows += pct === 100 ? '<span class="pill pill-resolved" style="font-size:10px">Done</span>' : '<div style="width:40px"><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div><div class="text-xs text-3 mono" style="text-align:right;margin-top:2px">' + dn + '/' + tot + '</div></div>';
         if (!isStaffUser) rows += '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openEditMove(\'' + m.id + '\')" title="Edit">&#9998;</button>';
         rows += archBtn;
-        if (!isStaffUser) rows += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="event.stopPropagation();deleteMove(\'' + m.id + '\')">x</button>';
+        if (!isStaffUser) rows += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="event.stopPropagation();deleteMove(\'' + m.id + '\')">&#x2715;</button>';
         rows += '</div></td></tr>';
         var cls = moveShowLogged ? 9 : 8;
         rows += '<tr class="move-cl-row ' + (isOpen ? 'open' : '') + '" id="cl-' + m.id + '"><td colspan="' + cls + '"><div class="cl-inner">' + buildCL(m, moveFilter) + '</div></td></tr>';
@@ -2732,7 +2744,7 @@ function renderMoves() {
         html += '<div class="text-xs text-3 mono" style="margin-top:2px">' + dn + '/' + tot + ' tasks</div></div>';
         html += '<span style="color:var(--text3);font-size:18px;flex-shrink:0">' + (isOpen ? '&#9650;' : '&#9660;') + '</span></div>';
         html += '<div class="mc-cl">' + buildCL(m, moveFilter) + '</div>';
-        html += '<div class="mc-actions"><button class="btn btn-secondary btn-xs" onclick="openEditMove(\'' + m.id + '\')" title="Edit">&#9998; Edit</button>' + archBtn + '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteMove(\'' + m.id + '\')">Delete</button><button class="btn btn-secondary btn-xs ml-auto" onclick="openAddTask(\'' + m.id + '\')">+ Task</button></div>';
+        html += '<div class="mc-actions">' + (!isStaffUser ? '<button class="btn btn-secondary btn-xs" onclick="openEditMove(\'' + m.id + '\')" title="Edit">&#9998; Edit</button>' : '') + archBtn + (!isStaffUser ? '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteMove(\'' + m.id + '\')">Delete</button>' : '') + '<button class="btn btn-secondary btn-xs ml-auto" onclick="openAddTask(\'' + m.id + '\')">+ Task</button></div>';
         html += '</div>';
       });
       cardsEl.innerHTML = html;
@@ -2776,7 +2788,9 @@ function toggleTask(moveId, taskId, checked) {
           state.keys.push({ id: uid(), unit: m.unit, name: cr.name, type: 'resident', fob: '', status: 'issued', notes: keyNote + ' (co-resident)', addedBy: currentUser ? currentUser.name : '', issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null });
         });
       }
-      toast('Key entry created in Key Tracker');
+      var qtyNum = parseInt(t.qty) || (1 + (m.coResidents ? m.coResidents.length : 0));
+      applySupplyAdjustment('Key Cards – Blank Stock', checked ? -qtyNum : +qtyNum, 'Keys ' + (checked ? 'prepared' : 'reversed') + ' — Unit ' + m.unit + ' · ' + m.resident);
+      toast('Key entry created in Key Tracker — blank stock updated');
       if (curSec === 'keys') renderKeys();
     }
   }
@@ -2812,7 +2826,10 @@ function toggleTask(moveId, taskId, checked) {
 function deleteTask(moveId, taskId) {
   var m = (state.moves || []).find(function (x) { return x.id === moveId; }); if (!m) return;
   m.tasks = (m.tasks || []).filter(function (t) { return t.id !== taskId; });
-  scheduleSave(); renderMoves();
+  scheduleSave();
+  var ci = document.querySelector('#cl-' + moveId + ' .cl-inner'); if (ci) ci.innerHTML = buildCL(m, moveFilter);
+  var mci = document.querySelector('#mc-' + moveId + ' .mc-cl'); if (mci) mci.innerHTML = buildCL(m, moveFilter);
+  updateBadges(); renderDash();
 }
 var addTaskMoveId = null;
 function openAddTask(moveId) {
@@ -2836,18 +2853,31 @@ function resetCL(moveId) {
   (m.tasks || []).forEach(function (t) { t.done = false; });
   scheduleSave(); renderMoves(); toast('Checklist reset');
 }
-function addCoResident(moveId) {
-  var name = prompt('Roommate / co-leaseholder name:');
-  if (!name || !name.trim()) return;
+function openCoResidentInput(moveId) {
+  var btn = g('coadd-btn-' + moveId), form = g('coadd-form-' + moveId);
+  if (btn) btn.style.display = 'none';
+  if (form) { form.style.display = 'flex'; var inp = g('coadd-input-' + moveId); if (inp) { inp.value = ''; inp.focus(); } }
+}
+function closeCoResidentInput(moveId) {
+  var btn = g('coadd-btn-' + moveId), form = g('coadd-form-' + moveId);
+  if (btn) btn.style.display = '';
+  if (form) form.style.display = 'none';
+}
+function addCoResident(moveId, name) {
+  if (!name || !name.trim()) { toast('Enter a name'); return; }
   var m = (state.moves || []).find(function(x){ return x.id === moveId; }); if (!m) return;
   if (!m.coResidents) m.coResidents = [];
   m.coResidents.push({ id: uid(), name: name.trim() });
-  scheduleSave(); renderMoves();
+  scheduleSave();
+  var ci = document.querySelector('#cl-' + moveId + ' .cl-inner'); if (ci) ci.innerHTML = buildCL(m, moveFilter);
+  var mci = document.querySelector('#mc-' + moveId + ' .mc-cl'); if (mci) mci.innerHTML = buildCL(m, moveFilter);
 }
 function removeCoResident(moveId, coId) {
   var m = (state.moves || []).find(function(x){ return x.id === moveId; }); if (!m) return;
   m.coResidents = (m.coResidents || []).filter(function(c){ return c.id !== coId; });
-  scheduleSave(); renderMoves();
+  scheduleSave();
+  var ci = document.querySelector('#cl-' + moveId + ' .cl-inner'); if (ci) ci.innerHTML = buildCL(m, moveFilter);
+  var mci = document.querySelector('#mc-' + moveId + ' .mc-cl'); if (mci) mci.innerHTML = buildCL(m, moveFilter);
 }
 function archiveMove(id) {
   var m = (state.moves || []).find(function (x) { return x.id === id; }); if (!m) return;
@@ -3196,7 +3226,7 @@ function renderMaint() {
     html += '<td><span class="pill pill-' + m.priority + '">' + m.priority + '</span></td>';
     html += '<td><select class="ie-sel" onchange="updateMaintStatus(\'' + m.id + '\',this.value)"><option value="open" ' + (m.status === 'open' ? 'selected' : '') + '>Open</option><option value="in-progress" ' + (m.status === 'in-progress' ? 'selected' : '') + '>In Progress</option><option value="resolved" ' + (m.status === 'resolved' ? 'selected' : '') + '>Resolved</option></select></td>';
     html += '<td class="text-xs text-3">' + new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</td>';
-    html += '<td><button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="toggleMaintLog(\'' + m.id + '\')" title="Activity log">' + logBtnLabel + '</button> <button class="btn btn-ghost btn-xs" onclick="openEditMaint(\'' + m.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteMaint(\'' + m.id + '\')">x</button></td>';
+    html += '<td><button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="toggleMaintLog(\'' + m.id + '\')" title="Activity log">' + logBtnLabel + '</button> <button class="btn btn-ghost btn-xs" onclick="openEditMaint(\'' + m.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteMaint(\'' + m.id + '\')">&#x2715;</button></td>';
     html += '</tr>';
     // Activity log sub-row
     var logInputId = 'maint-log-input-' + m.id;
@@ -3267,7 +3297,7 @@ function renderGuests() {
     var gstBy = fmtByTag(gst.addedBy, gst.createdAt);
     html += '<tr><td class="font-600">' + gst.name + gstBy + '</td><td class="mono">' + gst.unit + '</td><td class="text-sm text-2">' + (gst.host || '-') + '</td><td class="text-sm">' + gst.type + '</td>';
     html += '<td><select class="ie-sel" onchange="updateGuestStatus(\'' + gst.id + '\',this.value)"><option value="pending" ' + (gst.status === 'pending' ? 'selected' : '') + '>Pending</option><option value="in" ' + (gst.status === 'in' ? 'selected' : '') + '>Checked In</option><option value="out" ' + (gst.status === 'out' ? 'selected' : '') + '>Checked Out</option></select></td>';
-    html += '<td><button class="btn btn-ghost btn-xs" onclick="openEditGuest(\'' + gst.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteGuest(\'' + gst.id + '\')">x</button></td></tr>';
+    html += '<td><button class="btn btn-ghost btn-xs" onclick="openEditGuest(\'' + gst.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteGuest(\'' + gst.id + '\')">&#x2715;</button></td></tr>';
   });
   tbody.innerHTML = html;
   setBadge('badge-guests', allG.filter(function (gst) { return gst.status === 'in'; }).length);
@@ -3426,7 +3456,7 @@ function renderKeys() {
     html += '<td><select class="ie-sel" onchange="updateKeyStatus(\'' + k.id + '\',this.value)"><option value="issued" ' + (isIssued ? 'selected' : '') + '>Issued</option><option value="returned" ' + (k.status === 'returned' ? 'selected' : '') + '>Returned</option></select></td>';
     html += '<td>'
       + (isIssued ? '<button class="btn btn-secondary btn-xs" style="margin-right:4px" onclick="logKeyReturn(\'' + k.id + '\')" title="Log key return">↩ Return</button>' : '')
-      + '<button class="btn btn-ghost btn-xs" onclick="openEditKey(\'' + k.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteKey(\'' + k.id + '\')">x</button></td>';
+      + '<button class="btn btn-ghost btn-xs" onclick="openEditKey(\'' + k.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteKey(\'' + k.id + '\')">&#x2715;</button></td>';
     html += '</tr>';
     // Status note row for all issued one-time keys
     if (isOneTime && isIssued) {
@@ -3580,7 +3610,7 @@ function renderParking() {
     if (p.status==='active') html += '<button class="btn btn-ghost btn-xs" style="color:var(--amber)" onclick="giveParkingNotice(\'' + p.id + '\')">30-Day Notice</button>';
     if (p.status!=='returned') html += '<button class="btn btn-ghost btn-xs" style="color:var(--green)" onclick="markParkingReturned(\'' + p.id + '\')">✓ Returned</button>';
     html += '<button class="btn btn-ghost btn-xs" onclick="openEditParking(\'' + p.id + '\')">&#9998;</button>';
-    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteParking(\'' + p.id + '\')">x</button>';
+    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteParking(\'' + p.id + '\')">&#x2715;</button>';
     html += '</div></td></tr>';
   });
   tbody.innerHTML = html;
@@ -3671,7 +3701,7 @@ function renderSecurity() {
     html+='<td class="text-sm">'+s.handledBy+'</td>';
     html+='<td>'+statusBadge+'</td>';
     html+='<td class="text-sm text-2" style="max-width:200px;white-space:pre-wrap">'+(s.notes||'—')+'</td>';
-    html+='<td>' + (!s.maintEscalated ? '<button onclick="escalateSecurityToMaint(\''+s.id+'\')" class="btn btn-ghost btn-xs" title="Escalate to Maintenance" style="color:var(--amber)">&#8594; Maint</button> ' : '<span style="font-size:10px;color:var(--text3);font-style:italic">&#8594; Maint</span> ') + '<button class="btn btn-ghost btn-xs" onclick="openEditSecurity(\''+s.id+'\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteSecurity(\''+s.id+'\')">x</button></td>';
+    html+='<td>' + (!s.maintEscalated ? '<button onclick="escalateSecurityToMaint(\''+s.id+'\')" class="btn btn-ghost btn-xs" title="Escalate to Maintenance" style="color:var(--amber)">&#8594; Maint</button> ' : '<span style="font-size:10px;color:var(--text3);font-style:italic">&#8594; Maint</span> ') + '<button class="btn btn-ghost btn-xs" onclick="openEditSecurity(\''+s.id+'\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteSecurity(\''+s.id+'\')">&#x2715;</button></td>';
     html+='</tr>';
   });
   tbody.innerHTML=html;
@@ -3733,7 +3763,7 @@ function renderAmenities() {
     html += '<td class="text-sm text-2">' + (a.notes || '-') + '</td>';
     html += '<td>';
     if (pendingCloseout) html += '<button class="btn btn-secondary btn-sm" style="border-color:var(--amber);color:var(--amber)" onclick="toggleAmenityCloseout(\'' + a.id + '\')">Close out</button> ';
-    html += '<button class="btn btn-ghost btn-xs" onclick="openEditAmenity(\'' + a.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteAmenity(\'' + a.id + '\')">x</button>';
+    html += '<button class="btn btn-ghost btn-xs" onclick="openEditAmenity(\'' + a.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteAmenity(\'' + a.id + '\')">&#x2715;</button>';
     html += '</td></tr>';
     // Close-out input sub-row
     if (pendingCloseout) {
@@ -3809,7 +3839,7 @@ function renderTours() {
     var trBy = fmtByTag(tr.addedBy, tr.createdAt);
     html += '<tr><td class="font-600">' + tr.name + trBy + '</td><td class="mono text-sm">' + (tr.unit || '-') + '</td><td class="mono text-sm">' + fmtShort(tr.date) + '</td>';
     html += '<td><span class="pill ' + (tr.type === 'sgt' ? 'pill-reservation' : 'pill-event') + '">' + (tr.type === 'sgt' ? 'SGT' : 'Guided') + '</span></td>';
-    html += '<td class="text-sm text-2">' + (tr.notes || '-') + '</td><td><button class="btn btn-ghost btn-xs" onclick="openEditTour(\'' + tr.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteTour(\'' + tr.id + '\')">x</button></td></tr>';
+    html += '<td class="text-sm text-2">' + (tr.notes || '-') + '</td><td><button class="btn btn-ghost btn-xs" onclick="openEditTour(\'' + tr.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteTour(\'' + tr.id + '\')">&#x2715;</button></td></tr>';
   });
   tbody.innerHTML = html;
   setBadge('badge-tours', allT.filter(function (tr) { return tr.date === t; }).length);
@@ -3932,7 +3962,7 @@ function renderPatrolByType(type) {
       html += '<div class="text-sm text-2">' + f.desc + '</div></div>';
       html += (!f.maintEscalated ? '<button onclick="escalateFlagToMaint(\'' + f.id + '\')" class="btn btn-ghost btn-xs" title="Escalate to Maintenance" style="color:var(--amber)">&#8594; Maint</button>' : '<span style="font-size:10px;color:var(--text3);font-style:italic">&#8594; Maint</span>');
       html += ' <button class="btn btn-green btn-xs" onclick="resolveFlag(\'' + f.id + '\')">Resolve</button>';
-      html += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteFlag(\'' + f.id + '\')">x</button>';
+      html += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteFlag(\'' + f.id + '\')">&#x2715;</button>';
       html += '</div>';
     });
     html += '</div></div>';
@@ -4027,7 +4057,7 @@ function renderInspection() {
   else {
     var fhtml = '';
     activeFlags.forEach(function(f) {
-      fhtml += '<div class="flagged-item"><div class="flex items-center gap-8"><span class="font-600">' + f.location + '</span><span class="pill pill-' + f.priority + '">' + f.priority + '</span><button class="btn btn-green btn-xs ml-auto" onclick="resolveFlag(\'' + f.id + '\')">Resolve</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteFlag(\'' + f.id + '\')">x</button></div><div class="text-sm text-2 mt-8">' + f.desc + '</div></div>';
+      fhtml += '<div class="flagged-item"><div class="flex items-center gap-8"><span class="font-600">' + f.location + '</span><span class="pill pill-' + f.priority + '">' + f.priority + '</span><button class="btn btn-green btn-xs ml-auto" onclick="resolveFlag(\'' + f.id + '\')">Resolve</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteFlag(\'' + f.id + '\')">&#x2715;</button></div><div class="text-sm text-2 mt-8">' + f.desc + '</div></div>';
     });
     fb.innerHTML = fhtml;
   }
@@ -4467,7 +4497,7 @@ function openEditWTFloor(fi) {
     html += '<div class="wt-item">';
     html += '<input type="checkbox" ' + (done ? 'checked' : '') + ' onchange="toggleWTItem(\'' + key + '\',this.checked)">';
     html += '<input type="text" class="cl-text-input" value="' + safeItem + '" onblur="updateWTItem(' + fi + ',' + i + ',this.value)" style="flex:1;font-size:13px">';
-    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteWTItem(' + fi + ',' + i + ')">x</button>';
+    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteWTItem(' + fi + ',' + i + ')">&#x2715;</button>';
     html += '</div>';
   });
   html += '<div class="wt-item" style="border-top:1px dashed var(--border2);background:var(--surface2)">';
@@ -4666,7 +4696,7 @@ function renderTodos() {
     html += '<div class="todo-meta">' + due + '<span class="text-xs text-3">' + new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span></div>';
     html += '</div>';
     html += '<button class="btn btn-ghost btn-xs" onclick="openEditTodo(\'' + t.id + '\')" title="Edit">&#9998;</button>';
-    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteTodo(\'' + t.id + '\')">x</button>';
+    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteTodo(\'' + t.id + '\')">&#x2715;</button>';
     html += '</div>';
   });
   if (clTasks.length) {
@@ -4734,7 +4764,7 @@ function renderLAF() {
     html += '<td class="mono text-sm">' + fmtShort(i.date) + '</td><td class="text-sm">' + (i.location || '-') + '</td><td class="font-600">' + i.desc + lafBy + '</td>';
     html += '<td class="text-sm text-2">' + i.condition + '</td><td class="text-sm">' + (i.foundBy || '-') + '</td>';
     var pdBtn = !i.claimedAt ? (i.flaggedForPassdown ? '<button class="btn btn-ghost btn-xs" onclick="toggleLAFPassdown(\'' + i.id + '\')" title="Remove from passdown" style="color:var(--green)">&#10003; Passdown</button> ' : '<button class="btn btn-ghost btn-xs" onclick="toggleLAFPassdown(\'' + i.id + '\')" title="Flag for passdown" style="color:var(--text3)">+ Passdown</button> ') : '';
-    html += '<td class="text-sm">' + statusCell + '</td><td>' + pdBtn + '<button class="btn btn-ghost btn-xs" onclick="openEditLAF(\'' + i.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteLAF(\'' + i.id + '\')">x</button></td></tr>';
+    html += '<td class="text-sm">' + statusCell + '</td><td>' + pdBtn + '<button class="btn btn-ghost btn-xs" onclick="openEditLAF(\'' + i.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteLAF(\'' + i.id + '\')">&#x2715;</button></td></tr>';
   });
   tbody.innerHTML = html;
   setBadge('badge-laf', (state.laf || []).filter(function (i) { return !i.claimedAt; }).length);
@@ -6436,7 +6466,7 @@ function renderPassdownHistory() {
       + '<div class="flex gap-4" style="margin-left:auto">'
       + '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();copyPD(\'' + p.id + '\')">Copy</button>'
       + (canDelete ? '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();editPD(\'' + p.id + '\')">Edit</button>' : '')
-      + (canDelete ? '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="event.stopPropagation();deletePD(\'' + p.id + '\',\'' + (p.authorId||'') + '\')">x</button>' : '')
+      + (canDelete ? '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="event.stopPropagation();deletePD(\'' + p.id + '\',\'' + (p.authorId||'') + '\')">&#x2715;</button>' : '')
       + '</div></div><div class="phi-body">' + p.text + '</div></div>';
   });
   histEl.innerHTML = html;
