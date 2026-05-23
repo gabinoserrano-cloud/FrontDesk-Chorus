@@ -18,6 +18,8 @@
     --shadow:0 1px 4px rgba(26,24,20,0.07),0 1px 2px rgba(26,24,20,0.04);
     --shadow-md:0 4px 16px rgba(26,24,20,0.10),0 2px 4px rgba(26,24,20,0.06);
   }
+  body.dark-mode{--bg:#0F1923;--surface:#162130;--surface2:#1C2A3A;--border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.05);--text:#E2EAF0;--text2:#8FA8BC;--text3:#506478;--green-light:rgba(26,102,64,0.18);--red-light:rgba(192,53,53,0.15);--amber-light:rgba(181,112,32,0.15);--purple-light:rgba(96,68,178,0.15);--accent-light:rgba(26,92,62,0.18);--shadow:0 1px 4px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);--shadow-md:0 4px 24px rgba(0,0,0,.5),0 2px 4px rgba(0,0,0,.4)}
+  body.text-sm{font-size:12px}body.text-lg{font-size:16px}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%}
   body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;display:flex;height:100vh;overflow:hidden}
@@ -815,7 +817,39 @@
     <div class="section" id="section-activity"><div id="activity-body"></div></div>
     <div class="section" id="section-settings">
 
-      <!-- ── Accounts & Access ── -->
+      <!-- ── Your Account (staff only) ── -->
+      <div id="settings-your-account-card" class="card mb-12" style="display:none">
+        <div class="card-hdr"><span class="card-title">🔑 Your Account</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Update your PIN. You'll need to enter your current PIN to confirm the change.</p>
+          <button class="btn btn-secondary btn-sm" onclick="openChangePinModal()">Change My PIN</button>
+        </div>
+      </div>
+
+      <!-- ── Display (all users) ── -->
+      <div class="card mb-12">
+        <div class="card-hdr"><span class="card-title">🎨 Display</span></div>
+        <div class="card-body">
+          <div style="margin-bottom:16px">
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">Theme</div>
+            <div style="display:flex;gap:8px">
+              <button id="theme-btn-light" class="btn btn-secondary btn-sm" onclick="setTheme('light')" style="flex:1">☀️ Light</button>
+              <button id="theme-btn-dark" class="btn btn-secondary btn-sm" onclick="setTheme('dark')" style="flex:1">🌙 Dark</button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">Font Size</div>
+            <div style="display:flex;gap:8px">
+              <button id="font-btn-sm" class="btn btn-secondary btn-sm" onclick="setFontSize('sm')" style="flex:1;font-size:11px">Small</button>
+              <button id="font-btn-md" class="btn btn-secondary btn-sm" onclick="setFontSize('md')" style="flex:1;font-size:13px">Medium</button>
+              <button id="font-btn-lg" class="btn btn-secondary btn-sm" onclick="setFontSize('lg')" style="flex:1;font-size:15px">Large</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Accounts & Access (admin only) ── -->
+      <div id="settings-admin-only" style="display:none">
       <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:4px 2px 8px">Accounts &amp; Access</div>
       <div id="settings-accounts-card" style="display:none" class="card mb-12">
         <div class="card-hdr"><span class="card-title">&#128100; Team Accounts</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddAccount()">+ Add Member</button></div>
@@ -952,6 +986,8 @@
           </div>
         </div>
       </div>
+
+      </div><!-- /settings-admin-only -->
 
       <!-- ── About ── -->
       <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:12px 2px 8px;border-top:1px solid var(--border2);margin-top:4px">About</div>
@@ -1493,7 +1529,7 @@ var currentUser = null;
 var loginPinEntry = '';
 var loginSelectedAccount = null;
 var todosViewingId = null;
-var STAFF_HIDDEN = ['team', 'activity', 'import', 'settings'];
+var STAFF_HIDDEN = ['team', 'activity', 'import'];
 
 // ─── SESSION TIMEOUT ───
 var _lastActivity = Date.now();
@@ -7533,10 +7569,16 @@ function toggleStaffNavSection(sec, visible) {
 // ===== [SETTINGS] ============================================================
 function renderSettings() {
   var isAdmin = !currentUser || currentUser.role === 'admin';
+  var isStaff = currentUser && currentUser.role === 'staff';
   var acctCard = g('settings-accounts-card');
   if (acctCard) acctCard.style.display = isAdmin ? '' : 'none';
   var staffVisCard = g('settings-staff-visibility-card');
   if (staffVisCard) staffVisCard.style.display = isAdmin ? '' : 'none';
+  var adminOnly = g('settings-admin-only');
+  if (adminOnly) adminOnly.style.display = isAdmin ? '' : 'none';
+  var yourAcctCard = g('settings-your-account-card');
+  if (yourAcctCard) yourAcctCard.style.display = isStaff ? '' : 'none';
+  renderDisplaySettings();
   if (isAdmin) renderTeamAccounts();
   renderTaskList('in');
   renderTaskList('out');
@@ -8133,6 +8175,77 @@ function resetPassdownState() {
   var sumEl = g('pd-summary'); if (sumEl) sumEl.value = '';
   var pv = g('pd-preview'); if (pv) pv.value = '';
 }
+// ===== [DISPLAY SETTINGS] ====================================================
+function applyUserDisplay() {
+  if (!currentUser) return;
+  var theme = localStorage.getItem('theme_' + currentUser.id) || 'light';
+  var fontSize = localStorage.getItem('fontsize_' + currentUser.id) || 'md';
+  document.body.classList.toggle('dark-mode', theme === 'dark');
+  document.body.classList.remove('text-sm', 'text-lg');
+  if (fontSize === 'sm') document.body.classList.add('text-sm');
+  if (fontSize === 'lg') document.body.classList.add('text-lg');
+}
+function setTheme(theme) {
+  if (!currentUser) return;
+  try { localStorage.setItem('theme_' + currentUser.id, theme); } catch(e) {}
+  applyUserDisplay();
+  renderDisplaySettings();
+}
+function setFontSize(size) {
+  if (!currentUser) return;
+  try { localStorage.setItem('fontsize_' + currentUser.id, size); } catch(e) {}
+  applyUserDisplay();
+  renderDisplaySettings();
+}
+function renderDisplaySettings() {
+  if (!currentUser) return;
+  var theme = localStorage.getItem('theme_' + currentUser.id) || 'light';
+  var fontSize = localStorage.getItem('fontsize_' + currentUser.id) || 'md';
+  ['light','dark'].forEach(function(t) {
+    var btn = g('theme-btn-' + t);
+    if (!btn) return;
+    btn.style.background = theme === t ? 'var(--accent)' : '';
+    btn.style.color = theme === t ? '#fff' : '';
+    btn.style.borderColor = theme === t ? 'var(--accent)' : '';
+  });
+  ['sm','md','lg'].forEach(function(s) {
+    var btn = g('font-btn-' + s);
+    if (!btn) return;
+    btn.style.background = fontSize === s ? 'var(--accent)' : '';
+    btn.style.color = fontSize === s ? '#fff' : '';
+    btn.style.borderColor = fontSize === s ? 'var(--accent)' : '';
+  });
+}
+function openChangePinModal() {
+  var ov = g('modal-change-pin');
+  if (!ov) { ov = document.createElement('div'); ov.className = 'modal-ov'; ov.id = 'modal-change-pin'; document.body.appendChild(ov); }
+  ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Change Your PIN</span><button class="modal-close" onclick="closeModal(\'modal-change-pin\')">&#x2715;</button></div>'
+    + '<div class="modal-bdy">'
+    + '<div class="fg"><label>Current PIN</label><input type="password" id="pin-current" placeholder="Enter your current PIN" maxlength="4" inputmode="numeric"></div>'
+    + '<div class="fg"><label>New PIN</label><input type="password" id="pin-new" placeholder="Choose a new 4-digit PIN" maxlength="4" inputmode="numeric"></div>'
+    + '<div class="fg"><label>Confirm New PIN</label><input type="password" id="pin-confirm" placeholder="Re-enter new PIN" maxlength="4" inputmode="numeric"></div>'
+    + '</div>'
+    + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-change-pin\')">Cancel</button><button class="btn btn-primary" onclick="submitChangePin()">Update PIN</button></div>'
+    + '</div>';
+  openModal('modal-change-pin');
+}
+function submitChangePin() {
+  if (!currentUser) return;
+  var current = (g('pin-current').value || '').trim();
+  var newPin = (g('pin-new').value || '').trim();
+  var confirm = (g('pin-confirm').value || '').trim();
+  var acct = (state.accounts || []).find(function(a){ return a.id === currentUser.id; });
+  if (!acct) return;
+  if (current !== acct.pin) { toast('Current PIN is incorrect'); return; }
+  if (newPin.length < 4) { toast('PIN must be 4 digits'); return; }
+  if (!/^\d+$/.test(newPin)) { toast('PIN must be numbers only'); return; }
+  if (newPin !== confirm) { toast('New PINs do not match'); return; }
+  acct.pin = newPin;
+  scheduleSave();
+  closeModal('modal-change-pin');
+  toast('PIN updated successfully');
+}
+
 // ===== [WELCOME MODAL] =======================================================
 function checkFirstLoginWelcome() {
   if (!currentUser) return;
@@ -8190,6 +8303,7 @@ function submitPin() {
     g('hdr-actions').innerHTML = '';
     renderDash(); updateBadges();
     toast('Welcome, ' + currentUser.name + '!');
+    applyUserDisplay();
     setTimeout(checkFirstLoginWelcome, 300);
     setTimeout(checkCarriedItemsOnLogin, 600);
     setTimeout(checkPassdownAcknowledgementOnLogin, 1200);
@@ -8202,6 +8316,7 @@ function submitPin() {
 function doLogout() {
   stopSessionTimer();
   currentUser = null; teamUnlocked = false; todosViewingId = null;
+  document.body.classList.remove('dark-mode', 'text-sm', 'text-lg');
   updateSidebarForRole();
   showLogin();
 }
