@@ -5693,6 +5693,7 @@ function renderPdAutoBlocks(isLead) {
   var html = '<div style="font-size:12px;background:rgba(100,116,139,0.07);color:#475569;border:1px solid rgba(100,116,139,0.18);border-radius:6px;padding:8px 12px;margin-bottom:8px;line-height:1.5">✏ Items marked <em>↓ Add update to include</em> only appear in your passdown if you write a note — leave blank to skip.</div>'
     + (carriedCount ? '<div style="font-size:12px;background:rgba(59,130,246,0.08);color:#1e40af;border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:8px 12px;margin-bottom:12px">↩ <strong>' + carriedCount + ' item' + (carriedCount > 1 ? 's' : '') + ' carried over from a previous shift</strong> — add an update below to include in your passdown, or leave blank to skip.</div>' : '');
 
+  var pdSections = []; // section nav tracker: { id, icon, label, count }
   var shift = g('pd-shift') ? g('pd-shift').value : 'PM';
   var maxDate = pdGetMaxDate(isLead);
   var tmrw = (function(){ var d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
@@ -5735,7 +5736,8 @@ function renderPdAutoBlocks(isLead) {
   });
 
   if (isLead || shiftMoveIns.length || shiftMoveOuts.length || outstandingKeyMoves.length) {
-    html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🚛 Move-Ins (' + allIns.length + ')</div>';
+    pdSections.push({ id: 'pd-blk-in', icon: '🚛', label: 'Move-Ins', count: allIns.length });
+    html += '<div class="pd-auto-block" id="pd-blk-in"><div class="pd-auto-hdr">🚛 Move-Ins (' + allIns.length + ')</div>';
     if (!allIns.length) html += '<div style="color:var(--text3)">None today' + (isLead ? ' or upcoming' : '') + '</div>';
     else allIns.forEach(function(m) {
       var apptD = m.apptDate || m.date;
@@ -5756,7 +5758,8 @@ function renderPdAutoBlocks(isLead) {
     html += '</div>';
 
     var outHeaderCount = allOuts.length + outstandingKeyMoves.length;
-    html += '<div class="pd-auto-block"><div class="pd-auto-hdr">📦 Move-Outs (' + outHeaderCount + ')</div>';
+    pdSections.push({ id: 'pd-blk-out', icon: '📦', label: 'Move-Outs', count: outHeaderCount });
+    html += '<div class="pd-auto-block" id="pd-blk-out"><div class="pd-auto-hdr">📦 Move-Outs (' + outHeaderCount + ')</div>';
     if (!allOuts.length && !outstandingKeyMoves.length) html += '<div style="color:var(--text3)">None today' + (isLead ? ' or upcoming' : '') + '</div>';
     allOuts.forEach(function(m) {
       var apptD = m.apptDate || m.date;
@@ -5791,7 +5794,8 @@ function renderPdAutoBlocks(isLead) {
   var shiftAm = (state.amenities||[]).filter(function(a){ return !a.closeoutNote && a.date===t && pdInShift(a.start, shift); }).sort(function(a,b){ return (a.start||'').localeCompare(b.start||''); });
   var upcomingAm = isLead ? (state.amenities||[]).filter(function(a){ return !a.closeoutNote && a.date>t && a.date<=maxDate; }).sort(function(a,b){ return a.date.localeCompare(b.date)||(a.start||'').localeCompare(b.start||''); }) : [];
   var allAm = shiftAm.concat(upcomingAm);
-  html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🎉 Amenity Bookings</div>';
+  pdSections.push({ id: 'pd-blk-am', icon: '🎉', label: 'Amenities', count: allAm.length });
+  html += '<div class="pd-auto-block" id="pd-blk-am"><div class="pd-auto-hdr">🎉 Amenity Bookings</div>';
   if (!allAm.length) html += '<div style="color:var(--text3)">None today' + (isLead ? ' or upcoming' : '') + '</div>';
   else allAm.forEach(function(a) {
     var tag = a.date!==t ? '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(a.date) + '</span>' : '';
@@ -5804,7 +5808,8 @@ function renderPdAutoBlocks(isLead) {
 
   // Open concierge requests
   var openC = (state.concierge||[]).filter(function(c){ return c.status==='open'; });
-  html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🎭 Open Concierge Requests</div>';
+  pdSections.push({ id: 'pd-blk-conc', icon: '🎭', label: 'Concierge', count: openC.length });
+  html += '<div class="pd-auto-block" id="pd-blk-conc"><div class="pd-auto-hdr">🎭 Open Concierge Requests</div>';
   if (!openC.length) html += '<div style="color:var(--text3)">None open</div>';
   else openC.forEach(function(c) {
     var content = '<strong>Unit ' + esc(c.unit) + ' – ' + esc(c.resident) + '</strong>' + pdYouBadge(c) + ' / ' + esc(c.type) + (c.notes ? ': ' + esc(c.notes) : '');
@@ -5817,7 +5822,8 @@ function renderPdAutoBlocks(isLead) {
 
   // One-time keys still out
   var oneTimeOut = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued'; });
-  html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🗝 One-Time Keys Still Out</div>';
+  pdSections.push({ id: 'pd-blk-keys', icon: '🗝', label: 'Keys Out', count: oneTimeOut.length });
+  html += '<div class="pd-auto-block" id="pd-blk-keys"><div class="pd-auto-hdr">🗝 One-Time Keys Still Out</div>';
   if (!oneTimeOut.length) {
     html += '<div style="color:var(--text3)">None currently out</div>';
   } else {
@@ -5838,7 +5844,8 @@ function renderPdAutoBlocks(isLead) {
   // Open / in-progress maintenance items
   var openMaint = (state.maintenance||[]).filter(function(m){ return m.status!=='resolved'; });
   openMaint.sort(function(a,b){ var p={high:0,medium:1,low:2}; return (p[a.priority]||1)-(p[b.priority]||1); });
-  html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🔧 Open Maintenance</div>';
+  pdSections.push({ id: 'pd-blk-maint', icon: '🔧', label: 'Maintenance', count: openMaint.length });
+  html += '<div class="pd-auto-block" id="pd-blk-maint"><div class="pd-auto-hdr">🔧 Open Maintenance</div>';
   if (!openMaint.length) {
     html += '<div style="color:var(--text3)">No open items</div>';
   } else {
@@ -5860,7 +5867,8 @@ function renderPdAutoBlocks(isLead) {
   // Security incidents (active monitoring + today's unresolved)
   var secIncidents = (state.security||[]).filter(function(s){ return s.status==='monitoring' || (s.date===t && s.status!=='resolved'); });
   if (secIncidents.length) {
-    html += '<div class="pd-auto-block" style="border-color:rgba(220,38,38,0.3)"><div class="pd-auto-hdr" style="color:#dc2626">🛡 Incidents</div>';
+    pdSections.push({ id: 'pd-blk-sec', icon: '🛡', label: 'Incidents', count: secIncidents.length });
+    html += '<div class="pd-auto-block" id="pd-blk-sec" style="border-color:rgba(220,38,38,0.3)"><div class="pd-auto-hdr" style="color:#dc2626">🛡 Incidents</div>';
     secIncidents.forEach(function(s) {
       var content = '<strong>' + s.type + '</strong>' + pdYouBadge(s) + ' — ' + s.location;
       if (s.time) content += ' at ' + fmtTime(s.time);
@@ -5886,7 +5894,8 @@ function renderPdAutoBlocks(isLead) {
     return false;
   });
   if (pendingFees.length) {
-    html += '<div class="pd-auto-block" style="border-color:rgba(217,119,6,0.35)"><div class="pd-auto-hdr" style="color:#92400E">💳 Charges to Add to Ledger</div>';
+    pdSections.push({ id: 'pd-blk-fees', icon: '💳', label: 'Charges', count: pendingFees.length });
+    html += '<div class="pd-auto-block" id="pd-blk-fees" style="border-color:rgba(217,119,6,0.35)"><div class="pd-auto-hdr" style="color:#92400E">💳 Charges to Add to Ledger</div>';
     pendingFees.forEach(function(k) {
       var content, defNs;
       if (k.isReplacement) {
@@ -5902,7 +5911,20 @@ function renderPdAutoBlocks(isLead) {
     html += '</div>';
   }
 
-    container.innerHTML = html;
+  // ── Section navigator bar ──
+  if (pdSections.length) {
+    var needsNote = activeIds.filter(function(id){ return !pdNotes[id] || !pdNotes[id].trim(); }).length;
+    var navHtml = '<div id="pd-section-nav" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;align-items:center">';
+    navHtml += '<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-right:2px;white-space:nowrap">' + pdSections.length + ' section' + (pdSections.length!==1?'s':'') + '</span>';
+    pdSections.forEach(function(s) {
+      var hasItems = s.count > 0;
+      navHtml += '<button onclick="(function(){var el=document.getElementById(\'' + s.id + '\');if(el)el.scrollIntoView({behavior:\'smooth\',block:\'nearest\'});})()" style="font-size:11px;padding:2px 8px;border:1px solid var(--border' + (hasItems?'2':'') + ');border-radius:10px;background:' + (hasItems?'var(--surface)':'var(--bg)') + ';color:' + (hasItems?'var(--text2)':'var(--text3)') + ';cursor:pointer;white-space:nowrap;line-height:1.6">' + s.icon + ' ' + s.label + (hasItems?' <span style="font-size:10px;opacity:.7">(' + s.count + ')</span>':'') + '</button>';
+    });
+    if (needsNote) navHtml += '<span style="margin-left:auto;font-size:10px;color:var(--amber);font-weight:600;white-space:nowrap">✏ ' + needsNote + ' need' + (needsNote===1?'s':'') + ' a note</span>';
+    navHtml += '</div>';
+    html = navHtml + html;
+  }
+  container.innerHTML = html;
   } catch(e) {
     console.error('[passdown] renderPdAutoBlocks error:', e);
     container.innerHTML = '<div style="padding:16px;color:var(--red);border:1px solid rgba(220,38,38,0.2);border-radius:8px;text-align:center">'
