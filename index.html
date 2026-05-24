@@ -633,7 +633,7 @@
       <div class="card"><div class="card-hdr"><span class="card-title">Guest &amp; Visitor Log</span><span class="card-count" id="guests-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddGuest()">+ Log Guest</button></div><div class="tbl-wrap"><table><thead><tr><th>Guest</th><th>Unit</th><th>Host</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody id="guests-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-keys">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('resident',this)">Resident</div><div class="sub-tab" onclick="filterKeys('joiner',this)">Joiner</div><div class="sub-tab" onclick="filterKeys('one-time',this)">One-Time</div><div class="sub-tab" onclick="filterKeys('vendor',this)">Vendor</div><div class="sub-tab" onclick="filterKeys('issued',this)">Out Now</div><div class="sub-tab" onclick="filterKeys('parking',this)">🚗 Parking</div></div>
+      <div class="sub-tabs"><div class="sub-tab active" onclick="filterKeys('issued',this)">Currently Out</div><div class="sub-tab" onclick="filterKeys('fobs',this)">Resident Fobs</div><div class="sub-tab" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('parking',this)">🚗 Parking</div></div>
       <div class="key-stat-row" id="keys-stats"></div>
       <div class="card" id="keys-log-card"><div class="card-hdr"><span class="card-title">Key Log</span><span class="card-count" id="keys-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddKey()">+ Log Key</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident / Guest</th><th>Type</th><th>Key #</th><th>Time Out</th><th>Status</th><th></th></tr></thead><tbody id="keys-tbody"></tbody></table></div></div>
       <div id="parking-view" style="display:none">
@@ -642,7 +642,7 @@
       </div>
     </div>
     <div class="section" id="section-amenities">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterAmenities('all',this)">All</div><div class="sub-tab" onclick="filterAmenities('today',this)">Today</div><div class="sub-tab" onclick="filterAmenities('upcoming',this)">Upcoming</div><div class="sub-tab" onclick="filterAmenities('event',this)">Events</div><div class="sub-tab" onclick="filterAmenities('past',this)">Past</div></div>
+      <div class="sub-tabs"><div class="sub-tab active" onclick="filterAmenities('upcoming',this)">Upcoming</div><div class="sub-tab" onclick="filterAmenities('today',this)">Today</div><div class="sub-tab" onclick="filterAmenities('event',this)">Events</div><div class="sub-tab" onclick="filterAmenities('past',this)">Past</div><div class="sub-tab" onclick="filterAmenities('all',this)">All</div></div>
       <div class="card"><div class="card-hdr"><span class="card-title">Amenity Bookings</span><span class="card-count" id="amenities-count">0 bookings</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddAmenity()">+ Add Booking</button></div><div class="tbl-wrap"><table><thead><tr><th>Resident</th><th>Unit</th><th>Amenity</th><th>Date</th><th>Time</th><th>Type</th><th>Notes</th><th></th></tr></thead><tbody id="amenities-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-tours">
@@ -673,6 +673,7 @@
     </div>
     <div class="section" id="section-laf">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterLAF('all',this)">All</div><div class="sub-tab" onclick="filterLAF('unclaimed',this)">Unclaimed</div><div class="sub-tab" onclick="filterLAF('claimed',this)">Claimed</div></div>
+      <div style="margin:8px 0"><input type="text" id="laf-search" placeholder="&#128269; Search items, location, found by…" oninput="searchLAF(this.value)" style="width:100%;max-width:320px;font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text)"></div>
       <div class="card"><div class="card-hdr"><span class="card-title">Lost &amp; Found Log</span><span class="card-count" id="laf-count">0 items</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddLAF()">+ Log Item</button></div><div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Location</th><th>Description</th><th>Condition</th><th>Found By</th><th>Status</th><th></th></tr></thead><tbody id="laf-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-concierge">
@@ -689,7 +690,7 @@
       <div id="supplies-body"></div>
     </div>
     <div class="section" id="section-residents">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterResidents('all',this)">All Profiles</div><div class="sub-tab" onclick="filterResidents('pte-granted',this)">&#9989; PTE Granted</div><div class="sub-tab" onclick="filterResidents('pte-denied',this)">&#128683; PTE Denied</div><div class="sub-tab" onclick="filterResidents('pte-not-set',this)">PTE Not Set</div><div class="sub-tab" onclick="filterResidents('blueground',this)">&#128309; Blueground</div></div>
+      <div class="sub-tabs"><div class="sub-tab active" onclick="filterResidents('all',this)">All Profiles</div><div class="sub-tab" onclick="filterResidents('pte-granted',this)">&#9989; PTE Granted</div><div class="sub-tab" onclick="filterResidents('pte-denied',this)">&#128683; PTE Denied</div><div class="sub-tab" onclick="filterResidents('pte-not-set',this)">PTE Not Set</div><div class="sub-tab" onclick="filterResidents('blueground',this)">&#128309; Blueground</div><div class="sub-tab" onclick="filterResidents('archived',this)">&#128449; Archived</div></div>
       <div style="margin:8px 0"><input id="residents-search" type="text" placeholder="&#128269; Search by name or unit…" oninput="searchResidents(this.value)" style="width:100%;max-width:320px;font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text)"></div>
       <div id="residents-missing-banner"></div>
       <div id="residents-pte-banner" style="display:none;margin-bottom:10px;padding:10px 14px;background:#fffbeb;border:1px solid #fcd34d;border-radius:var(--radius);font-size:13px;color:#92400e"><strong>&#128230; Package Team:</strong> This view shows PTE (Permission to Enter) status per unit. Always check before entering a unit for package delivery.</div>
@@ -1255,7 +1256,7 @@
   <div class="modal-hdr"><span class="modal-title" id="modal-laf-title">Log Lost &amp; Found Item</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-laf')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Date Found</label><input id="lf-date" type="date"></div><div class="fg"><label>Time Found</label><input id="lf-time" type="time"></div></div>
-    <div class="fr"><div class="fg"><label>Found By</label><input id="lf-foundby" type="text"></div><div class="fg"><label>Location</label><input id="lf-location" type="text"></div></div>
+    <div class="fr"><div class="fg"><label>Found By</label><input id="lf-foundby" type="text"></div><div class="fg"><label>Location</label><input id="lf-location" type="text" list="lf-location-list" autocomplete="off"><datalist id="lf-location-list"><option value="Lobby"></option><option value="Mail Room"></option><option value="Package Room"></option><option value="Elevator"></option><option value="Hallway"></option><option value="Stairwell"></option><option value="Front Desk"></option><option value="Laundry Room"></option><option value="Bike Room"></option><option value="Garage"></option><option value="Terrace"></option><option value="Roof Deck"></option><option value="Gym"></option><option value="Common Area"></option></datalist></div></div>
     <div class="fg"><label>Condition</label><select id="lf-condition"><option>Good</option><option>Fair</option><option>Damaged</option><option>Unknown</option></select></div>
     <div class="fg"><label>Item Description</label><textarea id="lf-desc" rows="3" placeholder="Describe item clearly"></textarea></div>
     <div class="fg"><label>Notes (optional)</label><textarea id="lf-notes" rows="3"></textarea></div>
@@ -2891,12 +2892,6 @@ function archiveMove(id) {
     var alreadyHasProfile = (state.residentProfiles || []).some(function(p) { return p.unit === m.unit; });
     if (!alreadyHasProfile) {
       if (!state.residentProfiles) state.residentProfiles = [];
-      if (m.coResidents && m.coResidents.length) {
-        m.coResidents.forEach(function(cr) {
-          state.residentProfiles.push({ id: uid(), unit: m.unit, residentName: cr.name, preferredName: '', phone: '', notes: 'Co-resident — moved in ' + fmtShort(m.date), pte: 'not-set', instructions: '', parking: 'none', parkingInfo: '', bike: 'none', bikeNotes: '', storage: 'none', storageUnit: '', blueground: false, hasPet: false, petNotes: '', hasVehicle: false, vehicleInfo: '', createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' });
-        });
-        scheduleSave();
-      }
       openAddResidentFromMove(m);
     }
     // Ensure vacant unit is marked occupied on archive
@@ -3155,7 +3150,7 @@ function renderConcierge() {
 function escalateConciergeToMaint(id) {
   var c = (state.concierge || []).find(function(x) { return x.id === id; }); if (!c) return;
   if (!confirm('Create a maintenance issue from this concierge request?')) return;
-  var entry = { id: uid(), unit: c.unit || '', resident: c.resident || '', type: 'General', priority: 'medium', status: 'open', notes: 'Escalated from concierge request: ' + c.type + ' — ' + c.details, log: [], createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' };
+  var entry = { id: uid(), unit: c.unit || '', resident: c.resident || '', type: 'General', priority: 'medium', status: 'open', notes: 'Escalated from concierge request: ' + c.type + (c.notes ? ' — ' + c.notes : ''), log: [], createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' };
   if (!state.maintenance) state.maintenance = [];
   state.maintenance.push(entry);
   if (!c.log) c.log = [];
@@ -3327,7 +3322,7 @@ function updateGuestStatus(id, val) {
 function deleteGuest(id) { if (!confirm('Remove?')) return; var gx = (state.guests||[]).find(function(x){return x.id===id;}); if (gx) pushUndo({ sec: 'guests', type: 'DELETE', id: id, data: Object.assign({}, gx), label: 'delete guest — ' + gx.name }); logActivity('guests', 'delete', 'Removed guest' + (gx ? ' — ' + gx.name + ' · Unit ' + gx.unit : '')); state.guests = (state.guests || []).filter(function (gst) { return gst.id !== id; }); scheduleSave(); renderGuests(); updateBadges(); toast('Removed'); }
 
 // ─── KEYS ───
-var keyFilter = 'all';
+var keyFilter = 'issued';
 function filterKeys(f, item) {
   keyFilter = f;
   document.querySelectorAll('#section-keys .sub-tab').forEach(function (t) { t.classList.remove('active'); });
@@ -3394,6 +3389,7 @@ function saveKey() {
 function renderKeys() {
   var list = (state.keys || []).slice();
   if (keyFilter === 'issued') list = list.filter(function (k) { return k.status === 'issued'; });
+  else if (keyFilter === 'fobs') list = list.filter(function (k) { return k.type === 'resident' || k.type === 'joiner' || k.type === 'mobile'; });
   else if (keyFilter !== 'all') list = list.filter(function (k) { return k.type === keyFilter; });
   list.sort(function (a, b) { if (a.status === 'issued' && b.status !== 'issued') return -1; if (b.status === 'issued' && a.status !== 'issued') return 1; return b.createdAt - a.createdAt; });
   var allK = state.keys || [];
@@ -3504,7 +3500,11 @@ function logKeyReturn(id) {
   var ts = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
   if (!k.shiftNotes) k.shiftNotes = [];
   k.shiftNotes.push({ shiftId: getCurrentShiftId(), shift: getCurrentShiftLabel(), note: 'Key returned — logged at ' + ts, by: currentUser ? currentUser.name : '', ts: Date.now() });
+  var wasIssued = k.status === 'issued';
   k.status = 'returned'; k.returnedAt = Date.now();
+  if (k.type !== 'mobile' && wasIssued) {
+    applySupplyAdjustment('Key Cards – Blank Stock', +1, 'Returned — Unit ' + k.unit + ' · ' + k.name + (currentUser ? ' · ' + currentUser.name : ''));
+  }
   scheduleSave(); renderKeys(); updateBadges(); renderDash(); toast('Key return logged');
 }
 function deleteKey(id) { if (!confirm('Remove?')) return; var kx=(state.keys||[]).find(function(x){return x.id===id;}); if (kx) pushUndo({ sec: 'keys', type: 'DELETE', id: id, data: Object.assign({}, kx), label: 'delete key — Unit ' + kx.unit }); logActivity('keys','delete','Removed key'+(kx?' — Unit '+kx.unit+' · '+kx.name:'')); state.keys = (state.keys || []).filter(function (k) { return k.id !== id; }); scheduleSave(); renderKeys(); updateBadges(); toast('Removed'); }
@@ -3709,7 +3709,7 @@ function renderSecurity() {
 }
 
 // ─── AMENITIES ───
-var amenityFilter = 'all';
+var amenityFilter = 'upcoming';
 function filterAmenities(f, item) { amenityFilter = f; document.querySelectorAll('#section-amenities .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderAmenities(); }
 function getSelectedSpaces() { var cbs=document.querySelectorAll('input[name="am-space-cb"]:checked'),vals=[]; cbs.forEach(function(cb){vals.push(cb.value);}); return vals.join(', '); }
 function clearSpaceCheckboxes() { document.querySelectorAll('input[name="am-space-cb"]').forEach(function(cb){cb.checked=false;}); }
@@ -3726,7 +3726,19 @@ function saveAmenity() {
     pushUndo({ sec: 'amenities', type: 'EDIT', id: a.id, before: _ab, after: Object.assign({}, a), label: 'amenity edit — Unit ' + unit });
     editingAmenityId=null; logActivity('amenities','edit','Updated amenity booking — Unit '+unit+' · '+space+' · '+fmtShort(date)); scheduleSave(); closeModal('modal-amenity'); renderAmenities(); updateBadges(); renderCalendar(); toast('Booking updated'); return;
   }
-  var a = { id: uid(), resident: resident, unit: unit, space: space, date: date, start: g('am-start').value, end: g('am-end').value, type: g('am-type').value, fee: g('am-fee').value.trim(), notes: g('am-notes').value.trim(), addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
+  var newStart = g('am-start').value, newEnd = g('am-end').value;
+  // Conflict check: same space, same date, overlapping time
+  var conflicts = (state.amenities||[]).filter(function(x) {
+    if (x.space !== space || x.date !== date) return false;
+    if (!newStart || !x.start) return true; // no time = flag as potential overlap
+    var s1 = newStart, e1 = newEnd || '23:59', s2 = x.start, e2 = x.end || '23:59';
+    return s1 < e2 && s2 < e1;
+  });
+  if (conflicts.length) {
+    var names = conflicts.map(function(x){ return x.resident + ' (Unit ' + x.unit + ')' + (x.start ? ' ' + fmtTime(x.start) + (x.end ? '–' + fmtTime(x.end) : '') : ''); }).join(', ');
+    if (!confirm('⚠ Conflict: ' + space + ' is already booked on ' + fmtShort(date) + ' — ' + names + '.\n\nAdd anyway?')) return;
+  }
+  var a = { id: uid(), resident: resident, unit: unit, space: space, date: date, start: newStart, end: newEnd, type: g('am-type').value, fee: g('am-fee').value.trim(), notes: g('am-notes').value.trim(), addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
   if (!state.amenities) state.amenities = [];
   state.amenities.push(a); pushUndo({ sec: 'amenities', type: 'ADD', id: a.id, data: Object.assign({}, a), label: 'add booking — Unit ' + unit }); logActivity('amenities','create','Added amenity booking — Unit '+unit+' · '+space+' · '+fmtShort(date)); scheduleSave(); closeModal('modal-amenity'); renderAmenities(); updateBadges();
   ['am-resident', 'am-unit', 'am-fee', 'am-notes'].forEach(function (id) { g(id).value = ''; }); clearSpaceCheckboxes(); toast('Booking added');
@@ -3738,8 +3750,9 @@ function renderAmenities() {
   else if (amenityFilter === 'upcoming') list = list.filter(function (a) { return a.date >= t; });
   else if (amenityFilter === 'event') list = list.filter(function (a) { return a.type === 'event' && a.date >= t; });
   else if (amenityFilter === 'past') list = list.filter(function (a) { return a.date < t; });
-  else list = list.filter(function (a) { return a.date >= t; }); // "all" = today + future only
-  list.sort(function (a, b) { return a.date.localeCompare(b.date) || (a.start || '').localeCompare(b.start || ''); });
+  // 'all' = no date filter — show every booking
+  if (amenityFilter === 'all') list.sort(function (a, b) { return b.date.localeCompare(a.date) || (b.start || '').localeCompare(a.start || ''); });
+  else list.sort(function (a, b) { return a.date.localeCompare(b.date) || (a.start || '').localeCompare(b.start || ''); });
   var tbody = g('amenities-tbody'), cnt = g('amenities-count');
   if (cnt) cnt.textContent = list.length + ' bookings';
   if (!list.length) { tbody.innerHTML = '<tr><td colspan="8" class="tbl-empty">No bookings.</td></tr>'; return; }
@@ -4725,8 +4738,9 @@ function deleteTodo(id) { setCurrentTodos(getCurrentTodos().filter(function (t) 
 function clearDoneTodos() { if (!confirm('Clear completed to-dos?')) return; setCurrentTodos(getCurrentTodos().filter(function (t) { return !t.done; })); scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Cleared'); }
 
 // ─── LOST & FOUND ───
-var lafFilter = 'all';
+var lafFilter = 'all', lafSearch = '';
 function filterLAF(f, item) { lafFilter = f; document.querySelectorAll('#section-laf .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderLAF(); }
+function searchLAF(val) { lafSearch = val.toLowerCase().trim(); renderLAF(); }
 function saveLAF() {
   var desc = g('lf-desc').value.trim(); if (!desc) { toast('Enter item description'); return; }
   if (editingLAFId) {
@@ -4746,6 +4760,7 @@ function renderLAF() {
   var list = (state.laf || []).slice();
   if (lafFilter === 'unclaimed') list = list.filter(function (i) { return !i.claimedAt; });
   else if (lafFilter === 'claimed') list = list.filter(function (i) { return !!i.claimedAt; });
+  if (lafSearch) list = list.filter(function(i){ var q = lafSearch; return (i.desc||'').toLowerCase().includes(q) || (i.location||'').toLowerCase().includes(q) || (i.foundBy||'').toLowerCase().includes(q) || (i.notes||'').toLowerCase().includes(q); });
   list.sort(function (a, b) { return b.loggedAt - a.loggedAt; });
   var tbody = g('laf-tbody'), cnt = g('laf-count');
   var expiryDays = (state.lafSettings && state.lafSettings.expiryDays) || 30;
@@ -4779,6 +4794,17 @@ function deleteLAF(id) { if (!confirm('Remove?')) return; var lx=(state.laf||[])
 var residentsFilter = 'all', residentsSort = 'unit', residentsSearch = '', editingResidentId = null;
 // ===== [RESIDENT PROFILES] ===================================================
 function filterResidents(f, item) { residentsFilter = f; document.querySelectorAll('#section-residents .sub-tab').forEach(function(t){ t.classList.remove('active'); }); item.classList.add('active'); renderResidents(); }
+function viewResidentProfile(unit) {
+  var nav = document.querySelector('[onclick="showSection(\'residents\')"]');
+  if (nav) nav.click(); else showSection('residents');
+  residentsSearch = unit;
+  var si = g('residents-search'); if (si) si.value = unit;
+  renderResidents();
+  setTimeout(function(){
+    var grid = g('residents-grid');
+    if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 200);
+}
 function sortResidents(s) { residentsSort = s; document.querySelectorAll('#section-residents [data-sort]').forEach(function(b){ var on=b.dataset.sort===s; b.style.background=on?'var(--accent)':''; b.style.color=on?'#fff':''; b.style.borderColor=on?'var(--accent)':''; }); renderResidents(); }
 function searchResidents(val) { residentsSearch = val.toLowerCase(); renderResidents(); }
 function openAddResidentFromMoveId(moveId) {
@@ -4794,7 +4820,14 @@ function openAddResidentFromMove(m) {
   g('rp-unit').value = m.unit || '';
   g('rp-name').value = m.resident || '';
   var lsf = g('rp-lease-start'); if (lsf && m.date) lsf.value = m.date;
-  var notesEl = g('rp-notes'); if (notesEl) notesEl.value = 'Moved in ' + fmtShort(m.date);
+  var notesEl = g('rp-notes');
+  if (notesEl) {
+    var moveNotes = 'Moved in ' + fmtShort(m.date);
+    if (m.coResidents && m.coResidents.length) {
+      moveNotes += ' · Roommate(s): ' + m.coResidents.map(function(cr){ return cr.name; }).join(', ');
+    }
+    notesEl.value = moveNotes;
+  }
   setModalMode('modal-resident-title','modal-resident-savebtn','Create Resident Profile','Save Profile');
   openModal('modal-resident');
 }
@@ -5164,7 +5197,8 @@ function deleteSupply(id) {
 }
 
 function renderResidents() {
-  var list = (state.residentProfiles || []).filter(function(r){ return !r.archivedAt; });
+  var isArchived = residentsFilter === 'archived';
+  var list = (state.residentProfiles || []).filter(function(r){ return isArchived ? !!r.archivedAt : !r.archivedAt; });
   if (residentsFilter === 'pte-granted') list = list.filter(function(r){ return r.pte==='granted'; });
   else if (residentsFilter === 'pte-denied') list = list.filter(function(r){ return r.pte==='denied'; });
   else if (residentsFilter === 'pte-not-set') list = list.filter(function(r){ return !r.pte || r.pte==='not-set'; });
@@ -5244,7 +5278,8 @@ function renderResidents() {
     if (r.hasVehicle) credBadges.push('<span style="font-size:10px;background:#f0fdf4;color:#166534;border-radius:3px;padding:1px 6px;font-weight:600">&#128663; Vehicle' + (r.vehicleInfo ? ': ' + esc(r.vehicleInfo) : '') + '</span>');
     if (credBadges.length) html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">' + credBadges.join('') + '</div>';
     if (r.notes) html += '<div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.4"><em>' + esc(r.notes) + '</em></div>';
-    html += '<div class="flex gap-4 mt-10"><button class="btn btn-ghost btn-xs" onclick="openEditResident(\'' + r.id + '\')">&#9998; Edit</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteResident(\'' + r.id + '\')">&#215;</button></div>';
+    if (r.archivedAt) { var arDate = new Date(r.archivedAt).toISOString().split('T')[0]; html += '<div style="font-size:11px;color:var(--text3);margin-top:6px">&#128449; Archived ' + fmtShort(arDate) + '</div>'; }
+    html += '<div class="flex gap-4 mt-10">' + (!isStaffUser ? '<button class="btn btn-ghost btn-xs" onclick="openEditResident(\'' + r.id + '\')">&#9998; Edit</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteResident(\'' + r.id + '\')">&#215;</button>' : '') + '</div>';
     html += '</div>';
   });
   html += '</div>';
@@ -5424,6 +5459,7 @@ function getActiveAutoBlockIds() {
   });
   (state.amenities||[]).forEach(function(a) {
     var exKey = 'am_'+a.id; if (pdExcluded[exKey]) return;
+    if (a.closeoutNote) return; // already closed out — skip
     if ((a.date===t && pdInShift(a.start, shift)) || (isLead && a.date>t && a.date<=maxDate)) ids.push(exKey);
   });
   (state.maintenance||[]).filter(function(m){ return (m.status==='open'||m.status==='in-progress') && !pdExcluded['mt_'+m.id]; }).forEach(function(m){ ids.push('mt_'+m.id); });
@@ -5633,8 +5669,8 @@ function renderPdAutoBlocks(isLead) {
   }
 
   // Amenity bookings: this-shift (today, time-filtered) + upcoming (lead)
-  var shiftAm = (state.amenities||[]).filter(function(a){ return a.date===t && pdInShift(a.start, shift); }).sort(function(a,b){ return (a.start||'').localeCompare(b.start||''); });
-  var upcomingAm = isLead ? (state.amenities||[]).filter(function(a){ return a.date>t && a.date<=maxDate; }).sort(function(a,b){ return a.date.localeCompare(b.date)||(a.start||'').localeCompare(b.start||''); }) : [];
+  var shiftAm = (state.amenities||[]).filter(function(a){ return !a.closeoutNote && a.date===t && pdInShift(a.start, shift); }).sort(function(a,b){ return (a.start||'').localeCompare(b.start||''); });
+  var upcomingAm = isLead ? (state.amenities||[]).filter(function(a){ return !a.closeoutNote && a.date>t && a.date<=maxDate; }).sort(function(a,b){ return a.date.localeCompare(b.date)||(a.start||'').localeCompare(b.start||''); }) : [];
   var allAm = shiftAm.concat(upcomingAm);
   html += '<div class="pd-auto-block"><div class="pd-auto-hdr">🎉 Amenity Bookings</div>';
   if (!allAm.length) html += '<div style="color:var(--text3)">None today' + (isLead ? ' or upcoming' : '') + '</div>';
@@ -5702,8 +5738,8 @@ function renderPdAutoBlocks(isLead) {
   }
   html += '</div>';
 
-  // Security incidents (today's shift + any monitoring)
-  var secIncidents = (state.security||[]).filter(function(s){ return s.date===t || s.status==='monitoring'; });
+  // Security incidents (active monitoring + today's unresolved)
+  var secIncidents = (state.security||[]).filter(function(s){ return s.status==='monitoring' || (s.date===t && s.status!=='resolved'); });
   if (secIncidents.length) {
     html += '<div class="pd-auto-block" style="border-color:rgba(220,38,38,0.3)"><div class="pd-auto-hdr" style="color:#dc2626">🛡 Incidents</div>';
     secIncidents.forEach(function(s) {
