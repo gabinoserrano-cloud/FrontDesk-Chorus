@@ -638,7 +638,7 @@
       <div class="card" id="keys-log-card"><div class="card-hdr"><span class="card-title">Key Log</span><span class="card-count" id="keys-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddKey()">+ Log Key</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident / Guest</th><th>Type</th><th>Key #</th><th>Time Out</th><th>Status</th><th></th></tr></thead><tbody id="keys-tbody"></tbody></table></div></div>
       <div id="parking-view" style="display:none">
         <div class="card"><div class="card-hdr"><span class="card-title">Parking Credentials</span><span class="card-count" id="parking-count">0 credentials</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddParking()">+ Add Credential</button></div>
-        <div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident</th><th>Transponder</th><th>Key Tag</th><th>Valet Sticker</th><th>Monthly Fee</th><th>Status</th><th>Notice Date</th><th></th></tr></thead><tbody id="parking-tbody"></tbody></table></div></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident</th><th>Transponder</th><th>Key Tag</th><th>Xpress Sticker</th><th>Monthly Fee</th><th>Status</th><th>Notice Date</th><th></th></tr></thead><tbody id="parking-tbody"></tbody></table></div></div>
       </div>
     </div>
     <div class="section" id="section-amenities">
@@ -1184,7 +1184,7 @@
         <div class="fg" style="margin:0"><input id="pk-keytag-num" type="text" placeholder="Key Tag ID #" style="font-size:12px"></div>
       </div>
       <div class="fr" style="align-items:center;gap:10px">
-        <div style="display:flex;align-items:center;gap:6px;flex:0 0 160px"><input type="checkbox" id="pk-valet" style="accent-color:var(--accent)"><label for="pk-valet" style="margin:0;font-weight:600;font-size:13px">Valet Sticker</label></div>
+        <div style="display:flex;align-items:center;gap:6px;flex:0 0 160px"><input type="checkbox" id="pk-valet" style="accent-color:var(--accent)"><label for="pk-valet" style="margin:0;font-weight:600;font-size:13px">Xpress Sticker</label></div>
         <div class="fg" style="margin:0"><input id="pk-valet-num" type="text" placeholder="Sticker # / Plate" style="font-size:12px"></div>
       </div>
     </div>
@@ -1581,7 +1581,7 @@ var DEFAULT_IN_TASKS = [
   { text: 'Prepare Unit Mail Key(s)', cat: 'Keys & Access', hint: '# of mail keys: ___ (e.g. 1 mail key)' },
   { text: 'Parking: Vehicle info & transponder issued', cat: 'Parking', hint: 'Vehicle type & color: ___ | Transponder #: ___' },
   { text: 'Parking: Key tag issued', cat: 'Parking', hint: 'Key tag #: ___' },
-  { text: 'Parking: Valet sticker issued', cat: 'Parking', hint: 'Valet sticker #: ___' },
+  { text: 'Parking: Xpress sticker issued', cat: 'Parking', hint: 'Xpress sticker #: ___' },
   // Move-In Day
   { text: 'Confirm move-in date and time window', cat: 'Move In' },
   { text: 'Reserve service elevator', cat: 'Elevator' },
@@ -1608,7 +1608,7 @@ var DEFAULT_OUT_TASKS = [
   { text: 'Collect & Verify All Unit Mail Keys', cat: 'Keys & Access' },
   { text: 'Parking: Transponder returned', cat: 'Parking', hint: 'If not returned or returned damaged, note here (e.g. adhered to windshield / cracked)' },
   { text: 'Parking: Key tag returned', cat: 'Parking' },
-  { text: 'Parking: Valet sticker returned', cat: 'Parking' },
+  { text: 'Parking: Xpress sticker returned', cat: 'Parking' },
   { text: 'Mobile key deactivated (Lenel)', cat: 'Keys & Access' },
   { text: 'Parking spot vacated', cat: 'Move Out' },
   { text: 'Mail forwarding reminder given', cat: 'Move Out' },
@@ -1629,7 +1629,7 @@ var DEFAULT_SUPPLIES = [
   { name: 'Key Cards – Blank Stock', cat: 'Key Cards & Access', unit: 'cards', lowAt: 10 },
   { name: 'Transponders', cat: 'Key Cards & Access', unit: 'transponders', lowAt: 2 },
   { name: 'Key Tags', cat: 'Key Cards & Access', unit: 'tags', lowAt: 3 },
-  { name: 'Valet Stickers', cat: 'Key Cards & Access', unit: 'stickers', lowAt: 3 },
+  { name: 'Xpress Stickers', cat: 'Key Cards & Access', unit: 'stickers', lowAt: 3 },
   { name: 'Vendor Cards – Active Issued', cat: 'Key Cards & Access', unit: 'cards', lowAt: null },
   { name: 'One-Time Cards – Active Issued', cat: 'Key Cards & Access', unit: 'cards', lowAt: null },
   { name: 'Self-Guided Tour Keys – Active', cat: 'Key Cards & Access', unit: 'keys', lowAt: null }
@@ -1638,10 +1638,10 @@ var DEFAULT_SUPPLIES = [
 var TASK_SUPPLY_MAP = {
   'Parking: Vehicle info & transponder issued': { supName: 'Transponders',        delta: -1 },
   'Parking: Key tag issued':                   { supName: 'Key Tags',             delta: -1 },
-  'Parking: Valet sticker issued':             { supName: 'Valet Stickers',       delta: -1 },
+  'Parking: Xpress sticker issued':             { supName: 'Xpress Stickers',       delta: -1 },
   'Parking: Transponder returned':             { supName: 'Transponders',         delta: +1 },
   'Parking: Key tag returned':                 { supName: 'Key Tags',             delta: +1 },
-  'Parking: Valet sticker returned':           { supName: 'Valet Stickers',       delta: +1 }
+  'Parking: Xpress sticker returned':           { supName: 'Xpress Stickers',       delta: +1 }
 };
 var WT_FLOORS = [
   { label: 'Lobby & Exterior', items: ['Main entrance clean & clear', 'Door signage OK', 'Lobby furniture arranged', 'Elevator lobby clean', 'Mail room organized', 'Package area clean', 'Bike storage OK', 'Trash/recycling rooms clear', 'Lighting OK'] },
@@ -4904,7 +4904,7 @@ function openUnitView(unit) {
     var items = [];
     if (p.transponder) items.push('Transponder #'+esc(p.transponderNum||''));
     if (p.keytag) items.push('Key Tag #'+esc(p.keytagNum||''));
-    if (p.valet) items.push('Valet Sticker #'+esc(p.valetNum||''));
+    if (p.valet) items.push('Xpress Sticker #'+esc(p.valetNum||''));
     return items.join(' &middot; ') || '(no items listed)';
   }));
   // ── L&F ──
@@ -5046,7 +5046,7 @@ function renderSupplies() {
       return { id: uid(), name: d.name, cat: d.cat, unit: d.unit, qty: 0, lowAt: d.lowAt, notes: '', log: [], updatedAt: null, updatedBy: null };
     });
   } else {
-    // Seed any new default items that don't exist yet (e.g. Transponders/Key Tags/Valet Stickers)
+    // Seed any new default items that don't exist yet (e.g. Transponders/Key Tags/Xpress Stickers)
     DEFAULT_SUPPLIES.forEach(function(d) {
       var exists = state.supplies.some(function(s){ return s.name === d.name; });
       if (!exists) state.supplies.push({ id: uid(), name: d.name, cat: d.cat, unit: d.unit, qty: 0, lowAt: d.lowAt, notes: '', log: [], updatedAt: null, updatedBy: null });
@@ -5259,7 +5259,7 @@ function checkSupplyLowStockTodos() {
 function applySupplyAdjustment(supName, delta, note) {
   // Ensure new items are seeded before looking up
   if (!state.supplies || !state.supplies.length) return;
-  // Seed any missing default items (e.g. Transponders/Key Tags/Valet Stickers added in code update)
+  // Seed any missing default items (e.g. Transponders/Key Tags/Xpress Stickers added in code update)
   DEFAULT_SUPPLIES.forEach(function(d) {
     var exists = state.supplies.some(function(s){ return s.name === d.name; });
     if (!exists) state.supplies.push({ id: uid(), name: d.name, cat: d.cat, unit: d.unit, qty: 0, lowAt: d.lowAt, notes: '', log: [], updatedAt: null, updatedBy: null });
@@ -8214,7 +8214,7 @@ function migrateTaskUpdatesV2() {
   var inParkingSubs = [
     { text: 'Parking: Vehicle info & transponder issued', cat: 'Parking', hint: 'Vehicle type & color: ___ | Transponder #: ___' },
     { text: 'Parking: Key tag issued', cat: 'Parking', hint: 'Key tag #: ___' },
-    { text: 'Parking: Valet sticker issued', cat: 'Parking', hint: 'Valet sticker #: ___' }
+    { text: 'Parking: Xpress sticker issued', cat: 'Parking', hint: 'Xpress sticker #: ___' }
   ];
   var outRenames = {
     'Initial - Inspection & Elevator Scheduling Message': 'Send Inspection & Move-Out Scheduling Message',
@@ -8225,7 +8225,7 @@ function migrateTaskUpdatesV2() {
   var outParkingSubs = [
     { text: 'Parking: Transponder returned', cat: 'Parking', hint: 'If not returned or returned damaged, note here (e.g. adhered to windshield / cracked)' },
     { text: 'Parking: Key tag returned', cat: 'Parking', hint: null },
-    { text: 'Parking: Valet sticker returned', cat: 'Parking', hint: null }
+    { text: 'Parking: Xpress sticker returned', cat: 'Parking', hint: null }
   ];
   function applyMigration(list, renames, hints, removals, parkingExpand, parkingSubs) {
     if (!list) return list;
