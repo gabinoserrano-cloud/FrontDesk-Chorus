@@ -1397,6 +1397,12 @@
   <div class="modal-ftr"><button class="btn btn-primary" onclick="closeModal('modal-help')">Got it</button></div>
 </div></div>
 
+<div class="modal-ov" id="modal-unit-view"><div class="modal" style="max-width:560px">
+  <div class="modal-hdr"><span class="modal-title" id="unit-view-title">Unit Overview</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-unit-view')">&#x2715;</button></div>
+  <div class="modal-bdy" id="unit-view-body" style="max-height:72vh;overflow-y:auto;padding:0"></div>
+  <div class="modal-ftr" id="unit-view-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-unit-view')">Close</button></div>
+</div></div>
+
 <div id="login-overlay">
   <div class="login-box">
     <div class="login-logo">&#127968; Chorus Front Desk</div>
@@ -3124,7 +3130,7 @@ function renderConcierge() {
     html += '<td><select class="ie-sel" onchange="updateConciergeStatus(\'' + c.id + '\',this.value)"><option value="open"' + (c.status==='open'?' selected':'') + '>Open</option><option value="completed"' + (c.status==='completed'?' selected':'') + '>Completed</option></select></td>';
     html += '<td class="text-xs text-2">' + (c.handledBy || '—') + '</td>';
     html += '<td class="text-xs text-3">' + new Date(c.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) + '</td>';
-    html += '<td><button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="toggleConciergeLog(\'' + c.id + '\')" title="Activity log">' + logBtnLabel + '</button> ' + (c.status === 'open' ? '<button onclick="escalateConciergeToMaint(\'' + c.id + '\')" class="btn btn-ghost btn-xs" title="Escalate to Maintenance" style="color:var(--amber)">&#8594; Maint</button> ' : '') + '<button class="btn btn-ghost btn-xs" onclick="openEditConcierge(\'' + c.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteConcierge(\'' + c.id + '\')">&#215;</button></td>';
+    html += '<td><button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="toggleConciergeLog(\'' + c.id + '\')" title="Activity log">' + logBtnLabel + '</button> ' + (c.status === 'open' ? '<button onclick="escalateConciergeToMaint(\'' + c.id + '\')" class="btn btn-ghost btn-xs" title="Escalate to Maintenance" style="color:var(--amber)">&#8594; Maint</button> ' : '') + (c.unit ? '<button class="btn btn-ghost btn-xs" onclick="openUnitView(\'' + c.unit + '\')" title="Unit overview" style="color:var(--accent)">&#128100;</button>' : '') + '<button class="btn btn-ghost btn-xs" onclick="openEditConcierge(\'' + c.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteConcierge(\'' + c.id + '\')">&#215;</button></td>';
     html += '</tr>';
     // Activity log sub-row
     var logInputId = 'concierge-log-input-' + c.id;
@@ -3452,6 +3458,7 @@ function renderKeys() {
     html += '<td><select class="ie-sel" onchange="updateKeyStatus(\'' + k.id + '\',this.value)"><option value="issued" ' + (isIssued ? 'selected' : '') + '>Issued</option><option value="returned" ' + (k.status === 'returned' ? 'selected' : '') + '>Returned</option></select></td>';
     html += '<td>'
       + (isIssued ? '<button class="btn btn-secondary btn-xs" style="margin-right:4px" onclick="logKeyReturn(\'' + k.id + '\')" title="Log key return">↩ Return</button>' : '')
+      + (k.unit ? '<button class="btn btn-ghost btn-xs" onclick="openUnitView(\'' + k.unit + '\')" title="Unit overview" style="color:var(--accent)">&#128100;</button>' : '')
       + '<button class="btn btn-ghost btn-xs" onclick="openEditKey(\'' + k.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteKey(\'' + k.id + '\')">&#x2715;</button></td>';
     html += '</tr>';
     // Status note row for all issued one-time keys
@@ -3721,8 +3728,20 @@ function saveAmenity() {
   if (!space) { toast('Select at least one amenity space'); return; }
   if (editingAmenityId) {
     var a = (state.amenities||[]).find(function(x){return x.id===editingAmenityId;}); if(!a) return;
+    var editStart = g('am-start').value, editEnd = g('am-end').value;
+    var editConflicts = (state.amenities||[]).filter(function(x) {
+      if (x.id === editingAmenityId) return false; // skip self
+      if (x.space !== space || x.date !== date) return false;
+      if (!editStart || !x.start) return true;
+      var s1 = editStart, e1 = editEnd || '23:59', s2 = x.start, e2 = x.end || '23:59';
+      return s1 < e2 && s2 < e1;
+    });
+    if (editConflicts.length) {
+      var ecNames = editConflicts.map(function(x){ return x.resident + ' (Unit ' + x.unit + ')' + (x.start ? ' ' + fmtTime(x.start) + (x.end ? '–' + fmtTime(x.end) : '') : ''); }).join(', ');
+      if (!confirm('⚠ Conflict: ' + space + ' is already booked on ' + fmtShort(date) + ' — ' + ecNames + '.\n\nSave anyway?')) return;
+    }
     var _ab = Object.assign({}, a);
-    a.resident=resident; a.unit=unit; a.space=space; a.date=date; a.start=g('am-start').value; a.end=g('am-end').value; a.type=g('am-type').value; a.fee=g('am-fee').value.trim(); a.notes=g('am-notes').value.trim();
+    a.resident=resident; a.unit=unit; a.space=space; a.date=date; a.start=editStart; a.end=editEnd; a.type=g('am-type').value; a.fee=g('am-fee').value.trim(); a.notes=g('am-notes').value.trim();
     pushUndo({ sec: 'amenities', type: 'EDIT', id: a.id, before: _ab, after: Object.assign({}, a), label: 'amenity edit — Unit ' + unit });
     editingAmenityId=null; logActivity('amenities','edit','Updated amenity booking — Unit '+unit+' · '+space+' · '+fmtShort(date)); scheduleSave(); closeModal('modal-amenity'); renderAmenities(); updateBadges(); renderCalendar(); toast('Booking updated'); return;
   }
@@ -3776,7 +3795,8 @@ function renderAmenities() {
     html += '<td class="text-sm text-2">' + (a.notes || '-') + '</td>';
     html += '<td>';
     if (pendingCloseout) html += '<button class="btn btn-secondary btn-sm" style="border-color:var(--amber);color:var(--amber)" onclick="toggleAmenityCloseout(\'' + a.id + '\')">Close out</button> ';
-    html += '<button class="btn btn-ghost btn-xs" onclick="openEditAmenity(\'' + a.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteAmenity(\'' + a.id + '\')">&#x2715;</button>';
+    html += (a.unit ? '<button class="btn btn-ghost btn-xs" onclick="openUnitView(\'' + a.unit + '\')" title="Unit overview" style="color:var(--accent)">&#128100;</button>' : '')
+      + '<button class="btn btn-ghost btn-xs" onclick="openEditAmenity(\'' + a.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteAmenity(\'' + a.id + '\')">&#x2715;</button>';
     html += '</td></tr>';
     // Close-out input sub-row
     if (pendingCloseout) {
@@ -4804,6 +4824,105 @@ function viewResidentProfile(unit) {
     var grid = g('residents-grid');
     if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 200);
+}
+function openUnitView(unit) {
+  var t = today();
+  var profile = (state.residentProfiles||[]).find(function(p){ return p.unit===unit && !p.archivedAt; });
+  var titleEl = g('unit-view-title');
+  if (titleEl) titleEl.textContent = 'Unit ' + unit + (profile ? ' — ' + (profile.preferredName || profile.residentName) : '');
+  var pteLabel = { granted: '&#9989; PTE Granted', denied: '&#128683; PTE Denied', 'not-set': 'PTE Not Set' };
+  var pteClass = { granted: 'pte-granted', denied: 'pte-denied', 'not-set': 'pte-not-set' };
+  var html = '';
+  // ── Profile card ──
+  html += '<div style="padding:14px 16px;border-bottom:1px solid var(--border)">';
+  if (profile) {
+    var pte = profile.pte || 'not-set';
+    html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">';
+    html += '<span class="unit-num" style="font-size:15px">Unit ' + esc(unit) + '</span>';
+    html += '<span class="pte-badge ' + pteClass[pte] + '">' + pteLabel[pte] + '</span>';
+    if (profile.blueground) html += '<span style="font-size:10px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600">&#128309; Blueground</span>';
+    html += '<button class="btn btn-primary btn-xs ml-auto" onclick="closeModal(\'modal-unit-view\');openEditResident(\'' + profile.id + '\')">&#9998; Edit Profile</button>';
+    html += '</div>';
+    html += '<div style="font-weight:600;font-size:14px">' + esc(profile.residentName) + (profile.preferredName ? ' <span style="font-weight:400;color:var(--text3);font-size:12px">(' + esc(profile.preferredName) + ')</span>' : '') + '</div>';
+    if (profile.phone) html += '<div style="font-size:12px;color:var(--text3);margin-top:2px">&#128222; ' + esc(profile.phone) + '</div>';
+    var dateBits = [];
+    if (profile.leaseEnd) dateBits.push('Lease ends ' + fmtShort(profile.leaseEnd));
+    else if (profile.leaseStart) dateBits.push('Lease started ' + fmtShort(profile.leaseStart));
+    if (profile.monthToMonth) dateBits.push('Month-to-month');
+    if (profile.wifiExpiry) dateBits.push('WiFi exp. ' + fmtShort(profile.wifiExpiry));
+    if (dateBits.length) html += '<div style="font-size:11px;color:var(--text2);margin-top:4px">' + dateBits.join(' &middot; ') + '</div>';
+    var credBits = [];
+    if (profile.parking === 'yes') credBits.push('&#128664; Parking' + (profile.parkingInfo ? ': ' + esc(profile.parkingInfo) : ''));
+    if (profile.bike && profile.bike !== 'none') credBits.push('&#128690; Bike ×' + esc(profile.bike));
+    if (profile.storage === 'yes') credBits.push('&#128230; Storage' + (profile.storageUnit ? ' ' + esc(profile.storageUnit) : ''));
+    if (profile.hasPet) credBits.push('&#128062; Pet' + (profile.petNotes ? ': ' + esc(profile.petNotes) : ''));
+    if (profile.hasVehicle) credBits.push('&#128663; Vehicle' + (profile.vehicleInfo ? ': ' + esc(profile.vehicleInfo) : ''));
+    if (credBits.length) html += '<div style="font-size:11px;color:var(--text2);margin-top:4px">' + credBits.join(' &middot; ') + '</div>';
+    if (profile.instructions) html += '<div style="font-size:12px;background:var(--bg);border-radius:5px;padding:6px 8px;margin-top:8px;color:var(--text2);line-height:1.5"><strong>Instructions:</strong> ' + esc(profile.instructions) + '</div>';
+    if (profile.notes) html += '<div style="font-size:11px;color:var(--text3);margin-top:6px;font-style:italic">' + esc(profile.notes) + '</div>';
+  } else {
+    html += '<div style="display:flex;align-items:center;justify-content:space-between">';
+    html += '<span class="unit-num" style="font-size:15px">Unit ' + esc(unit) + '</span>';
+    html += '<button class="btn btn-primary btn-xs" onclick="closeModal(\'modal-unit-view\');openAddResident()">+ Create Profile</button>';
+    html += '</div>';
+    html += '<div style="font-size:12px;color:var(--text3);margin-top:6px">No active resident profile for this unit.</div>';
+  }
+  html += '</div>';
+  // ── Section helper ──
+  function uvSection(icon, label, rows, emptyMsg) {
+    if (!rows.length) return '';
+    var s = '<div style="padding:10px 16px;border-bottom:1px solid var(--border)">';
+    s += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-bottom:6px">' + icon + ' ' + label + ' <span style="font-weight:400">(' + rows.length + ')</span></div>';
+    rows.forEach(function(r){ s += '<div style="font-size:12px;color:var(--text2);padding:3px 0;border-bottom:1px dashed var(--border2)">' + r + '</div>'; });
+    s += '</div>';
+    return s;
+  }
+  // ── Maintenance ──
+  var maint = (state.maintenance||[]).filter(function(m){ return m.unit===unit && (m.status==='open'||m.status==='in-progress'); });
+  html += uvSection('&#128295;', 'Open Maintenance', maint.map(function(m){
+    var pri = m.priority==='high'?'<span style="color:var(--red);font-weight:600">High</span>':m.priority==='low'?'<span style="color:var(--text3)">Low</span>':'Med';
+    return '<strong>' + esc(m.issue||m.type) + '</strong> &middot; ' + pri + ' &middot; ' + (m.status==='in-progress'?'In Progress':'Open');
+  }));
+  // ── Keys ──
+  var keys = (state.keys||[]).filter(function(k){ return k.unit===unit && k.status==='issued'; });
+  html += uvSection('&#128273;', 'Keys Out', keys.map(function(k){
+    return esc(k.name) + ' <span style="color:var(--text3)">&middot; ' + k.type + (k.fob?' &middot; #'+esc(k.fob):'') + '</span>';
+  }));
+  // ── Concierge ──
+  var conc = (state.concierge||[]).filter(function(c){ return c.unit===unit && c.status==='open'; });
+  html += uvSection('&#127917;', 'Open Concierge Requests', conc.map(function(c){
+    return '<strong>' + esc(c.type) + '</strong>' + (c.notes?' &middot; <span style="color:var(--text3)">'+esc(c.notes)+'</span>':'');
+  }));
+  // ── Amenities ──
+  var amens = (state.amenities||[]).filter(function(a){ return a.unit===unit && a.date>=t && !a.closeoutNote; });
+  html += uvSection('&#127881;', 'Upcoming Amenities', amens.map(function(a){
+    return '<strong>' + esc(a.space) + '</strong> &middot; ' + fmtShort(a.date) + (a.start?' '+fmtTime(a.start)+(a.end?'–'+fmtTime(a.end):''):'');
+  }));
+  // ── Parking ──
+  var parking = (state.parking||[]).filter(function(p){ return p.unit===unit && p.status!=='cancelled'; });
+  html += uvSection('&#128664;', 'Parking Credentials', parking.map(function(p){
+    var items = [];
+    if (p.transponder) items.push('Transponder #'+esc(p.transponderNum||''));
+    if (p.keytag) items.push('Key Tag #'+esc(p.keytagNum||''));
+    if (p.valet) items.push('Valet Sticker #'+esc(p.valetNum||''));
+    return items.join(' &middot; ') || '(no items listed)';
+  }));
+  // ── L&F ──
+  var laf = (state.laf||[]).filter(function(i){ return !i.claimedAt && i.flaggedForPassdown; });
+  var lafUnit = laf.filter(function(i){ return (i.unit||'')===unit; });
+  // Also check unclaimed items with no unit but flag them separately
+  if (lafUnit.length) html += uvSection('&#128181;', 'Flagged L&F Items', lafUnit.map(function(i){ return esc(i.desc) + ' &middot; ' + (i.location||'?'); }));
+  // ── Active monitoring security for unit ──
+  var sec = (state.security||[]).filter(function(s){ return s.unit===unit && s.status==='monitoring'; });
+  html += uvSection('&#128737;', 'Active Security Monitoring', sec.map(function(s){
+    return '<strong>' + esc(s.type) + '</strong> &middot; ' + esc(s.location) + (s.time?' at '+fmtTime(s.time):'');
+  }));
+  // ── All clear ──
+  var anyOpen = maint.length||keys.length||conc.length||amens.length||parking.length||lafUnit.length||sec.length;
+  if (!anyOpen) html += '<div style="padding:14px 16px;font-size:12px;color:var(--green);font-weight:600">&#10003; No open items across any section</div>';
+  var bodyEl = g('unit-view-body');
+  if (bodyEl) bodyEl.innerHTML = html;
+  openModal('modal-unit-view');
 }
 function sortResidents(s) { residentsSort = s; document.querySelectorAll('#section-residents [data-sort]').forEach(function(b){ var on=b.dataset.sort===s; b.style.background=on?'var(--accent)':''; b.style.color=on?'#fff':''; b.style.borderColor=on?'var(--accent)':''; }); renderResidents(); }
 function searchResidents(val) { residentsSearch = val.toLowerCase(); renderResidents(); }
