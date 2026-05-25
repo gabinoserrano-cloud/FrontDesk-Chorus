@@ -107,6 +107,9 @@
   .sup-unit{font-size:11px;color:var(--text3);flex-shrink:0}
   .sup-name{flex:1;font-weight:500}
   .sup-updated{font-size:11px;color:var(--text3);white-space:nowrap}
+  .sup-start-info{font-size:10px;color:var(--text3);margin-top:2px}
+  .cl-parking-hdr{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);padding:6px 0 2px 2px;margin-top:4px;border-top:1px solid var(--border2);display:flex;align-items:center;gap:5px}
+  .cl-item-parking{padding-left:14px;border-left:2px solid var(--border2);margin-left:4px}
 
   /* CARD */
   .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:14px}
@@ -1363,6 +1366,10 @@
       <div class="fg"><label>Unit Label</label><input id="sup-unit" type="text" placeholder="e.g. reams, cards, pens"></div>
     </div>
     <div class="fr">
+      <div class="fg"><label>Starting Qty</label><input id="sup-startqty" type="number" min="0" value="0" title="Count when you started tracking this item"></div>
+      <div class="fg"><label>As of Date</label><input id="sup-startdate" type="date" data-no-autofill></div>
+    </div>
+    <div class="fr">
       <div class="fg"><label>Current Qty</label><input id="sup-qty" type="number" min="0" value="0"></div>
       <div class="fg"><label>Low Alert At (optional)</label><input id="sup-low" type="number" min="0" placeholder="leave blank = counter"></div>
     </div>
@@ -2473,8 +2480,14 @@ function buildCL(m, filterCat) {
   html += '</div></div>';
   if (!tasks.length) { html += '<div class="text-3 text-sm" style="padding:8px 0">No tasks yet.</div>'; return html; }
   var allDone = tasks.length > 0 && done === tasks.length;
+  var hadParkingHeader = false;
   tasks.forEach(function (t) {
-    html += '<div class="cl-item" onclick="event.stopPropagation()">';
+    var isParkingTask = t.cat === 'Parking';
+    if (isParkingTask && !hadParkingHeader) {
+      html += '<div class="cl-parking-hdr">&#128663; Parking Credentials</div>';
+      hadParkingHeader = true;
+    }
+    html += '<div class="cl-item' + (isParkingTask ? ' cl-item-parking' : '') + '" onclick="event.stopPropagation()">';
     html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTask(\'' + m.id + '\',\'' + t.id + '\',this.checked)">';
     // Editable task text
     html += '<input type="text" class="cl-text-input ' + (t.done ? 'done' : '') + '" value="' + (t.text || t.label || '').replace(/"/g, '&quot;') + '" onblur="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'text\',this.value)" onclick="event.stopPropagation()">';
@@ -3275,6 +3288,7 @@ function saveGuest() {
     state.keys.push(guestKeyEntry);
     gst.linkedKeyId = guestKeyEntry.id;
     applySupplyAdjustment('Key Cards – Blank Stock', -1, 'Issued for guest — Unit ' + unit);
+    applySupplyAdjustment('One-Time Cards – Active Issued', +1, 'Issued for guest — Unit ' + unit + ' · ' + name);
     renderKeys();
   }
   state.guests.push(gst); pushUndo({ sec: 'guests', type: 'ADD', id: gst.id, data: Object.assign({}, gst), label: 'add guest — ' + name }); logActivity('guests', 'create', 'Logged guest — ' + name + ' · Unit ' + unit + (issueKey ? ' (key issued)' : '')); scheduleSave(); closeModal('modal-guest'); renderGuests(); updateBadges();
@@ -3316,6 +3330,7 @@ function updateGuestStatus(id, val) {
         if (confirm('Mark guest key as returned?')) {
           linkedKey.status = 'returned'; linkedKey.returnedAt = Date.now();
           applySupplyAdjustment('Key Cards – Blank Stock', +1, 'Returned — guest key Unit ' + gst.unit + ' · ' + gst.name);
+          applySupplyAdjustment('One-Time Cards – Active Issued', -1, 'Returned — guest key Unit ' + gst.unit + ' · ' + gst.name);
           renderKeys();
         }
       }
@@ -3373,6 +3388,8 @@ function saveKey() {
       // Increment blank stock when a physical key is returned
       if (k.type !== 'mobile' && !wasReturned) {
         applySupplyAdjustment('Key Cards – Blank Stock', +1, 'Returned — Unit ' + k.unit + ' · ' + k.name + (currentUser ? ' · ' + currentUser.name : ''));
+        if (k.type === 'one-time') applySupplyAdjustment('One-Time Cards – Active Issued', -1, 'Returned — Unit ' + k.unit + ' · ' + k.name);
+        if (k.type === 'vendor') applySupplyAdjustment('Vendor Cards – Active Issued', -1, 'Returned — ' + (k.company || k.name) + ' · Unit ' + k.unit);
       }
     }
     pushUndo({ sec: 'keys', type: 'EDIT', id: k.id, before: _kb, after: Object.assign({}, k), label: 'key edit — Unit ' + unit });
@@ -3388,6 +3405,8 @@ function saveKey() {
   // Decrement blank key card stock when a physical key is issued
   if (k.status === 'issued' && k.type !== 'mobile') {
     applySupplyAdjustment('Key Cards – Blank Stock', -1, 'Issued — Unit ' + k.unit + ' · ' + k.name + (k.addedBy ? ' · ' + k.addedBy : ''));
+    if (k.type === 'one-time') applySupplyAdjustment('One-Time Cards – Active Issued', +1, 'Issued — Unit ' + k.unit + ' · ' + k.name);
+    if (k.type === 'vendor') applySupplyAdjustment('Vendor Cards – Active Issued', +1, 'Issued — ' + (k.company || k.name) + ' · Unit ' + k.unit);
   }
   ['ky-unit', 'ky-name', 'ky-fob', 'ky-notes', 'ky-guest', 'ky-timeout'].forEach(function (id) { var el=g(id); if(el) el.value=''; }); g('ky-expiry').value = ''; toast('Key logged');
 }
@@ -3498,6 +3517,8 @@ function updateKeyStatus(id, val) {
     k.returnedAt = Date.now();
     if (k.type !== 'mobile' && wasIssued) {
       applySupplyAdjustment('Key Cards – Blank Stock', +1, 'Returned — Unit ' + k.unit + ' · ' + k.name + (currentUser ? ' · ' + currentUser.name : ''));
+      if (k.type === 'one-time') applySupplyAdjustment('One-Time Cards – Active Issued', -1, 'Returned — Unit ' + k.unit + ' · ' + k.name);
+      if (k.type === 'vendor') applySupplyAdjustment('Vendor Cards – Active Issued', -1, 'Returned — ' + (k.company || k.name) + ' · Unit ' + k.unit);
     }
   }
   scheduleSave(); renderKeys(); updateBadges(); renderDash();
@@ -3511,6 +3532,8 @@ function logKeyReturn(id) {
   k.status = 'returned'; k.returnedAt = Date.now();
   if (k.type !== 'mobile' && wasIssued) {
     applySupplyAdjustment('Key Cards – Blank Stock', +1, 'Returned — Unit ' + k.unit + ' · ' + k.name + (currentUser ? ' · ' + currentUser.name : ''));
+    if (k.type === 'one-time') applySupplyAdjustment('One-Time Cards – Active Issued', -1, 'Returned — Unit ' + k.unit + ' · ' + k.name);
+    if (k.type === 'vendor') applySupplyAdjustment('Vendor Cards – Active Issued', -1, 'Returned — ' + (k.company || k.name) + ' · Unit ' + k.unit);
   }
   scheduleSave(); renderKeys(); updateBadges(); renderDash(); toast('Key return logged');
 }
@@ -5041,18 +5064,28 @@ function filterSupplies(view, el) {
 
 // ===== [SUPPLIES] ============================================================
 function renderSupplies() {
+  if (!state.deletedDefaultSupplies) state.deletedDefaultSupplies = [];
+  var deletedNames = state.deletedDefaultSupplies;
   if (!state.supplies || state.supplies.length === 0) {
-    state.supplies = DEFAULT_SUPPLIES.map(function(d) {
-      return { id: uid(), name: d.name, cat: d.cat, unit: d.unit, qty: 0, lowAt: d.lowAt, notes: '', log: [], updatedAt: null, updatedBy: null };
+    state.supplies = DEFAULT_SUPPLIES.filter(function(d){ return deletedNames.indexOf(d.name) === -1; }).map(function(d) {
+      return { id: uid(), name: d.name, cat: d.cat, unit: d.unit, qty: 0, startQty: 0, startDate: today(), lowAt: d.lowAt, notes: '', log: [], updatedAt: null, updatedBy: null };
     });
   } else {
-    // Seed any new default items that don't exist yet (e.g. Transponders/Key Tags/Xpress Stickers)
+    // Seed any new default items that don't exist yet, skipping explicitly deleted ones
     DEFAULT_SUPPLIES.forEach(function(d) {
+      if (deletedNames.indexOf(d.name) !== -1) return;
       var exists = state.supplies.some(function(s){ return s.name === d.name; });
-      if (!exists) state.supplies.push({ id: uid(), name: d.name, cat: d.cat, unit: d.unit, qty: 0, lowAt: d.lowAt, notes: '', log: [], updatedAt: null, updatedBy: null });
+      if (!exists) state.supplies.push({ id: uid(), name: d.name, cat: d.cat, unit: d.unit, qty: 0, startQty: 0, startDate: today(), lowAt: d.lowAt, notes: '', log: [], updatedAt: null, updatedBy: null });
     });
     // Ensure all items have a log array
     state.supplies.forEach(function(s){ if (!s.log) s.log = []; });
+    // One-time migration: capture current qty as starting point for items that were tracked before startQty was added
+    var migrated = false;
+    state.supplies.forEach(function(s){
+      if (s.startQty == null && s.qty > 0) { s.startQty = s.qty; s.startDate = today(); migrated = true; }
+      if (s.startQty == null) s.startQty = 0;
+    });
+    if (migrated) scheduleSave();
   }
   var el = g('supplies-body'); if (!el) return;
   var isAdmin = !currentUser || currentUser.role === 'admin';
@@ -5108,10 +5141,16 @@ function renderSupplies() {
             + '<span style="font-weight:600;color:' + (lastLog.delta < 0 ? 'var(--red)' : 'var(--green)') + '">' + llDelta + '</span>'
             + ' ' + (lastLog.note || '') + '<br>' + llTime + (lastLog.by ? ' · ' + lastLog.by.split(' ')[0] : '') + '</div>';
         }
+        var startLine = '';
+        if (s.startQty != null && s.startDate) {
+          var usedAmt = (s.startQty || 0) - (s.qty || 0);
+          startLine = '<div class="sup-start-info">Started: ' + s.startQty + ' · ' + fmtShort(s.startDate) + (usedAmt !== 0 ? ' · ' + (usedAmt > 0 ? usedAmt + ' used' : Math.abs(usedAmt) + ' added') : '') + '</div>';
+        }
         html += '<div style="background:' + cardBg + ';border:1px solid var(--border2);border-radius:var(--radius);border-top:3px solid ' + accentColor + ';padding:14px 12px;display:flex;flex-direction:column;gap:4px">'
           + '<div style="font-size:12px;font-weight:600;color:var(--text2);line-height:1.3;min-height:30px">' + s.name + '</div>'
           + '<div style="font-size:34px;font-weight:800;color:' + accentColor + ';line-height:1.1;margin:4px 0">' + (s.qty || 0) + '<span style="font-size:12px;font-weight:400;color:var(--text3);margin-left:4px">' + s.unit + '</span></div>'
           + '<div style="font-size:11px;font-weight:600;color:' + accentColor + '">' + statusLabel + '</div>'
+          + startLine
           + (isAdmin ? '<div style="display:flex;gap:6px;margin-top:6px">'
           + '<button class="sup-qty-btn" style="flex:1" onclick="adjustSupply(\'' + s.id + '\',-1)">&#8722;</button>'
           + '<button class="sup-qty-btn" style="flex:1" onclick="adjustSupply(\'' + s.id + '\',1)">&#43;</button>'
@@ -5157,8 +5196,9 @@ function renderSupplies() {
             + '<span style="color:var(--text3);white-space:nowrap">' + edStr + (e.by ? ' · ' + e.by : '') + '</span>'
             + '</div>';
         }).join('');
+        var listStartInfo = (s.startQty != null && s.startDate) ? '<span class="sup-start-info" style="display:block">Started: ' + s.startQty + ' · ' + fmtShort(s.startDate) + '</span>' : '';
         html += '<div class="supply-row">'
-          + '<span class="sup-name">' + s.name + '</span>'
+          + '<span class="sup-name">' + s.name + listStartInfo + '</span>'
           + statusBadge
           + (isAdmin ? '<button class="sup-qty-btn" onclick="adjustSupply(\'' + s.id + '\',-1)">&#8722;</button>' : '')
           + '<span class="sup-qty-num"' + (isAdmin ? ' onclick="setSupplyQtyPrompt(\'' + s.id + '\')" title="Click to set exact qty"' : '') + '>' + (s.qty || 0) + '</span>'
@@ -5190,6 +5230,8 @@ function openAddSupply() {
   g('sup-cat').value = 'Office Supplies';
   g('sup-unit').value = '';
   g('sup-qty').value = 0;
+  g('sup-startqty').value = 0;
+  g('sup-startdate').value = today();
   g('sup-low').value = '';
   g('sup-notes').value = '';
   openModal('modal-supply');
@@ -5205,6 +5247,8 @@ function openEditSupply(id) {
   g('sup-cat').value = s.cat || 'Office Supplies';
   g('sup-unit').value = s.unit || '';
   g('sup-qty').value = s.qty || 0;
+  g('sup-startqty').value = s.startQty != null ? s.startQty : (s.qty || 0);
+  g('sup-startdate').value = s.startDate || today();
   g('sup-low').value = s.lowAt != null ? s.lowAt : '';
   g('sup-notes').value = s.notes || '';
   openModal('modal-supply');
@@ -5216,6 +5260,8 @@ function saveSupply() {
   var cat = g('sup-cat').value;
   var unit = g('sup-unit').value.trim() || 'units';
   var qty = parseInt(g('sup-qty').value) || 0;
+  var startQty = g('sup-startqty').value !== '' ? parseInt(g('sup-startqty').value) : qty;
+  var startDate = g('sup-startdate').value || today();
   var lowRaw = g('sup-low').value.trim();
   var lowAt = lowRaw !== '' ? parseInt(lowRaw) : null;
   var notes = g('sup-notes').value.trim();
@@ -5223,9 +5269,9 @@ function saveSupply() {
   if (!state.supplies) state.supplies = [];
   if (editingSupplyId) {
     var s = state.supplies.find(function(x){ return x.id === editingSupplyId; });
-    if (s) { var _spb = Object.assign({}, s); s.name = name; s.cat = cat; s.unit = unit; s.qty = qty; s.lowAt = lowAt; s.notes = notes; s.updatedAt = Date.now(); s.updatedBy = by; pushUndo({ sec: 'supplies', type: 'EDIT', id: s.id, before: _spb, after: Object.assign({}, s), label: 'supply edit — ' + name }); }
+    if (s) { var _spb = Object.assign({}, s); s.name = name; s.cat = cat; s.unit = unit; s.qty = qty; s.startQty = startQty; s.startDate = startDate; s.lowAt = lowAt; s.notes = notes; s.updatedAt = Date.now(); s.updatedBy = by; pushUndo({ sec: 'supplies', type: 'EDIT', id: s.id, before: _spb, after: Object.assign({}, s), label: 'supply edit — ' + name }); }
   } else {
-    var _snew2 = { id: uid(), name: name, cat: cat, unit: unit, qty: qty, lowAt: lowAt, notes: notes, updatedAt: Date.now(), updatedBy: by };
+    var _snew2 = { id: uid(), name: name, cat: cat, unit: unit, qty: qty, startQty: startQty, startDate: startDate, lowAt: lowAt, notes: notes, updatedAt: Date.now(), updatedBy: by };
     state.supplies.push(_snew2);
     pushUndo({ sec: 'supplies', type: 'ADD', id: _snew2.id, data: Object.assign({}, _snew2), label: 'add supply — ' + name });
   }
@@ -5259,10 +5305,13 @@ function checkSupplyLowStockTodos() {
 function applySupplyAdjustment(supName, delta, note) {
   // Ensure new items are seeded before looking up
   if (!state.supplies || !state.supplies.length) return;
-  // Seed any missing default items (e.g. Transponders/Key Tags/Xpress Stickers added in code update)
+  if (!state.deletedDefaultSupplies) state.deletedDefaultSupplies = [];
+  var deletedNames = state.deletedDefaultSupplies;
+  // Seed any missing default items, skipping explicitly deleted ones
   DEFAULT_SUPPLIES.forEach(function(d) {
+    if (deletedNames.indexOf(d.name) !== -1) return;
     var exists = state.supplies.some(function(s){ return s.name === d.name; });
-    if (!exists) state.supplies.push({ id: uid(), name: d.name, cat: d.cat, unit: d.unit, qty: 0, lowAt: d.lowAt, notes: '', log: [], updatedAt: null, updatedBy: null });
+    if (!exists) state.supplies.push({ id: uid(), name: d.name, cat: d.cat, unit: d.unit, qty: 0, startQty: 0, startDate: today(), lowAt: d.lowAt, notes: '', log: [], updatedAt: null, updatedBy: null });
   });
   var s = state.supplies.find(function(x){ return x.name === supName; });
   if (!s) return;
@@ -5311,6 +5360,14 @@ function setSupplyQtyPrompt(id) {
 function deleteSupply(id) {
   if (currentUser && currentUser.role !== 'admin') { toast('Admin access required'); return; }
   if (!confirm('Remove this supply item?')) return;
+  var s = (state.supplies || []).find(function(x){ return x.id === id; });
+  if (s) {
+    var isDefault = DEFAULT_SUPPLIES.some(function(d){ return d.name === s.name; });
+    if (isDefault) {
+      if (!state.deletedDefaultSupplies) state.deletedDefaultSupplies = [];
+      if (state.deletedDefaultSupplies.indexOf(s.name) === -1) state.deletedDefaultSupplies.push(s.name);
+    }
+  }
   state.supplies = (state.supplies || []).filter(function(x){ return x.id !== id; });
   scheduleSave(); renderSupplies(); updateBadges(); toast('Item removed');
 }
@@ -5359,7 +5416,22 @@ function renderResidents() {
   g('residents-stats').innerHTML = '<div class="stat-card green"><div class="stat-num">' + granted + '</div><div class="stat-lbl">PTE Granted</div></div><div class="stat-card red"><div class="stat-num">' + denied + '</div><div class="stat-lbl">PTE Denied</div></div><div class="stat-card"><div class="stat-num">' + notset + '</div><div class="stat-lbl">PTE Not Set</div></div><div class="stat-card" style="border-left:3px solid #3b82f6"><div class="stat-num">' + bgCount + '</div><div class="stat-lbl">Blueground</div></div><div class="stat-card"><div class="stat-num">' + activeProfiles.length + '</div><div class="stat-lbl">Total Profiles</div></div>';
   var cnt = g('residents-count'); if (cnt) cnt.textContent = list.length + ' profiles';
   var grid = g('residents-grid');
-  if (!list.length) { grid.innerHTML = '<div class="text-3 text-sm">' + (residentsFilter === 'blueground' ? 'No Blueground profiles yet. Add a profile and check the Blueground box.' : 'No profiles yet. Add a profile to track resident preferences, important dates, and PTE status.') + '</div>'; return; }
+  if (!list.length) {
+    var emptyMsg;
+    if (residentsSearch && activeProfiles.length > 0) {
+      emptyMsg = '<div class="text-3 text-sm">No profiles match <strong>"' + esc(residentsSearch) + '"</strong>. '
+        + '<button class="btn btn-xs btn-secondary" style="margin-left:6px" onclick="var el=g(\'residents-search\');if(el)el.value=\'\';searchResidents(\'\')">Clear search</button></div>';
+    } else if (activeProfiles.length > 0 && residentsFilter !== 'all') {
+      var filterLabel = { 'pte-granted': 'PTE Granted', 'pte-denied': 'PTE Denied', 'pte-not-set': 'PTE Not Set', 'blueground': 'Blueground', 'archived': 'Archived' }[residentsFilter] || residentsFilter;
+      emptyMsg = '<div class="text-3 text-sm">No profiles match the <strong>' + filterLabel + '</strong> filter. '
+        + '<button class="btn btn-xs btn-secondary" style="margin-left:6px" onclick="filterResidents(\'all\',document.querySelector(\'#section-residents .sub-tab\'))">Show all ' + activeProfiles.length + ' profiles</button></div>';
+    } else if (residentsFilter === 'blueground') {
+      emptyMsg = '<div class="text-3 text-sm">No Blueground profiles yet. Add a profile and check the Blueground box.</div>';
+    } else {
+      emptyMsg = '<div class="text-3 text-sm">No profiles yet. Add a profile to track resident preferences, important dates, and PTE status.</div>';
+    }
+    grid.innerHTML = emptyMsg; return;
+  }
   var pteLabel = { granted: '&#9989; PTE Granted', denied: '&#128683; PTE Denied', 'not-set': 'PTE Not Set' };
   var pteClass = { granted: 'pte-granted', denied: 'pte-denied', 'not-set': 'pte-not-set' };
   var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">';
