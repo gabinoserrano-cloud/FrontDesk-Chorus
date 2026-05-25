@@ -5432,6 +5432,7 @@ function renderResidents() {
     }
     grid.innerHTML = emptyMsg; return;
   }
+  var isStaffUser = currentUser && currentUser.role === 'staff';
   var pteLabel = { granted: '&#9989; PTE Granted', denied: '&#128683; PTE Denied', 'not-set': 'PTE Not Set' };
   var pteClass = { granted: 'pte-granted', denied: 'pte-denied', 'not-set': 'pte-not-set' };
   var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">';
