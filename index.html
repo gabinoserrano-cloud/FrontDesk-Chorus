@@ -1317,6 +1317,7 @@
     <div class="fr"><div class="fg"><label>&#128246; WiFi Expiration Date</label><input id="rp-wifi-expiry" type="date" data-no-autofill></div><div class="fg" id="rp-wifi-hint" style="display:flex;align-items:flex-end;padding-bottom:6px;font-size:12px;color:var(--text3)"></div></div>
     <div class="fr"><div class="fg"><label>&#128203; Lease Start Date</label><input id="rp-lease-start" type="date" data-no-autofill></div><div class="fg"><label>Lease End Date</label><input id="rp-lease-end" type="date" data-no-autofill></div></div>
     <div style="padding:2px 0 4px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="rp-m2m"> <span>Month-to-month (no fixed end date)</span></label></div>
+    <div class="fr"><div class="fg"><label>&#128204; Notice Date</label><input id="rp-notice-date" type="date" data-no-autofill placeholder="Date resident gave notice"></div><div class="fg"><label>&#128197; Move-Out Date</label><input id="rp-moveout-date" type="date" data-no-autofill></div></div>
     <div class="fg"><label>Special Instructions</label><textarea id="rp-instructions" rows="3" placeholder='e.g. "Always call before buzzing", "Do not leave packages at door"'></textarea></div>
     <div class="fg"><label>&#128230; PTE — Permission to Enter (Packages)</label><select id="rp-pte"><option value="not-set">Not Set</option><option value="granted">Granted — OK to enter for package delivery</option><option value="denied">Denied — Do NOT enter unit</option></select></div>
     <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
@@ -4971,7 +4972,7 @@ function openAddResidentFromMoveId(moveId) {
 }
 function openAddResidentFromMove(m) {
   editingResidentId = null;
-  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-email','rp-wifi-expiry','rp-lease-start','rp-lease-end','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit','rp-pet-notes','rp-vehicle-info'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-email','rp-wifi-expiry','rp-lease-start','rp-lease-end','rp-notice-date','rp-moveout-date','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit','rp-pet-notes','rp-vehicle-info'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
   var wh = g('rp-wifi-hint'); if (wh) wh.innerHTML = '';
   g('rp-pte').value = 'not-set'; g('rp-parking').value = 'none'; g('rp-bike').value = 'none'; g('rp-storage').value = 'none';
   ['rp-m2m','rp-blueground','rp-has-pet','rp-has-vehicle'].forEach(function(id){ var el=g(id); if(el) el.checked=false; });
@@ -4994,7 +4995,7 @@ function openAddResident() {
   editingResidentId = null;
   var nav = g('modal-resident-nav'); if (nav) nav.style.display = 'none';
   var rpEmail = g('rp-email'); if (rpEmail) rpEmail.value = '';
-  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-email','rp-wifi-expiry','rp-lease-start','rp-lease-end','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit','rp-pet-notes','rp-vehicle-info'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-email','rp-wifi-expiry','rp-lease-start','rp-lease-end','rp-notice-date','rp-moveout-date','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit','rp-pet-notes','rp-vehicle-info'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
   var wh = g('rp-wifi-hint'); if (wh) wh.innerHTML = '';
   var m2m = g('rp-m2m'); if (m2m) m2m.checked = false;
   g('rp-pte').value = 'not-set';
@@ -5032,6 +5033,8 @@ function openEditResident(id) {
   var lsf = g('rp-lease-start'); if (lsf) lsf.value = r.leaseStart || '';
   var lef = g('rp-lease-end'); if (lef) lef.value = r.leaseEnd || '';
   var m2m = g('rp-m2m'); if (m2m) m2m.checked = !!r.monthToMonth;
+  var ndf = g('rp-notice-date'); if (ndf) ndf.value = r.noticeDate || '';
+  var mof = g('rp-moveout-date'); if (mof) mof.value = r.moveoutDate || '';
   var wifiField = g('rp-wifi-expiry'), wifiHint = g('rp-wifi-hint');
   var t0 = today();
   var warn3 = new Date(); warn3.setDate(warn3.getDate() + 3); var warn3s = warn3.toISOString().split('T')[0];
@@ -5066,11 +5069,25 @@ function saveResident() {
     var r = (state.residentProfiles || []).find(function(x){ return x.id===editingResidentId; }); if (!r) return;
     var _rb = Object.assign({}, r);
     var bgCbS = g('rp-blueground');
-    r.unit=unit; r.residentName=name; r.preferredName=g('rp-preferred').value.trim(); r.phone=g('rp-phone').value.trim(); r.email=g('rp-email')?g('rp-email').value.trim():''; r.instructions=g('rp-instructions').value.trim(); r.pte=g('rp-pte').value; r.notes=g('rp-notes').value.trim(); r.wifiExpiry=g('rp-wifi-expiry').value||''; r.leaseStart=g('rp-lease-start').value||''; r.leaseEnd=g('rp-lease-end').value||''; r.monthToMonth=!!(g('rp-m2m')&&g('rp-m2m').checked);
+    var prevMoveoutDate = _rb.moveoutDate || '';
+    r.unit=unit; r.residentName=name; r.preferredName=g('rp-preferred').value.trim(); r.phone=g('rp-phone').value.trim(); r.email=g('rp-email')?g('rp-email').value.trim():''; r.instructions=g('rp-instructions').value.trim(); r.pte=g('rp-pte').value; r.notes=g('rp-notes').value.trim(); r.wifiExpiry=g('rp-wifi-expiry').value||''; r.leaseStart=g('rp-lease-start').value||''; r.leaseEnd=g('rp-lease-end').value||''; r.monthToMonth=!!(g('rp-m2m')&&g('rp-m2m').checked); r.noticeDate=g('rp-notice-date')?g('rp-notice-date').value||'':''; r.moveoutDate=g('rp-moveout-date')?g('rp-moveout-date').value||'':'';
     r.parking=g('rp-parking').value; r.parkingInfo=g('rp-parking-info').value.trim(); r.bike=g('rp-bike').value; r.bikeNotes=g('rp-bike-notes').value.trim(); r.storage=g('rp-storage').value; r.storageUnit=g('rp-storage-unit').value.trim(); r.blueground=bgCbS?!!bgCbS.checked:false;
     r.hasPet=!!(g('rp-has-pet')&&g('rp-has-pet').checked); r.petNotes=g('rp-pet-notes')?g('rp-pet-notes').value.trim():''; r.hasVehicle=!!(g('rp-has-vehicle')&&g('rp-has-vehicle').checked); r.vehicleInfo=g('rp-vehicle-info')?g('rp-vehicle-info').value.trim():'';
     pushUndo({ sec: 'residents', type: 'EDIT', id: r.id, before: _rb, after: Object.assign({}, r), label: 'profile edit — Unit ' + unit });
-    editingResidentId=null; logActivity('residents','edit','Updated resident profile — Unit '+unit+' · '+name); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile updated'); return;
+    editingResidentId=null; logActivity('residents','edit','Updated resident profile — Unit '+unit+' · '+name); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile updated');
+    if (r.moveoutDate && r.moveoutDate !== prevMoveoutDate) {
+      var existingOut = (state.moves||[]).find(function(mv){ return mv.type==='out' && mv.unit===unit && !mv.archivedAt; });
+      if (!existingOut && confirm('Create a move-out entry for ' + name + ', Unit ' + unit + ' on ' + fmtShort(r.moveoutDate) + '?')) {
+        var outTasks = (state.customOutTasks || DEFAULT_OUT_TASKS).map(function(t){ return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint||null }; });
+        var outEntry = { id: uid(), unit: unit, resident: name, date: r.moveoutDate, type: 'out', total: '', notes: r.noticeDate ? 'Notice given ' + fmtShort(r.noticeDate) : '', apptDate: '', apptTime: '', tasks: outTasks, archivedAt: null, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : 'Front Desk' };
+        if (!state.moves) state.moves = [];
+        state.moves.push(outEntry);
+        pushUndo({ sec: 'moves', type: 'ADD', id: outEntry.id, data: Object.assign({}, outEntry), label: 'move-out — Unit ' + unit });
+        logActivity('moves', 'create', 'Move-out created from profile — Unit ' + unit + ' · ' + name);
+        scheduleSave(); renderMoves(); updateBadges(); renderDash(); toast('Move-out entry created');
+      }
+    }
+    return;
   }
   var existingForUnit = (state.residentProfiles || []).filter(function(p){ return p.unit === unit; });
   if (existingForUnit.length) {
@@ -5078,7 +5095,7 @@ function saveResident() {
     if (!confirm('Unit ' + unit + ' already has a profile (' + names + '). Add another profile for this unit?')) return;
   }
   var bgCbN = g('rp-blueground');
-  var entry = { id: uid(), unit: unit, residentName: name, preferredName: g('rp-preferred').value.trim(), phone: g('rp-phone').value.trim(), email: g('rp-email')?g('rp-email').value.trim():'', instructions: g('rp-instructions').value.trim(), pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), wifiExpiry: g('rp-wifi-expiry').value||'', leaseStart: g('rp-lease-start').value||'', leaseEnd: g('rp-lease-end').value||'', monthToMonth: !!(g('rp-m2m')&&g('rp-m2m').checked), parking: g('rp-parking').value, parkingInfo: g('rp-parking-info').value.trim(), bike: g('rp-bike').value, bikeNotes: g('rp-bike-notes').value.trim(), storage: g('rp-storage').value, storageUnit: g('rp-storage-unit').value.trim(), blueground: bgCbN?!!bgCbN.checked:false, hasPet: !!(g('rp-has-pet')&&g('rp-has-pet').checked), petNotes: g('rp-pet-notes')?g('rp-pet-notes').value.trim():'', hasVehicle: !!(g('rp-has-vehicle')&&g('rp-has-vehicle').checked), vehicleInfo: g('rp-vehicle-info')?g('rp-vehicle-info').value.trim():'', createdAt: Date.now() };
+  var entry = { id: uid(), unit: unit, residentName: name, preferredName: g('rp-preferred').value.trim(), phone: g('rp-phone').value.trim(), email: g('rp-email')?g('rp-email').value.trim():'', instructions: g('rp-instructions').value.trim(), pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), wifiExpiry: g('rp-wifi-expiry').value||'', leaseStart: g('rp-lease-start').value||'', leaseEnd: g('rp-lease-end').value||'', monthToMonth: !!(g('rp-m2m')&&g('rp-m2m').checked), noticeDate: g('rp-notice-date')?g('rp-notice-date').value||'':'', moveoutDate: g('rp-moveout-date')?g('rp-moveout-date').value||'':'', parking: g('rp-parking').value, parkingInfo: g('rp-parking-info').value.trim(), bike: g('rp-bike').value, bikeNotes: g('rp-bike-notes').value.trim(), storage: g('rp-storage').value, storageUnit: g('rp-storage-unit').value.trim(), blueground: bgCbN?!!bgCbN.checked:false, hasPet: !!(g('rp-has-pet')&&g('rp-has-pet').checked), petNotes: g('rp-pet-notes')?g('rp-pet-notes').value.trim():'', hasVehicle: !!(g('rp-has-vehicle')&&g('rp-has-vehicle').checked), vehicleInfo: g('rp-vehicle-info')?g('rp-vehicle-info').value.trim():'', createdAt: Date.now() };
   if (!state.residentProfiles) state.residentProfiles = [];
   state.residentProfiles.push(entry); pushUndo({ sec: 'residents', type: 'ADD', id: entry.id, data: Object.assign({}, entry), label: 'add profile — Unit ' + unit }); logActivity('residents','create','Added resident profile — Unit '+unit+' · '+name); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile saved');
 }
@@ -5496,6 +5513,8 @@ function renderResidents() {
       dates.push('&#128203; Lease started ' + fmtShort(r.leaseStart));
     }
     if (dates.length) html += '<div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.8">' + dates.join('<br>') + '</div>';
+    if (r.noticeDate) dates.push('<span style="color:#92400E;font-weight:600">&#128204; Notice given ' + fmtShort(r.noticeDate) + '</span>');
+    if (r.moveoutDate) dates.push('<span style="color:var(--red);font-weight:600">&#128197; Moving out ' + fmtShort(r.moveoutDate) + '</span>');
     if (r.instructions) html += '<div style="font-size:12px;background:var(--bg);border-radius:5px;padding:6px 8px;margin-top:8px;color:var(--text2);line-height:1.5"><strong>Instructions:</strong> ' + esc(r.instructions) + '</div>';
     var credBadges = [];
     if (r.parking === 'yes') credBadges.push('<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 6px;font-weight:600">&#128664; Parking' + (r.parkingInfo ? ': ' + esc(r.parkingInfo) : '') + '</span>');
