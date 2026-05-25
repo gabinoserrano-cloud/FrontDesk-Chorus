@@ -111,6 +111,24 @@
   .cl-parking-hdr{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);padding:6px 0 2px 2px;margin-top:4px;border-top:1px solid var(--border2);display:flex;align-items:center;gap:5px}
   .cl-item-parking{padding-left:14px;border-left:2px solid var(--border2);margin-left:4px}
 
+  /* FLOATING NOTEPAD */
+  #notepad-tab{position:fixed;right:-1px;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;text-orientation:mixed;background:var(--surface);border:1px solid var(--border);border-right:none;border-radius:8px 0 0 8px;padding:14px 8px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:7px;box-shadow:-3px 0 12px rgba(0,0,0,.3);transition:background .12s,color .12s;z-index:1000;user-select:none}
+  #notepad-tab:hover{background:var(--accent);color:#fff}
+  #notepad-tab .np-dot{width:6px;height:6px;border-radius:50%;background:#e53e3e;flex-shrink:0;display:none}
+  #notepad-panel{position:fixed;right:0;top:50%;transform:translateY(-50%);width:300px;background:var(--surface);border:1px solid var(--border);border-right:none;border-radius:10px 0 0 10px;box-shadow:-8px 0 32px rgba(0,0,0,.4);z-index:1001;display:none;overflow:hidden;min-width:240px;min-height:180px}
+  #notepad-panel.np-free{border-right:1px solid var(--border);border-radius:10px;transform:none}
+  #notepad-hdr{padding:10px 12px;background:linear-gradient(135deg,#2a2118,#1e1a12);border-bottom:1px solid #c9a84c33;display:flex;align-items:center;cursor:grab;user-select:none}
+  #notepad-hdr:active{cursor:grabbing}
+  #notepad-hdr .np-title{font-size:12px;font-weight:700;letter-spacing:.4px;color:var(--accent);flex:1}
+  #notepad-hdr .np-close{background:none;border:none;cursor:pointer;color:#666;font-size:15px;line-height:1;padding:0 0 0 8px;transition:color .12s}
+  #notepad-hdr .np-close:hover{color:var(--accent)}
+  #notepad-txt{width:100%;height:260px;border:none;outline:none;resize:none;background:var(--surface);padding:12px 14px;font-size:13px;line-height:1.7;color:var(--text);font-family:var(--mono)}
+  #notepad-txt::placeholder{color:var(--text3)}
+  #notepad-ftr{padding:6px 12px;background:var(--bg);border-top:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+  #notepad-ftr span{font-size:10px;color:var(--text3)}
+  #notepad-ftr button{font-size:10px;background:none;border:none;color:var(--text3);cursor:pointer;padding:0}
+  #notepad-ftr button:hover{color:var(--red)}
+
   /* CARD */
   .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:14px}
   .card-hdr{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--border2);flex-wrap:wrap}
@@ -9331,6 +9349,99 @@ function deleteTemplate(id) {
   document.addEventListener('mouseout', function(e) {
     if (e.target.closest('.nav-item[data-tip]') && tip) tip.style.opacity = '0';
   });
+})();
+</script>
+
+<!-- ── FLOATING NOTEPAD ── -->
+<div id="notepad-tab" onclick="openNotepad()" title="Open notepad">
+  <span class="np-dot" id="np-dot"></span>
+  Notes
+</div>
+<div id="notepad-panel">
+  <div id="notepad-hdr">
+    <span class="np-title">&#128203; My Notes</span>
+    <button class="np-close" onclick="closeNotepad()" title="Close">&#x2715;</button>
+  </div>
+  <textarea id="notepad-txt" placeholder="Jot anything down...
+&#8226; UI tweaks to request
+&#8226; Things to follow up on
+&#8226; Shift reminders
+
+Drag the header to move."></textarea>
+  <div id="notepad-ftr">
+    <span id="np-status">Auto-saved</span>
+    <button onclick="if(confirm('Clear all notes?')){document.getElementById('notepad-txt').value='';npSave();}">Clear</button>
+  </div>
+</div>
+<script>
+(function(){
+  var NP_KEY = 'chorus-notepad';
+  var panel  = document.getElementById('notepad-panel');
+  var tab    = document.getElementById('notepad-tab');
+  var txt    = document.getElementById('notepad-txt');
+  var dot    = document.getElementById('np-dot');
+  var status = document.getElementById('np-status');
+  var isFree = false;
+
+  txt.value = localStorage.getItem(NP_KEY) || '';
+  updateDot();
+
+  function updateDot() { dot.style.display = txt.value.trim() ? 'block' : 'none'; }
+
+  window.npSave = function() {
+    localStorage.setItem(NP_KEY, txt.value);
+    status.textContent = 'Saved ✓';
+    setTimeout(function(){ status.textContent = 'Auto-saved'; }, 1200);
+    updateDot();
+  };
+
+  var saveTimer;
+  txt.addEventListener('input', function() {
+    status.textContent = 'Saving…';
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(npSave, 600);
+  });
+
+  window.openNotepad = function() {
+    tab.style.display = 'none';
+    if (!isFree) {
+      panel.style.right = '0'; panel.style.top = '50%';
+      panel.style.transform = 'translateY(-50%)';
+      panel.style.left = ''; panel.classList.remove('np-free');
+    }
+    panel.style.display = 'block';
+    txt.focus();
+  };
+
+  window.closeNotepad = function() {
+    panel.style.display = 'none';
+    tab.style.display = 'flex';
+    isFree = false;
+    panel.style.right = '0'; panel.style.top = '50%';
+    panel.style.transform = 'translateY(-50%)';
+    panel.style.left = ''; panel.classList.remove('np-free');
+  };
+
+  var hdr = document.getElementById('notepad-hdr');
+  var dragStartX, dragStartY, panelStartLeft, panelStartTop, dragging = false;
+
+  hdr.addEventListener('mousedown', function(e) {
+    if (e.target.classList.contains('np-close')) return;
+    dragging = true;
+    var r = panel.getBoundingClientRect();
+    panelStartLeft = r.left; panelStartTop = r.top;
+    dragStartX = e.clientX; dragStartY = e.clientY;
+    panel.style.left = panelStartLeft + 'px'; panel.style.top = panelStartTop + 'px';
+    panel.style.right = 'auto'; panel.style.transform = 'none';
+    panel.classList.add('np-free'); isFree = true;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', function(e) {
+    if (!dragging) return;
+    panel.style.left = (panelStartLeft + e.clientX - dragStartX) + 'px';
+    panel.style.top  = (panelStartTop  + e.clientY - dragStartY) + 'px';
+  });
+  document.addEventListener('mouseup', function() { dragging = false; });
 })();
 </script>
 </body>
