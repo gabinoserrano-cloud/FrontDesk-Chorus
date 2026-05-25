@@ -1760,6 +1760,11 @@ function today() {
 function fmtShort(d) { if (!d) return '-'; return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
 function toast(msg) { var e = g('toast'); e.textContent = msg; e.classList.add('show'); setTimeout(function () { e.classList.remove('show'); }, 2500); }
 function g(id) { return document.getElementById(id); }
+function cloneData(obj) {
+  if (obj === undefined) return undefined;
+  try { return JSON.parse(JSON.stringify(obj)); }
+  catch (e) { return obj; }
+}
 function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, parking: [], security: [], propertyConfig: {} }; }
 
 // ─── UNDO / REDO ───
@@ -1774,33 +1779,87 @@ function _secStateKey(sec) {
 
 // ===== [UNDO SYSTEM & ACTIVITY LOG] ==========================================
 function pushUndo(cmd) {
+  var key = _secStateKey(cmd.sec);
+  if (!cmd.path && key) cmd.path = [key];
+  if (cmd.path && (cmd.type === 'ADD' || cmd.type === 'DELETE') && cmd.index == null) {
+    var arrForIndex = _getStatePath(cmd.path) || [];
+    var idx = arrForIndex.findIndex(function(x) { return x && x.id === cmd.id; });
+    cmd.index = idx >= 0 ? idx : arrForIndex.length;
+  }
+  cmd = cloneData(cmd);
   undoStack.push(cmd);
   if (undoStack.length > UNDO_LIMIT) { undoStack.shift(); toast('Undo history full — oldest action can no longer be undone'); }
   redoStack = [];
   updateUndoButtons();
 }
 
+function pushSetUndo(sec, path, before, after, label) {
+  pushUndo({ sec: sec, type: 'SET', path: path, before: cloneData(before), after: cloneData(after), label: label });
+}
+
+function pushBatchUndo(sec, label, commands) {
+  pushUndo({ sec: sec, type: 'BATCH', label: label, commands: cloneData(commands || []) });
+}
+
+function _getStatePath(path) {
+  var cur = state;
+  for (var i = 0; i < path.length; i++) {
+    if (cur == null) return undefined;
+    cur = cur[path[i]];
+  }
+  return cur;
+}
+
+function _setStatePath(path, value) {
+  var cur = state;
+  for (var i = 0; i < path.length - 1; i++) {
+    var p = path[i];
+    if (cur[p] == null || typeof cur[p] !== 'object') cur[p] = typeof path[i + 1] === 'number' ? [] : {};
+    cur = cur[p];
+  }
+  cur[path[path.length - 1]] = cloneData(value);
+}
+
+function _insertAt(arr, index, item) {
+  var copy = arr.slice();
+  var pos = Math.max(0, Math.min(index == null ? copy.length : index, copy.length));
+  copy.splice(pos, 0, cloneData(item));
+  return copy;
+}
+
 function _applyUndoCmd(cmd, inverse) {
-  var key = _secStateKey(cmd.sec);
-  var arr = state[key] || [];
+  if (cmd.type === 'BATCH') {
+    var list = (cmd.commands || []).slice();
+    if (inverse) list.reverse();
+    list.forEach(function(sub) { _applyUndoCmd(sub, inverse); });
+    return;
+  }
+  if (cmd.type === 'SET') {
+    _setStatePath(cmd.path, inverse ? cmd.before : cmd.after);
+    scheduleSave(); renderSection(curSec); updateBadges(); renderDash();
+    return;
+  }
+  var path = cmd.path || [_secStateKey(cmd.sec)];
+  var arr = _getStatePath(path) || [];
   if (inverse) {
     if (cmd.type === 'ADD') {
-      state[key] = arr.filter(function(x) { return x.id !== cmd.id; });
+      _setStatePath(path, arr.filter(function(x) { return x.id !== cmd.id; }));
     } else if (cmd.type === 'DELETE') {
       var alreadyExists = arr.some(function(x) { return x.id === cmd.id; });
-      state[key] = alreadyExists ? arr : [cmd.data].concat(arr);
+      _setStatePath(path, alreadyExists ? arr : _insertAt(arr, cmd.index, cmd.data));
     } else {
       var obj = arr.find(function(x) { return x.id === cmd.id; });
-      if (obj) Object.assign(obj, cmd.before);
+      if (obj) Object.assign(obj, cloneData(cmd.before));
     }
   } else {
     if (cmd.type === 'ADD') {
-      state[key] = arr.concat([cmd.data]);
+      var exists = arr.some(function(x) { return x.id === cmd.id; });
+      _setStatePath(path, exists ? arr : _insertAt(arr, cmd.index, cmd.data));
     } else if (cmd.type === 'DELETE') {
-      state[key] = arr.filter(function(x) { return x.id !== cmd.id; });
+      _setStatePath(path, arr.filter(function(x) { return x.id !== cmd.id; }));
     } else {
       var obj = arr.find(function(x) { return x.id === cmd.id; });
-      if (obj) Object.assign(obj, cmd.after);
+      if (obj) Object.assign(obj, cloneData(cmd.after));
     }
   }
   scheduleSave(); renderSection(curSec); updateBadges(); renderDash();
@@ -1811,6 +1870,8 @@ function applyUndo() {
   var cmd = undoStack.pop();
   redoStack.push(cmd);
   _applyUndoCmd(cmd, true);
+  logActivity('activity', 'undo', 'Undid — ' + (cmd.label || 'last action'));
+  scheduleSave();
   updateUndoButtons();
   toast('Undid: ' + (cmd.label || 'last action'));
 }
@@ -1820,6 +1881,8 @@ function applyRedo() {
   var cmd = redoStack.pop();
   undoStack.push(cmd);
   _applyUndoCmd(cmd, false);
+  logActivity('activity', 'redo', 'Redid — ' + (cmd.label || 'last action'));
+  scheduleSave();
   updateUndoButtons();
   toast('Redid: ' + (cmd.label || 'last action'));
 }
@@ -1836,11 +1899,32 @@ document.addEventListener('keydown', function(e) {
 });
 
 // ─── ACTIVITY LOG ───
-function logActivity(section, action, desc) {
+function logActivity(section, action, desc, details) {
   if (!state.activityLog) state.activityLog = [];
-  var entry = { id: uid(), ts: Date.now(), by: currentUser ? currentUser.name : 'System', byId: currentUser ? currentUser.id : null, section: section, action: action, desc: desc };
+  var entry = { id: uid(), ts: Date.now(), by: currentUser ? currentUser.name : 'System', byId: currentUser ? currentUser.id : null, section: section, action: action, desc: desc, details: details || '' };
   state.activityLog.unshift(entry);
   if (state.activityLog.length > 1000) state.activityLog = state.activityLog.slice(0, 1000);
+}
+
+function activityFields(before, after, labels) {
+  labels = labels || {};
+  var out = [];
+  before = before || {}; after = after || {};
+  Object.keys(after).forEach(function(k) {
+    var a = after[k], b = before[k];
+    if (JSON.stringify(a == null ? '' : a) !== JSON.stringify(b == null ? '' : b)) {
+      out.push((labels[k] || k) + ': ' + (b == null || b === '' ? 'blank' : b) + ' -> ' + (a == null || a === '' ? 'blank' : a));
+    }
+  });
+  return out.join(' · ');
+}
+
+function _todoOwnerLabel() {
+  if (currentUser && currentUser.role === 'admin' && todosViewingId) {
+    var acct = (state.accounts || []).find(function(a) { return a.id === todosViewingId; });
+    return acct ? acct.name : 'selected user';
+  }
+  return currentUser ? currentUser.name : 'shared list';
 }
 
 function renderActivityLog() {
@@ -1866,7 +1950,7 @@ function renderActivityLog() {
   (state.accounts || []).forEach(function(a) { userOpts += '<option value="' + a.id + '"' + (filterUser === a.id ? ' selected' : '') + '>' + a.name + '</option>'; });
 
   var secOpts = '<option value="">All Sections</option>';
-  var secs = ['moves','maintenance','guests','keys','amenities','tours','walkthrough','laf','passdown','concierge','residents','security','supplies','todos','settings'];
+  var secs = ['moves','maintenance','guests','keys','amenities','tours','walkthrough','laf','passdown','concierge','residents','security','supplies','todos','settings','activity'];
   secs.forEach(function(s) { secOpts += '<option value="' + s + '"' + (filterSec === s ? ' selected' : '') + '>' + (SEC_TITLES[s] || s) + '</option>'; });
 
   var html = '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px">'
@@ -1895,6 +1979,7 @@ function renderActivityLog() {
         + '<span style="font-size:11px;color:var(--text3);min-width:58px;padding-top:1px">' + timeStr + '</span>'
         + '<div style="flex:1;min-width:0">'
         + '<div style="font-size:13px;color:var(--text1)">' + (e.desc || '') + '</div>'
+        + (e.details ? '<div style="font-size:11px;color:var(--text2);margin-top:2px;line-height:1.4">' + esc(e.details) + '</div>' : '')
         + '<div style="font-size:11px;color:var(--text3);margin-top:2px">'
         + '<span style="color:' + actionColor + ';font-weight:600;text-transform:capitalize">' + (e.action || '') + '</span>'
         + ' &middot; ' + secLabel
@@ -2821,6 +2906,7 @@ function toggleTask(moveId, taskId, checked) {
   else { t.completedBy = null; t.completedAt = null; }
   var tasksAfter = JSON.parse(JSON.stringify(m.tasks));
   pushUndo({ sec: 'moves', type: 'EDIT', id: m.id, before: { tasks: tasksBefore }, after: { tasks: tasksAfter }, label: (checked ? 'check' : 'uncheck') + ' task — ' + (t.text || 'task') });
+  logActivity('moves', checked ? 'complete' : 'reopen', (checked ? 'Completed' : 'Reopened') + ' move task — Unit ' + m.unit + ' · ' + (t.text || 'task'), 'Resident: ' + (m.resident || '-') + (checked && t.completedBy ? ' · Completed by: ' + t.completedBy : ''));
   // ── Supply integration ──
   var supLink = TASK_SUPPLY_MAP[t.text];
   if (supLink) {
@@ -2881,7 +2967,11 @@ function toggleTask(moveId, taskId, checked) {
 }
 function deleteTask(moveId, taskId) {
   var m = (state.moves || []).find(function (x) { return x.id === moveId; }); if (!m) return;
+  var tasksBefore = cloneData(m.tasks || []);
+  var oldTask = (m.tasks || []).find(function(t) { return t.id === taskId; });
   m.tasks = (m.tasks || []).filter(function (t) { return t.id !== taskId; });
+  pushUndo({ sec: 'moves', type: 'EDIT', id: m.id, before: { tasks: tasksBefore }, after: { tasks: cloneData(m.tasks) }, label: 'delete task — ' + (oldTask ? oldTask.text : 'move task') });
+  logActivity('moves', 'delete', 'Deleted move task — Unit ' + m.unit + (oldTask ? ' · ' + oldTask.text : ''), 'Resident: ' + (m.resident || '-'));
   scheduleSave();
   var ci = document.querySelector('#cl-' + moveId + ' .cl-inner'); if (ci) ci.innerHTML = buildCL(m, moveFilter);
   var mci = document.querySelector('#mc-' + moveId + ' .mc-cl'); if (mci) mci.innerHTML = buildCL(m, moveFilter);
@@ -2898,7 +2988,10 @@ function saveTask() {
   var text = g('task-text').value.trim(); if (!text) { toast('Enter a task description'); return; }
   var m = (state.moves || []).find(function (x) { return x.id === addTaskMoveId; }); if (!m) return;
   if (!m.tasks) m.tasks = [];
+  var tasksBefore = cloneData(m.tasks);
   m.tasks.push({ id: uid(), text: text, cat: g('task-cat').value, dueDate: g('task-due').value || null, done: false });
+  pushUndo({ sec: 'moves', type: 'EDIT', id: m.id, before: { tasks: tasksBefore }, after: { tasks: cloneData(m.tasks) }, label: 'add task — ' + text });
+  logActivity('moves', 'create', 'Added move task — Unit ' + m.unit + ' · ' + text, 'Resident: ' + (m.resident || '-') + ' · Category: ' + (g('task-cat').value || 'General'));
   scheduleSave(); closeModal('modal-task'); renderMoves();
   g('task-text').value = ''; g('task-due').value = ''; toast('Task added');
 }
@@ -2906,7 +2999,10 @@ function resetCL(moveId) {
   var id = moveId || openMoveId; if (!id) return;
   if (!confirm('Reset all tasks for this move?')) return;
   var m = (state.moves || []).find(function (x) { return x.id === id; }); if (!m) return;
+  var tasksBefore = cloneData(m.tasks || []);
   (m.tasks || []).forEach(function (t) { t.done = false; });
+  pushUndo({ sec: 'moves', type: 'EDIT', id: m.id, before: { tasks: tasksBefore }, after: { tasks: cloneData(m.tasks) }, label: 'reset checklist — Unit ' + m.unit });
+  logActivity('moves', 'reopen', 'Reset move checklist — Unit ' + m.unit, 'Resident: ' + (m.resident || '-'));
   scheduleSave(); renderMoves(); toast('Checklist reset');
 }
 function openCoResidentInput(moveId) {
@@ -2923,14 +3019,21 @@ function addCoResident(moveId, name) {
   if (!name || !name.trim()) { toast('Enter a name'); return; }
   var m = (state.moves || []).find(function(x){ return x.id === moveId; }); if (!m) return;
   if (!m.coResidents) m.coResidents = [];
+  var before = cloneData(m.coResidents);
   m.coResidents.push({ id: uid(), name: name.trim() });
+  pushUndo({ sec: 'moves', type: 'EDIT', id: m.id, before: { coResidents: before }, after: { coResidents: cloneData(m.coResidents) }, label: 'add co-resident — Unit ' + m.unit });
+  logActivity('moves', 'create', 'Added co-resident — Unit ' + m.unit + ' · ' + name.trim(), 'Primary resident: ' + (m.resident || '-'));
   scheduleSave();
   var ci = document.querySelector('#cl-' + moveId + ' .cl-inner'); if (ci) ci.innerHTML = buildCL(m, moveFilter);
   var mci = document.querySelector('#mc-' + moveId + ' .mc-cl'); if (mci) mci.innerHTML = buildCL(m, moveFilter);
 }
 function removeCoResident(moveId, coId) {
   var m = (state.moves || []).find(function(x){ return x.id === moveId; }); if (!m) return;
+  var before = cloneData(m.coResidents || []);
+  var old = (m.coResidents || []).find(function(c){ return c.id === coId; });
   m.coResidents = (m.coResidents || []).filter(function(c){ return c.id !== coId; });
+  pushUndo({ sec: 'moves', type: 'EDIT', id: m.id, before: { coResidents: before }, after: { coResidents: cloneData(m.coResidents) }, label: 'remove co-resident — Unit ' + m.unit });
+  logActivity('moves', 'delete', 'Removed co-resident — Unit ' + m.unit + (old ? ' · ' + old.name : ''), 'Primary resident: ' + (m.resident || '-'));
   scheduleSave();
   var ci = document.querySelector('#cl-' + moveId + ' .cl-inner'); if (ci) ci.innerHTML = buildCL(m, moveFilter);
   var mci = document.querySelector('#mc-' + moveId + ' .mc-cl'); if (mci) mci.innerHTML = buildCL(m, moveFilter);
@@ -4067,6 +4170,8 @@ function renderPatrolByType(type) {
     var btn = g('scan-del-' + s.id);
     if (btn) btn.addEventListener('click', function() {
       if (!confirm('Remove this scan entry?')) return;
+      pushUndo({ sec: 'walkthrough', type: 'DELETE', path: ['scans'], id: s.id, data: s, label: 'delete patrol scan — ' + (s.checkpointName || 'checkpoint') });
+      logActivity('walkthrough', 'delete', 'Deleted patrol scan — ' + (s.checkpointName || 'Checkpoint'), 'Staff: ' + (s.staffName || 'Unknown') + ' · Time: ' + new Date(s.timestamp).toLocaleString());
       state.scans = (state.scans || []).filter(function(x) { return x.id !== s.id; });
       scheduleSave(); renderWT();
     });
@@ -4121,6 +4226,12 @@ function renderCheckpoints() {
     var delBtn = g('del-cp-' + cp.id);
     if (delBtn) delBtn.addEventListener('click', function() {
       if (!confirm('Delete "' + cp.name + '"? Scan history for this checkpoint will also be removed.')) return;
+      var removedScans = (state.scans || []).filter(function(s) { return s.checkpointId === cp.id; });
+      pushBatchUndo('walkthrough', 'delete checkpoint — ' + cp.name, [
+        { sec: 'walkthrough', type: 'DELETE', path: ['checkpoints'], id: cp.id, data: cloneData(cp), label: 'delete checkpoint — ' + cp.name },
+        { sec: 'walkthrough', type: 'SET', path: ['scans'], before: cloneData(state.scans || []), after: (state.scans || []).filter(function(s) { return s.checkpointId !== cp.id; }), label: 'delete checkpoint scan history — ' + cp.name }
+      ]);
+      logActivity('walkthrough', 'delete', 'Deleted patrol checkpoint — ' + cp.name, (cp.location ? 'Location: ' + cp.location + ' · ' : '') + removedScans.length + ' scan(s) removed');
       state.checkpoints = (state.checkpoints || []).filter(function(c) { return c.id !== cp.id; });
       state.scans = (state.scans || []).filter(function(s) { return s.checkpointId !== cp.id; });
       scheduleSave(); renderWT(); toast('Checkpoint removed');
@@ -4202,7 +4313,10 @@ function openAddCheckpoint() {
     var patrolType = (g('cp-patrol-type') ? g('cp-patrol-type').value : 'both');
     if (!name) { toast('Enter a checkpoint name'); return; }
     if (!state.checkpoints) state.checkpoints = [];
-    state.checkpoints.push({ id: uid(), name: name, location: location, patrolType: patrolType, createdAt: Date.now() });
+    var cp = { id: uid(), name: name, location: location, patrolType: patrolType, createdAt: Date.now() };
+    state.checkpoints.push(cp);
+    pushUndo({ sec: 'walkthrough', type: 'ADD', path: ['checkpoints'], id: cp.id, data: cp, label: 'add checkpoint — ' + name });
+    logActivity('walkthrough', 'create', 'Added patrol checkpoint — ' + name, (location ? 'Location: ' + location + ' · ' : '') + 'Patrol type: ' + patrolType);
     scheduleSave(); closeModal('modal-add-cp'); renderWT(); toast('Checkpoint added');
   });
 }
@@ -4225,7 +4339,10 @@ function openEditCheckpoint(cpId) {
       var location = (g('cp-location') ? g('cp-location').value.trim() : '');
       var patrolType = (g('cp-patrol-type') ? g('cp-patrol-type').value : 'both');
       if (!name) { toast('Enter a checkpoint name'); return; }
+      var before = cloneData(cp);
       cp.name = name; cp.location = location; cp.patrolType = patrolType;
+      pushUndo({ sec: 'walkthrough', type: 'EDIT', path: ['checkpoints'], id: cp.id, before: before, after: cloneData(cp), label: 'edit checkpoint — ' + name });
+      logActivity('walkthrough', 'edit', 'Updated patrol checkpoint — ' + name, activityFields(before, cp, { name: 'Name', location: 'Location', patrolType: 'Patrol type' }));
       scheduleSave(); closeModal('modal-add-cp'); renderWT(); toast('Checkpoint updated');
     });
   }, 50);
@@ -4235,7 +4352,10 @@ function logScan(checkpointId, staffName, manual) {
   var cp = (state.checkpoints || []).find(function(c) { return c.id === checkpointId; });
   if (!cp) { toast('Checkpoint not found'); return; }
   if (!state.scans) state.scans = [];
-  state.scans.push({ id: uid(), checkpointId: checkpointId, checkpointName: cp.name, staffName: staffName, timestamp: Date.now(), manual: !!manual });
+  var scan = { id: uid(), checkpointId: checkpointId, checkpointName: cp.name, staffName: staffName, timestamp: Date.now(), manual: !!manual };
+  state.scans.push(scan);
+  pushUndo({ sec: 'walkthrough', type: 'ADD', path: ['scans'], id: scan.id, data: scan, label: 'log patrol scan — ' + cp.name });
+  logActivity('walkthrough', manual ? 'manual' : 'scan', 'Logged patrol scan — ' + cp.name, 'Staff: ' + staffName + (cp.location ? ' · Location: ' + cp.location : '') + (manual ? ' · Manual entry' : ' · QR scan'));
   localStorage.setItem('chorus-patrol-name', staffName);
   scheduleSave(); renderDash();
   if ((patrolFilter === 'amenity' || patrolFilter === 'stairway') && g('patrol-body')) renderWT();
@@ -4534,7 +4654,10 @@ function showScanPinPrompt(checkpointId, staffName, cpName) {
 
 function toggleWTItem(key, checked) {
   if (!state.walkthrough) state.walkthrough = {};
+  var before = !!state.walkthrough[key];
   state.walkthrough[key] = checked;
+  pushSetUndo('walkthrough', ['walkthrough', key], before, checked, (checked ? 'check patrol item — ' : 'uncheck patrol item — ') + key);
+  logActivity('walkthrough', checked ? 'complete' : 'reopen', (checked ? 'Checked patrol item — ' : 'Unchecked patrol item — ') + key.replace(/_/g, ' · '));
   scheduleSave();
   // Update label in-place without collapsing any floors
   var el = event.target;
@@ -4562,7 +4685,14 @@ function toggleWTItem(key, checked) {
     if (prog) prog.textContent = dc + '/' + floor.items.length;
   });
 }
-function resetWT() { if (!confirm('Reset walkthrough?')) return; state.walkthrough = {}; scheduleSave(); renderWT(); toast('Walkthrough reset'); }
+function resetWT() {
+  if (!confirm('Reset walkthrough?')) return;
+  var before = cloneData(state.walkthrough || {});
+  state.walkthrough = {};
+  pushSetUndo('walkthrough', ['walkthrough'], before, {}, 'reset patrol checklist');
+  logActivity('walkthrough', 'reopen', 'Reset patrol checklist', Object.keys(before).filter(function(k){ return before[k]; }).length + ' completed item(s) cleared');
+  scheduleSave(); renderWT(); toast('Walkthrough reset');
+}
 
 // ─── WALKTHROUGH FLOOR EDITOR ───
 function openAddWTFloor() {
@@ -4571,7 +4701,10 @@ function openAddWTFloor() {
   if (!state.wtFloors) state.wtFloors = getWTFloors();
   // Check for duplicate
   if (state.wtFloors.find(function(f){ return f.label === label.trim(); })) { toast('Floor already exists'); return; }
+  var before = cloneData(state.wtFloors);
   state.wtFloors.push({ label: label.trim(), items: [] });
+  pushSetUndo('walkthrough', ['wtFloors'], before, cloneData(state.wtFloors), 'add patrol area — ' + label.trim());
+  logActivity('walkthrough', 'create', 'Added patrol area — ' + label.trim());
   scheduleSave(); renderWT(); toast('Floor added');
 }
 
@@ -4615,7 +4748,11 @@ function updateWTItem(fi, ii, value) {
   var trimmed = value.trim(); if (!trimmed) return;
   // Remap walkthrough keys if label changed
   var oldText = floor.items[ii];
+  if (oldText === trimmed) return;
+  var before = cloneData(state.wtFloors);
   floor.items[ii] = trimmed;
+  pushSetUndo('walkthrough', ['wtFloors'], before, cloneData(state.wtFloors), 'edit patrol item — ' + trimmed);
+  logActivity('walkthrough', 'edit', 'Updated patrol checklist item — ' + floor.label, 'Was: ' + oldText + ' · Now: ' + trimmed);
   scheduleSave();
 }
 
@@ -4625,7 +4762,10 @@ function addWTItem(fi) {
   var text = inputEl.value.trim(); if (!text) { toast('Enter item text'); return; }
   if (!state.wtFloors) state.wtFloors = getWTFloors();
   var floor = state.wtFloors[fi]; if (!floor) return;
+  var before = cloneData(state.wtFloors);
   floor.items.push(text);
+  pushSetUndo('walkthrough', ['wtFloors'], before, cloneData(state.wtFloors), 'add patrol item — ' + text);
+  logActivity('walkthrough', 'create', 'Added patrol checklist item — ' + floor.label, text);
   scheduleSave(); renderWT();
   // Re-open edit mode for that floor and scroll to it
   setTimeout(function() {
@@ -4640,7 +4780,11 @@ function deleteWTItem(fi, ii) {
   if (!confirm('Remove this checklist item?')) return;
   if (!state.wtFloors) state.wtFloors = getWTFloors();
   var floor = state.wtFloors[fi]; if (!floor) return;
+  var before = cloneData(state.wtFloors);
+  var old = floor.items[ii];
   floor.items.splice(ii, 1);
+  pushSetUndo('walkthrough', ['wtFloors'], before, cloneData(state.wtFloors), 'delete patrol item — ' + (old || 'item'));
+  logActivity('walkthrough', 'delete', 'Deleted patrol checklist item — ' + floor.label, old || '');
   scheduleSave(); renderWT();
   setTimeout(function() { openEditWTFloor(fi); }, 50);
   toast('Item removed');
@@ -4653,12 +4797,19 @@ function renameWTFloor(fi) {
   if (!newLabel || !newLabel.trim() || newLabel.trim() === floor.label) return;
   // Remap walkthrough keys
   var wt = state.walkthrough || {};
+  var floorsBefore = cloneData(state.wtFloors);
+  var wtBefore = cloneData(wt);
   floor.items.forEach(function (item, i) {
     var oldKey = floor.label + '_' + i;
     var newKey = newLabel.trim() + '_' + i;
     if (wt[oldKey] !== undefined) { wt[newKey] = wt[oldKey]; delete wt[oldKey]; }
   });
   floor.label = newLabel.trim();
+  pushBatchUndo('walkthrough', 'rename patrol area — ' + newLabel.trim(), [
+    { sec: 'walkthrough', type: 'SET', path: ['wtFloors'], before: floorsBefore, after: cloneData(state.wtFloors), label: 'rename patrol area — ' + newLabel.trim() },
+    { sec: 'walkthrough', type: 'SET', path: ['walkthrough'], before: wtBefore, after: cloneData(state.walkthrough || {}), label: 'remap patrol area progress — ' + newLabel.trim() }
+  ]);
+  logActivity('walkthrough', 'edit', 'Renamed patrol area', 'Was: ' + floorsBefore[fi].label + ' · Now: ' + newLabel.trim());
   scheduleSave(); renderWT(); toast('Floor renamed');
 }
 
@@ -4668,8 +4819,15 @@ function deleteWTFloor(fi) {
   if (!confirm('Delete floor "' + floor.label + '" and all its items? Checkmark progress for this floor will be lost.')) return;
   // Clean up walkthrough keys for this floor
   var wt = state.walkthrough || {};
+  var floorsBefore = cloneData(state.wtFloors);
+  var wtBefore = cloneData(wt);
   floor.items.forEach(function (item, i) { delete wt[floor.label + '_' + i]; });
   state.wtFloors.splice(fi, 1);
+  pushBatchUndo('walkthrough', 'delete patrol area — ' + floor.label, [
+    { sec: 'walkthrough', type: 'SET', path: ['wtFloors'], before: floorsBefore, after: cloneData(state.wtFloors), label: 'delete patrol area — ' + floor.label },
+    { sec: 'walkthrough', type: 'SET', path: ['walkthrough'], before: wtBefore, after: cloneData(state.walkthrough || {}), label: 'clear patrol area progress — ' + floor.label }
+  ]);
+  logActivity('walkthrough', 'delete', 'Deleted patrol area — ' + floor.label, floor.items.length + ' checklist item(s) removed');
   scheduleSave(); renderWT(); toast('Floor deleted');
 }
 function saveFlag() {
@@ -4677,18 +4835,45 @@ function saveFlag() {
   if (!location || !desc) { toast('Fill in location and description'); return; }
   var f = { id: uid(), location: location, desc: desc, priority: g('fl-priority').value, resolved: false, createdAt: Date.now() };
   if (!state.flags) state.flags = [];
-  state.flags.push(f); scheduleSave(); closeModal('modal-flag'); renderWT();
+  state.flags.push(f);
+  pushUndo({ sec: 'walkthrough', type: 'ADD', path: ['flags'], id: f.id, data: f, label: 'flag patrol issue — ' + location });
+  logActivity('walkthrough', 'create', 'Flagged patrol issue — ' + location, 'Priority: ' + f.priority + ' · ' + desc);
+  scheduleSave(); closeModal('modal-flag'); renderWT();
   ['fl-location', 'fl-desc'].forEach(function (id) { g(id).value = ''; }); toast('Issue flagged');
 }
-function resolveFlag(id) { var f = (state.flags || []).find(function (x) { return x.id === id; }); if (f) { f.resolved = true; scheduleSave(); renderWT(); toast('Resolved'); } }
-function deleteFlag(id) { if (!confirm('Remove?')) return; state.flags = (state.flags || []).filter(function (f) { return f.id !== id; }); scheduleSave(); renderWT(); toast('Removed'); }
+function resolveFlag(id) {
+  var f = (state.flags || []).find(function (x) { return x.id === id; });
+  if (f) {
+    var before = cloneData(f);
+    f.resolved = true;
+    pushUndo({ sec: 'walkthrough', type: 'EDIT', path: ['flags'], id: f.id, before: before, after: cloneData(f), label: 'resolve patrol issue — ' + f.location });
+    logActivity('walkthrough', 'complete', 'Resolved patrol issue — ' + f.location, f.desc || '');
+    scheduleSave(); renderWT(); toast('Resolved');
+  }
+}
+function deleteFlag(id) {
+  if (!confirm('Remove?')) return;
+  var f = (state.flags || []).find(function (x) { return x.id === id; });
+  if (f) {
+    pushUndo({ sec: 'walkthrough', type: 'DELETE', path: ['flags'], id: f.id, data: f, label: 'delete patrol issue — ' + f.location });
+    logActivity('walkthrough', 'delete', 'Deleted patrol issue — ' + f.location, f.desc || '');
+  }
+  state.flags = (state.flags || []).filter(function (f) { return f.id !== id; });
+  scheduleSave(); renderWT(); toast('Removed');
+}
 function escalateFlagToMaint(id) {
   var f = (state.flags || []).find(function(x) { return x.id === id; }); if (!f) return;
   if (!confirm('Create a maintenance issue from this patrol flag?')) return;
   var entry = { id: uid(), unit: '', resident: '', type: 'General', priority: f.priority === 'high' ? 'high' : (f.priority === 'medium' ? 'medium' : 'low'), status: 'open', notes: 'Escalated from patrol flag: ' + f.location + (f.desc ? '\nDetails: ' + f.desc : ''), log: [], createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' };
   if (!state.maintenance) state.maintenance = [];
+  var flagBefore = cloneData(f);
   state.maintenance.push(entry);
   f.maintEscalated = true;
+  pushBatchUndo('walkthrough', 'escalate patrol issue — ' + f.location, [
+    { sec: 'maintenance', type: 'ADD', path: ['maintenance'], id: entry.id, data: cloneData(entry), label: 'add maintenance from patrol issue — ' + f.location },
+    { sec: 'walkthrough', type: 'EDIT', path: ['flags'], id: f.id, before: flagBefore, after: cloneData(f), label: 'mark patrol issue escalated — ' + f.location }
+  ]);
+  logActivity('walkthrough', 'escalate', 'Escalated patrol issue to maintenance — ' + f.location, f.desc || '');
   scheduleSave(); renderMaint(); renderWT(); updateBadges(); renderDash();
   toast('Maintenance issue created from patrol flag');
 }
@@ -4707,11 +4892,19 @@ function setCurrentTodos(arr) {
   if (!state.userTodos) state.userTodos = {};
   state.userTodos[vid] = arr;
 }
+function currentTodosPath() {
+  if (!currentUser) return ['todos'];
+  var vid = (currentUser.role === 'admin' && todosViewingId) ? todosViewingId : currentUser.id;
+  return ['userTodos', vid];
+}
 function addTodo() {
   var input = g('todo-input'), text = input.value.trim(); if (!text) { toast('Enter a to-do first'); return; }
   if (currentUser && currentUser.role === 'admin' && todosViewingId && todosViewingId !== currentUser.id) { toast('Switch to your own list to add tasks'); return; }
   var todos = getCurrentTodos();
-  todos.push({ id: uid(), text: text, priority: g('todo-priority').value, dueDate: g('todo-date').value || null, done: false, createdAt: Date.now() });
+  var todo = { id: uid(), text: text, priority: g('todo-priority').value, dueDate: g('todo-date').value || null, done: false, createdAt: Date.now() };
+  todos.push(todo);
+  pushUndo({ sec: 'todos', type: 'ADD', path: currentTodosPath(), id: todo.id, data: todo, label: 'add to-do — ' + text });
+  logActivity('todos', 'create', 'Added to-do — ' + text, 'Owner: ' + _todoOwnerLabel() + (todo.dueDate ? ' · Due: ' + fmtShort(todo.dueDate) : '') + ' · Priority: ' + todo.priority);
   input.value = ''; g('todo-date').value = ''; g('todo-priority').value = 'normal';
   scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Added');
 }
@@ -4812,9 +5005,36 @@ function renderTodos() {
   list.innerHTML = html;
   setBadge('badge-todos', totalPending); setMBadge('mb-todos', totalPending);
 }
-function toggleTodo(id, checked) { var todos = getCurrentTodos(); var t = todos.find(function (x) { return x.id === id; }); if (t) { t.done = checked; t.completedAt = checked ? Date.now() : null; scheduleSave(); renderTodos(); updateBadges(); renderDash(); } }
-function deleteTodo(id) { setCurrentTodos(getCurrentTodos().filter(function (t) { return t.id !== id; })); scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Removed'); }
-function clearDoneTodos() { if (!confirm('Clear completed to-dos?')) return; setCurrentTodos(getCurrentTodos().filter(function (t) { return !t.done; })); scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Cleared'); }
+function toggleTodo(id, checked) {
+  var todos = getCurrentTodos();
+  var t = todos.find(function (x) { return x.id === id; });
+  if (t) {
+    var before = cloneData(t);
+    t.done = checked; t.completedAt = checked ? Date.now() : null;
+    pushUndo({ sec: 'todos', type: 'EDIT', path: currentTodosPath(), id: t.id, before: before, after: cloneData(t), label: (checked ? 'complete' : 'reopen') + ' to-do — ' + t.text });
+    logActivity('todos', checked ? 'complete' : 'reopen', (checked ? 'Completed' : 'Reopened') + ' to-do — ' + t.text, 'Owner: ' + _todoOwnerLabel());
+    scheduleSave(); renderTodos(); updateBadges(); renderDash();
+  }
+}
+function deleteTodo(id) {
+  var todos = getCurrentTodos();
+  var t = todos.find(function (x) { return x.id === id; });
+  if (t) {
+    pushUndo({ sec: 'todos', type: 'DELETE', path: currentTodosPath(), id: t.id, data: t, label: 'delete to-do — ' + t.text });
+    logActivity('todos', 'delete', 'Deleted to-do — ' + t.text, 'Owner: ' + _todoOwnerLabel());
+  }
+  setCurrentTodos(todos.filter(function (t) { return t.id !== id; }));
+  scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Removed');
+}
+function clearDoneTodos() {
+  if (!confirm('Clear completed to-dos?')) return;
+  var before = cloneData(getCurrentTodos());
+  var after = getCurrentTodos().filter(function (t) { return !t.done; });
+  setCurrentTodos(after);
+  pushSetUndo('todos', currentTodosPath(), before, cloneData(after), 'clear completed to-dos');
+  logActivity('todos', 'delete', 'Cleared completed to-dos', (before.length - after.length) + ' completed item(s) removed · Owner: ' + _todoOwnerLabel());
+  scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Cleared');
+}
 
 // ─── LOST & FOUND ───
 var lafFilter = 'all', lafSearch = '';
@@ -5401,10 +5621,12 @@ function adjustSupply(id, delta) {
   if (!s) return;
   if (!s.log) s.log = [];
   var by = currentUser ? currentUser.name : '';
+  var before = cloneData(s);
   var prevQty = s.qty || 0;
   s.qty = Math.max(0, prevQty + delta);
   s.updatedAt = Date.now(); s.updatedBy = by;
   s.log.push({ ts: Date.now(), by: by, delta: delta, prevQty: prevQty, newQty: s.qty, note: 'Manual adjustment' });
+  pushUndo({ sec: 'supplies', type: 'EDIT', path: ['supplies'], id: s.id, before: before, after: cloneData(s), label: 'adjust supply — ' + s.name });
   logActivity('supplies','edit',(delta>0?'Increased':'Decreased')+' supply qty — '+s.name+' · '+prevQty+' → '+s.qty);
   checkSupplyLowStockTodos(); scheduleSave(); renderSupplies(); updateBadges(); renderDash(); if(curSec==='todos') renderTodos();
 }
@@ -5419,10 +5641,13 @@ function setSupplyQtyPrompt(id) {
   if (isNaN(n) || n < 0) { toast('Enter a valid number'); return; }
   if (!s.log) s.log = [];
   var by = currentUser ? currentUser.name : '';
+  var before = cloneData(s);
   var prevQty = s.qty || 0;
   s.qty = n;
   s.updatedAt = Date.now(); s.updatedBy = by;
   s.log.push({ ts: Date.now(), by: by, delta: n - prevQty, prevQty: prevQty, newQty: n, note: 'Set manually' });
+  pushUndo({ sec: 'supplies', type: 'EDIT', path: ['supplies'], id: s.id, before: before, after: cloneData(s), label: 'set supply qty — ' + s.name });
+  logActivity('supplies','edit','Set supply qty — '+s.name+' · '+prevQty+' → '+s.qty);
   checkSupplyLowStockTodos(); scheduleSave(); renderSupplies(); updateBadges(); renderDash(); if(curSec==='todos') renderTodos();
 }
 
@@ -5431,11 +5656,17 @@ function deleteSupply(id) {
   if (!confirm('Remove this supply item?')) return;
   var s = (state.supplies || []).find(function(x){ return x.id === id; });
   if (s) {
+    var beforeDeletedDefaults = cloneData(state.deletedDefaultSupplies || []);
     var isDefault = DEFAULT_SUPPLIES.some(function(d){ return d.name === s.name; });
     if (isDefault) {
       if (!state.deletedDefaultSupplies) state.deletedDefaultSupplies = [];
       if (state.deletedDefaultSupplies.indexOf(s.name) === -1) state.deletedDefaultSupplies.push(s.name);
     }
+    pushBatchUndo('supplies', 'delete supply — ' + s.name, [
+      { sec: 'supplies', type: 'DELETE', path: ['supplies'], id: s.id, data: cloneData(s), label: 'delete supply — ' + s.name },
+      { sec: 'supplies', type: 'SET', path: ['deletedDefaultSupplies'], before: beforeDeletedDefaults, after: cloneData(state.deletedDefaultSupplies || []), label: 'update deleted default supplies — ' + s.name }
+    ]);
+    logActivity('supplies', 'delete', 'Removed supply item — ' + s.name, 'Qty at removal: ' + (s.qty || 0));
   }
   state.supplies = (state.supplies || []).filter(function(x){ return x.id !== id; });
   scheduleSave(); renderSupplies(); updateBadges(); toast('Item removed');
@@ -6983,10 +7214,18 @@ function saveTodoModal() {
   var priority = g('td-priority').value;
   if (editingTodoId) {
     var t = getCurrentTodos().find(function (x) { return x.id === editingTodoId; });
-    if (t) { t.text = text; t.note = note; t.dueDate = dueDate; t.priority = priority; }
+    if (t) {
+      var before = cloneData(t);
+      t.text = text; t.note = note; t.dueDate = dueDate; t.priority = priority;
+      pushUndo({ sec: 'todos', type: 'EDIT', path: currentTodosPath(), id: t.id, before: before, after: cloneData(t), label: 'edit to-do — ' + text });
+      logActivity('todos', 'edit', 'Updated to-do — ' + text, activityFields(before, t, { text: 'Task', note: 'Note', dueDate: 'Due date', priority: 'Priority' }));
+    }
   } else {
     var todos = getCurrentTodos();
-    todos.push({ id: uid(), text: text, note: note, priority: priority, dueDate: dueDate, done: false, createdAt: Date.now() });
+    var todo = { id: uid(), text: text, note: note, priority: priority, dueDate: dueDate, done: false, createdAt: Date.now() };
+    todos.push(todo);
+    pushUndo({ sec: 'todos', type: 'ADD', path: currentTodosPath(), id: todo.id, data: todo, label: 'add to-do — ' + text });
+    logActivity('todos', 'create', 'Added to-do — ' + text, 'Owner: ' + _todoOwnerLabel() + (dueDate ? ' · Due: ' + fmtShort(dueDate) : '') + ' · Priority: ' + priority);
   }
   var wasEditing = !!editingTodoId;
   closeModal('modal-todo'); editingTodoId = null;
@@ -9055,7 +9294,10 @@ function addMaintLog(id, note) {
   if (!note) { toast('Enter an update'); return; }
   var m = (state.maintenance || []).find(function (x) { return x.id === id; }); if (!m) return;
   if (!m.log) m.log = m.desc ? [{ ts: m.createdAt, by: m.addedBy || '', note: m.desc }] : [];
+  var before = cloneData(m.log);
   m.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: note });
+  pushUndo({ sec: 'maintenance', type: 'EDIT', id: m.id, before: { log: before }, after: { log: cloneData(m.log) }, label: 'maintenance update — Unit ' + (m.unit || '-') });
+  logActivity('maintenance', 'update', 'Added maintenance update — Unit ' + (m.unit || '-') + ' · ' + (m.issue || m.type || 'Issue'), note);
   scheduleSave(); renderMaint(); toast('Update logged');
   setTimeout(function () { var row = g('maint-log-' + id); if (row) row.classList.add('open'); }, 0);
 }
@@ -9073,14 +9315,24 @@ function saveMaintLog(id, idx) {
   var inp = g('mle-inp-'+id+'-'+idx); if (!inp) return;
   var note = inp.value.trim(); if (!note) { toast('Note cannot be empty'); return; }
   var m = (state.maintenance||[]).find(function(x){return x.id===id;}); if (!m||!m.log||!m.log[idx]) return;
+  var before = cloneData(m.log);
+  var oldNote = m.log[idx].note || '';
   m.log[idx].note = note; scheduleSave(); renderMaint(); toast('Log entry updated');
+  pushUndo({ sec: 'maintenance', type: 'EDIT', id: m.id, before: { log: before }, after: { log: cloneData(m.log) }, label: 'edit maintenance update — Unit ' + (m.unit || '-') });
+  logActivity('maintenance', 'edit', 'Edited maintenance update — Unit ' + (m.unit || '-') + ' · ' + (m.issue || m.type || 'Issue'), 'Was: ' + oldNote + ' · Now: ' + note);
+  scheduleSave();
   setTimeout(function(){var row=g('maint-log-'+id);if(row)row.classList.add('open');},0);
 }
 function cancelMaintLog(id, idx) { renderMaint(); setTimeout(function(){var row=g('maint-log-'+id);if(row)row.classList.add('open');},0); }
 function deleteMaintLog(id, idx) {
   if (!confirm('Delete this log entry?')) return;
   var m = (state.maintenance||[]).find(function(x){return x.id===id;}); if (!m||!m.log) return;
+  var before = cloneData(m.log);
+  var old = m.log[idx];
   m.log.splice(idx, 1); scheduleSave(); renderMaint(); toast('Log entry deleted');
+  pushUndo({ sec: 'maintenance', type: 'EDIT', id: m.id, before: { log: before }, after: { log: cloneData(m.log) }, label: 'delete maintenance update — Unit ' + (m.unit || '-') });
+  logActivity('maintenance', 'delete', 'Deleted maintenance update — Unit ' + (m.unit || '-') + ' · ' + (m.issue || m.type || 'Issue'), old ? old.note : '');
+  scheduleSave();
   setTimeout(function(){var row=g('maint-log-'+id);if(row)row.classList.add('open');},0);
 }
 function toggleConciergeLog(id) {
@@ -9092,7 +9344,10 @@ function addConciergeLog(id, note) {
   if (!note) { toast('Enter an update'); return; }
   var c = (state.concierge || []).find(function (x) { return x.id === id; }); if (!c) return;
   if (!c.log) c.log = c.notes ? [{ ts: c.createdAt, by: c.addedBy || '', note: c.notes }] : [];
+  var before = cloneData(c.log);
   c.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: note });
+  pushUndo({ sec: 'concierge', type: 'EDIT', id: c.id, before: { log: before }, after: { log: cloneData(c.log) }, label: 'concierge update — Unit ' + (c.unit || '-') });
+  logActivity('concierge', 'update', 'Added concierge update — Unit ' + (c.unit || '-') + ' · ' + (c.type || 'Request'), note);
   scheduleSave(); renderConcierge(); toast('Update logged');
   setTimeout(function () { var row = g('concierge-log-' + id); if (row) row.classList.add('open'); }, 0);
 }
@@ -9110,14 +9365,24 @@ function saveConciergeLog(id, idx) {
   var inp = g('cle-inp-'+id+'-'+idx); if (!inp) return;
   var note = inp.value.trim(); if (!note) { toast('Note cannot be empty'); return; }
   var c = (state.concierge||[]).find(function(x){return x.id===id;}); if (!c||!c.log||!c.log[idx]) return;
+  var before = cloneData(c.log);
+  var oldNote = c.log[idx].note || '';
   c.log[idx].note = note; scheduleSave(); renderConcierge(); toast('Log entry updated');
+  pushUndo({ sec: 'concierge', type: 'EDIT', id: c.id, before: { log: before }, after: { log: cloneData(c.log) }, label: 'edit concierge update — Unit ' + (c.unit || '-') });
+  logActivity('concierge', 'edit', 'Edited concierge update — Unit ' + (c.unit || '-') + ' · ' + (c.type || 'Request'), 'Was: ' + oldNote + ' · Now: ' + note);
+  scheduleSave();
   setTimeout(function(){var row=g('concierge-log-'+id);if(row)row.classList.add('open');},0);
 }
 function cancelConciergeLog(id, idx) { renderConcierge(); setTimeout(function(){var row=g('concierge-log-'+id);if(row)row.classList.add('open');},0); }
 function deleteConciergeLog(id, idx) {
   if (!confirm('Delete this log entry?')) return;
   var c = (state.concierge||[]).find(function(x){return x.id===id;}); if (!c||!c.log) return;
+  var before = cloneData(c.log);
+  var old = c.log[idx];
   c.log.splice(idx, 1); scheduleSave(); renderConcierge(); toast('Log entry deleted');
+  pushUndo({ sec: 'concierge', type: 'EDIT', id: c.id, before: { log: before }, after: { log: cloneData(c.log) }, label: 'delete concierge update — Unit ' + (c.unit || '-') });
+  logActivity('concierge', 'delete', 'Deleted concierge update — Unit ' + (c.unit || '-') + ' · ' + (c.type || 'Request'), old ? old.note : '');
+  scheduleSave();
   setTimeout(function(){var row=g('concierge-log-'+id);if(row)row.classList.add('open');},0);
 }
 
