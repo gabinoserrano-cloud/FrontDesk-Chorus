@@ -1308,7 +1308,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-resident"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="modal-resident-title">Add Resident Profile</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-resident')">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="modal-resident-title">Add Resident Profile</span><span id="modal-resident-nav" style="display:none;align-items:center;gap:6px;margin-left:auto;margin-right:10px"><button class="btn btn-ghost btn-xs" id="modal-resident-prev" onclick="navigateResident(-1)" style="font-size:16px;padding:2px 8px;line-height:1">&#8592;</button><span id="modal-resident-pos" style="font-size:11px;color:var(--text3);white-space:nowrap"></span><button class="btn btn-ghost btn-xs" id="modal-resident-next" onclick="navigateResident(1)" style="font-size:16px;padding:2px 8px;line-height:1">&#8594;</button></span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-resident')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Unit #</label><input id="rp-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Resident Name</label><input id="rp-name" type="text"></div></div>
     <div style="padding:4px 0 2px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="rp-blueground"> <span>&#128309; <strong>Blueground Unit</strong> — Managed by Blueground</span></label></div>
@@ -4834,7 +4834,7 @@ function toggleLAFPassdown(id) { var item = (state.laf || []).find(function(x){ 
 function deleteLAF(id) { if (!confirm('Remove?')) return; var lx=(state.laf||[]).find(function(x){return x.id===id;}); if (lx) pushUndo({ sec: 'laf', type: 'DELETE', id: id, data: Object.assign({}, lx), label: 'delete L&F — ' + lx.desc }); logActivity('laf','delete','Removed L&F item'+(lx?' — '+lx.desc:'')); state.laf = (state.laf || []).filter(function (i) { return i.id !== id; }); scheduleSave(); renderLAF(); updateBadges(); toast('Removed'); }
 
 // ─── RESIDENT PROFILES / VIP NOTES / PTE ───
-var residentsFilter = 'all', residentsSort = 'unit', residentsSearch = '', editingResidentId = null;
+var residentsFilter = 'all', residentsSort = 'unit', residentsSearch = '', editingResidentId = null, residentNavList = [];
 // ===== [RESIDENT PROFILES] ===================================================
 function filterResidents(f, item) { residentsFilter = f; document.querySelectorAll('#section-residents .sub-tab').forEach(function(t){ t.classList.remove('active'); }); item.classList.add('active'); renderResidents(); }
 function viewResidentProfile(unit) {
@@ -4971,10 +4971,12 @@ function openAddResidentFromMove(m) {
     notesEl.value = moveNotes;
   }
   setModalMode('modal-resident-title','modal-resident-savebtn','Create Resident Profile','Save Profile');
+  var nav = g('modal-resident-nav'); if (nav) nav.style.display = 'none';
   openModal('modal-resident');
 }
 function openAddResident() {
   editingResidentId = null;
+  var nav = g('modal-resident-nav'); if (nav) nav.style.display = 'none';
   ['rp-unit','rp-name','rp-preferred','rp-phone','rp-wifi-expiry','rp-lease-start','rp-lease-end','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit','rp-pet-notes','rp-vehicle-info'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
   var wh = g('rp-wifi-hint'); if (wh) wh.innerHTML = '';
   var m2m = g('rp-m2m'); if (m2m) m2m.checked = false;
@@ -5024,7 +5026,20 @@ function openEditResident(id) {
     if (wifiHint) wifiHint.innerHTML = '';
   }
   setModalMode('modal-resident-title','modal-resident-savebtn','Edit Profile','Save Changes');
+  var nav = g('modal-resident-nav');
+  if (nav && residentNavList.length > 1) {
+    var idx = residentNavList.indexOf(id);
+    nav.style.display = 'flex';
+    g('modal-resident-pos').textContent = (idx + 1) + ' of ' + residentNavList.length;
+    g('modal-resident-prev').disabled = idx <= 0;
+    g('modal-resident-next').disabled = idx >= residentNavList.length - 1;
+  } else if (nav) { nav.style.display = 'none'; }
   openModal('modal-resident');
+}
+function navigateResident(dir) {
+  var idx = residentNavList.indexOf(editingResidentId);
+  var next = residentNavList[idx + dir];
+  if (next) openEditResident(next);
 }
 function saveResident() {
   var unit = g('rp-unit').value.trim(), name = g('rp-name').value.trim();
@@ -5432,6 +5447,7 @@ function renderResidents() {
     }
     grid.innerHTML = emptyMsg; return;
   }
+  residentNavList = list.map(function(r){ return r.id; });
   var isStaffUser = currentUser && currentUser.role === 'staff';
   var pteLabel = { granted: '&#9989; PTE Granted', denied: '&#128683; PTE Denied', 'not-set': 'PTE Not Set' };
   var pteClass = { granted: 'pte-granted', denied: 'pte-denied', 'not-set': 'pte-not-set' };
