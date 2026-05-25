@@ -1313,6 +1313,7 @@
     <div class="fr"><div class="fg"><label>Unit #</label><input id="rp-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Resident Name</label><input id="rp-name" type="text"></div></div>
     <div style="padding:4px 0 2px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="rp-blueground"> <span>&#128309; <strong>Blueground Unit</strong> — Managed by Blueground</span></label></div>
     <div class="fr"><div class="fg"><label>Preferred Name / Nickname</label><input id="rp-preferred" type="text" placeholder="e.g. Mike"></div><div class="fg"><label>Phone (optional)</label><input id="rp-phone" type="text"></div></div>
+    <div class="fr"><div class="fg"><label>Email (optional)</label><input id="rp-email" type="email" placeholder="e.g. resident@email.com"></div><div class="fg"></div></div>
     <div class="fr"><div class="fg"><label>&#128246; WiFi Expiration Date</label><input id="rp-wifi-expiry" type="date" data-no-autofill></div><div class="fg" id="rp-wifi-hint" style="display:flex;align-items:flex-end;padding-bottom:6px;font-size:12px;color:var(--text3)"></div></div>
     <div class="fr"><div class="fg"><label>&#128203; Lease Start Date</label><input id="rp-lease-start" type="date" data-no-autofill></div><div class="fg"><label>Lease End Date</label><input id="rp-lease-end" type="date" data-no-autofill></div></div>
     <div style="padding:2px 0 4px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="rp-m2m"> <span>Month-to-month (no fixed end date)</span></label></div>
@@ -1338,12 +1339,14 @@
       <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Pets &amp; Vehicles</div>
       <div class="fr">
         <div class="fg">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px;font-size:13px"><input type="checkbox" id="rp-has-pet"> Has Pet(s)</label>
+          <label>Pets</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;margin-bottom:6px"><input type="checkbox" id="rp-has-pet"> Has Pet(s)</label>
           <input id="rp-pet-notes" type="text" placeholder="e.g. Golden retriever named Max">
         </div>
         <div class="fg">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px;font-size:13px"><input type="checkbox" id="rp-has-vehicle"> Has Vehicle</label>
-          <input id="rp-vehicle-info" type="text" placeholder="e.g. Blue Tesla Model 3, ABC-1234">
+          <label>Vehicle</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;margin-bottom:6px"><input type="checkbox" id="rp-has-vehicle"> Registered Vehicle</label>
+          <input id="rp-vehicle-info" type="text" placeholder="e.g. Blue Tesla Model 3, plate ABC-1234">
         </div>
       </div>
     </div>
@@ -2486,6 +2489,19 @@ function buildCL(m, filterCat) {
     if (isParkingTask && !hadParkingHeader) {
       html += '<div class="cl-parking-hdr">&#128663; Parking Credentials</div>';
       hadParkingHeader = true;
+      var clProfile = (state.residentProfiles||[]).find(function(p){ return p.unit===m.unit && !p.archivedAt; });
+      var clPark = (state.parking||[]).find(function(p){ return p.unit===m.unit && p.status==='active'; });
+      if (clProfile && clProfile.hasVehicle && clProfile.vehicleInfo) {
+        html += '<div style="font-size:11px;color:var(--text2);padding:2px 2px 4px 14px">&#128663; ' + esc(clProfile.vehicleInfo) + '</div>';
+      }
+      if (clPark) {
+        var credParts = [
+          (clPark.transponder && clPark.transponder.issued ? '<span style="color:var(--green)">&#10003; Transponder</span>' : '<span style="color:var(--red)">&#10007; Transponder</span>'),
+          (clPark.keyTag && clPark.keyTag.issued ? '<span style="color:var(--green)">&#10003; Key Tag</span>' : '<span style="color:var(--red)">&#10007; Key Tag</span>'),
+          (clPark.valetSticker && clPark.valetSticker.issued ? '<span style="color:var(--green)">&#10003; Xpress Sticker</span>' : '<span style="color:var(--red)">&#10007; Xpress Sticker</span>')
+        ];
+        html += '<div style="font-size:11px;padding:0 2px 6px 14px;display:flex;gap:10px">' + credParts.join('') + '</div>';
+      }
     }
     html += '<div class="cl-item' + (isParkingTask ? ' cl-item-parking' : '') + '" onclick="event.stopPropagation()">';
     html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTask(\'' + m.id + '\',\'' + t.id + '\',this.checked)">';
@@ -4955,7 +4971,7 @@ function openAddResidentFromMoveId(moveId) {
 }
 function openAddResidentFromMove(m) {
   editingResidentId = null;
-  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-wifi-expiry','rp-lease-start','rp-lease-end','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit','rp-pet-notes','rp-vehicle-info'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-email','rp-wifi-expiry','rp-lease-start','rp-lease-end','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit','rp-pet-notes','rp-vehicle-info'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
   var wh = g('rp-wifi-hint'); if (wh) wh.innerHTML = '';
   g('rp-pte').value = 'not-set'; g('rp-parking').value = 'none'; g('rp-bike').value = 'none'; g('rp-storage').value = 'none';
   ['rp-m2m','rp-blueground','rp-has-pet','rp-has-vehicle'].forEach(function(id){ var el=g(id); if(el) el.checked=false; });
@@ -4977,7 +4993,8 @@ function openAddResidentFromMove(m) {
 function openAddResident() {
   editingResidentId = null;
   var nav = g('modal-resident-nav'); if (nav) nav.style.display = 'none';
-  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-wifi-expiry','rp-lease-start','rp-lease-end','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit','rp-pet-notes','rp-vehicle-info'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  var rpEmail = g('rp-email'); if (rpEmail) rpEmail.value = '';
+  ['rp-unit','rp-name','rp-preferred','rp-phone','rp-email','rp-wifi-expiry','rp-lease-start','rp-lease-end','rp-instructions','rp-notes','rp-parking-info','rp-bike-notes','rp-storage-unit','rp-pet-notes','rp-vehicle-info'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
   var wh = g('rp-wifi-hint'); if (wh) wh.innerHTML = '';
   var m2m = g('rp-m2m'); if (m2m) m2m.checked = false;
   g('rp-pte').value = 'not-set';
@@ -4997,6 +5014,7 @@ function openEditResident(id) {
   g('rp-name').value = r.residentName || '';
   g('rp-preferred').value = r.preferredName || '';
   g('rp-phone').value = r.phone || '';
+  var rpEmail = g('rp-email'); if (rpEmail) rpEmail.value = r.email || '';
   g('rp-instructions').value = r.instructions || '';
   g('rp-pte').value = r.pte || 'not-set';
   g('rp-notes').value = r.notes || '';
@@ -5048,7 +5066,7 @@ function saveResident() {
     var r = (state.residentProfiles || []).find(function(x){ return x.id===editingResidentId; }); if (!r) return;
     var _rb = Object.assign({}, r);
     var bgCbS = g('rp-blueground');
-    r.unit=unit; r.residentName=name; r.preferredName=g('rp-preferred').value.trim(); r.phone=g('rp-phone').value.trim(); r.instructions=g('rp-instructions').value.trim(); r.pte=g('rp-pte').value; r.notes=g('rp-notes').value.trim(); r.wifiExpiry=g('rp-wifi-expiry').value||''; r.leaseStart=g('rp-lease-start').value||''; r.leaseEnd=g('rp-lease-end').value||''; r.monthToMonth=!!(g('rp-m2m')&&g('rp-m2m').checked);
+    r.unit=unit; r.residentName=name; r.preferredName=g('rp-preferred').value.trim(); r.phone=g('rp-phone').value.trim(); r.email=g('rp-email')?g('rp-email').value.trim():''; r.instructions=g('rp-instructions').value.trim(); r.pte=g('rp-pte').value; r.notes=g('rp-notes').value.trim(); r.wifiExpiry=g('rp-wifi-expiry').value||''; r.leaseStart=g('rp-lease-start').value||''; r.leaseEnd=g('rp-lease-end').value||''; r.monthToMonth=!!(g('rp-m2m')&&g('rp-m2m').checked);
     r.parking=g('rp-parking').value; r.parkingInfo=g('rp-parking-info').value.trim(); r.bike=g('rp-bike').value; r.bikeNotes=g('rp-bike-notes').value.trim(); r.storage=g('rp-storage').value; r.storageUnit=g('rp-storage-unit').value.trim(); r.blueground=bgCbS?!!bgCbS.checked:false;
     r.hasPet=!!(g('rp-has-pet')&&g('rp-has-pet').checked); r.petNotes=g('rp-pet-notes')?g('rp-pet-notes').value.trim():''; r.hasVehicle=!!(g('rp-has-vehicle')&&g('rp-has-vehicle').checked); r.vehicleInfo=g('rp-vehicle-info')?g('rp-vehicle-info').value.trim():'';
     pushUndo({ sec: 'residents', type: 'EDIT', id: r.id, before: _rb, after: Object.assign({}, r), label: 'profile edit — Unit ' + unit });
@@ -5060,7 +5078,7 @@ function saveResident() {
     if (!confirm('Unit ' + unit + ' already has a profile (' + names + '). Add another profile for this unit?')) return;
   }
   var bgCbN = g('rp-blueground');
-  var entry = { id: uid(), unit: unit, residentName: name, preferredName: g('rp-preferred').value.trim(), phone: g('rp-phone').value.trim(), instructions: g('rp-instructions').value.trim(), pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), wifiExpiry: g('rp-wifi-expiry').value||'', leaseStart: g('rp-lease-start').value||'', leaseEnd: g('rp-lease-end').value||'', monthToMonth: !!(g('rp-m2m')&&g('rp-m2m').checked), parking: g('rp-parking').value, parkingInfo: g('rp-parking-info').value.trim(), bike: g('rp-bike').value, bikeNotes: g('rp-bike-notes').value.trim(), storage: g('rp-storage').value, storageUnit: g('rp-storage-unit').value.trim(), blueground: bgCbN?!!bgCbN.checked:false, hasPet: !!(g('rp-has-pet')&&g('rp-has-pet').checked), petNotes: g('rp-pet-notes')?g('rp-pet-notes').value.trim():'', hasVehicle: !!(g('rp-has-vehicle')&&g('rp-has-vehicle').checked), vehicleInfo: g('rp-vehicle-info')?g('rp-vehicle-info').value.trim():'', createdAt: Date.now() };
+  var entry = { id: uid(), unit: unit, residentName: name, preferredName: g('rp-preferred').value.trim(), phone: g('rp-phone').value.trim(), email: g('rp-email')?g('rp-email').value.trim():'', instructions: g('rp-instructions').value.trim(), pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), wifiExpiry: g('rp-wifi-expiry').value||'', leaseStart: g('rp-lease-start').value||'', leaseEnd: g('rp-lease-end').value||'', monthToMonth: !!(g('rp-m2m')&&g('rp-m2m').checked), parking: g('rp-parking').value, parkingInfo: g('rp-parking-info').value.trim(), bike: g('rp-bike').value, bikeNotes: g('rp-bike-notes').value.trim(), storage: g('rp-storage').value, storageUnit: g('rp-storage-unit').value.trim(), blueground: bgCbN?!!bgCbN.checked:false, hasPet: !!(g('rp-has-pet')&&g('rp-has-pet').checked), petNotes: g('rp-pet-notes')?g('rp-pet-notes').value.trim():'', hasVehicle: !!(g('rp-has-vehicle')&&g('rp-has-vehicle').checked), vehicleInfo: g('rp-vehicle-info')?g('rp-vehicle-info').value.trim():'', createdAt: Date.now() };
   if (!state.residentProfiles) state.residentProfiles = [];
   state.residentProfiles.push(entry); pushUndo({ sec: 'residents', type: 'ADD', id: entry.id, data: Object.assign({}, entry), label: 'add profile — Unit ' + unit }); logActivity('residents','create','Added resident profile — Unit '+unit+' · '+name); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile saved');
 }
@@ -5459,6 +5477,7 @@ function renderResidents() {
     html += '<div class="flex items-center gap-8 mb-8"><span class="unit-num" style="font-size:15px">Unit ' + esc(r.unit) + '</span><span class="pte-badge ' + pteClass[pte] + '">' + pteLabel[pte] + '</span>' + (r.blueground ? '<span style="font-size:10px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600;margin-left:auto">&#128309; Blueground</span>' : '') + '</div>';
     html += '<div style="font-weight:600;font-size:14px">' + esc(r.residentName) + (r.preferredName ? ' <span style="font-weight:400;color:var(--text3);font-size:12px">(' + esc(r.preferredName) + ')</span>' : '') + '</div>';
     if (r.phone) html += '<div style="font-size:12px;color:var(--text3);margin-top:2px">&#128222; ' + esc(r.phone) + '</div>';
+    if (r.email) html += '<div style="font-size:12px;color:var(--text3);margin-top:1px">&#9993; ' + esc(r.email) + '</div>';
     var dates = [];
     if (r.wifiExpiry) {
       var wt = today(), wd3 = new Date(); wd3.setDate(wd3.getDate()+3); var wd3s = wd3.toISOString().split('T')[0];
