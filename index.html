@@ -1962,7 +1962,7 @@ function renderActivityLog() {
   (state.accounts || []).forEach(function(a) { userOpts += '<option value="' + a.id + '"' + (filterUser === a.id ? ' selected' : '') + '>' + a.name + '</option>'; });
 
   var secOpts = '<option value="">All Sections</option>';
-  var secs = ['moves','maintenance','guests','keys','amenities','tours','walkthrough','laf','passdown','concierge','residents','security','supplies','todos','settings','activity'];
+  var secs = ['moves','maintenance','guests','keys','amenities','tours','walkthrough','laf','passdown','concierge','residents','security','supplies','todos','units','parking','settings','activity','session'];
   secs.forEach(function(s) { secOpts += '<option value="' + s + '"' + (filterSec === s ? ' selected' : '') + '>' + (SEC_TITLES[s] || s) + '</option>'; });
 
   var html = '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px">'
@@ -2017,7 +2017,7 @@ function openMobSidebar() { g('sidebar').classList.add('mob-open'); g('sb-ov').s
 function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov').style.display = 'none'; }
 
 // ─── NAV ───
-var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Resident Profiles', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log' };
+var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Resident Profiles', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', parking: 'Parking Credentials', security: 'Security Incidents', session: 'Login / Session' };
 var patrolFilter = 'amenity';
 var SEC_ACTIONS = {
   moves: '<button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
@@ -2077,7 +2077,7 @@ function mobNav(item) {
   curSec = sec; renderSection(sec);
 }
 function renderSection(sec) {
-  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, templates: renderTemplates, guide: renderGuide, security: renderSecurity, supplies: renderSupplies, activity: renderActivityLog };
+  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, templates: renderTemplates, guide: renderGuide, security: renderSecurity, supplies: renderSupplies, activity: renderActivityLog, parking: renderParking };
   if (map[sec]) map[sec]();
 }
 function renderAll() { renderSection(curSec); updateBadges(); }
@@ -3172,13 +3172,19 @@ function saveUnit() {
   var isBG = g('un-blueground').checked;
   if (editingUnitId) {
     var u = (state.units || []).find(function(x){ return x.id===editingUnitId; }); if (!u) return;
+    var _ub = cloneData(u);
     u.unit=unit; u.floor=g('un-floor').value.trim(); u.bed=g('un-bed').value.trim(); u.sqft=g('un-sqft').value.trim(); u.rent=g('un-rent').value.trim(); u.notes=g('un-notes').value.trim(); u.availDate=g('un-avail').value; u.status=g('un-status').value; u.sgt=g('un-sgt').checked; u.blueground=isBG;
     u.bgResident=isBG ? g('un-bg-resident').value.trim() : ''; u.bgCheckin=isBG ? g('un-bg-checkin').value : ''; u.bgCheckout=isBG ? g('un-bg-checkout').value : '';
+    pushUndo({ sec: 'units', type: 'EDIT', id: u.id, before: _ub, after: cloneData(u), label: 'unit edit — ' + unit });
+    logActivity('units', 'edit', 'Updated unit ' + unit, 'Status: ' + u.status + (u.rent ? ' · Rent: $' + u.rent : '') + (u.bed ? ' · ' + u.bed + ' bed' : ''));
     editingUnitId=null; scheduleSave(); closeModal('modal-unit'); renderUnits(); updateBadges(); toast('Unit updated'); return;
   }
   var newU = { id: uid(), unit: unit, floor: g('un-floor').value.trim(), bed: g('un-bed').value.trim(), sqft: g('un-sqft').value.trim(), rent: g('un-rent').value.trim(), notes: g('un-notes').value.trim(), availDate: g('un-avail').value, status: g('un-status').value, sgt: g('un-sgt').checked, blueground: isBG, bgResident: isBG ? g('un-bg-resident').value.trim() : '', bgCheckin: isBG ? g('un-bg-checkin').value : '', bgCheckout: isBG ? g('un-bg-checkout').value : '', createdAt: Date.now() };
   if (!state.units) state.units = [];
-  state.units.push(newU); scheduleSave(); closeModal('modal-unit'); renderUnits(); updateBadges(); toast('Unit added');
+  state.units.push(newU);
+  pushUndo({ sec: 'units', type: 'ADD', id: newU.id, data: newU, label: 'add unit — ' + unit });
+  logActivity('units', 'create', 'Added unit ' + unit, 'Status: ' + newU.status + (newU.rent ? ' · Rent: $' + newU.rent : '') + (newU.bed ? ' · ' + newU.bed + ' bed' : ''));
+  scheduleSave(); closeModal('modal-unit'); renderUnits(); updateBadges(); toast('Unit added');
 }
 function renderUnits() {
   var all = state.units || [];
@@ -3848,6 +3854,7 @@ function renderKeys() {
 function updateKeyStatus(id, val) {
   var k = (state.keys || []).find(function (x) { return x.id === id; }); if (!k) return;
   var wasIssued = k.status === 'issued';
+  var _ksb = { status: k.status, returnedAt: k.returnedAt };
   k.status = val;
   if (val === 'returned' && !k.returnedAt) {
     k.returnedAt = Date.now();
@@ -3857,6 +3864,8 @@ function updateKeyStatus(id, val) {
       if (k.type === 'vendor') applySupplyAdjustment('Vendor Cards – Active Issued', -1, 'Returned — ' + (k.company || k.name) + ' · Unit ' + k.unit);
     }
   }
+  pushUndo({ sec: 'keys', type: 'EDIT', id: k.id, before: _ksb, after: { status: k.status, returnedAt: k.returnedAt }, label: 'key status → ' + val + ' — Unit ' + k.unit });
+  logActivity('keys', val === 'returned' ? 'complete' : 'edit', 'Key status → ' + val + ' — Unit ' + k.unit + ' · ' + k.name, 'Type: ' + k.type + (k.fob ? ' · Fob: ' + k.fob : ''));
   scheduleSave(); renderKeys(); updateBadges(); renderDash();
 }
 function logKeyReturn(id) {
@@ -3865,12 +3874,15 @@ function logKeyReturn(id) {
   if (!k.shiftNotes) k.shiftNotes = [];
   k.shiftNotes.push({ shiftId: getCurrentShiftId(), shift: getCurrentShiftLabel(), note: 'Key returned — logged at ' + ts, by: currentUser ? currentUser.name : '', ts: Date.now() });
   var wasIssued = k.status === 'issued';
+  var _krb = { status: k.status, returnedAt: k.returnedAt };
   k.status = 'returned'; k.returnedAt = Date.now();
   if (k.type !== 'mobile' && wasIssued) {
     applySupplyAdjustment('Key Cards – Blank Stock', +1, 'Returned — Unit ' + k.unit + ' · ' + k.name + (currentUser ? ' · ' + currentUser.name : ''));
     if (k.type === 'one-time') applySupplyAdjustment('One-Time Cards – Active Issued', -1, 'Returned — Unit ' + k.unit + ' · ' + k.name);
     if (k.type === 'vendor') applySupplyAdjustment('Vendor Cards – Active Issued', -1, 'Returned — ' + (k.company || k.name) + ' · Unit ' + k.unit);
   }
+  pushUndo({ sec: 'keys', type: 'EDIT', id: k.id, before: _krb, after: { status: 'returned', returnedAt: k.returnedAt }, label: 'key returned — Unit ' + k.unit });
+  logActivity('keys', 'complete', 'Key returned — Unit ' + k.unit + ' · ' + k.name, 'Type: ' + k.type + (k.fob ? ' · Fob: ' + k.fob : '') + ' · Logged at ' + ts);
   scheduleSave(); renderKeys(); updateBadges(); renderDash(); toast('Key return logged');
 }
 function deleteKey(id) { if (!confirm('Remove?')) return; var kx=(state.keys||[]).find(function(x){return x.id===id;}); if (kx) pushUndo({ sec: 'keys', type: 'DELETE', id: id, data: Object.assign({}, kx), label: 'delete key — Unit ' + kx.unit }); logActivity('keys','delete','Removed key'+(kx?' — Unit '+kx.unit+' · '+kx.name:'')); state.keys = (state.keys || []).filter(function (k) { return k.id !== id; }); scheduleSave(); renderKeys(); updateBadges(); toast('Removed'); }
@@ -3932,25 +3944,44 @@ function saveParking() {
   };
   if (editingParkingId) {
     var p=(state.parking||[]).find(function(x){return x.id===editingParkingId;}); if(!p) return;
+    var _pb = cloneData(p);
     Object.assign(p, data); editingParkingId=null;
+    pushUndo({ sec: 'parking', type: 'EDIT', id: p.id, before: _pb, after: cloneData(p), label: 'parking edit — Unit ' + unit });
+    logActivity('parking', 'edit', 'Updated parking credential — Unit ' + unit + ' · ' + resident);
     scheduleSave(); closeModal('modal-parking'); renderParking(); toast('Updated');
   } else {
     if (!state.parking) state.parking=[];
-    state.parking.push(Object.assign({ id:uid(), status:'active', cancelNoticeDate:null, returnedAt:null, addedBy:currentUser?currentUser.name:'', createdAt:Date.now() }, data));
+    var newP = Object.assign({ id:uid(), status:'active', cancelNoticeDate:null, returnedAt:null, addedBy:currentUser?currentUser.name:'', createdAt:Date.now() }, data);
+    state.parking.push(newP);
+    pushUndo({ sec: 'parking', type: 'ADD', id: newP.id, data: newP, label: 'add parking — Unit ' + unit });
+    logActivity('parking', 'create', 'Added parking credential — Unit ' + unit + ' · ' + resident, (data.transponder&&data.transponder.issued?'Transponder ✓ ':'')+( data.keyTag&&data.keyTag.issued?'Key Tag ✓ ':'')+( data.valetSticker&&data.valetSticker.issued?'Xpress Sticker ✓':''));
     scheduleSave(); closeModal('modal-parking'); renderParking(); toast('Parking credential added');
   }
 }
 function giveParkingNotice(id) {
   var p=(state.parking||[]).find(function(x){return x.id===id;}); if(!p) return;
   if (!confirm('Mark 30-day cancellation notice submitted for Unit ' + p.unit + '?')) return;
-  p.status='notice-given'; p.cancelNoticeDate=today(); scheduleSave(); renderParking(); toast('30-day notice recorded');
+  var _pnb = cloneData(p);
+  p.status='notice-given'; p.cancelNoticeDate=today();
+  pushUndo({ sec: 'parking', type: 'EDIT', id: p.id, before: _pnb, after: cloneData(p), label: 'parking notice — Unit ' + p.unit });
+  logActivity('parking', 'edit', '30-day notice given — Unit ' + p.unit + ' · ' + p.resident, 'Notice date: ' + today());
+  scheduleSave(); renderParking(); toast('30-day notice recorded');
 }
 function markParkingReturned(id) {
   var p=(state.parking||[]).find(function(x){return x.id===id;}); if(!p) return;
   if (!confirm('Mark all parking credentials returned for Unit ' + p.unit + '?')) return;
-  p.status='returned'; p.returnedAt=Date.now(); scheduleSave(); renderParking(); toast('Marked as returned');
+  var _prb = cloneData(p);
+  p.status='returned'; p.returnedAt=Date.now();
+  pushUndo({ sec: 'parking', type: 'EDIT', id: p.id, before: _prb, after: cloneData(p), label: 'parking returned — Unit ' + p.unit });
+  logActivity('parking', 'complete', 'Parking credentials returned — Unit ' + p.unit + ' · ' + p.resident);
+  scheduleSave(); renderParking(); toast('Marked as returned');
 }
-function deleteParking(id) { if(!confirm('Remove?')) return; state.parking=(state.parking||[]).filter(function(x){return x.id!==id;}); scheduleSave(); renderParking(); toast('Removed'); }
+function deleteParking(id) {
+  if(!confirm('Remove?')) return;
+  var px=(state.parking||[]).find(function(x){return x.id===id;});
+  if (px) { pushUndo({ sec: 'parking', type: 'DELETE', id: id, data: px, label: 'delete parking — Unit ' + px.unit }); logActivity('parking','delete','Removed parking credential — Unit '+px.unit+' · '+px.resident); }
+  state.parking=(state.parking||[]).filter(function(x){return x.id!==id;}); scheduleSave(); renderParking(); toast('Removed');
+}
 function renderParking() {
   var list = (state.parking||[]).slice();
   var cnt=g('parking-count'); if(cnt) cnt.textContent=list.length+' credentials';
@@ -9646,7 +9677,10 @@ function saveAmenityCloseout(id, note) {
   note = (note || '').trim();
   if (!note) { toast('Enter a close-out note'); return; }
   var a = (state.amenities || []).find(function (x) { return x.id === id; }); if (!a) return;
+  var _acb = { closeoutNote: a.closeoutNote, closeoutAt: a.closeoutAt };
   a.closeoutNote = note; a.closeoutAt = Date.now();
+  pushUndo({ sec: 'amenities', type: 'EDIT', id: a.id, before: _acb, after: { closeoutNote: a.closeoutNote, closeoutAt: a.closeoutAt }, label: 'amenity closeout — Unit ' + a.unit });
+  logActivity('amenities', 'complete', 'Closed out amenity booking — Unit ' + a.unit + ' · ' + a.space + ' · ' + fmtShort(a.date), note);
   scheduleSave(); renderAmenities(); toast('Booking closed out');
 }
 
