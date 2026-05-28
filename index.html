@@ -9490,6 +9490,7 @@ async function init() {
   try { var params = new URLSearchParams(window.location.search); pendingScanId = params.get('scan'); } catch(e) {}
   await pullCloud();
   migrateTaskUpdatesV2();
+  seedDefaultTemplates();
   updatePropertyUI();
   lastSyncTs = Date.now();
   if (pendingScanId) {
@@ -9709,6 +9710,117 @@ function checkPassdownReady() {
 var tmplActiveCat = 'All';
 var editingTemplateId = null;
 var TMPL_CATS = ['Packages','Noise','Maintenance','Lease','Guest Policy','Move In / Out','General'];
+
+var DEFAULT_TEMPLATES = [
+  // ── PACKAGES ──────────────────────────────────────────────────────────────
+  { title: 'Package Arrived – Standard', category: 'Packages',
+    body: "Hi [Name],\n\nJust a heads-up — a package has arrived for your unit and is ready for pickup in the package room on the lower level (Level -1). Feel free to stop by at your convenience.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  { title: 'Package Arrived – Food / Perishables', category: 'Packages',
+    body: "Hi [Name],\n\nYour package has arrived and has been placed in the cold storage fridge on the Valet Floor (Level -1), inside the laundry room.\n\nPlease note that due to limited space and the perishable nature of these items, we can only hold them for up to 5 days — after that, we may need to dispose of them for safety reasons.\n\nPlease stop by at your earliest convenience and check in with our package concierge team on Level -1. Thank you for your understanding!\n\nBest,\nPackage Concierge | Chorus" },
+
+  { title: 'Package Arrived – Large / Heavy', category: 'Packages',
+    body: "Your package has arrived — it’s a bit on the larger or heavier side, so we’ve set it aside in the package room for easier access.\n\nWhen it’s convenient for you, feel free to stop by and pick it up. We’re currently working on creating more space and truly appreciate your help in keeping things organized!\n\nPlease don’t hesitate to reach out if you need assistance.\n\nBest,\nPackage Concierge | Chorus" },
+
+  { title: 'Package Arrived – Live Plant', category: 'Packages',
+    body: "Your package has arrived and appears to contain a live plant. We recommend picking it up as soon as possible to help keep it in good condition.\n\nLet us know if there’s anything we can help with!\n\nBest,\nPackage Concierge | Chorus" },
+
+  { title: 'Package Arrived – Damaged / Opened', category: 'Packages',
+    body: "Your package has arrived, but it was visibly opened or damaged upon delivery. We’ve included a photo for your reference and have done our best to secure the contents.\n\nIf you have any questions or need further assistance, please feel free to reach out.\n\nBest,\nPackage Concierge | Chorus" },
+
+  { title: 'Package – Name Mismatch / ID Required', category: 'Packages',
+    body: "Hi [Name],\n\nWe have a package on file for your unit, but the name on the package does not match the current authorized resident on file. In order for us to release it, you will need to bring a valid ID matching the name on the package.\n\nIf ownership cannot be confirmed, the package will be returned to sender. We also ask that going forward, all deliveries be addressed to the name of the current authorized resident so we can accept and hold them on your behalf.\n\nIf you have any questions, please don’t hesitate to reach out.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  { title: 'Package – Unclaimed Follow-Up', category: 'Packages',
+    body: "Hi [Name],\n\nJust a friendly reminder that you have a package waiting for pickup in the package room (Level -1). It has been in our care for a few days and we want to make sure it gets to you.\n\nPlease stop by at your earliest convenience. If you’re unable to pick it up soon, please let us know so we can make arrangements.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  // ── NOISE ─────────────────────────────────────────────────────────────────
+  { title: 'Noise Complaint – Acknowledged / Investigating', category: 'Noise',
+    body: "Hi [Name],\n\nThank you for reaching out — we sincerely apologize for the inconvenience this has caused.\n\nWe’ve received your report and are looking into the situation. We’ll be reaching out to the relevant party to address the matter and remind them that our building’s quiet hours are in effect from 10:00 PM to 8:00 AM.\n\nIn the meantime, if you experience any further disturbances please don’t hesitate to contact the front desk directly at (415) 707-3030 and we will respond right away. For true emergencies, please call 911.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  { title: 'Noise Complaint – Quiet Hours Reminder', category: 'Noise',
+    body: "Hi [Name],\n\nWe wanted to reach out as a courtesy reminder that our building’s quiet hours are from 10:00 PM to 8:00 AM. During this time, we ask all residents to please be mindful of noise levels — including music, TV, conversations, and any activity that may carry through shared walls or floors.\n\nWe truly appreciate your cooperation and consideration for your neighbors!\n\nBest,\nFront Desk Associate | Chorus" },
+
+  // ── MAINTENANCE ───────────────────────────────────────────────────────────
+  { title: 'Maintenance – How to Submit a Work Order', category: 'Maintenance',
+    body: "Hi [Name],\n\nTo submit a maintenance request, please follow these steps in the RiseIO Resident App:\n\n1. Open the app\n2. Tap Work Orders\n3. Tap the + icon in the top right corner\n4. Select a category\n5. Set the priority level\n6. Grant or deny the team permission to enter (PTE)\n7. Add all relevant details about the issue\n8. Attach a photo if possible\n9. Tap Send\n\nOur team will review your request and follow up. For maintenance emergencies, please contact the front desk at (415) 707-3030.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  { title: 'Maintenance – Please Submit a Work Order', category: 'Maintenance',
+    body: "Hi [Name],\n\nTo get this addressed as quickly as possible, please submit a work order directly through the RiseIO Resident App:\n\n1. Open the app\n2. Tap Work Orders\n3. Tap the + icon in the top right corner\n4. Select a category\n5. Set the priority level\n6. Grant or deny the team permission to enter (PTE)\n7. Add all relevant details about the issue\n8. Attach a photo if possible\n9. Tap Send\n\nOnce submitted, our maintenance team will review and follow up with you directly. For emergencies, please call the front desk at (415) 707-3030.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  { title: 'Maintenance – Redirect to Team', category: 'Maintenance',
+    body: "Hi [Name],\n\nThis is best handled by our maintenance team. To get them the request directly, please submit a work order through the RiseIO Resident App:\n\n1. Open the app\n2. Tap Work Orders\n3. Tap the + icon in the top right corner\n4. Select a category\n5. Set the priority level\n6. Grant or deny the team permission to enter (PTE)\n7. Add all relevant details about the issue\n8. Attach a photo if possible\n9. Tap Send\n\nFor emergencies, please call the front desk at (415) 707-3030.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  // ── LEASE ─────────────────────────────────────────────────────────────────
+  { title: 'Lease – Redirect to Leasing Team', category: 'Lease',
+    body: "Hi [Name],\n\nLease-related questions — including renewals, pricing, availability, and move-out — are handled by our leasing team through EliseAI.\n\nPlease reach out at:\nalex@align-real-estate-resident.com\n\nThey’ll be happy to assist. Let us know if there’s anything the front desk can help with in the meantime!\n\nBest,\nFront Desk Associate | Chorus" },
+
+  // ── GUEST POLICY ──────────────────────────────────────────────────────────
+  { title: 'Guest Policy – One-Time Key Reminder', category: 'Guest Policy',
+    body: "Hi [Name],\n\nJust a reminder that the one-time key card issued for your guest is building property and must be returned to the front desk before your guest leaves the building.\n\nIf the key is not returned within 24 hours, our team will follow up as a courtesy reminder.\n\nThank you for your help keeping our key inventory in order!\n\nBest,\nFront Desk Associate | Chorus" },
+
+  { title: 'Guest – Unregistered Visitor', category: 'Guest Policy',
+    body: "Hi [Name],\n\nWe had a visitor arrive at the front desk who was not on your registered guest list. We contacted you to verify and your visitor has been [granted access / asked to wait].\n\nAs a reminder, guests and visitors can be registered in advance through the RiseIO app to help ensure a smooth and secure arrival experience. If you have any questions, feel free to reach out at (415) 707-3030.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  // ── MOVE IN / OUT ─────────────────────────────────────────────────────────
+  { title: 'Move-In – Welcome / What to Expect', category: 'Move In / Out',
+    body: "Hi [Name],\n\nWe’re so excited to welcome you to Chorus! Here’s what to take care of before move-in day:\n\n🔑 Key Pickup — Ready at the front desk on move-in day. Please bring a valid ID.\n\n🛗 Service Elevator — Must be reserved via the RiseIO app (Services → Elevator Reservation) at least 72 hours before your lease start date. Available 8:00 AM – 6:00 PM.\n\n📋 COI Required — Your moving company must submit a Certificate of Insurance to members@rentchorus.com before move-in day. Movers will NOT be permitted to enter without a valid COI on file.\nCOI requirements: Additional Insured: Otis Property Owner, LLC (30 Otis St, SF, CA 94103) · Liability: $1,000,000 min · Workers’ Comp: $500,000 min · Truck: max 24 ft, no detached beds\n\n💵 Move-In Total — Due at move-in via Cashier’s Check or Money Order payable to Otis Property Owner, LLC. See the first page of your Lease Agreement for the amount.\n\n⚡ PG&E — An active PG&E account is required before you receive your keys.\n\n🏠 Renter’s Insurance — Proof must be uploaded to ePremium before or on move-in day.\n\n📱 RiseIO App — Download and activate your profile before arriving.\n\nOur team is here every step of the way. Call us anytime at (415) 707-3030. We look forward to welcoming you home!\n\nBest,\nFront Desk Associate | Chorus" },
+
+  { title: 'Move-In – RiseIO App Setup', category: 'Move In / Out',
+    body: "Hi [Name],\n\nHere’s how to get started with the RiseIO Resident App:\n\nDownload from the App Store, Google Play, or directly through the activation link we sent you.\n\n1. Open your activation email and click the link\n2. Set up your account password\n3. Sign in with your email and new password\n\nOnce you’re in, you’ll be able to:\n- Reserve your move-in time slot (Services → Elevator Reservation) — must be booked at least 72 hours before your lease start date\n- Reserve amenity spaces\n- Call your vehicle (if parking is included)\n- Manage your guest and visitor list\n- Submit maintenance work orders and more\n\nReach out at (415) 707-3030 if you need any help getting set up.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  { title: 'Move-In – Book Your Time Slot & Submit COI', category: 'Move In / Out',
+    body: "Hi [Name],\n\nWith your lease start date approaching, please make sure these two things are taken care of as soon as possible:\n\n1. Reserve your move-in time slot via the RiseIO app (Services → Elevator Reservation). This must be secured at least 72 hours before your lease start date. The service elevator is available 8:00 AM – 6:00 PM.\n\n2. Have your moving company submit a Certificate of Insurance (COI) to members@rentchorus.com before move-in day. Movers will NOT be permitted to enter the building without a valid COI on file.\n\nCOI requirements for your movers:\n- Additional Insured: Otis Property Owner, LLC (30 Otis St, San Francisco, CA 94103)\n- Liability Coverage: $1,000,000 minimum\n- Workers’ Compensation: $500,000 minimum\n- Moving Truck: Max 24 feet long — no detached truck beds\n\nWe can’t wait to welcome you to Chorus! Reach out at (415) 707-3030 with any questions.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  { title: 'Move-Out – Key Return Reminder', category: 'Move In / Out',
+    body: "Hi [Name],\n\nAs your move-out date approaches, please remember to return all keys and access items to the front desk:\n\n- Unit key(s)\n- Fob(s)\n- Mail key\n- Parking credentials (transponder, key tag, valet sticker — if applicable)\n\nAll items must be returned on or before your scheduled move-out date. Unreturned keys may result in replacement charges.\n\nPlease reach out to the leasing team or stop by the front desk if you have any questions.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  { title: 'Move-Out – Book Inspection & Time Slot', category: 'Move In / Out',
+    body: "Hi [Name],\n\nAs your move-out date approaches, please make sure you’ve taken care of the following — you can disregard if already done:\n\n1. Submit a move-out inspection work order through the RiseIO app (Work Orders → + icon). Select the appropriate category, add any relevant notes, and submit.\n\n2. Reserve your move-out time slot via the RiseIO app (Services → Elevator Reservation). The service elevator is available 8:00 AM – 6:00 PM.\n\nPlease don’t hesitate to reach out if you have any questions!\n\nBest,\nFront Desk Associate | Chorus" },
+
+  { title: 'PG&E Setup', category: 'Move In / Out',
+    body: "Hi [Name],\n\nAn active PG&E account is required before you can receive your keys on move-in day. Here’s how to get set up:\n\nCall PG&E at 1-800-743-5000 or visit pge.com to start your electricity service.\n\nA few things to note:\n- No meter number is needed\n- No separate gas account needed — PG&E covers both gas and electric under one account\n- Electricity charges begin on your move-in date\n- Once your account is active, please send a screenshot of your account number with your Chorus address to the leasing team at alex@align-real-estate-resident.com\n\nIf PG&E service is not set up, the account remains in the building’s name and all usage will be billed back to you.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  { title: 'Renter’s Insurance', category: 'Move In / Out',
+    body: "Hi [Name],\n\nProof of active renter’s insurance is required before or on your move-in date. Your policy must include:\n\n- $100,000 minimum in liability coverage\n- Otis Property Owner, LLC — P.O. Box 498067, Cincinnati, OH 45249 — listed as the third-party insured/interested party\n- All residents occupying the unit listed on the policy\n\nTo upload proof of insurance, visit:\nhttps://www.epremiuminsurance.com/Renters-Insurance/Providers/ThirdParty/AddThirdPartyPolicy.aspx\n\nOnce your policy is approved, you’ll receive a confirmation email from ePremium. Please forward that approval email to the leasing team.\n\nUpload at least 3 business days before move-in to avoid being auto-enrolled in ePremium’s coverage at $40/month (building coverage only — no personal property).\n\nIf you switch to an ePremium policy, no manual upload is needed — they forward proof automatically.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  // ── GENERAL ───────────────────────────────────────────────────────────────
+  { title: 'Wi-Fi – Zentro Setup & Support', category: 'General',
+    body: "Hi [Name],\n\nThe building’s internet is provided by Zentro. Here’s how to get connected:\n\n1. An activation link will be sent to the email on file for your unit\n2. Log in and create your account through that welcome email\n3. Your Wi-Fi credentials will be visible in the Zentro portal once your account is active\n\nFor technical issues or connection problems, Zentro support is available 24/7 at (844) 691-7687.\n\nFeel free to reach out to the front desk at (415) 707-3030 if you need anything.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  { title: 'Wi-Fi – Activation Link Sent', category: 'General',
+    body: "Hi [Name],\n\nThe Wi-Fi activation link has been sent to the email on file for your unit. Once you log in through the welcome email, your credentials will be visible in the Zentro portal.\n\nIf you don’t see it in your inbox, please check your spam or junk folder.\n\nFor technical issues after setup, Zentro support is available 24/7 at (844) 691-7687.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  { title: 'Phone Greeting Script', category: 'General',
+    body: "Opening:\n\"Good morning/afternoon, thank you for calling Chorus. This is [Name] at the Front Desk. How may I assist you?\"\n\nPlacing on hold:\n\"May I place you on a brief hold while I check that information for you?\"\n\nClosing:\n\"Is there anything else I may assist you with today?\"\n\"Thank you for calling Chorus. Have a great day.\"\n\nLeasing inquiries → Transfer to Leasing (Ext. 1402) or direct to alex@align-real-estate-resident.com\n\nFor true emergencies → Direct caller to call 911 immediately." },
+
+  { title: 'Amenity Booking – How To', category: 'General',
+    body: "Hi [Name],\n\nHere’s how to reserve an amenity through the RiseIO app:\n\n1. Open the app\n2. Tap Community\n3. Tap Amenities\n4. Select the desired amenity\n5. Read over the rules and policies, then tap Reserve\n6. Select your start and end date/time\n7. Enter the number of guests\n8. Add any additional details\n9. Tap Reserve\n\nFeel free to reach out at (415) 707-3030 if you have questions about availability or specific amenity policies.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  { title: 'Parking / Valet Info', category: 'General',
+    body: "Hi [Name],\n\nHere’s an overview of parking at Chorus:\n\n- All parking is valet only — self-parking is not permitted\n- Valet operates 24 hours a day\n- Residents must leave their vehicle keys with the valet team — vehicles left without keys may be towed\n- Monthly resident parking is $595/month (separate from rent and amenity fees; promotional discounts and concessions do not apply)\n- Guests use the valet directly and pay an hourly rate — there is no dedicated guest parking\n- The garage entrance is on 12th Street\n- EV charging requests go directly to the valet team — the front desk does not handle charging matters\n- The valet team is available in person only at the valet area on Level -1 (no phone or email contact)\n\nTo add parking: Contact the leasing team with your full vehicle info and desired start date. Management approval is required before credentials are issued and available for pickup at the front desk.\n\nTo cancel parking: A 30-day notice is required and credentials must be returned upon cancellation. Parking charges stop once credentials are returned.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  { title: 'Lost & Found – Item Inquiry', category: 'General',
+    body: "Hi [Name],\n\nThank you for reaching out! If you believe you may have left an item behind, please stop by the front desk and we’ll be happy to check our Lost & Found log for you.\n\nIf you’re unable to come in, feel free to call us at (415) 707-3030 and we can check on your behalf and let you know if anything matching your description has been turned in.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  { title: 'Smoke / Odor Complaint', category: 'General',
+    body: "Hi [Name],\n\nThank you for letting us know. If you are experiencing a smoke or gas odor that may indicate a fire or emergency, please call 911 immediately.\n\nFor non-emergency concerns, we’ve noted the report and will look into it. Our team will follow up as needed. Please contact the front desk at (415) 707-3030 if the situation changes.\n\nBest,\nFront Desk Associate | Chorus" },
+
+  { title: 'Elevator Out of Service', category: 'General',
+    body: "Hi [Name],\n\nThank you for the heads-up. We’ve noted the issue and notified the appropriate team to look into it right away. We apologize for the inconvenience and will share an update as soon as more information is available.\n\nIn the meantime, please use the available elevators as needed. If you have an urgent accessibility need, please contact the front desk at (415) 707-3030 and we’ll do our best to assist. For emergencies, please call 911.\n\nBest,\nFront Desk Associate | Chorus" }
+];
+
+function seedDefaultTemplates() {
+  if (state.templatesSeedV1) return;
+  if (!state.templates) state.templates = [];
+  if (state.templates.length === 0) {
+    state.templates = DEFAULT_TEMPLATES.map(function(t) {
+      return { id: uid(), title: t.title, category: t.category, body: t.body, addedBy: 'System', createdAt: Date.now() };
+    });
+  }
+  state.templatesSeedV1 = true;
+  scheduleSave();
+}
 
 function renderTemplates() {
   var isAdmin = currentUser && currentUser.role === 'admin';
