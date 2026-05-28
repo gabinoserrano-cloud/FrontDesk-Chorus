@@ -6349,12 +6349,12 @@ function renderPdAutoBlocks(isLead) {
   var upcomingIns = isLead ? moves.filter(function(m){
     if (m.type!=='in' || m.archivedAt) return false;
     var apptD = m.apptDate || m.date;
-    return apptD > t && apptD <= maxDate;
+    return (apptD > t && apptD <= maxDate) || (m.date > t && m.date <= maxDate);
   }).sort(function(a,b){ return moveDateKey(a).localeCompare(moveDateKey(b)); }) : [];
   var upcomingOuts = isLead ? moves.filter(function(m){
     if (m.type!=='out' || m.archivedAt) return false;
     var apptD = m.apptDate || m.date;
-    return apptD > t && apptD <= maxDate;
+    return (apptD > t && apptD <= maxDate) || (m.date > t && m.date <= maxDate);
   }).sort(function(a,b){ return moveDateKey(a).localeCompare(moveDateKey(b)); }) : [];
 
   var allIns = shiftMoveIns.concat(upcomingIns);
@@ -6683,6 +6683,7 @@ function generatePassdown() {
     var shiftIns = moves.filter(function(m){
       if (m.type!=='in' || m.archivedAt || pdExcluded['in_'+m.id] || isCarriedNoNote('in_'+m.id)) return false;
       var apptD = m.apptDate || m.date;
+      if (m.date === t && m.apptDate && m.apptDate > t) return true;
       return apptD === t && pdInShift(m.apptTime, shift);
     }).sort(function(a,b){ return (a.apptDate||a.date).localeCompare(b.apptDate||b.date); });
     var upcomingIns = isLead ? moves.filter(function(m){
