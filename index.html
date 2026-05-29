@@ -2738,7 +2738,10 @@ function renderMoves() {
   var list = (state.moves || []).slice();
   if (moveFilter === 'in') list = list.filter(function (m) {
     if (m.type !== 'in' || m.archivedAt) return false;
-    var nonPost = (m.tasks || []).filter(function (tk) { return tk.cat !== 'Post Move-In'; });
+    var tasks = m.tasks || [];
+    var nonPost = tasks.filter(function (tk) { return tk.cat !== 'Post Move-In'; });
+    // Entries with tasks but ALL of them Post Move-In belong in the Post Move-In tab, not here
+    if (tasks.length > 0 && nonPost.length === 0) return false;
     return !nonPost.length || nonPost.some(function (tk) { return !tk.done; });
   });
   else if (moveFilter === 'out') list = list.filter(function (m) {
@@ -2752,7 +2755,8 @@ function renderMoves() {
     list = list.filter(function (m) {
       if (m.type !== 'in' || m.archivedAt) return false;
       var nonPost = (m.tasks || []).filter(function (tk) { return tk.cat !== 'Post Move-In'; });
-      var allNonPostDone = nonPost.length > 0 && nonPost.every(function (tk) { return tk.done === true; });
+      // Include when: no regular tasks exist (only Post Move-In) OR all regular tasks are done
+      var allNonPostDone = nonPost.length === 0 || nonPost.every(function (tk) { return tk.done === true; });
       var hasIncompletePost = (m.tasks || []).some(function (tk) { return tk.cat === 'Post Move-In' && !tk.done; });
       return allNonPostDone && hasIncompletePost;
     });
