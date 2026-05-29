@@ -570,7 +570,7 @@
     <div class="nav-item" data-sec="laf" onclick="nav(this)"><span class="icon" data-icon="search"></span><span class="nav-txt">Lost &amp; Found</span><span class="badge" id="badge-laf"></span></div>
     <div class="nav-item" data-sec="tours" onclick="nav(this)"><span class="icon" data-icon="mappin"></span><span class="nav-txt">Tour Log</span><span class="badge" id="badge-tours"></span></div>
     <div class="nav-item" data-sec="concierge" onclick="nav(this)"><span class="icon" data-icon="bell"></span><span class="nav-txt">Concierge Log</span><span class="badge" id="badge-concierge"></span></div>
-    <div class="nav-item" data-sec="residents" onclick="nav(this)"><span class="icon" data-icon="user"></span><span class="nav-txt">Resident Profiles</span></div>
+    <div class="nav-item" data-sec="residents" onclick="nav(this)"><span class="icon" data-icon="user"></span><span class="nav-txt">Unit Tracker</span></div>
     <div class="nav-item" data-sec="templates" onclick="nav(this)"><span class="icon" data-icon="message-square"></span><span class="nav-txt">Message Templates</span></div>
   </div>
   <div class="nav-group">
@@ -724,12 +724,23 @@
       <div id="supplies-body"></div>
     </div>
     <div class="section" id="section-residents">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterResidents('all',this)">All Profiles</div><div class="sub-tab" onclick="filterResidents('pte-granted',this)">&#9989; PTE Granted</div><div class="sub-tab" onclick="filterResidents('pte-denied',this)">&#128683; PTE Denied</div><div class="sub-tab" onclick="filterResidents('pte-not-set',this)">PTE Not Set</div><div class="sub-tab" onclick="filterResidents('blueground',this)">&#128309; Blueground</div><div class="sub-tab" onclick="filterResidents('archived',this)">&#128449; Archived</div></div>
-      <div style="margin:8px 0"><input id="residents-search" type="text" placeholder="&#128269; Search by name or unit…" oninput="searchResidents(this.value)" style="width:100%;max-width:320px;font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text)"></div>
-      <div id="residents-missing-banner"></div>
-      <div id="residents-pte-banner" style="display:none;margin-bottom:10px;padding:10px 14px;background:#fffbeb;border:1px solid #fcd34d;border-radius:var(--radius);font-size:13px;color:#92400e"><strong>&#128230; Package Team:</strong> This view shows PTE (Permission to Enter) status per unit. Always check before entering a unit for package delivery.</div>
-      <div class="stat-grid" id="residents-stats"></div>
-      <div class="card"><div class="card-hdr" style="flex-wrap:wrap;gap:6px"><span class="card-title">Resident Profiles &amp; VIP Notes</span><span class="card-count" id="residents-count">0 profiles</span><div style="display:flex;align-items:center;gap:4px;margin-left:auto"><span style="font-size:11px;color:var(--text3)">Sort:</span><button data-sort="unit" class="btn btn-xs btn-secondary" onclick="sortResidents('unit')" style="background:var(--accent);color:#fff;border-color:var(--accent)">Unit</button><button data-sort="floor" class="btn btn-xs btn-secondary" onclick="sortResidents('floor')">Floor</button><button data-sort="name" class="btn btn-xs btn-secondary" onclick="sortResidents('name')">Name</button><button data-sort="recent" class="btn btn-xs btn-secondary" onclick="sortResidents('recent')">Recent</button></div><button class="btn btn-primary btn-sm" onclick="openAddResident()">+ Add Profile</button></div><div id="residents-grid" style="padding:12px 14px"></div></div>
+      <div id="ut-wifi-banner" style="display:none;margin-bottom:10px;padding:10px 14px;background:#fef9c3;border:1px solid #fcd34d;border-radius:var(--radius);font-size:13px;color:#854d0e"></div>
+      <div class="stat-grid" id="ut-stats"></div>
+      <div class="card">
+        <div class="card-hdr" style="flex-wrap:wrap;gap:6px">
+          <span class="card-title">Unit Tracker</span>
+          <span class="card-count" id="ut-count">0 units</span>
+          <div style="display:flex;align-items:center;gap:6px;margin-left:auto;flex-wrap:wrap">
+            <input id="ut-search" type="text" placeholder="&#128269; Search unit or leaseholder&#8230;" oninput="searchUnitRecords(this.value)" style="font-size:13px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);width:220px">
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-xs" id="ut-filter-all" onclick="filterUnitRecords('all',this)" style="background:var(--accent);color:#fff;border-color:var(--accent)">All</button>
+              <button class="btn btn-xs btn-secondary" id="ut-filter-bg" onclick="filterUnitRecords('blueground',this)">&#128309; BG</button>
+              <button class="btn btn-xs btn-secondary" id="ut-filter-wifi" onclick="filterUnitRecords('wifi',this)">&#128246; WiFi Expiring</button>
+            </div>
+          </div>
+        </div>
+        <div id="ut-grid" style="padding:12px 14px"></div>
+      </div>
     </div>
     <div class="section" id="section-passdown">
       <div class="two-col">
@@ -1386,6 +1397,41 @@
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-resident')">Cancel</button><button class="btn btn-primary" id="modal-resident-savebtn" onclick="saveResident()">Save Profile</button></div>
 </div></div>
 
+<div class="modal-ov" id="modal-unit-record"><div class="modal" style="max-width:480px">
+  <div class="modal-hdr"><span class="modal-title" id="ur-unit-title">Edit Unit</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-unit-record')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <div class="fg"><label>Leaseholder</label><input id="ur-leaseholder" type="text" placeholder="Primary resident name"></div>
+    <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">&#128273; Keys</div>
+      <div class="fr">
+        <div class="fg"><label>Unit Keys &mdash; Move-in</label><input id="ur-unit-keys-issued" type="number" min="0" value="0"></div>
+        <div class="fg"><label>Replacement Unit Keys</label><input id="ur-unit-keys-replacement" type="number" min="0" value="0"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>Mailbox Keys &mdash; Move-in</label><input id="ur-mailbox-keys-issued" type="number" min="0" value="0"></div>
+        <div class="fg"><label>Replacement Mailbox Keys</label><input id="ur-mailbox-keys-replacement" type="number" min="0" value="0"></div>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">&#128664; Parking Credentials</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="ur-transponder"> Garage Transponder</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="ur-xpress"> Xpress Sticker</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="ur-keytag"> Key Tag</label>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">&#128246; WiFi</div>
+      <div class="fr">
+        <div class="fg"><label>Expiration Date</label><input id="ur-wifi-expiry" type="date" data-no-autofill></div>
+        <div class="fg" id="ur-wifi-hint" style="display:flex;align-items:flex-end;padding-bottom:8px;font-size:12px;color:var(--text3)"></div>
+      </div>
+    </div>
+    <div class="fg"><label>Notes</label><textarea id="ur-notes" rows="3" placeholder="Any front desk notes for this unit&#8230;"></textarea></div>
+  </div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-unit-record')">Cancel</button><button class="btn btn-primary" onclick="saveUnitRecord()">Save</button></div>
+</div></div>
+
 <div class="modal-ov" id="modal-import"><div class="modal">
   <div class="modal-hdr"><span class="modal-title">Import Backup</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-import')">&#x2715;</button></div>
   <div class="modal-bdy"><p style="font-size:13px;color:var(--text2);margin-bottom:12px">Upload a previously exported JSON backup. This will <strong>replace</strong> all current data.</p><div class="fg"><label>Select JSON File</label><input type="file" id="import-file" accept=".json"></div></div>
@@ -1568,7 +1614,7 @@ function applyIcons() {
   });
 }
 
-var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [], templates: [], propertyConfig: {} };
+var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [], templates: [], propertyConfig: {} };
 var teamUnlocked = false;
 
 var currentUser = null;
@@ -1700,7 +1746,7 @@ function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(stat
 function loadLocal() {
   try {
     var raw = localStorage.getItem(LOCAL_KEY);
-    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], supplies: [], activityLog: [], parking: [], security: [], templates: [] }, JSON.parse(raw));
+    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], supplies: [], activityLog: [], parking: [], security: [], templates: [] }, JSON.parse(raw));
   } catch (e) {}
 }
 function scheduleSave() { saveLocal(); clearTimeout(syncTO); syncTO = setTimeout(pushCloud, 800); }
@@ -1716,7 +1762,7 @@ async function pullCloud() {
   try {
     var row = await supaGet();
     if (row && row.data && Object.keys(row.data).length > 0) {
-      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [], parking: [], security: [], templates: [] }, row.data);
+      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], activityLog: [], parking: [], security: [], templates: [] }, row.data);
       saveLocal();
     } else { loadLocal(); await supaPush(state); }
     setSyncStatus('synced', 'Synced');
@@ -1729,7 +1775,7 @@ setInterval(async function () {
     if (row && row.updated_at) {
       var ts = new Date(row.updated_at).getTime();
       if (lastSyncTs && ts > lastSyncTs + 2000) {
-        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [], parking: [], security: [], templates: [] }, row.data);
+        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], activityLog: [], parking: [], security: [], templates: [] }, row.data);
         saveLocal(); lastSyncTs = ts;
         renderSection(curSec); updateBadges();
         setSyncStatus('synced', 'Updated'); setTimeout(function () { setSyncStatus('synced', 'Synced'); }, 2000);
@@ -1747,14 +1793,14 @@ function processImport() {
   var file = g('import-file').files[0]; if (!file) { toast('Choose a file first'); return; }
   var reader = new FileReader();
   reader.onload = function (e) {
-    try { state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], activityLog: [] }, JSON.parse(e.target.result)); scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported'); }
+    try { state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], activityLog: [] }, JSON.parse(e.target.result)); scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported'); }
     catch (err) { toast('Invalid file'); }
   };
   reader.readAsText(file);
 }
 function resetData() {
   if (!confirm('Reset ALL data? Cannot be undone.')) return;
-  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [] };
+  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [] };
   scheduleSave(); renderAll(); toast('Data reset');
 }
 
@@ -1777,7 +1823,7 @@ function cloneData(obj) {
   try { return JSON.parse(JSON.stringify(obj)); }
   catch (e) { return obj; }
 }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], accounts: [], userTodos: {}, userPassdowns: {}, parking: [], security: [], propertyConfig: {} }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, userPassdowns: {}, parking: [], security: [], propertyConfig: {} }; }
 
 // ─── UNDO / REDO ───
 var undoStack = [];
@@ -2017,7 +2063,7 @@ function openMobSidebar() { g('sidebar').classList.add('mob-open'); g('sb-ov').s
 function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov').style.display = 'none'; }
 
 // ─── NAV ───
-var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Resident Profiles', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', parking: 'Parking Credentials', security: 'Security Incidents', session: 'Login / Session' };
+var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Unit Tracker', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', parking: 'Parking Credentials', security: 'Security Incidents', session: 'Login / Session' };
 var patrolFilter = 'amenity';
 var SEC_ACTIONS = {
   moves: '<button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
@@ -5327,10 +5373,67 @@ function saveClaimLAF() { var item = (state.laf || []).find(function(x){ return 
 function toggleLAFPassdown(id) { var item = (state.laf || []).find(function(x){ return x.id === id; }); if (!item) return; item.flaggedForPassdown = !item.flaggedForPassdown; scheduleSave(); renderLAF(); toast(item.flaggedForPassdown ? 'Flagged for passdown' : 'Removed from passdown'); }
 function deleteLAF(id) { if (!confirm('Remove?')) return; var lx=(state.laf||[]).find(function(x){return x.id===id;}); if (lx) pushUndo({ sec: 'laf', type: 'DELETE', id: id, data: Object.assign({}, lx), label: 'delete L&F — ' + lx.desc }); logActivity('laf','delete','Removed L&F item'+(lx?' — '+lx.desc:'')); state.laf = (state.laf || []).filter(function (i) { return i.id !== id; }); scheduleSave(); renderLAF(); updateBadges(); toast('Removed'); }
 
-// ─── RESIDENT PROFILES / VIP NOTES / PTE ───
+// ─── UNIT TRACKER ───
+var utFilter = 'all', utSearch = '', editingUnitRecordId = null;
+// ===== [UNIT TRACKER] ========================================================
+function filterUnitRecords(f, btn) {
+  utFilter = f;
+  ['ut-filter-all','ut-filter-bg','ut-filter-wifi'].forEach(function(id) {
+    var b = g(id); if (!b) return;
+    b.style.background = ''; b.style.color = ''; b.style.borderColor = '';
+  });
+  if (btn) { btn.style.background = 'var(--accent)'; btn.style.color = '#fff'; btn.style.borderColor = 'var(--accent)'; }
+  renderResidents();
+}
+function searchUnitRecords(val) { utSearch = val.toLowerCase(); renderResidents(); }
+
+function openEditUnitRecord(id) {
+  var r = (state.unitRecords || []).find(function(x) { return x.id === id; });
+  if (!r) return;
+  editingUnitRecordId = id;
+  var titleEl = g('ur-unit-title'); if (titleEl) titleEl.textContent = 'Unit ' + r.unit;
+  g('ur-leaseholder').value = r.leaseholder || '';
+  g('ur-unit-keys-issued').value = r.unitKeysIssued || 0;
+  g('ur-mailbox-keys-issued').value = r.mailboxKeysIssued || 0;
+  g('ur-unit-keys-replacement').value = r.unitKeysReplacement || 0;
+  g('ur-mailbox-keys-replacement').value = r.mailboxKeysReplacement || 0;
+  g('ur-transponder').checked = !!r.transponder;
+  g('ur-xpress').checked = !!r.xpressSticker;
+  g('ur-keytag').checked = !!r.keyTag;
+  g('ur-wifi-expiry').value = r.wifiExpiry || '';
+  g('ur-notes').value = r.notes || '';
+  var hint = g('ur-wifi-hint');
+  if (hint && r.wifiExpiry) {
+    var t0 = today(); var d15 = new Date(); d15.setDate(d15.getDate()+15); var d15s = d15.toISOString().split('T')[0];
+    if (r.wifiExpiry < t0) hint.innerHTML = '<span style="color:var(--red)">&#9888; Expired &mdash; renew</span>';
+    else if (r.wifiExpiry <= d15s) hint.innerHTML = '<span style="color:#92400e">&#9650; Expiring soon</span>';
+    else hint.innerHTML = '';
+  } else if (hint) { hint.innerHTML = ''; }
+  openModal('modal-unit-record');
+}
+
+function saveUnitRecord() {
+  var r = (state.unitRecords || []).find(function(x) { return x.id === editingUnitRecordId; });
+  if (!r) return;
+  var before = Object.assign({}, r);
+  r.leaseholder = g('ur-leaseholder').value.trim();
+  r.unitKeysIssued = parseInt(g('ur-unit-keys-issued').value) || 0;
+  r.mailboxKeysIssued = parseInt(g('ur-mailbox-keys-issued').value) || 0;
+  r.unitKeysReplacement = parseInt(g('ur-unit-keys-replacement').value) || 0;
+  r.mailboxKeysReplacement = parseInt(g('ur-mailbox-keys-replacement').value) || 0;
+  r.transponder = g('ur-transponder').checked;
+  r.xpressSticker = g('ur-xpress').checked;
+  r.keyTag = g('ur-keytag').checked;
+  r.wifiExpiry = g('ur-wifi-expiry').value || '';
+  r.notes = g('ur-notes').value.trim();
+  pushUndo({ sec: 'residents', type: 'EDIT', id: r.id, before: before, after: Object.assign({}, r), label: 'unit record — Unit ' + r.unit });
+  logActivity('residents', 'edit', 'Updated unit record — Unit ' + r.unit);
+  scheduleSave(); closeModal('modal-unit-record'); renderResidents(); toast('Saved');
+}
+
+// legacy stubs kept for move-in flow compatibility
 var residentsFilter = 'all', residentsSort = 'unit', residentsSearch = '', editingResidentId = null, residentNavList = [];
-// ===== [RESIDENT PROFILES] ===================================================
-function filterResidents(f, item) { residentsFilter = f; document.querySelectorAll('#section-residents .sub-tab').forEach(function(t){ t.classList.remove('active'); }); item.classList.add('active'); renderResidents(); }
+function filterResidents(f, item) {}
 function viewResidentProfile(unit) {
   var nav = document.querySelector('[onclick="showSection(\'residents\')"]');
   if (nav) nav.click(); else showSection('residents');
@@ -5909,142 +6012,91 @@ function deleteSupply(id) {
 }
 
 function renderResidents() {
+  var t = today();
+  var d15 = new Date(); d15.setDate(d15.getDate()+15); var d15s = d15.toISOString().split('T')[0];
+  var allRecs = state.unitRecords || [];
+  var list = allRecs.slice();
+  if (utFilter === 'blueground') list = list.filter(function(r){ return r.blueground; });
+  else if (utFilter === 'wifi') list = list.filter(function(r){ return r.wifiExpiry && r.wifiExpiry <= d15s; });
+  if (utSearch) list = list.filter(function(r){ return (r.unit||'').includes(utSearch)||(r.leaseholder||'').toLowerCase().includes(utSearch); });
+  list.sort(function(a,b){ return parseInt(a.unit)-parseInt(b.unit); });
+
+  // WiFi banner
+  var wifiExpired = allRecs.filter(function(r){ return r.wifiExpiry && r.wifiExpiry < t; });
+  var wifiSoon = allRecs.filter(function(r){ return r.wifiExpiry && r.wifiExpiry >= t && r.wifiExpiry <= d15s; });
+  var banner = g('ut-wifi-banner');
+  if (banner) {
+    if (wifiExpired.length || wifiSoon.length) {
+      var parts = [];
+      if (wifiExpired.length) parts.push('<strong>&#9888; ' + wifiExpired.length + ' unit' + (wifiExpired.length!==1?'s':'') + ' WiFi EXPIRED</strong>');
+      if (wifiSoon.length) parts.push(wifiSoon.length + ' expiring within 15 days');
+      banner.innerHTML = '&#128246; ' + parts.join(' &middot; ') + ' &nbsp;<button class="btn btn-xs btn-secondary" onclick="filterUnitRecords(\'wifi\',g(\'ut-filter-wifi\'))">View</button>';
+      banner.style.display = '';
+    } else { banner.style.display = 'none'; }
+  }
+
+  // Stats
+  var bgCount = allRecs.filter(function(r){ return r.blueground; }).length;
+  var parkCount = allRecs.filter(function(r){ return r.transponder||r.xpressSticker||r.keyTag; }).length;
+  var wifiCount = allRecs.filter(function(r){ return r.wifiExpiry; }).length;
+  var statsEl = g('ut-stats');
+  if (statsEl) statsEl.innerHTML = '<div class="stat-card"><div class="stat-num">'+allRecs.length+'</div><div class="stat-lbl">Total Units</div></div><div class="stat-card" style="border-left:3px solid #3b82f6"><div class="stat-num">'+bgCount+'</div><div class="stat-lbl">Blueground</div></div><div class="stat-card green"><div class="stat-num">'+parkCount+'</div><div class="stat-lbl">Parking Issued</div></div><div class="stat-card"><div class="stat-num">'+wifiCount+'</div><div class="stat-lbl">WiFi Tracked</div></div>';
+
+  var cnt = g('ut-count'); if (cnt) cnt.textContent = list.length + ' unit' + (list.length!==1?'s':'');
+  var grid = g('ut-grid');
+  if (!grid) return;
+  if (!list.length) { grid.innerHTML = '<div class="text-3 text-sm">No units match your search.</div>'; return; }
+
+  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">';
+  list.forEach(function(r) {
+    var isExpired = r.wifiExpiry && r.wifiExpiry < t;
+    var isSoon = r.wifiExpiry && !isExpired && r.wifiExpiry <= d15s;
+    var borderColor = r.blueground ? '#93c5fd' : isExpired ? 'var(--red)' : isSoon ? '#fcd34d' : 'var(--border)';
+    html += '<div style="background:var(--surface);border:1px solid '+borderColor+';border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)">';
+    // Header
+    html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">';
+    html += '<span class="unit-num" style="font-size:15px">Unit '+esc(r.unit)+'</span>';
+    if (r.blueground) html += '<span style="font-size:10px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600">&#128309; BG</span>';
+    html += '<button class="btn btn-ghost btn-xs" style="margin-left:auto" onclick="openEditUnitRecord(\''+r.id+'\')">&#9998;</button>';
+    html += '</div>';
+    // Leaseholder
+    if (r.leaseholder) html += '<div style="font-size:13px;font-weight:600;margin-bottom:8px">'+esc(r.leaseholder)+'</div>';
+    // Keys
+    var unitTotal = (r.unitKeysIssued||0)+(r.unitKeysReplacement||0);
+    var mailTotal = (r.mailboxKeysIssued||0)+(r.mailboxKeysReplacement||0);
+    html += '<div style="font-size:12px;color:var(--text2);margin-bottom:6px">&#128273; Unit: <strong>'+unitTotal+'</strong>'+(r.unitKeysReplacement?'<span style="font-size:10px;color:#92400e"> (+'+r.unitKeysReplacement+' repl)</span>':'')+' &nbsp;&middot;&nbsp; &#128236; Mailbox: <strong>'+mailTotal+'</strong>'+(r.mailboxKeysReplacement?'<span style="font-size:10px;color:#92400e"> (+'+r.mailboxKeysReplacement+' repl)</span>':'')+'</div>';
+    // Parking
+    var parkBits = [];
+    if (r.transponder) parkBits.push('Transponder');
+    if (r.xpressSticker) parkBits.push('Xpress Sticker');
+    if (r.keyTag) parkBits.push('Key Tag');
+    if (parkBits.length) html += '<div style="margin-bottom:6px"><span style="font-size:11px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:2px 7px;font-weight:600">&#128664; '+parkBits.join(' &middot; ')+'</span></div>';
+    // WiFi
+    if (r.wifiExpiry) {
+      if (isExpired) html += '<div style="font-size:11px;color:var(--red);font-weight:600">&#128246; WiFi EXPIRED '+fmtShort(r.wifiExpiry)+'</div>';
+      else if (isSoon) { var dl=Math.floor((new Date(r.wifiExpiry+'T00:00:00')-new Date(t+'T00:00:00'))/86400000); html += '<div style="font-size:11px;color:#92400e;font-weight:600">&#128246; WiFi expires '+fmtShort(r.wifiExpiry)+' ('+dl+'d)</div>'; }
+      else html += '<div style="font-size:11px;color:var(--text3)">&#128246; WiFi exp. '+fmtShort(r.wifiExpiry)+'</div>';
+    }
+    // Notes
+    if (r.notes) html += '<div style="font-size:11px;color:var(--text3);margin-top:6px;font-style:italic">'+esc(r.notes)+'</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  grid.innerHTML = html;
+
+  // ── legacy path (no-op fallback) ──
+  if (false) {
   var isArchived = residentsFilter === 'archived';
   var list = (state.residentProfiles || []).filter(function(r){ return isArchived ? !!r.archivedAt : !r.archivedAt; });
   if (residentsFilter === 'pte-granted') list = list.filter(function(r){ return r.pte==='granted'; });
   else if (residentsFilter === 'pte-denied') list = list.filter(function(r){ return r.pte==='denied'; });
   else if (residentsFilter === 'pte-not-set') list = list.filter(function(r){ return !r.pte || r.pte==='not-set'; });
-  else if (residentsFilter === 'blueground') list = list.filter(function(r){ return !!r.blueground; });
-  if (residentsSearch) list = list.filter(function(r){ var q=residentsSearch; return (r.residentName||'').toLowerCase().includes(q)||(r.preferredName||'').toLowerCase().includes(q)||(r.unit||'').toLowerCase().includes(q); });
-  if (residentsSort === 'floor') {
-    list.sort(function(a,b){ var fa=Math.floor(parseInt(a.unit||0)/100),fb=Math.floor(parseInt(b.unit||0)/100); return fa!==fb?fa-fb:parseInt(a.unit)-parseInt(b.unit); });
-  } else if (residentsSort === 'name') {
-    list.sort(function(a,b){ var na=(a.preferredName||a.residentName||'').toLowerCase(),nb=(b.preferredName||b.residentName||'').toLowerCase(); return na<nb?-1:na>nb?1:0; });
-  } else if (residentsSort === 'recent') {
-    list.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
-  } else {
-    list.sort(function(a,b){ return parseInt(a.unit)-parseInt(b.unit); });
-  }
-  var missingBanner = g('residents-missing-banner');
-  if (missingBanner) {
-    var archivedIns = (state.moves||[]).filter(function(mv){ return mv.type==='in' && mv.archivedAt; });
-    var missing = archivedIns.filter(function(mv){
-      var hasLaterOut = (state.moves||[]).some(function(mo){ return mo.type==='out' && mo.unit===mv.unit && mo.archivedAt && mo.archivedAt > mv.archivedAt; });
-      if (hasLaterOut) return false;
-      return !(state.residentProfiles||[]).some(function(p){ return p.unit===mv.unit; });
-    });
-    if (missing.length) {
-      var mbHtml = '<div style="margin-bottom:10px;padding:10px 14px;background:#fef9c3;border:1px solid #fcd34d;border-radius:var(--radius);font-size:13px;color:#854d0e"><strong>&#9888; Missing profiles:</strong> ';
-      mbHtml += missing.map(function(mv){ return '<span style="margin-left:8px">' + esc(mv.resident) + ' &middot; Unit ' + esc(mv.unit) + ' <button class="btn btn-xs btn-secondary" style="margin-left:4px" onclick="openAddResidentFromMoveId(\'' + mv.id + '\')">Create</button></span>'; }).join('');
-      mbHtml += '</div>';
-      missingBanner.innerHTML = mbHtml;
-    } else {
-      missingBanner.innerHTML = '';
-    }
-  }
-  var banner = g('residents-pte-banner');
-  if (banner) banner.style.display = (residentsFilter==='pte-granted'||residentsFilter==='pte-denied') ? '' : 'none';
-  var activeProfiles = (state.residentProfiles||[]).filter(function(r){ return !r.archivedAt; });
-  var granted = activeProfiles.filter(function(r){ return r.pte==='granted'; }).length;
-  var denied = activeProfiles.filter(function(r){ return r.pte==='denied'; }).length;
-  var notset = activeProfiles.filter(function(r){ return !r.pte||r.pte==='not-set'; }).length;
-  var bgCount = activeProfiles.filter(function(r){ return !!r.blueground; }).length;
-  g('residents-stats').innerHTML = '<div class="stat-card green"><div class="stat-num">' + granted + '</div><div class="stat-lbl">PTE Granted</div></div><div class="stat-card red"><div class="stat-num">' + denied + '</div><div class="stat-lbl">PTE Denied</div></div><div class="stat-card"><div class="stat-num">' + notset + '</div><div class="stat-lbl">PTE Not Set</div></div><div class="stat-card" style="border-left:3px solid #3b82f6"><div class="stat-num">' + bgCount + '</div><div class="stat-lbl">Blueground</div></div><div class="stat-card"><div class="stat-num">' + activeProfiles.length + '</div><div class="stat-lbl">Total Profiles</div></div>';
-  var cnt = g('residents-count'); if (cnt) cnt.textContent = list.length + ' profiles';
-  var grid = g('residents-grid');
-  if (!list.length) {
-    var emptyMsg;
-    if (residentsSearch && activeProfiles.length > 0) {
-      emptyMsg = '<div class="text-3 text-sm">No profiles match <strong>"' + esc(residentsSearch) + '"</strong>. '
-        + '<button class="btn btn-xs btn-secondary" style="margin-left:6px" onclick="var el=g(\'residents-search\');if(el)el.value=\'\';searchResidents(\'\')">Clear search</button></div>';
-    } else if (activeProfiles.length > 0 && residentsFilter !== 'all') {
-      var filterLabel = { 'pte-granted': 'PTE Granted', 'pte-denied': 'PTE Denied', 'pte-not-set': 'PTE Not Set', 'blueground': 'Blueground', 'archived': 'Archived' }[residentsFilter] || residentsFilter;
-      emptyMsg = '<div class="text-3 text-sm">No profiles match the <strong>' + filterLabel + '</strong> filter. '
-        + '<button class="btn btn-xs btn-secondary" style="margin-left:6px" onclick="filterResidents(\'all\',document.querySelector(\'#section-residents .sub-tab\'))">Show all ' + activeProfiles.length + ' profiles</button></div>';
-    } else if (residentsFilter === 'blueground') {
-      emptyMsg = '<div class="text-3 text-sm">No Blueground profiles yet. Add a profile and check the Blueground box.</div>';
-    } else {
-      emptyMsg = '<div class="text-3 text-sm">No profiles yet. Add a profile to track resident preferences, important dates, and PTE status.</div>';
-    }
-    grid.innerHTML = emptyMsg; return;
-  }
-  residentNavList = list.map(function(r){ return r.id; });
-  var isStaffUser = currentUser && currentUser.role === 'staff';
-  var pteLabel = { granted: '&#9989; PTE Granted', denied: '&#128683; PTE Denied', 'not-set': 'PTE Not Set' };
-  var pteClass = { granted: 'pte-granted', denied: 'pte-denied', 'not-set': 'pte-not-set' };
-  // Group by unit (#2 — Option A)
-  var unitMap = {}, unitOrder = [];
-  list.forEach(function(r) { if (!unitMap[r.unit]) { unitMap[r.unit] = []; unitOrder.push(r.unit); } unitMap[r.unit].push(r); });
-  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">';
-  unitOrder.forEach(function(unit) {
-    var profiles = unitMap[unit];
-    var isBlueground = profiles.some(function(r){ return r.blueground; });
-    var borderStyle = isBlueground ? 'border:1px solid #93c5fd;' : 'border:1px solid var(--border);';
-    // Live key count (#3)
-    var issuedKeys = (state.keys||[]).filter(function(k){ return k.unit===unit && k.status==='issued'; });
-    var residentKeyCt = issuedKeys.filter(function(k){ return k.type==='resident'||k.type==='joiner'; }).length;
-    var otkCt = issuedKeys.filter(function(k){ return k.type==='one-time'; }).length;
-    html += '<div style="background:var(--surface);' + borderStyle + 'border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)">';
-    // Unit header
-    html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px">';
-    html += '<span class="unit-num" style="font-size:15px">Unit ' + esc(unit) + '</span>';
-    if (isBlueground) html += '<span style="font-size:10px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600">&#128309; BG</span>';
-    if (residentKeyCt > 0) html += '<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 6px;font-weight:600" title="Keys currently issued — from Key Tracker">&#128273; ' + residentKeyCt + ' key' + (residentKeyCt !== 1 ? 's' : '') + (otkCt > 0 ? ' &middot; ' + otkCt + ' OTK out' : '') + '</span>';
-    else if (otkCt > 0) html += '<span style="font-size:10px;background:#fef9c3;color:#92400e;border-radius:3px;padding:1px 6px;font-weight:600">&#128273; ' + otkCt + ' OTK out</span>';
-    html += '</div>';
-    // Each resident
-    profiles.forEach(function(r, idx) {
-      if (idx > 0) html += '<div style="border-top:1px solid var(--border2);margin:8px 0 6px"></div>';
-      var pte = r.pte || 'not-set';
-      html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">';
-      html += '<span style="font-weight:600;font-size:14px">' + esc(r.residentName) + '</span>';
-      html += '<span class="pte-badge ' + pteClass[pte] + '">' + pteLabel[pte] + '</span>';
-      if (!isStaffUser) {
-        html += '<button class="btn btn-ghost btn-xs" style="margin-left:auto" onclick="openEditResident(\'' + r.id + '\')">&#9998;</button>';
-        html += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteResident(\'' + r.id + '\')">&#215;</button>';
-      }
-      html += '</div>';
-      // Dates
-      var dates = [];
-      if (r.wifiExpiry) {
-        var wt = today(), wd3s = (function(){ var d=new Date(); d.setDate(d.getDate()+3); return d.toISOString().split('T')[0]; })();
-        if (r.wifiExpiry < wt) dates.push('<span style="color:var(--red);font-weight:600">&#128246; WiFi EXPIRED ' + fmtShort(r.wifiExpiry) + '</span>');
-        else if (r.wifiExpiry <= wd3s) dates.push('<span style="color:#92400E;font-weight:600">&#128246; WiFi expires ' + fmtShort(r.wifiExpiry) + '</span>');
-        else dates.push('&#128246; WiFi expires ' + fmtShort(r.wifiExpiry));
-      }
-      if (r.monthToMonth) { dates.push('&#128203; Month-to-month');
-      } else if (r.leaseEnd) {
-        var le30s = (function(){ var d=new Date(); d.setDate(d.getDate()+30); return d.toISOString().split('T')[0]; })();
-        if (r.leaseEnd < today()) dates.push('<span style="color:var(--red);font-weight:600">&#128203; Lease EXPIRED ' + fmtShort(r.leaseEnd) + '</span>');
-        else if (r.leaseEnd <= le30s) dates.push('<span style="color:#92400E;font-weight:600">&#128203; Lease ends ' + fmtShort(r.leaseEnd) + '</span>');
-        else dates.push('&#128203; Lease ends ' + fmtShort(r.leaseEnd));
-      } else if (r.leaseStart) { dates.push('&#128203; Lease started ' + fmtShort(r.leaseStart)); }
-      if (r.noticeDate) dates.push('<span style="color:#92400E;font-weight:600">&#128204; Notice given ' + fmtShort(r.noticeDate) + '</span>');
-      if (r.moveoutDate) dates.push('<span style="color:var(--red);font-weight:600">&#128197; Moving out ' + fmtShort(r.moveoutDate) + '</span>');
-      if (dates.length) html += '<div style="font-size:11px;color:var(--text2);margin-top:4px;line-height:1.8">' + dates.join('<br>') + '</div>';
-      // Credentials
-      var credBadges = [];
-      if (r.parking === 'yes') credBadges.push('<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 6px;font-weight:600">&#128664; Parking' + (r.parkingInfo ? ': ' + esc(r.parkingInfo) : '') + (r.vehicleType ? ' &middot; ' + esc(r.vehicleType) : (r.vehicleInfo ? ' &middot; ' + esc(r.vehicleInfo) : '')) + '</span>');
-      if (r.hasBike || (r.bike && r.bike !== 'none')) credBadges.push('<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 6px;font-weight:600">&#128690; Bike' + (r.bikeSticker ? ': sticker #' + esc(r.bikeSticker) : (r.bikeNotes ? ': ' + esc(r.bikeNotes) : '')) + '</span>');
-      if (r.storage === 'yes') credBadges.push('<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:1px 6px;font-weight:600">&#128230; Storage' + (r.storageUnit ? ' ' + esc(r.storageUnit) : '') + '</span>');
-      if (r.hasPet) credBadges.push('<span style="font-size:10px;background:#fef9c3;color:#854d0e;border-radius:3px;padding:1px 6px;font-weight:600">&#128062; Pet</span>');
-      if (r.keysQty != null && r.keysQty > 0) credBadges.push('<span style="font-size:10px;background:#f0fdf4;color:#166534;border-radius:3px;padding:1px 6px;font-weight:600">&#128273; ' + r.keysQty + ' fob' + (r.keysQty !== 1 ? 's' : '') + ' issued</span>');
-      if (credBadges.length) html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">' + credBadges.join('') + '</div>';
-      // Notes (merged Front Desk Notes + legacy instructions)
-      var displayNotes = r.notes || '';
-      if (!displayNotes && r.instructions) displayNotes = r.instructions;
-      if (displayNotes) html += '<div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.4"><em>' + esc(displayNotes) + '</em></div>';
-      if (r.archivedAt) { var arDate = new Date(r.archivedAt).toISOString().split('T')[0]; html += '<div style="font-size:11px;color:var(--text3);margin-top:6px">&#128449; Archived ' + fmtShort(arDate) + '</div>'; }
-    });
-    html += '</div>'; // end unit card
-  });
-  html += '</div>';
-  grid.innerHTML = html;
+  } // end if(false) legacy block
 }
 
 function getWifiRenewals() {
-  var wd3 = new Date(); wd3.setDate(wd3.getDate()+3); var wd3s = wd3.toISOString().split('T')[0];
-  return (state.residentProfiles||[]).filter(function(r){ return r.wifiExpiry && r.wifiExpiry <= wd3s; }).sort(function(a,b){ return a.wifiExpiry < b.wifiExpiry ? -1 : 1; });
+  var d15 = new Date(); d15.setDate(d15.getDate()+15); var d15s = d15.toISOString().split('T')[0];
+  return (state.unitRecords||[]).filter(function(r){ return r.wifiExpiry && r.wifiExpiry <= d15s; }).sort(function(a,b){ return a.wifiExpiry < b.wifiExpiry ? -1 : 1; });
 }
 function getLeaseExpirations() {
   var le30 = new Date(); le30.setDate(le30.getDate()+30); var le30s = le30.toISOString().split('T')[0];
