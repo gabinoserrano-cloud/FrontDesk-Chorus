@@ -656,9 +656,9 @@
       <div class="card"><div class="card-hdr"><span class="card-title">Guest &amp; Visitor Log</span><span class="card-count" id="guests-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddGuest()">+ Log Guest</button></div><div class="tbl-wrap"><table><thead><tr><th>Guest</th><th>Unit</th><th>Host</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody id="guests-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-keys">
-      <div class="sub-tabs"><div class="sub-tab" onclick="filterKeys('drawer',this)">🗝 Card Drawer</div><div class="sub-tab active" onclick="filterKeys('issued',this)">Currently Out</div><div class="sub-tab" onclick="filterKeys('fobs',this)">Resident Fobs</div><div class="sub-tab" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('parking',this)">🚗 Parking</div></div>
-      <div class="key-stat-row" id="keys-stats"></div>
-      <div id="keys-sort-bar" style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+      <div class="sub-tabs"><div class="sub-tab active" onclick="filterKeys('drawer',this)">🗝 Card Drawer</div><div class="sub-tab" onclick="filterKeys('issued',this)">Currently Out</div><div class="sub-tab" onclick="filterKeys('fobs',this)">Resident Fobs</div><div class="sub-tab" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('parking',this)">🚗 Parking</div></div>
+      <div class="key-stat-row" id="keys-stats" style="display:none"></div>
+      <div id="keys-sort-bar" style="display:none;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
         <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-right:2px">Sort:</span>
         <button class="ks-btn btn btn-ghost btn-xs active" data-sort="timeout" onclick="setKeySort('timeout')">Time Out</button>
         <button class="ks-btn btn btn-ghost btn-xs" data-sort="fob" onclick="setKeySort('fob')">Key #</button>
@@ -671,7 +671,7 @@
       </div>
       <div class="card" id="keys-log-card"><div class="card-hdr"><span class="card-title" id="keys-log-title">Key Log</span><span class="card-count" id="keys-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddKey()">+ Log Key</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident / Guest</th><th>Type</th><th>Key #</th><th>Time Out</th><th>Status</th><th></th></tr></thead><tbody id="keys-tbody"></tbody></table></div></div>
       <!-- Card Drawer view -->
-      <div id="card-drawer-view" style="display:none">
+      <div id="card-drawer-view">
         <div class="card"><div class="card-hdr"><span class="card-title">One-Time Card Drawer</span><span class="card-count" id="drawer-count"></span></div><div class="card-body" id="drawer-body" style="padding:14px"></div></div>
       </div>
       <div id="parking-view" style="display:none">
@@ -2145,7 +2145,7 @@ function mobNav(item) {
   curSec = sec; renderSection(sec);
 }
 function renderSection(sec) {
-  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeys, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, templates: renderTemplates, guide: renderGuide, security: renderSecurity, supplies: renderSupplies, activity: renderActivityLog, parking: renderParking };
+  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeysSection, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, templates: renderTemplates, guide: renderGuide, security: renderSecurity, supplies: renderSupplies, activity: renderActivityLog, parking: renderParking };
   if (map[sec]) map[sec]();
 }
 function renderAll() { renderSection(curSec); updateBadges(); }
@@ -3607,7 +3607,7 @@ function updateGuestStatus(id, val) {
 function deleteGuest(id) { if (!confirm('Remove?')) return; var gx = (state.guests||[]).find(function(x){return x.id===id;}); if (gx) pushUndo({ sec: 'guests', type: 'DELETE', id: id, data: Object.assign({}, gx), label: 'delete guest — ' + gx.name }); logActivity('guests', 'delete', 'Removed guest' + (gx ? ' — ' + gx.name + ' · Unit ' + gx.unit : '')); state.guests = (state.guests || []).filter(function (gst) { return gst.id !== id; }); scheduleSave(); renderGuests(); updateBadges(); toast('Removed'); }
 
 // ─── KEYS ───
-var keyFilter = 'issued';
+var keyFilter = 'drawer';
 var keySort = 'timeout';
 function setKeySort(s) {
   keySort = s;
@@ -3639,6 +3639,12 @@ function filterKeys(f, item) {
     if (sortBar) sortBar.style.display = '';
     renderKeys();
   }
+}
+
+function renderKeysSection() {
+  if (keyFilter === 'drawer') renderCardDrawer();
+  else if (keyFilter === 'parking') renderParking();
+  else renderKeys();
 }
 
 // ─── CARD DRAWER ───────────────────────────────────────────────────────────────
