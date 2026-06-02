@@ -656,7 +656,7 @@
       <div class="card"><div class="card-hdr"><span class="card-title">Guest &amp; Visitor Log</span><span class="card-count" id="guests-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddGuest()">+ Log Guest</button></div><div class="tbl-wrap"><table><thead><tr><th>Guest</th><th>Unit</th><th>Host</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody id="guests-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-keys">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterKeys('issued',this)">Currently Out</div><div class="sub-tab" onclick="filterKeys('fobs',this)">Resident Fobs</div><div class="sub-tab" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('parking',this)">🚗 Parking</div></div>
+      <div class="sub-tabs"><div class="sub-tab" onclick="filterKeys('drawer',this)">🗝 Card Drawer</div><div class="sub-tab active" onclick="filterKeys('issued',this)">Currently Out</div><div class="sub-tab" onclick="filterKeys('fobs',this)">Resident Fobs</div><div class="sub-tab" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('parking',this)">🚗 Parking</div></div>
       <div class="key-stat-row" id="keys-stats"></div>
       <div id="keys-sort-bar" style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
         <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-right:2px">Sort:</span>
@@ -670,6 +670,10 @@
         <div id="keys-otk-cards"></div>
       </div>
       <div class="card" id="keys-log-card"><div class="card-hdr"><span class="card-title" id="keys-log-title">Key Log</span><span class="card-count" id="keys-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddKey()">+ Log Key</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident / Guest</th><th>Type</th><th>Key #</th><th>Time Out</th><th>Status</th><th></th></tr></thead><tbody id="keys-tbody"></tbody></table></div></div>
+      <!-- Card Drawer view -->
+      <div id="card-drawer-view" style="display:none">
+        <div class="card"><div class="card-hdr"><span class="card-title">One-Time Card Drawer</span><span class="card-count" id="drawer-count"></span></div><div class="card-body" id="drawer-body" style="padding:14px"></div></div>
+      </div>
       <div id="parking-view" style="display:none">
         <div class="card"><div class="card-hdr"><span class="card-title">Parking Credentials</span><span class="card-count" id="parking-count">0 credentials</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddParking()">+ Add Credential</button></div>
         <div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident</th><th>Transponder</th><th>Key Tag</th><th>Xpress Sticker</th><th>Monthly Fee</th><th>Status</th><th>Notice Date</th><th></th></tr></thead><tbody id="parking-tbody"></tbody></table></div></div>
@@ -1179,6 +1183,27 @@
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-key')">Cancel</button><button class="btn btn-primary" id="modal-key-savebtn" onclick="saveKey()">Save</button></div>
 </div></div>
 
+<!-- Quick Key Issue Modal (Card Drawer) -->
+<div class="modal-ov" id="modal-quick-key"><div class="modal" style="max-width:380px">
+  <div class="modal-hdr">
+    <span class="modal-title" id="qk-title">Issue Key Card</span>
+    <span id="qk-card-badge" style="font-size:12px;font-weight:700;font-family:var(--font-mono);background:var(--accent-light);color:var(--accent);border-radius:4px;padding:2px 9px;margin-left:6px"></span>
+    <button class="modal-close" aria-label="Close" onclick="closeModal('modal-quick-key')">&#x2715;</button>
+  </div>
+  <div class="modal-bdy">
+    <div class="fr">
+      <div class="fg"><label>Unit #</label><input id="qk-unit" type="text" placeholder="e.g. 804" autocomplete="off"></div>
+      <div class="fg"><label>Resident Name</label><input id="qk-resident" type="text" placeholder="e.g. Sofia Park" autocomplete="off"></div>
+    </div>
+    <div class="fg"><label>Guest / Visitor Name <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="qk-guest" type="text" placeholder="Who is physically taking the card?" autocomplete="off"></div>
+    <div style="font-size:11px;color:var(--text3);margin-top:4px">Time stamps automatically. You can edit the entry anytime from the Key Tracker.</div>
+  </div>
+  <div class="modal-ftr">
+    <button class="btn btn-secondary" onclick="closeModal('modal-quick-key')">Cancel</button>
+    <button class="btn btn-primary" onclick="saveQuickKey()">Issue Card</button>
+  </div>
+</div></div>
+
 <div class="modal-ov" id="modal-security"><div class="modal" style="max-width:500px">
   <div class="modal-hdr"><span class="modal-title" id="modal-security-title">Log Incident</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-security')">&#x2715;</button></div>
   <div class="modal-bdy">
@@ -1366,33 +1391,7 @@
     <div style="padding:2px 0 4px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="rp-m2m"> <span>Month-to-month (no fixed end date)</span></label></div>
     <div class="fr"><div class="fg"><label>&#128204; Notice Date</label><input id="rp-notice-date" type="date" data-no-autofill placeholder="Date resident gave notice"></div><div class="fg"><label>&#128197; Move-Out Date</label><input id="rp-moveout-date" type="date" data-no-autofill></div></div>
     <div class="fg"><label>&#128230; PTE — Permission to Enter (Packages)</label><select id="rp-pte"><option value="not-set">Not Set</option><option value="granted">Granted — OK to enter for package delivery</option><option value="denied">Denied — Do NOT enter unit</option></select></div>
-    <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
-      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Parking, Storage &amp; Access</div>
-      <div class="fr">
-        <div class="fg"><label>Parking</label><select id="rp-parking"><option value="none">None</option><option value="yes">Has Parking</option></select></div>
-        <div class="fg"><label>Space / Credential Info</label><input id="rp-parking-info" type="text" placeholder="e.g. Spot B-12, fob #4"></div>
-      </div>
-      <div class="fr">
-        <div class="fg"><label>Vehicle Type</label><input id="rp-vehicle-type" type="text" placeholder="e.g. Blue Tesla Model 3, plate ABC-1234"></div>
-        <div class="fg"></div>
-      </div>
-      <div class="fr">
-        <div class="fg">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px"><input type="checkbox" id="rp-has-bike"> <span>Bike Storage</span></label>
-          <input id="rp-bike-sticker" type="text" placeholder="Bike sticker #">
-        </div>
-        <div class="fg">
-          <label>Storage Unit</label>
-          <select id="rp-storage" style="margin-bottom:4px"><option value="none">None</option><option value="yes">Has Storage Unit</option></select>
-          <input id="rp-storage-unit" type="text" placeholder="e.g. S-04">
-        </div>
-      </div>
-      <div class="fr">
-        <div class="fg"><label>Keys / Fobs Issued</label><input id="rp-keys-qty" type="number" min="0" placeholder="e.g. 2" style="max-width:120px"></div>
-        <div class="fg" style="display:flex;align-items:flex-end;padding-bottom:8px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="rp-has-pet"> Has Pet(s)</label></div>
-      </div>
-    </div>
-    <div class="fg"><label>Front Desk Notes</label><textarea id="rp-notes" rows="4" placeholder="Special instructions, VIP notes, preferences — anything the team should know..."></textarea></div>
+    <div class="fg" style="margin-top:4px"><label style="font-size:11px;color:var(--text3)">Parking, bike, storage, pet, and vehicle details are tracked in RiseIO. Use the Parking tab in Key Tracker for credential tracking.</label></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-resident')">Cancel</button><button class="btn btn-primary" id="modal-resident-savebtn" onclick="saveResident()">Save Profile</button></div>
 </div></div>
@@ -1457,6 +1456,29 @@
     <div class="fg"><label>Notes (optional)</label><input id="sup-notes" type="text" placeholder="Any notes about this item"></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-supply')">Cancel</button><button class="btn btn-primary" onclick="saveSupply()">Save Item</button></div>
+</div></div>
+
+<!-- Quick Supply Adjustment Modal -->
+<div class="modal-ov" id="modal-quick-adj"><div class="modal" style="max-width:380px">
+  <div class="modal-hdr"><span class="modal-title" id="qa-title">Adjust Supply</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-quick-adj')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:10px 12px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border)">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600" id="qa-name"></div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">Current: <span id="qa-current" style="font-weight:600;font-family:var(--font-mono)"></span></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="sup-qty-btn" onclick="qaDelta(-1)">&#8722;</button>
+        <span id="qa-new-qty" style="font-size:18px;font-weight:700;min-width:36px;text-align:center;font-family:var(--font-mono)"></span>
+        <button class="sup-qty-btn" onclick="qaDelta(+1)">&#43;</button>
+      </div>
+    </div>
+    <div class="fg"><label>Reason / Note <span style="font-weight:400;color:var(--text3)">(required)</span></label><input id="qa-reason" type="text" placeholder="e.g. Issued to Unit 2204, new stock received, damaged…" autocomplete="off"></div>
+  </div>
+  <div class="modal-ftr">
+    <button class="btn btn-secondary" onclick="closeModal('modal-quick-adj')">Cancel</button>
+    <button class="btn btn-primary" onclick="saveQuickAdj()">Save Adjustment</button>
+  </div>
 </div></div>
 
 <div class="modal-ov" id="modal-template"><div class="modal" style="max-width:520px">
@@ -2364,9 +2386,32 @@ function renderDash() {
   if (!openMt.length) html += '<div class="text-3 text-sm">No open issues</div>';
   else openMt.slice(0, 5).forEach(function (m) { var bc = m.priority === 'high' ? 'var(--red)' : m.priority === 'medium' ? 'var(--amber)' : '#B0AEA7'; html += '<div class="flex items-center gap-8" style="padding:4px 0;border-bottom:1px solid var(--border2)"><div style="width:7px;height:7px;border-radius:50%;background:' + bc + ';flex-shrink:0"></div><span class="text-sm" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Unit ' + m.unit + ': ' + m.issue + '</span><span class="pill pill-' + (m.status === 'in-progress' ? 'inprogress' : 'open') + '" style="font-size:10px">' + m.status + '</span></div>'; });
   html += '</div></div>';
-  html += '<div class="card"><div class="card-hdr"><span class="card-title">Keys Out</span></div><div class="card-body" style="padding:8px 14px">';
+  var overdueK = issuedK.filter(function(k) { return k.type === 'one-time' && k.issuedAt && (Date.now() - k.issuedAt) >= 2 * 3600000; });
+  html += '<div class="card"><div class="card-hdr"><span class="card-title">Keys Out</span>'
+    + (overdueK.length ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:10px;padding:2px 8px;margin-left:6px">⚠ ' + overdueK.length + ' overdue</span>' : '')
+    + '</div><div class="card-body" style="padding:8px 14px">';
   if (!issuedK.length) html += '<div class="text-3 text-sm">All keys returned</div>';
-  else issuedK.slice(0, 5).forEach(function (k) { html += '<div class="flex items-center gap-8" style="padding:4px 0;border-bottom:1px solid var(--border2)"><span class="text-sm" style="flex:1">Unit ' + k.unit + ' - ' + k.name + '</span><span class="text-xs text-3 mono">' + k.type + '</span></div>'; });
+  else {
+    var nowTs = Date.now();
+    issuedK.slice(0, 6).forEach(function(k) {
+      var isOD = k.type === 'one-time' && k.issuedAt && (nowTs - k.issuedAt) >= 2 * 3600000;
+      var ms = k.issuedAt ? nowTs - k.issuedAt : 0;
+      var hrs = Math.floor(ms / 3600000), mins = Math.floor((ms % 3600000) / 60000);
+      var timeStr = k.issuedAt ? (hrs > 0 ? hrs + 'h ' + mins + 'm' : mins + 'm') : '';
+      html += '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border2)">'
+        + (isOD ? '<span style="color:var(--red);font-size:11px;flex-shrink:0">⚠</span>' : '<span style="color:var(--border);font-size:11px;flex-shrink:0">·</span>')
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:12.5px;font-weight:500;' + (isOD ? 'color:var(--red)' : '') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+        + (k.fob ? '<span class="mono" style="font-size:11px;color:var(--text3)">#' + k.fob + ' </span>' : '')
+        + 'Unit ' + esc(k.unit) + (k.name ? ' — ' + esc(k.name) : '') + (k.guest ? ' <span style="color:var(--text3);font-size:11px">/ ' + esc(k.guest) + '</span>' : '')
+        + '</div>'
+        + (timeStr ? '<div style="font-size:10px;color:' + (isOD ? 'var(--red)' : 'var(--text3)') + '">' + timeStr + ' out · ' + k.type + '</div>' : '<div style="font-size:10px;color:var(--text3)">' + k.type + '</div>')
+        + '</div>'
+        + '<button onclick="dashReturnKey(\'' + k.id + '\')" style="flex-shrink:0;font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .12s;white-space:nowrap" onmouseover="this.style.background=\'var(--green-light)\';this.style.color=\'var(--green)\';this.style.borderColor=\'rgba(26,102,64,0.3)\'" onmouseout="this.style.background=\'var(--surface2)\';this.style.color=\'var(--text2)\';this.style.borderColor=\'var(--border)\'">✓ Return</button>'
+        + '</div>';
+    });
+    if (issuedK.length > 6) html += '<div style="font-size:11px;color:var(--text3);padding-top:5px;text-align:center;cursor:pointer" onclick="navToSec(\'keys\')">+' + (issuedK.length - 6) + ' more — view all →</div>';
+  }
   html += '</div></div>';
   html += '<div class="card"><div class="card-hdr"><span class="card-title">Shift To-Do</span><span class="card-count">' + pendTd.length + ' pending</span></div><div class="card-body" style="padding:8px 14px">';
   if (!pendTd.length) html += '<div class="text-3 text-sm">All clear</div>';
@@ -3573,19 +3618,106 @@ function filterKeys(f, item) {
   keyFilter = f;
   document.querySelectorAll('#section-keys .sub-tab').forEach(function (t) { t.classList.remove('active'); });
   item.classList.add('active');
-  var parkingView = g('parking-view'), keyCard = g('keys-log-card'), statRow = g('keys-stats'), otkSec = g('keys-otk-section');
+  var parkingView = g('parking-view'), keyCard = g('keys-log-card'), statRow = g('keys-stats'), otkSec = g('keys-otk-section'), drawerView = g('card-drawer-view'), sortBar = g('keys-sort-bar');
+  // hide all views first
+  [parkingView, keyCard, drawerView].forEach(function(el) { if (el) el.style.display = 'none'; });
   if (f === 'parking') {
     if (parkingView) parkingView.style.display = '';
-    if (keyCard) keyCard.style.display = 'none';
     if (statRow) statRow.style.display = 'none';
     if (otkSec) otkSec.style.display = 'none';
+    if (sortBar) sortBar.style.display = 'none';
     renderParking();
+  } else if (f === 'drawer') {
+    if (drawerView) drawerView.style.display = '';
+    if (statRow) statRow.style.display = 'none';
+    if (otkSec) otkSec.style.display = 'none';
+    if (sortBar) sortBar.style.display = 'none';
+    renderCardDrawer();
   } else {
-    if (parkingView) parkingView.style.display = 'none';
     if (keyCard) keyCard.style.display = '';
     if (statRow) statRow.style.display = '';
+    if (sortBar) sortBar.style.display = '';
     renderKeys();
   }
+}
+
+// ─── CARD DRAWER ───────────────────────────────────────────────────────────────
+var CARD_DRAWER_COUNT = 30;
+var _quickKeyCardNum = null;
+
+function renderCardDrawer() {
+  var body = g('drawer-body'); if (!body) return;
+  var issued = (state.keys || []).filter(function(k) { return k.type === 'one-time' && k.status === 'issued'; });
+  var issuedMap = {};
+  issued.forEach(function(k) { if (k.fob) issuedMap[String(k.fob).trim()] = k; });
+  var cntEl = g('drawer-count');
+  if (cntEl) cntEl.textContent = (CARD_DRAWER_COUNT - issued.length) + ' in drawer · ' + issued.length + ' out';
+  var now = Date.now();
+  var html = '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+  for (var i = 1; i <= CARD_DRAWER_COUNT; i++) {
+    var cn = String(i), k = issuedMap[cn];
+    if (k) {
+      var overdue = k.issuedAt && (now - k.issuedAt) >= 2 * 3600000;
+      var ms = k.issuedAt ? now - k.issuedAt : 0, hrs = Math.floor(ms/3600000), mins = Math.floor((ms%3600000)/60000);
+      var timeStr = hrs > 0 ? hrs + 'h ' + mins + 'm' : mins + 'm';
+      var bg = overdue ? 'rgba(192,53,53,0.08)' : 'rgba(181,112,32,0.07)';
+      var bd = overdue ? '1.5px solid rgba(192,53,53,0.4)' : '1.5px solid rgba(181,112,32,0.35)';
+      var nc = overdue ? 'var(--red)' : 'var(--amber)';
+      var unitLbl = k.unit ? 'Unit ' + k.unit : (k.name ? k.name.split(' ')[0] : '—');
+      html += '<div style="width:74px;min-height:76px;background:' + bg + ';border:' + bd + ';border-radius:6px;padding:7px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative" onclick="dashReturnKey(\'' + k.id + '\')" title="Card #' + cn + ' — ' + esc(k.name||'') + ' Unit ' + esc(k.unit||'') + (k.guest ? ' / ' + k.guest : '') + '\nClick to mark returned">'
+        + (overdue ? '<span style="position:absolute;top:3px;right:4px;font-size:9px;color:var(--red)">⚠</span>' : '')
+        + '<span style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:' + nc + '">#' + cn + '</span>'
+        + '<span style="font-size:9px;font-weight:600;color:' + nc + ';text-align:center;line-height:1.3;word-break:break-word">' + esc(unitLbl) + '</span>'
+        + '<span style="font-size:8px;color:' + (overdue ? 'var(--red)' : 'var(--text3)') + ';margin-top:1px">' + timeStr + ' out</span>'
+        + '<span style="font-size:8px;color:var(--accent);margin-top:2px;font-weight:600">↩ return</span>'
+        + '</div>';
+    } else {
+      html += '<div style="width:74px;min-height:76px;background:var(--surface);border:1.5px solid var(--border);border-radius:6px;padding:7px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:border-color .12s,background .12s" onclick="openQuickKeyIssue(' + i + ')" title="Card #' + cn + ' — in drawer. Click to issue." onmouseover="this.style.borderColor=\'var(--accent)\';this.style.background=\'var(--accent-light)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.background=\'var(--surface)\'">'
+        + '<span style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:var(--text3)">#' + cn + '</span>'
+        + '<span style="font-size:8px;color:var(--text3)">in drawer</span>'
+        + '</div>';
+    }
+  }
+  html += '</div>';
+  body.innerHTML = html;
+}
+
+function openQuickKeyIssue(cardNum) {
+  _quickKeyCardNum = cardNum;
+  var t = g('qk-title'); if (t) t.textContent = 'Issue Card #' + cardNum;
+  var b = g('qk-card-badge'); if (b) b.textContent = '#' + cardNum;
+  ['qk-unit','qk-resident','qk-guest'].forEach(function(id) { var el = g(id); if (el) el.value = ''; });
+  openModal('modal-quick-key');
+  setTimeout(function() { var u = g('qk-unit'); if (u) u.focus(); }, 130);
+}
+
+function saveQuickKey() {
+  var unit = g('qk-unit') ? g('qk-unit').value.trim() : '';
+  var name = g('qk-resident') ? g('qk-resident').value.trim() : '';
+  var guest = g('qk-guest') ? g('qk-guest').value.trim() : '';
+  if (!unit) { toast('Enter a unit number'); g('qk-unit').focus(); return; }
+  if (!name) { toast('Enter the resident name'); g('qk-resident').focus(); return; }
+  if (!state.keys) state.keys = [];
+  // Check card not already issued
+  var alreadyOut = (state.keys || []).some(function(k) { return k.fob === String(_quickKeyCardNum) && k.status === 'issued'; });
+  if (alreadyOut) { toast('Card #' + _quickKeyCardNum + ' is already logged as issued — check the key log'); return; }
+  var k = { id: uid(), unit: unit, name: name, guest: guest, fob: String(_quickKeyCardNum), type: 'one-time', status: 'issued', issuedAt: Date.now(), notes: '', addedBy: currentUser ? currentUser.name : '', createdAt: Date.now(), returnedAt: null };
+  state.keys.push(k);
+  pushUndo({ sec: 'keys', type: 'ADD', id: k.id, data: Object.assign({}, k), label: 'issue card #' + _quickKeyCardNum + ' — Unit ' + unit });
+  logActivity('keys', 'create', 'Issued one-time card #' + _quickKeyCardNum + ' — Unit ' + unit + ' · ' + name + (guest ? ' / Guest: ' + guest : ''));
+  applySupplyAdjustment('Key Cards – Blank Stock', -1, 'Issued — Card #' + _quickKeyCardNum + ' · Unit ' + unit + ' · ' + name);
+  applySupplyAdjustment('One-Time Cards – Active Issued', +1, 'Issued — Card #' + _quickKeyCardNum + ' · Unit ' + unit + ' · ' + name);
+  scheduleSave(); closeModal('modal-quick-key'); renderCardDrawer(); renderKeys(); updateBadges(); renderDash();
+  toast('Card #' + _quickKeyCardNum + ' issued — Unit ' + unit);
+}
+
+function dashReturnKey(id) {
+  var k = (state.keys || []).find(function(x) { return x.id === id; }); if (!k) return;
+  var label = (k.fob ? 'Card #' + k.fob : 'Key') + ' — Unit ' + k.unit + (k.name ? ' · ' + k.name : '') + (k.guest ? ' / ' + k.guest : '');
+  if (!confirm('Mark returned: ' + label + '?')) return;
+  logKeyReturn(id);
+  if (keyFilter === 'drawer') renderCardDrawer();
+  toast((k.fob ? 'Card #' + k.fob : 'Key') + ' returned');
 }
 function keyIssuedToChange() {
   var sel = document.querySelector('input[name="ky-issued-to"]:checked');
@@ -5954,24 +6086,53 @@ function applySupplyAdjustment(supName, delta, note) {
   if (curSec === 'todos') renderTodos();
 }
 
-function adjustSupply(id, delta) {
+var _qaSupplyId = null, _qaNewQty = 0;
+function openQuickAdj(id, delta) {
   if (currentUser && currentUser.role !== 'admin') { toast('Admin access required'); return; }
   var s = (state.supplies || []).find(function(x){ return x.id === id; });
+  if (!s) return;
+  _qaSupplyId = id;
+  _qaNewQty = Math.max(0, (s.qty || 0) + (delta || 0));
+  var title = g('qa-title'); if (title) title.textContent = 'Adjust — ' + s.name;
+  var nameEl = g('qa-name'); if (nameEl) nameEl.textContent = s.name;
+  var curEl = g('qa-current'); if (curEl) curEl.textContent = (s.qty || 0) + (s.unit ? ' ' + s.unit : '');
+  var newEl = g('qa-new-qty'); if (newEl) newEl.textContent = _qaNewQty;
+  var reasonEl = g('qa-reason'); if (reasonEl) { reasonEl.value = ''; }
+  openModal('modal-quick-adj');
+  setTimeout(function(){ var r = g('qa-reason'); if (r) r.focus(); }, 120);
+}
+function qaDelta(d) {
+  _qaNewQty = Math.max(0, _qaNewQty + d);
+  var newEl = g('qa-new-qty'); if (newEl) newEl.textContent = _qaNewQty;
+}
+function saveQuickAdj() {
+  var reason = (g('qa-reason') ? g('qa-reason').value.trim() : '');
+  if (!reason) { toast('Please add a reason for this adjustment'); g('qa-reason').focus(); return; }
+  var s = (state.supplies || []).find(function(x){ return x.id === _qaSupplyId; });
   if (!s) return;
   if (!s.log) s.log = [];
   var by = currentUser ? currentUser.name : '';
   var before = cloneData(s);
   var prevQty = s.qty || 0;
-  s.qty = Math.max(0, prevQty + delta);
+  var delta = _qaNewQty - prevQty;
+  s.qty = _qaNewQty;
   s.updatedAt = Date.now(); s.updatedBy = by;
-  s.log.push({ ts: Date.now(), by: by, delta: delta, prevQty: prevQty, newQty: s.qty, note: 'Manual adjustment' });
+  s.log.push({ ts: Date.now(), by: by, delta: delta, prevQty: prevQty, newQty: s.qty, note: reason });
   pushUndo({ sec: 'supplies', type: 'EDIT', path: ['supplies'], id: s.id, before: before, after: cloneData(s), label: 'adjust supply — ' + s.name });
-  logActivity('supplies','edit',(delta>0?'Increased':'Decreased')+' supply qty — '+s.name+' · '+prevQty+' → '+s.qty);
-  checkSupplyLowStockTodos(); scheduleSave(); renderSupplies(); updateBadges(); renderDash(); if(curSec==='todos') renderTodos();
+  logActivity('supplies', 'edit', (delta > 0 ? 'Increased' : delta < 0 ? 'Decreased' : 'Set') + ' supply qty — ' + s.name + ' · ' + prevQty + ' → ' + s.qty, 'Reason: ' + reason);
+  checkSupplyLowStockTodos(); scheduleSave(); closeModal('modal-quick-adj'); renderSupplies(); updateBadges(); renderDash(); if (curSec === 'todos') renderTodos();
+  toast('Adjustment saved');
 }
+function adjustSupply(id, delta) { openQuickAdj(id, delta); }
 
 function setSupplyQtyPrompt(id) {
   if (currentUser && currentUser.role !== 'admin') { toast('Admin access required'); return; }
+  var s = (state.supplies || []).find(function(x){ return x.id === id; });
+  if (!s) return;
+  openQuickAdj(id, 0);  // open at current qty, let user +/- to desired value
+}
+
+function _setSupplyQtyLegacy(id) {
   var s = (state.supplies || []).find(function(x){ return x.id === id; });
   if (!s) return;
   var val = prompt('Set quantity for ' + s.name + ':', s.qty || 0);
@@ -6343,6 +6504,26 @@ function pdAutoRowInput(input, exKey, isPrompt) {
   }
   input.style.borderBottomColor = input.value.trim() ? 'var(--accent)' : (isPrompt ? 'rgba(201,164,94,0.6)' : 'var(--border)');
 }
+// ── "No update" per-item button handler ──────────────────────────────────────
+function pdNoUpdate(exKey, defaultText) {
+  pdNotes[exKey] = defaultText;
+  pdSaveDraft();
+  pdAutoRowSave(exKey, defaultText);
+  // Update DOM directly — no full re-render needed
+  var row = document.querySelector('[data-pd-key="' + CSS.escape(exKey) + '"]');
+  if (!row) return;
+  var input = row.querySelector('.pd-note-input');
+  if (input) { input.value = defaultText; input.style.borderBottomColor = 'var(--accent)'; }
+  var label = row.querySelector('.pd-note-label');
+  if (label) { label.textContent = '➤ Update / Next Step'; label.style.color = 'var(--accent)'; }
+  var btn = row.querySelector('.pd-noupdate-btn');
+  if (btn) {
+    btn.textContent = '✓ Done';
+    btn.style.cssText = 'flex-shrink:0;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid rgba(26,102,64,0.25);background:var(--green-light);color:var(--green);cursor:default;font-family:inherit;white-space:nowrap';
+    btn.onclick = null;
+  }
+}
+
 function pdAutoRow(exKey, content, defaultNextStep, isCarried, optional) {
   var excl = pdExcluded[exKey];
   var noteVal = pdNotes[exKey] !== undefined ? pdNotes[exKey] : '';
@@ -6352,11 +6533,24 @@ function pdAutoRow(exKey, content, defaultNextStep, isCarried, optional) {
   var labelColor = isEmpty ? (isPrompt ? '#92400E' : 'var(--text3)') : 'var(--accent)';
   var labelText = isEmpty ? (isPrompt ? '↓ Add update to include' : '+ Update / Next Step') : '➤ Update / Next Step';
   var borderColor = isEmpty ? (isPrompt ? 'rgba(201,164,94,0.6)' : 'var(--border)') : 'var(--border)';
-  var noteHtml = excl ? '' : '<div style="display:flex;align-items:center;gap:5px;margin-top:5px"><span style="font-size:10px;font-weight:600;color:' + labelColor + ';white-space:nowrap;flex-shrink:0">' + labelText + '</span><input type="text" value="' + pdAttrEsc(noteVal) + '" placeholder="' + notePlaceholder + '" '
+  // "No update" button — only for always-included items (not carried prompts) with a non-empty default and an empty note
+  var noUpdateBtn = (!excl && !isPrompt && isEmpty && defaultNextStep)
+    ? '<button class="pd-noupdate-btn" onclick="pdNoUpdate(\'' + exKey + '\',' + JSON.stringify(defaultNextStep) + ')" '
+      + 'title="Fill with default note — no update this shift" '
+      + 'style="flex-shrink:0;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text3);cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .12s" '
+      + 'onmouseover="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\';this.style.background=\'var(--accent-light)\'" '
+      + 'onmouseout="this.style.borderColor=\'var(--border)\';this.style.color=\'var(--text3)\';this.style.background=\'var(--surface2)\'">'
+      + '✓ No update</button>'
+    : '';
+  var noteHtml = excl ? '' : '<div style="display:flex;align-items:center;gap:5px;margin-top:5px">'
+    + '<span class="pd-note-label" style="font-size:10px;font-weight:600;color:' + labelColor + ';white-space:nowrap;flex-shrink:0">' + labelText + '</span>'
+    + '<input class="pd-note-input" type="text" value="' + pdAttrEsc(noteVal) + '" placeholder="' + notePlaceholder + '" '
     + 'style="flex:1;font-size:11.5px;color:var(--text);background:transparent;border:none;border-bottom:1px solid ' + borderColor + ';padding:2px 0;font-family:inherit;outline:none;min-width:0" '
     + 'oninput="pdAutoRowInput(this,\'' + exKey + '\',' + (isPrompt ? 'true' : 'false') + ')" '
     + 'onfocus="this.style.borderBottomColor=\'var(--accent)\'" '
-    + 'onblur="pdAutoRowSave(\'' + exKey + '\',this.value);this.style.borderBottomColor=this.value.trim()?\'var(--accent)\':\'' + borderColor + '\'" /></div>';
+    + 'onblur="pdAutoRowSave(\'' + exKey + '\',this.value);this.style.borderBottomColor=this.value.trim()?\'var(--accent)\':\'' + borderColor + '\'" />'
+    + noUpdateBtn
+    + '</div>';
   var editFn = isCarried ? pdAutoRowEditFn(exKey) : '';
   var editBtn = (isCarried && editFn && !excl) ? '<button onclick="' + editFn + '" style="font-size:10px;color:var(--accent);background:none;border:1px solid var(--accent);border-radius:3px;cursor:pointer;padding:1px 7px;margin-left:6px;white-space:nowrap;flex-shrink:0">✏ Edit record</button>' : '';
   var carriedBadge = (isCarried && !excl) ? '<span style="font-size:10px;background:rgba(201,164,94,0.15);color:var(--accent);border-radius:3px;padding:1px 6px;margin-right:5px;font-weight:600;white-space:nowrap">↩ carried over</span>' : '';
@@ -6405,11 +6599,15 @@ function renderPdAutoBlocks(isLead) {
   var upcomingIns = isLead ? moves.filter(function(m){
     if (m.type!=='in' || m.archivedAt) return false;
     var apptD = m.apptDate || m.date;
+    // Skip if already captured in shiftMoveIns (appt today + in-shift)
+    if (apptD === t && pdInShift(m.apptTime, shift)) return false;
     return (apptD > t && apptD <= maxDate) || (m.date > t && m.date <= maxDate);
   }).sort(function(a,b){ return moveDateKey(a).localeCompare(moveDateKey(b)); }) : [];
   var upcomingOuts = isLead ? moves.filter(function(m){
     if (m.type!=='out' || m.archivedAt) return false;
     var apptD = m.apptDate || m.date;
+    // Skip if already captured in shiftMoveOuts (appt today + in-shift)
+    if (apptD === t && pdInShift(m.apptTime, shift)) return false;
     return (apptD > t && apptD <= maxDate) || (m.date > t && m.date <= maxDate);
   }).sort(function(a,b){ return moveDateKey(a).localeCompare(moveDateKey(b)); }) : [];
 
@@ -7251,8 +7449,16 @@ function reviewBeforeSend() {
     ov.className = 'modal-ov'; ov.id = 'modal-pd-review';
     document.body.appendChild(ov);
   }
+  var shiftLbl = (g('pd-shift') ? g('pd-shift').value : 'AM').toUpperCase();
+  var d = new Date(); var dateStr = (d.getMonth()+1) + '.' + d.getDate() + '.' + d.getFullYear();
+  var recipients = getPassdownRecipientString ? getPassdownRecipientString() : (state.passdownSettings && state.passdownSettings.recipients ? state.passdownSettings.recipients : '—');
+  var sendSummary = '<div style="display:flex;flex-direction:column;gap:4px;padding:10px 12px;margin-bottom:14px;background:var(--bg);border-radius:6px;border:1px solid var(--border)">'
+    + '<div style="font-size:11px;color:var(--text3)"><span style="font-weight:600;color:var(--text2)">To:</span> ' + esc(recipients) + '</div>'
+    + '<div style="font-size:11px;color:var(--text3)"><span style="font-weight:600;color:var(--text2)">Subject:</span> ' + esc(dateStr + ' ' + shiftLbl + ' Front Desk Passdown') + '</div>'
+    + '<div style="font-size:11px;color:var(--text3)"><span style="font-weight:600;color:var(--text2)">Via:</span> Gmail (opens in a new tab)</div>'
+    + '</div>';
   ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Review Before Sending</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-pd-review\')">&#x2715;</button></div>'
-    + '<div class="modal-bdy">' + html + '</div>'
+    + '<div class="modal-bdy">' + sendSummary + html + '</div>'
     + '<div class="modal-ftr">'
     + '<button class="btn btn-secondary" onclick="closeModal(\'modal-pd-review\')">Go Back &amp; Edit</button>'
     + '<button class="btn btn-primary" ' + (hasBlocking ? 'disabled style="opacity:0.4;cursor:not-allowed" title="Fix required issues before sending"' : 'onclick="closeModal(\'modal-pd-review\');sendPassdownGmail()"') + '>Send via Gmail →</button>'
