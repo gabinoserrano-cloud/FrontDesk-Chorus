@@ -1807,29 +1807,64 @@ setInterval(async function () {
 }, 30000);
 
 function exportData() {
+  if (!currentUser || currentUser.role !== 'admin') { toast('Admin access required'); return; }
   var blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'chorus-fd-backup-' + today() + '.json'; a.click(); toast('Exported');
 }
-function importData() { openModal('modal-import'); }
+function importData() {
+  if (!currentUser || currentUser.role !== 'admin') { toast('Admin access required'); return; }
+  openModal('modal-import');
+}
 function processImport() {
+  if (!currentUser || currentUser.role !== 'admin') { toast('Admin access required'); return; }
   var file = g('import-file').files[0]; if (!file) { toast('Choose a file first'); return; }
+  var preservedAccounts = (state.accounts || []).slice();
   var reader = new FileReader();
   reader.onload = function (e) {
-    try { state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], activityLog: [] }, JSON.parse(e.target.result)); scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported'); }
+    try {
+      var imported = JSON.parse(e.target.result);
+      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], activityLog: [] }, imported);
+      state.accounts = preservedAccounts;
+      scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported');
+    }
     catch (err) { toast('Invalid file'); }
   };
   reader.readAsText(file);
 }
 function resetData() {
+  if (!currentUser || currentUser.role !== 'admin') { toast('Admin access required'); return; }
   if (!confirm('Reset ALL data? Cannot be undone.')) return;
+  var preservedAccounts = (state.accounts || []).slice();
   state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [] };
+  state.accounts = preservedAccounts;
   scheduleSave(); renderAll(); toast('Data reset');
 }
 
 // ─── UTILS ───
 // ===== [CORE UTILITIES] ======================================================
-function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function uid() { try { return crypto.randomUUID(); } catch(e) { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); } }
 function esc(s) { return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+async function hashPin(pin, salt) {
+  try {
+    var data = new TextEncoder().encode(String(pin) + ':' + String(salt));
+    var buf = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+  } catch(e) { return String(pin); }
+}
+function isPinHashed(pin) { return typeof pin === 'string' && pin.length === 64 && /^[0-9a-f]+$/.test(pin); }
+async function migratePinsToHashed() {
+  var accounts = state.accounts || [];
+  if (!accounts.length) return;
+  var changed = false;
+  for (var i = 0; i < accounts.length; i++) {
+    var a = accounts[i];
+    if (a.pin && !isPinHashed(a.pin)) {
+      a.pin = await hashPin(a.pin, a.id);
+      changed = true;
+    }
+  }
+  if (changed) scheduleSave();
+}
 function today() {
   var d = new Date();
   var yr = d.getFullYear();
@@ -8086,9 +8121,9 @@ function openCalPop(dateStr, evt) {
   } else {
     items.forEach(function (item) {
       html += '<div class="cal-pop-item">';
-      html += '<div class="pop-type"><span class="pill ' + item.typeClass + '" style="font-size:10px;padding:1px 6px">' + item.type + '</span></div>';
-      html += '<div class="pop-main">' + item.main + '</div>';
-      if (item.sub) html += '<div class="pop-sub">' + item.sub + '</div>';
+      html += '<div class="pop-type"><span class="pill ' + esc(item.typeClass) + '" style="font-size:10px;padding:1px 6px">' + esc(item.type) + '</span></div>';
+      html += '<div class="pop-main">' + esc(item.main) + '</div>';
+      if (item.sub) html += '<div class="pop-sub">' + esc(item.sub) + '</div>';
       html += '</div>';
     });
     secList.forEach(function (sec) {
@@ -9258,10 +9293,10 @@ function renderLoginScreen() {
   }
   var html = '';
   accounts.forEach(function(a) {
-    var initials = a.name.split(/\s+/).map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
-    html += '<button class="acct-btn" onclick="selectAccount(\'' + a.id + '\')">'
+    var initials = esc(a.name.split(/\s+/).map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2));
+    html += '<button class="acct-btn" onclick="selectAccount(\'' + esc(a.id) + '\')">'
       + '<div class="acct-avatar">' + initials + '</div>'
-      + '<div><div>' + a.name + '</div><div class="acct-role-tag">' + (a.role==='admin'?'&#128737; Admin':'Staff') + '</div></div>'
+      + '<div><div>' + esc(a.name) + '</div><div class="acct-role-tag">' + (a.role==='admin'?'&#128737; Admin':'Staff') + '</div></div>'
       + '</button>';
   });
   g('login-body').innerHTML = html;
@@ -9284,15 +9319,16 @@ function attachPinKeyboard() {
 function detachPinKeyboard() {
   document.removeEventListener('keydown', _pinKbHandler);
 }
-function renderPinPad(shake) {
+function renderPinPad(shake, customMsg) {
   var dots = '';
   for (var i=0;i<4;i++) dots += '<div class="pin-dot' + (i<loginPinEntry.length?' filled':'') + '"></div>';
   var keys = [1,2,3,4,5,6,7,8,9,'⌫',0,'✓'];
   var pad = keys.map(function(k){
     return '<button class="pin-key" onclick="pinKey(\'' + k + '\')">' + k + '</button>';
   }).join('');
+  var errMsg = customMsg || (shake ? 'Incorrect PIN' : '');
   g('login-body').innerHTML = '<div class="pin-dots" id="pin-dots">' + dots + '</div>'
-    + '<div id="pin-error" style="text-align:center;font-size:12px;color:var(--red);min-height:18px">' + (shake ? 'Incorrect PIN' : '') + '</div>'
+    + '<div id="pin-error" style="text-align:center;font-size:12px;color:var(--red);min-height:18px">' + esc(errMsg) + '</div>'
     + '<div class="pin-pad">' + pad + '</div>'
     + '<button class="btn btn-ghost btn-sm" style="width:100%;margin-top:10px" onclick="renderLoginScreen()">&#8592; Back</button>';
   attachPinKeyboard();
@@ -9472,18 +9508,20 @@ function openChangePinModal() {
     + '</div>';
   openModal('modal-change-pin');
 }
-function submitChangePin() {
+async function submitChangePin() {
   if (!currentUser) return;
   var current = (g('pin-current').value || '').trim();
   var newPin = (g('pin-new').value || '').trim();
-  var confirm = (g('pin-confirm').value || '').trim();
+  var confirmPin = (g('pin-confirm').value || '').trim();
   var acct = (state.accounts || []).find(function(a){ return a.id === currentUser.id; });
   if (!acct) return;
-  if (current !== acct.pin) { toast('Current PIN is incorrect'); return; }
+  var currentHash = await hashPin(current, acct.id);
+  var pinMatch = isPinHashed(acct.pin) ? (currentHash === acct.pin) : (current === acct.pin);
+  if (!pinMatch) { toast('Current PIN is incorrect'); return; }
   if (newPin.length < 4) { toast('PIN must be 4-8 digits'); return; }
   if (!/^\d+$/.test(newPin)) { toast('PIN must be numbers only'); return; }
-  if (newPin !== confirm) { toast('New PINs do not match'); return; }
-  acct.pin = newPin;
+  if (newPin !== confirmPin) { toast('New PINs do not match'); return; }
+  acct.pin = await hashPin(newPin, acct.id);
   scheduleSave();
   closeModal('modal-change-pin');
   toast('PIN updated successfully');
@@ -9528,9 +9566,22 @@ function closeWelcomeModal(fromButton) {
 }
 
 // ===== [LOGIN / AUTH] ========================================================
-function submitPin() {
+async function submitPin() {
   var acct = loginSelectedAccount; if (!acct) return;
-  if (loginPinEntry === acct.pin) {
+  var lockKey = 'pin_locked_until_' + acct.id;
+  var failKey = 'pin_fails_' + acct.id;
+  var lockedUntil = parseInt(sessionStorage.getItem(lockKey) || '0');
+  if (Date.now() < lockedUntil) {
+    var minsLeft = Math.ceil((lockedUntil - Date.now()) / 60000);
+    renderPinPad(false, 'Account locked. Try again in ' + minsLeft + ' min.');
+    loginPinEntry = '';
+    return;
+  }
+  var enteredHash = await hashPin(loginPinEntry, acct.id);
+  var match = isPinHashed(acct.pin) ? (enteredHash === acct.pin) : (loginPinEntry === acct.pin);
+  if (match) {
+    sessionStorage.removeItem(failKey);
+    sessionStorage.removeItem(lockKey);
     detachPinKeyboard();
     currentUser = { id: acct.id, name: acct.name, role: acct.role };
     resetPassdownState();
@@ -9552,8 +9603,16 @@ function submitPin() {
     setTimeout(checkPassdownAcknowledgementOnLogin, 1200);
   } else {
     loginPinEntry = '';
-    renderPinPad(true);
-    setTimeout(function(){ var e=g('pin-error'); if(e)e.textContent=''; }, 2000);
+    var fails = parseInt(sessionStorage.getItem(failKey) || '0') + 1;
+    sessionStorage.setItem(failKey, String(fails));
+    if (fails >= 5) {
+      sessionStorage.setItem(lockKey, String(Date.now() + 10 * 60 * 1000));
+      sessionStorage.removeItem(failKey);
+      renderPinPad(false, 'Too many attempts. Locked for 10 minutes.');
+    } else {
+      renderPinPad(true);
+      setTimeout(function(){ var e=g('pin-error'); if(e)e.textContent=''; }, 2000);
+    }
   }
 }
 function doLogout() {
@@ -9585,16 +9644,18 @@ function showFirstTimeSetup() {
     + '<button class="btn btn-primary" style="width:100%" onclick="saveAdminSetup()">Create Account &amp; Log In</button>'
     + '<button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px" onclick="renderLoginScreen()">&#8592; Back</button>';
 }
-function saveAdminSetup() {
+async function saveAdminSetup() {
   var name = g('setup-name').value.trim();
   var pin = g('setup-pin').value.trim();
   var pin2 = g('setup-pin2').value.trim();
   if (!name) { toast('Enter your name'); return; }
   if (!pin || pin.length < 4) { toast('PIN must be at least 4 digits'); return; }
+  if (!/^\d+$/.test(pin)) { toast('PIN must be numbers only'); return; }
   if (pin !== pin2) { toast('PINs do not match'); return; }
   if (!state.accounts) state.accounts = [];
   var adminId = uid();
-  state.accounts.push({ id: adminId, name: name, role: 'admin', pin: pin, createdAt: Date.now() });
+  var pinHash = await hashPin(pin, adminId);
+  state.accounts.push({ id: adminId, name: name, role: 'admin', pin: pinHash, createdAt: Date.now() });
   if (!state.teamstaff) state.teamstaff = [];
   if (state.teamstaff.indexOf(name) === -1) state.teamstaff.push(name);
   if (!state.userTodos) state.userTodos = {};
@@ -9604,7 +9665,7 @@ function saveAdminSetup() {
   scheduleSave();
   loginSelectedAccount = state.accounts[0];
   loginPinEntry = pin;
-  submitPin();
+  await submitPin();
 }
 
 // ─── ACCOUNT MANAGEMENT ───
@@ -9614,7 +9675,7 @@ function renderTeamAccounts() {
   if (!accounts.length) { el.innerHTML = '<div class="text-3 text-sm" style="padding:10px 14px">No accounts yet.</div>'; return; }
   var html = '';
   accounts.forEach(function(a, i) {
-    var initials = a.name.split(/\s+/).map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
+    var initials = esc(a.name.split(/\s+/).map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2));
     var isMe = a.id === currentUser.id;
     html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">'
       + '<div style="display:flex;flex-direction:column;gap:1px">'
@@ -9622,11 +9683,11 @@ function renderTeamAccounts() {
       + '<button class="btn btn-ghost btn-xs" style="padding:1px 4px;font-size:10px;line-height:1" onclick="moveAccount(' + i + ',1)" ' + (i===accounts.length-1?'disabled style="opacity:.3"':'') + '>▼</button>'
       + '</div>'
       + '<div class="acct-avatar" style="width:32px;height:32px;font-size:12px">' + initials + '</div>'
-      + '<div style="flex:1"><div class="font-600 text-sm">' + a.name + '</div>'
+      + '<div style="flex:1"><div class="font-600 text-sm">' + esc(a.name) + '</div>'
       + '<div style="font-size:11px;color:var(--text3)">' + (a.role==='admin'?'&#128737; Admin':'Staff') + (isMe?' &nbsp;·&nbsp; <em>you</em>':'') + '</div></div>'
-      + '<button class="btn btn-ghost btn-xs" onclick="editAccount(\'' + a.id + '\')" title="Edit">&#9998;</button>'
-      + '<button class="btn btn-ghost btn-xs" onclick="resetAccountPin(\'' + a.id + '\')" title="Reset PIN">PIN</button>'
-      + (!isMe ? '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteAccount(\'' + a.id + '\')" title="Remove">&#x2715;</button>' : '')
+      + '<button class="btn btn-ghost btn-xs" onclick="editAccount(\'' + esc(a.id) + '\')" title="Edit">&#9998;</button>'
+      + '<button class="btn btn-ghost btn-xs" onclick="resetAccountPin(\'' + esc(a.id) + '\')" title="Reset PIN">PIN</button>'
+      + (!isMe ? '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteAccount(\'' + esc(a.id) + '\')" title="Remove">&#x2715;</button>' : '')
       + '</div>';
   });
   el.innerHTML = html;
@@ -9723,7 +9784,7 @@ function resetAccountPin(id) {
     + '</div>';
   openModal('modal-reset-pin');
 }
-function submitResetPin(id) {
+async function submitResetPin(id) {
   var acct = (state.accounts||[]).find(function(a){return a.id===id;}); if (!acct) return;
   var np = (g('reset-pin-new') ? g('reset-pin-new').value.trim() : '');
   var cp = (g('reset-pin-confirm') ? g('reset-pin-confirm').value.trim() : '');
@@ -9731,7 +9792,10 @@ function submitResetPin(id) {
   if (np.length > 8) { toast('PIN cannot exceed 8 digits'); return; }
   if (!/^\d+$/.test(np)) { toast('PIN must be numbers only'); return; }
   if (np !== cp) { toast('PINs do not match'); return; }
-  acct.pin = np; scheduleSave(); closeModal('modal-reset-pin'); toast('PIN reset for ' + acct.name);
+  acct.pin = await hashPin(np, acct.id);
+  sessionStorage.removeItem('pin_fails_' + acct.id);
+  sessionStorage.removeItem('pin_locked_until_' + acct.id);
+  scheduleSave(); closeModal('modal-reset-pin'); toast('PIN reset for ' + acct.name);
 }
 function deleteAccount(id) {
   var acct = (state.accounts||[]).find(function(a){return a.id===id;}); if (!acct) return;
@@ -9758,6 +9822,7 @@ async function init() {
   var pendingScanId = null;
   try { var params = new URLSearchParams(window.location.search); pendingScanId = params.get('scan'); } catch(e) {}
   await pullCloud();
+  await migratePinsToHashed();
   migrateTaskUpdatesV2();
   seedDefaultTemplates();
   updatePropertyUI();
