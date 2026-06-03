@@ -1573,20 +1573,46 @@
 // ─── SUPABASE CONFIG ───
 var SUPA_URL = 'https://adovwmwpvwomljggscge.supabase.co';
 var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkb3Z3bXdwdndvbWxqZ2dzY2dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNzkxNjcsImV4cCI6MjA5MDg1NTE2N30.dZgl3jEL1FbBSe_gM3LN9Tc3wGGmsf_Bq6YaKJf4dyk';
-var SUPA_HDR = { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY };
+var SUPA_SYNC_EMAIL = 'sync@chorusfd.internal';
+var SUPA_SYNC_PASS = 'Chorus!Sync#2026FD';
 var LOCAL_KEY = 'chorus-fd-v3';
 var syncTO = null, isSyncing = false, lastSyncTs = null;
+var _supaSession = null;
+
+async function supaSignIn() {
+  var res = await fetch(SUPA_URL + '/auth/v1/token?grant_type=password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY },
+    body: JSON.stringify({ email: SUPA_SYNC_EMAIL, password: SUPA_SYNC_PASS })
+  });
+  if (!res.ok) throw new Error('auth ' + res.status);
+  _supaSession = await res.json();
+  return _supaSession.access_token;
+}
+async function getSupaToken() {
+  if (_supaSession && _supaSession.access_token) {
+    var expiresAt = (_supaSession.created_at ? _supaSession.created_at * 1000 : 0) + ((_supaSession.expires_in || 3600) - 60) * 1000;
+    if (Date.now() < expiresAt) return _supaSession.access_token;
+  }
+  return await supaSignIn();
+}
+async function getSupaHdr(extra) {
+  var token = await getSupaToken();
+  return Object.assign({ 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + token }, extra || {});
+}
 
 async function supaGet() {
-  var res = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.main&select=data,updated_at', { headers: SUPA_HDR });
+  var hdrs = await getSupaHdr();
+  var res = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.main&select=data,updated_at', { headers: hdrs });
   if (!res.ok) throw new Error('fetch ' + res.status);
   var rows = await res.json();
   return rows[0] || null;
 }
 async function supaPush(d) {
+  var hdrs = await getSupaHdr({ 'Prefer': 'return=minimal' });
   var res = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.main', {
     method: 'PATCH',
-    headers: Object.assign({ 'Prefer': 'return=minimal' }, SUPA_HDR),
+    headers: hdrs,
     body: JSON.stringify({ data: d, updated_at: new Date().toISOString() })
   });
   if (!res.ok) throw new Error('push ' + res.status);
