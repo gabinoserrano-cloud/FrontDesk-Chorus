@@ -1513,6 +1513,58 @@
   <div class="modal-ftr" id="unit-view-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-unit-view')">Close</button></div>
 </div></div>
 
+<!-- ── Key Return Modal ── -->
+<div class="modal-ov" id="modal-key-return"><div class="modal" style="max-width:400px">
+  <div class="modal-hdr"><span class="modal-title">Return Key</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-key-return')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.04em">Card #</span>
+        <span id="kr-fob" style="font-size:13px;font-weight:700;font-family:var(--font-mono);background:var(--accent);color:#fff;border-radius:5px;padding:1px 9px"></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.04em">Unit</span>
+        <span id="kr-unit" style="font-size:13px;font-weight:600"></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.04em">Issued to</span>
+        <span id="kr-name" style="font-size:13px;font-weight:600;text-align:right;max-width:60%"></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0" id="kr-time-row">
+        <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.04em">Time out</span>
+        <span id="kr-time" style="font-size:13px;font-weight:600"></span>
+      </div>
+      <div style="display:none;justify-content:space-between;align-items:center;padding:5px 0;border-top:1px solid var(--border)" id="kr-overdue-row">
+        <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.04em">Status</span>
+        <span style="font-size:13px;font-weight:700;color:var(--red)">⚠ Overdue</span>
+      </div>
+    </div>
+    <div class="fg">
+      <label>Card condition</label>
+      <div style="display:flex;gap:8px">
+        <button id="kr-btn-good" onclick="krSelectCondition('good')" style="flex:1;padding:9px;border-radius:8px;border:1.5px solid var(--green);background:rgba(21,128,61,0.08);color:var(--green);font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer">✓ Good</button>
+        <button id="kr-btn-damaged" onclick="krSelectCondition('damaged')" style="flex:1;padding:9px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text2);font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer">⚠ Damaged</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-ftr">
+    <button class="btn btn-secondary" onclick="closeModal('modal-key-return')">Cancel</button>
+    <button class="btn btn-primary" onclick="confirmKeyReturn()">✓ Mark Returned</button>
+  </div>
+</div></div>
+
+<!-- ── Generic Confirm Modal ── -->
+<div class="modal-ov" id="modal-confirm"><div class="modal" style="max-width:420px">
+  <div class="modal-hdr"><span class="modal-title" id="confirm-modal-title">Confirm</span><button class="modal-close" aria-label="Close" onclick="doConfirmNo()">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <p id="confirm-modal-msg" style="font-size:14px;color:var(--text2);line-height:1.55"></p>
+  </div>
+  <div class="modal-ftr">
+    <button class="btn btn-secondary" onclick="doConfirmNo()" id="confirm-modal-no">Cancel</button>
+    <button class="btn btn-primary" onclick="doConfirmYes()" id="confirm-modal-yes">Confirm</button>
+  </div>
+</div></div>
+
 <div id="login-overlay">
   <div class="login-box">
     <div class="login-logo">&#127968; Chorus Front Desk</div>
@@ -3236,30 +3288,44 @@ function archiveMove(id) {
     var vacUnit = (state.units || []).find(function(u){ return u.unit === m.unit; });
     if (vacUnit && vacUnit.status !== 'occupied') { vacUnit.status = 'occupied'; scheduleSave(); }
   }
-  // ── Connection: Move-out archive → offer to archive Resident Profile ──
+  // ── Connection: Move-out archive → offer to archive Resident Profile → return to Vacant ──
   if (m.type === 'out') {
-    var profile = (state.residentProfiles || []).find(function(p) { return p.unit === m.unit && !p.archivedAt; });
+    var _archM = m;
+    var profile = (state.residentProfiles || []).find(function(p) { return p.unit === _archM.unit && !p.archivedAt; });
+    var _doReturnVacant = function() {
+      showConfirm(
+        'Return to Vacant?',
+        'Return Unit <strong>' + esc(_archM.unit) + '</strong> to Vacant inventory as "Pending Turn"?',
+        'Return to Vacant', 'Not Now',
+        function() {
+          if (!state.units) state.units = [];
+          var existing = state.units.find(function(u){ return u.unit === _archM.unit; });
+          if (existing) {
+            existing.status = 'vacant';
+            existing.notes = (existing.notes ? existing.notes + '\n' : '') + 'Returned to vacant — ' + fmtShort(today()) + ' (move-out: ' + _archM.resident + ')';
+          } else {
+            state.units.push({ id: crypto.randomUUID(), unit: _archM.unit, floor: '', bed: '', sqft: '', rent: '', notes: 'Pending Turn — move-out: ' + _archM.resident, availDate: '', status: 'vacant', sgt: false, blueground: false, createdAt: Date.now() });
+          }
+          scheduleSave(); renderUnits(); updateBadges(); toast('Unit ' + _archM.unit + ' returned to vacant inventory');
+        }
+      );
+    };
     if (profile) {
-      if (confirm('Archive the resident profile for ' + profile.residentName + ' (Unit ' + m.unit + ')?\n\nTheir info will be saved in history but removed from the active profiles list.')) {
-        profile.archivedAt = Date.now();
-        profile.moveOutAt = Date.now();
-        scheduleSave();
-        toast('Profile archived for ' + profile.residentName);
-      }
-    }
-  }
-  // ── Connection: Move-out archive → return to Vacant Units ──
-  if (m.type === 'out') {
-    if (confirm('Return Unit ' + m.unit + ' to Vacant inventory as "Pending Turn"?')) {
-      if (!state.units) state.units = [];
-      var existing = state.units.find(function(u){ return u.unit === m.unit; });
-      if (existing) {
-        existing.status = 'vacant';
-        existing.notes = (existing.notes ? existing.notes + '\n' : '') + 'Returned to vacant — ' + fmtShort(today()) + ' (move-out: ' + m.resident + ')';
-      } else {
-        state.units.push({ id: uid(), unit: m.unit, floor: '', bed: '', sqft: '', rent: '', notes: 'Pending Turn — move-out: ' + m.resident, availDate: '', status: 'vacant', sgt: false, blueground: false, createdAt: Date.now() });
-      }
-      scheduleSave(); renderUnits(); updateBadges(); toast('Unit ' + m.unit + ' returned to vacant inventory');
+      showConfirm(
+        'Archive Resident Profile?',
+        'Archive <strong>' + esc(profile.residentName) + '</strong> (Unit ' + esc(_archM.unit) + ')? Their info will be saved in history but removed from the active profiles list.',
+        'Archive Profile', 'Keep Active',
+        function() {
+          profile.archivedAt = Date.now();
+          profile.moveOutAt = Date.now();
+          scheduleSave();
+          toast('Profile archived for ' + profile.residentName);
+          _doReturnVacant();
+        },
+        function() { _doReturnVacant(); }
+      );
+    } else {
+      _doReturnVacant();
     }
   }
 }
@@ -3778,14 +3844,52 @@ function saveQuickKey() {
   toast('Card #' + _quickKeyCardNum + ' issued — Unit ' + unit);
 }
 
+var _krId = null, _krCondition = 'good';
 function dashReturnKey(id) {
   var k = (state.keys || []).find(function(x) { return x.id === id; }); if (!k) return;
-  var label = (k.fob ? 'Card #' + k.fob : 'Key') + ' — Unit ' + k.unit + (k.name ? ' · ' + k.name : '') + (k.guest ? ' / ' + k.guest : '');
-  if (!confirm('Mark returned: ' + label + '?')) return;
-  logKeyReturn(id);
-  if (keyFilter === 'drawer') renderCardDrawer();
-  toast((k.fob ? 'Card #' + k.fob : 'Key') + ' returned');
+  _krId = id; _krCondition = 'good';
+  var ms = k.issuedAt ? Date.now() - k.issuedAt : 0;
+  var hrs = Math.floor(ms / 3600000), mins = Math.floor((ms % 3600000) / 60000);
+  var timeStr = k.issuedAt ? (hrs > 0 ? hrs + 'h ' + mins + 'm' : mins + 'm') : '';
+  var isOD = k.type === 'one-time' && k.issuedAt && ms >= 2 * 3600000;
+  var fobEl = g('kr-fob'), unitEl = g('kr-unit'), nameEl = g('kr-name'), timeEl = g('kr-time'), odRow = g('kr-overdue-row');
+  if (fobEl) { fobEl.textContent = k.fob || '—'; fobEl.style.display = k.fob ? '' : 'none'; }
+  if (unitEl) unitEl.textContent = 'Unit ' + esc(k.unit || '—');
+  if (nameEl) nameEl.textContent = (k.name || '—') + (k.guest ? ' / ' + k.guest : '');
+  if (timeEl) { timeEl.textContent = timeStr || '—'; timeEl.style.color = isOD ? 'var(--red)' : ''; }
+  if (odRow) odRow.style.display = isOD ? 'flex' : 'none';
+  krSelectCondition('good');
+  openModal('modal-key-return');
 }
+function krSelectCondition(val) {
+  _krCondition = val;
+  var gb = g('kr-btn-good'), db = g('kr-btn-damaged');
+  if (gb) { gb.style.borderColor = val === 'good' ? 'var(--green)' : 'var(--border)'; gb.style.background = val === 'good' ? 'rgba(21,128,61,0.08)' : 'transparent'; gb.style.color = val === 'good' ? 'var(--green)' : 'var(--text2)'; }
+  if (db) { db.style.borderColor = val === 'damaged' ? 'var(--red)' : 'var(--border)'; db.style.background = val === 'damaged' ? 'rgba(220,38,38,0.08)' : 'transparent'; db.style.color = val === 'damaged' ? 'var(--red)' : 'var(--text2)'; }
+}
+function confirmKeyReturn() {
+  if (!_krId) return;
+  var k = (state.keys || []).find(function(x) { return x.id === _krId; }); if (!k) return;
+  if (_krCondition === 'damaged') k.notes = (k.notes ? k.notes + '\n' : '') + 'Returned damaged — noted by ' + (currentUser ? currentUser.name : 'staff') + ' on ' + new Date().toLocaleDateString();
+  logKeyReturn(_krId);
+  closeModal('modal-key-return');
+  if (keyFilter === 'drawer') renderCardDrawer();
+  toast((k.fob ? 'Card #' + k.fob : 'Key') + ' returned' + (_krCondition === 'damaged' ? ' — damage noted' : ''));
+  _krId = null;
+}
+// ── Generic confirm modal ──
+var _confirmCbs = { yes: null, no: null };
+function showConfirm(title, msg, yesLabel, noLabel, yesCb, noCb) {
+  var t = g('confirm-modal-title'), m = g('confirm-modal-msg'), yb = g('confirm-modal-yes'), nb = g('confirm-modal-no');
+  if (t) t.textContent = title || 'Confirm';
+  if (m) m.innerHTML = msg || '';
+  if (yb) yb.textContent = yesLabel || 'Confirm';
+  if (nb) nb.textContent = noLabel || 'Cancel';
+  _confirmCbs.yes = yesCb || null; _confirmCbs.no = noCb || null;
+  openModal('modal-confirm');
+}
+function doConfirmYes() { closeModal('modal-confirm'); if (_confirmCbs.yes) _confirmCbs.yes(); }
+function doConfirmNo() { closeModal('modal-confirm'); if (_confirmCbs.no) _confirmCbs.no(); }
 function keyIssuedToChange() {
   var sel = document.querySelector('input[name="ky-issued-to"]:checked');
   var isGuest = !sel || sel.value === 'guest';
