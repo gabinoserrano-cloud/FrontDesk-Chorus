@@ -568,6 +568,22 @@
   .move-row.today-move>td:first-child{border-left:3px solid var(--accent)}
   .appt-badge.no-appt{cursor:pointer}.appt-badge.no-appt:hover{background:rgba(217,119,6,0.22)}
   .moves-note-cell{max-width:180px;white-space:normal;line-height:1.35;word-break:break-word}
+  /* Stage pills */
+  .stage-pill{display:inline-flex;align-items:center;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;text-transform:uppercase;letter-spacing:.5px;margin-top:3px;white-space:nowrap}
+  .stage-pending{background:var(--border2);color:var(--text3)}
+  .stage-confirmed{background:#EBF0F8;color:#4A6FA5}
+  .stage-scheduled{background:var(--accent-light);color:var(--accent)}
+  .stage-move_day{background:var(--amber-light);color:var(--amber)}
+  .stage-post_movein{background:var(--purple-light);color:var(--purple)}
+  .stage-complete{background:var(--green-light);color:var(--green)}
+  .stage-notice_given{background:var(--border2);color:var(--text3)}
+  .stage-wrap_up{background:var(--amber-light);color:var(--amber)}
+  body.dark-mode .stage-confirmed{background:rgba(74,111,165,0.18);color:#7BA7D4}
+  /* Payment task inline fields */
+  .pay-task-row{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
+  .pay-type-sel{font-size:11px;padding:2px 5px;border:1px solid var(--border2);border-radius:4px;background:var(--surface);color:var(--text);flex-shrink:0}
+  .pay-amt{font-size:11px;padding:2px 5px;border:1px solid var(--border2);border-radius:4px;background:var(--surface);color:var(--text);width:72px;text-align:right}
+  .pay-mismatch{color:var(--red);font-size:10px;font-weight:700}
 
   @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
@@ -1809,7 +1825,7 @@ var DEFAULT_IN_TASKS = [
   // Move-In Day
   { text: 'Confirm move-in date and time window', cat: 'Move In' },
   { text: 'Reserve service elevator', cat: 'Elevator' },
-  { text: 'Confirm Move-In Total collected', cat: 'Move In' },
+  { text: 'Confirm Move-In Total collected', cat: 'Move In', paymentTask: true },
   { text: 'Unit walkthrough completed', cat: 'Move In' },
   { text: 'Lobby access and fob confirmed', cat: 'Keys & Access' },
   { text: 'Resident signed move-in acknowledgment', cat: 'Move In' },
@@ -2604,6 +2620,30 @@ document.addEventListener('click', function (e) { if (!e.target.closest('.search
 
 // ─── MOVES ───
 var moveFilter = 'all', openMoveId = null, moveSort = 'date', moveSortDir = 'asc', moveShowLogged = false;
+var STAGE_LABELS = { pending:'Pending', confirmed:'Confirmed', scheduled:'Scheduled', move_day:'Move Day', post_movein:'Post Move-In', complete:'Complete', notice_given:'Notice Given', wrap_up:'Wrap-Up' };
+function getMoveStage(m) {
+  var t = today();
+  var tasks = m.tasks || [];
+  var allDone = tasks.length > 0 && tasks.every(function(tk){ return tk.done; });
+  var mainTasks = tasks.filter(function(tk){ return tk.cat !== 'Post Move-In'; });
+  var mainDone = mainTasks.length === 0 || mainTasks.every(function(tk){ return tk.done; });
+  var postTasks = tasks.filter(function(tk){ return tk.cat === 'Post Move-In'; });
+  var postDone = postTasks.length === 0 || postTasks.every(function(tk){ return tk.done; });
+  if (m.type === 'in') {
+    if (allDone && postDone) return 'complete';
+    if (m.date && m.date < t && mainDone && !postDone) return 'post_movein';
+    if (m.apptDate === t || m.date === t) return 'move_day';
+    if (m.apptDate && m.apptDate > t) return 'scheduled';
+    if (m.welcomeLetterSent) return 'confirmed';
+    return 'pending';
+  } else {
+    if (allDone) return 'complete';
+    if (m.date && m.date < t) return 'wrap_up';
+    if (m.apptDate === t || m.date === t) return 'move_day';
+    if (m.apptDate && m.apptDate > t) return 'scheduled';
+    return 'notice_given';
+  }
+}
 function sortMoves(col) { if (moveSort === col) { moveSortDir = moveSortDir === 'asc' ? 'desc' : 'asc'; } else { moveSort = col; moveSortDir = 'asc'; } renderMoves(); }
 var editingMoveId = null;
 
@@ -2781,30 +2821,38 @@ function saveMove() {
   // New move
   var customIn = state.customInTasks || DEFAULT_IN_TASKS;
   var customOut = state.customOutTasks || DEFAULT_OUT_TASKS;
-  var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null }; });
+  var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null, paymentTask: t.paymentTask || false }; });
   var m = { id: uid(), unit: unit, resident: resident, date: date, type: moveType, total: total, notes: notes, apptDate: apptDate, apptTime: apptTime, tasks: tasks, archivedAt: null, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : 'Front Desk' };
   if (!state.moves) state.moves = [];
   state.moves.push(m);
   if (moveType === 'in') {
-    var followUpDate = '';
+    var preCallDate = '', postCallDate = '';
     try {
-      var d = new Date(date + 'T12:00:00'); d.setDate(d.getDate() + 7);
-      followUpDate = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      var dPre = new Date(date + 'T12:00:00'); dPre.setDate(dPre.getDate() - 7);
+      preCallDate = dPre.getFullYear() + '-' + String(dPre.getMonth()+1).padStart(2,'0') + '-' + String(dPre.getDate()).padStart(2,'0');
+      var dPost = new Date(date + 'T12:00:00'); dPost.setDate(dPost.getDate() + 3);
+      postCallDate = dPost.getFullYear() + '-' + String(dPost.getMonth()+1).padStart(2,'0') + '-' + String(dPost.getDate()).padStart(2,'0');
     } catch(e) {}
     var myTodos = getCurrentTodos();
-    myTodos.push({ id: uid(), text: 'Welcome call \u2014 ' + resident + ', Unit ' + unit, dueDate: date, priority: 'normal', done: false, createdAt: Date.now() });
-    myTodos.push({ id: uid(), text: 'Follow-up call \u2014 ' + resident + ', Unit ' + unit, dueDate: followUpDate, priority: 'normal', done: false, createdAt: Date.now() });
+    myTodos.push({ id: uid(), text: 'Pre-move call \u2014 ' + resident + ', Unit ' + unit, dueDate: preCallDate, priority: 'normal', done: false, note: '1 week before lease start \u2014 confirm everything is ready, any remaining tasks on their end', createdAt: Date.now(), moveRef: m.id });
+    myTodos.push({ id: uid(), text: 'Post move-in call \u2014 ' + resident + ', Unit ' + unit, dueDate: postCallDate, priority: 'normal', done: false, note: '3 days after lease start \u2014 how did the move go? any questions?', createdAt: Date.now(), moveRef: m.id });
     // Connection: mark matching vacant unit as pending move-in
     var vacMatch = (state.units || []).find(function(u){ return u.unit === unit && u.status !== 'occupied'; });
     if (vacMatch && confirm('Mark Unit ' + unit + ' as occupied in Vacant Units?')) {
       vacMatch.status = 'occupied';
     }
   }
+  if (moveType === 'out') {
+    var outTodosRef = getCurrentTodos();
+    var outReminderDate = '';
+    try { var dOut = new Date(); dOut.setDate(dOut.getDate() + 1); outReminderDate = dOut.toISOString().split('T')[0]; } catch(e) {}
+    outTodosRef.push({ id: uid(), text: 'Send move-out reminders \u2014 ' + resident + ', Unit ' + unit, dueDate: outReminderDate, priority: 'normal', done: false, note: 'Remind resident: book move-out time slot + inspection work order + return all keys & parking credentials to front desk', createdAt: Date.now(), moveRef: m.id });
+  }
   pushUndo({ sec: 'moves', type: 'ADD', id: m.id, data: Object.assign({}, m), label: 'add move \u2014 Unit ' + unit });
   logActivity('moves', 'create', 'Added move \u2014 Unit ' + unit + ' (' + (moveType === 'in' ? 'Move In' : 'Move Out') + ') \u00b7 ' + resident);
   scheduleSave(); closeModal('modal-move'); openMoveId = m.id; renderMoves(); updateBadges(); renderDash();
   ['mv-unit', 'mv-resident', 'mv-total', 'mv-notes'].forEach(function (id) { g(id).value = ''; });
-  toast('Move added \u2014 welcome & follow-up call todos created');
+  toast(moveType === 'in' ? 'Move added \u2014 pre-move & post move-in call to-dos created' : 'Move added \u2014 move-out reminder to-do created');
   if (moveType === 'in') {
     var alreadyHasProfile = (state.residentProfiles || []).some(function(p){ return p.unit === m.unit && !p.archivedAt; });
     if (!alreadyHasProfile) setTimeout(function(){ openAddResidentFromMove(m); }, 400);
@@ -2894,6 +2942,23 @@ function buildCL(m, filterCat) {
     if (isKeyQtyTask) {
       html += '<span style="font-size:11px;color:var(--text3);flex-shrink:0;margin:0 2px" title="Number of keys to prepare">&#215;</span>';
       html += '<input type="text" value="' + (t.qty||'').replace(/"/g,'&quot;') + '" placeholder="# keys" title="Number of keys (1 per leaseholder)" style="width:52px;font-size:12px;text-align:center;border:1px solid var(--border2);border-radius:4px;padding:2px 4px;background:var(--surface);color:var(--text);flex-shrink:0;opacity:' + (t.qty ? '1' : '0.4') + '" onclick="event.stopPropagation()" onfocus="this.style.opacity=\'1\'" onblur="this.style.opacity=this.value?\'1\':\'0.4\';updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'qty\',this.value)">';
+    }
+    // Payment task fields
+    if (t.paymentTask) {
+      var expectedAmt = m.total ? '$' + m.total : '';
+      var receivedVal = t.paymentReceived !== undefined && t.paymentReceived !== null ? t.paymentReceived : (m.total || '');
+      var payTypes = ['Cashier\'s Check','Money Order','Online','Other'];
+      html += '<div class="pay-task-row" onclick="event.stopPropagation()">';
+      html += '<select class="pay-type-sel" onchange="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'paymentType\',this.value)" onclick="event.stopPropagation()">';
+      html += '<option value="">— Payment type —</option>';
+      payTypes.forEach(function(pt){ html += '<option value="' + pt + '"' + (t.paymentType === pt ? ' selected' : '') + '>' + pt + '</option>'; });
+      html += '</select>';
+      if (expectedAmt) html += '<span style="font-size:11px;color:var(--text3);flex-shrink:0">Expected: <strong>' + expectedAmt + '</strong></span>';
+      html += '<span style="font-size:11px;color:var(--text3);flex-shrink:0">Received:</span>';
+      html += '<input type="text" class="pay-amt" value="' + esc(String(receivedVal)) + '" placeholder="$0.00" onclick="event.stopPropagation()" onblur="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'paymentReceived\',this.value)">';
+      var hasMismatch = m.total && t.paymentReceived && String(t.paymentReceived).replace(/[$,\s]/g,'') !== String(m.total).replace(/[$,\s]/g,'');
+      if (hasMismatch) html += '<span class="pay-mismatch">⚠ MISMATCH</span>';
+      html += '</div>';
     }
     // Completed by/at tag
     if (t.done && (t.completedBy || t.completedAt)) {
@@ -3138,9 +3203,12 @@ function renderMoves() {
           + (coResNames ? '<div class="text-xs text-3">+ ' + coResNames + '</div>' : '')
           + (m.date === t && m.type === 'in' ? '<div class="text-xs" style="color:var(--accent)">Lease starts today</div>' : '') + '</td>';
         rows += '<td class="mono text-sm">' + fmtShort(m.date) + '</td>';
-        rows += '<td><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'Move In' : 'Move Out') + '</span></td>';
+        var stage = getMoveStage(m);
+        rows += '<td><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'Move In' : 'Move Out') + '</span><br><span class="stage-pill stage-' + stage + '">' + (STAGE_LABELS[stage] || stage) + '</span></td>';
         rows += '<td>' + apptBadge + '</td>';
-        rows += '<td class="mono text-sm">' + (m.total ? '$' + esc(m.total) : '-') + '</td>';
+        var payTask = (m.tasks||[]).find(function(tk){ return tk.paymentTask; });
+        var payMismatch = payTask && m.total && payTask.paymentReceived && String(payTask.paymentReceived).replace(/[$,\s]/g,'') !== String(m.total).replace(/[$,\s]/g,'');
+        rows += '<td class="mono text-sm">' + (m.total ? '$' + esc(m.total) : '-') + (payMismatch ? '<br><span style="font-size:9px;color:var(--red);font-weight:700">⚠ MISMATCH</span>' : '') + '</td>';
         rows += '<td class="text-sm text-2 moves-note-cell" title="' + (m.notes ? esc(m.notes).replace(/"/g,'&quot;') : '') + '">' + (m.notes ? esc(m.notes) : '-') + '</td>';
         if (moveShowLogged) rows += '<td class="text-xs text-3">' + fmtByTag(m.addedBy, m.createdAt) + '</td>';
         rows += '<td><div class="flex gap-4" style="justify-content:flex-end;align-items:center">';
@@ -3231,6 +3299,15 @@ function toggleTask(moveId, taskId, checked) {
   var tasksAfter = JSON.parse(JSON.stringify(m.tasks));
   pushUndo({ sec: 'moves', type: 'EDIT', id: m.id, before: { tasks: tasksBefore }, after: { tasks: tasksAfter }, label: (checked ? 'check' : 'uncheck') + ' task — ' + (t.text || 'task') });
   logActivity('moves', checked ? 'complete' : 'reopen', (checked ? 'Completed' : 'Reopened') + ' move task — Unit ' + m.unit + ' · ' + (t.text || 'task'), 'Resident: ' + (m.resident || '-') + (checked && t.completedBy ? ' · Completed by: ' + t.completedBy : ''));
+  // ── Welcome letter trigger → stage + welcome call To-Do ──
+  if (checked && m.type === 'in' && t.text === 'Send Welcome Letter' && !m.welcomeLetterSent) {
+    m.welcomeLetterSent = true;
+    var wcDue = '';
+    try { var wcD = new Date(); wcD.setDate(wcD.getDate() + 2); wcDue = wcD.toISOString().split('T')[0]; } catch(e) {}
+    var wcTodos = getCurrentTodos();
+    wcTodos.push({ id: uid(), text: 'Welcome call — ' + m.resident + ', Unit ' + m.unit, dueDate: wcDue, priority: 'normal', done: false, note: '2-3 min call — did they receive the welcome letter? any questions so far?', createdAt: Date.now(), moveRef: m.id });
+    toast('Welcome letter logged — welcome call to-do created (due in 2 days)');
+  }
   // ── Supply integration ──
   var supLink = TASK_SUPPLY_MAP[t.text];
   if (supLink) {
@@ -8165,7 +8242,7 @@ function applyImport(type, rows) {
       } else {
         var customIn = state.customInTasks || DEFAULT_IN_TASKS;
         var customOut = state.customOutTasks || DEFAULT_OUT_TASKS;
-        var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null }; });
+        var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null, paymentTask: t.paymentTask || false }; });
         state.moves.push({ id: uid(), unit: unit, resident: resident||'', date: date, type: moveType, time: time, total: total, elevator: elevator||'no', notes: notes, tasks: tasks, archivedAt: null, createdAt: Date.now() });
         added++; preview.push({ action:'added', label: (resident||unit) + ' Unit ' + unit + ' ' + date });
       }
@@ -9482,6 +9559,23 @@ function migrateTaskUpdatesV2() {
   scheduleSave();
 }
 
+function migrateTaskUpdatesV3() {
+  if (state.taskMigrationV3) return;
+  // Add paymentTask flag to "Confirm Move-In Total collected" in customInTasks and existing move tasks
+  if (state.customInTasks) {
+    state.customInTasks.forEach(function(t) {
+      if (t.text === 'Confirm Move-In Total collected') t.paymentTask = true;
+    });
+  }
+  (state.moves || []).forEach(function(m) {
+    (m.tasks || []).forEach(function(t) {
+      if (t.text === 'Confirm Move-In Total collected') t.paymentTask = true;
+    });
+  });
+  state.taskMigrationV3 = true;
+  scheduleSave();
+}
+
 // ─── LOGIN ───
 function showLogin() {
   var ov = g('login-overlay'); if (!ov) return;
@@ -10046,6 +10140,7 @@ async function init() {
   await pullCloud();
   await migratePinsToHashed();
   migrateTaskUpdatesV2();
+  migrateTaskUpdatesV3();
   seedDefaultTemplates();
   updatePropertyUI();
   lastSyncTs = Date.now();
@@ -10331,6 +10426,18 @@ var DEFAULT_TEMPLATES = [
   { title: 'Move-Out – Key Return Reminder', category: 'Move In / Out',
     body: "Hi [Name],\n\nAs your move-out date approaches, please remember to return all keys and access items to the front desk:\n\n- Unit key(s)\n- Fob(s)\n- Mail key\n- Parking credentials (transponder, key tag, valet sticker — if applicable)\n\nAll items must be returned on or before your scheduled move-out date. Unreturned keys may result in replacement charges.\n\nPlease reach out to the leasing team or stop by the front desk if you have any questions.\n\nBest,\nFront Desk Associate | Chorus" },
 
+  { title: 'Move-In – Welcome Call (Script)', category: 'Move In / Out',
+    body: "Call script — Welcome call (within 3 days of welcome letter)\n\n\"Hi [Name], this is [Your Name] calling from the Chorus front desk. I'm just reaching out to make sure you received your welcome letter and to see if you have any questions so far.\"\n\nQuick agenda (2-3 min):\n✓ Did you receive the welcome letter?\n✓ Any questions about the move-in process?\n✓ Remind them to book their elevator/dock time slot in RiseIO (72hr minimum before lease start)\n✓ Let them know we're available at (415) 707-3030\n\nAfter the call: log as completed in the move checklist and update the passdown if anything notable came up." },
+
+  { title: 'Move-In – Pre-Move Call (Script)', category: 'Move In / Out',
+    body: "Call script — Pre-move call (1 week before lease start)\n\n\"Hi [Name], this is [Your Name] at the Chorus front desk. Your lease start date is coming up on [date] and I wanted to do a quick check-in to make sure everything is set on your end.\"\n\nQuick agenda (2-5 min):\n✓ Elevator/dock time slot booked in RiseIO? (need 72hr min)\n✓ Move-in total ready? (cashier's check or money order payable to Otis Property Owner, LLC)\n✓ PG&E account active?\n✓ Renter's insurance uploaded to ePremium?\n✓ Moving company COI submitted to members@rentchorus.com?\n✓ RiseIO app downloaded and profile activated?\n✓ Any questions or concerns before move day?\n\nAfter the call: log as completed in the move checklist." },
+
+  { title: 'Move-In – Post Move-In Call (Script)', category: 'Move In / Out',
+    body: "Call script — Post move-in call (3 days after lease start)\n\n\"Hi [Name], this is [Your Name] from the Chorus front desk. I'm just calling to check in and see how the move went and how you're settling in!\"\n\nQuick agenda (2-3 min):\n✓ How did the move go?\n✓ Any issues or anything we should follow up on?\n✓ Is everything working in the unit?\n✓ Any questions about the building, amenities, or next steps?\n✓ Remind them front desk is always available at (415) 707-3030\n\nAfter the call: log as completed in the move checklist. If any issues were mentioned, add to passdown and/or log a maintenance or concierge item." },
+
+  { title: 'Move-Out – Full Reminder (All Steps)', category: 'Move In / Out',
+    body: "Hi [Name],\n\nWith your move-out date approaching, here's everything you'll need to take care — please disregard any items already completed:\n\n🗓 Book your move-out time slot\nReserve your service elevator and loading dock time via the RiseIO app (Services → Elevator Reservation). Available 8:00 AM – 6:00 PM.\n\n🔍 Schedule your move-out inspection\nSubmit a move-out inspection work order through the RiseIO app (Work Orders → + icon). Our maintenance team will coordinate with you directly.\n\n🔑 Return all keys and access credentials to the front desk\nPlease make sure to return the following on or before your move-out date:\n- Unit key(s)\n- Mail key\n- Fob(s)\n- Parking credentials (transponder, key tag, Xpress sticker — if applicable)\n\nUnreturned keys or credentials may result in replacement charges.\n\nPlease don't hesitate to reach out if you have any questions — we're here at (415) 707-3030.\n\nBest,\nFront Desk Associate | Chorus" },
+
   { title: 'Move-Out – Book Inspection & Time Slot', category: 'Move In / Out',
     body: "Hi [Name],\n\nAs your move-out date approaches, please make sure you’ve taken care of the following — you can disregard if already done:\n\n1. Submit a move-out inspection work order through the RiseIO app (Work Orders → + icon). Select the appropriate category, add any relevant notes, and submit.\n\n2. Reserve your move-out time slot via the RiseIO app (Services → Elevator Reservation). The service elevator is available 8:00 AM – 6:00 PM.\n\nPlease don’t hesitate to reach out if you have any questions!\n\nBest,\nFront Desk Associate | Chorus" },
 
@@ -10367,15 +10474,29 @@ var DEFAULT_TEMPLATES = [
 ];
 
 function seedDefaultTemplates() {
-  if (state.templatesSeedV1) return;
   if (!state.templates) state.templates = [];
-  if (state.templates.length === 0) {
-    state.templates = DEFAULT_TEMPLATES.map(function(t) {
-      return { id: uid(), title: t.title, category: t.category, body: t.body, addedBy: 'System', createdAt: Date.now() };
-    });
+  if (!state.templatesSeedV1) {
+    if (state.templates.length === 0) {
+      state.templates = DEFAULT_TEMPLATES.map(function(t) {
+        return { id: uid(), title: t.title, category: t.category, body: t.body, addedBy: 'System', createdAt: Date.now() };
+      });
+    }
+    state.templatesSeedV1 = true;
+    scheduleSave();
   }
-  state.templatesSeedV1 = true;
-  scheduleSave();
+  // V2: add new call scripts + combined move-out reminder if not already present
+  if (!state.templatesSeedV2) {
+    var newTitles = ['Move-In – Welcome Call (Script)', 'Move-In – Pre-Move Call (Script)', 'Move-In – Post Move-In Call (Script)', 'Move-Out – Full Reminder (All Steps)'];
+    var existing = (state.templates || []).map(function(t){ return t.title; });
+    newTitles.forEach(function(title) {
+      if (existing.indexOf(title) === -1) {
+        var def = DEFAULT_TEMPLATES.find(function(d){ return d.title === title; });
+        if (def) state.templates.push({ id: uid(), title: def.title, category: def.category, body: def.body, addedBy: 'System', createdAt: Date.now() });
+      }
+    });
+    state.templatesSeedV2 = true;
+    scheduleSave();
+  }
 }
 
 function renderTemplates() {
