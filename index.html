@@ -551,6 +551,19 @@
   .section.active>*:nth-child(4){animation-delay:105ms}
   .section.active>*:nth-child(n+5){animation-delay:130ms}
 
+  /* ── CALENDAR IMPROVEMENTS ── */
+  .cal-view-btn{background:none;border:none;cursor:pointer;padding:5px 12px;border-radius:16px;font-size:12px;font-weight:500;font-family:'DM Sans',sans-serif;color:var(--text2);transition:background 120ms ease-out,color 120ms ease-out,transform 100ms ease-out;white-space:nowrap}
+  .cal-view-btn:hover{color:var(--text)}
+  .cal-view-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(26,24,20,0.12)}
+  .cal-view-btn:active{transform:scale(0.97)}
+  body.dark-mode .cal-view-btn.active{box-shadow:0 1px 4px rgba(0,0,0,0.45)}
+  .cal-month-day{min-height:82px;padding:6px 5px}
+  .cal-month-day.today{border-color:rgba(78,138,112,0.4)!important;background:rgba(78,138,112,0.04)!important}
+  .cal-month-day.today .cal-day-num{background:#4E8A70;color:#fff!important;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;margin-bottom:3px}
+  .cal-month-grid{gap:4px}
+  .cal-week-tbl th.today-hdr{background:rgba(78,138,112,0.18)!important;color:#2A6050!important;font-weight:700}
+  .cal-week-tbl td.today-col{background:rgba(78,138,112,0.07)!important}
+
   @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -1065,28 +1078,30 @@
 
     </div>
     <div class="section" id="section-calendar">
-      <div class="flex gap-8 items-center mb-8" style="flex-wrap:wrap">
-        <button class="btn btn-secondary btn-sm" onclick="calNav(-1)">&#8249;</button>
-        <button class="btn btn-secondary btn-sm" onclick="calNav(0)">Today</button>
-        <button class="btn btn-secondary btn-sm" onclick="calNav(1)">&#8250;</button>
-        <span style="font-size:13px;font-weight:600;margin-left:4px" id="cal-title"></span>
-        <div class="flex gap-4 ml-auto">
-          <button class="btn btn-secondary btn-sm" onclick="setCalView('week')" id="cal-btn-week">Week</button>
-          <button class="btn btn-secondary btn-sm" onclick="setCalView('month')" id="cal-btn-month">Month</button>
-          <button class="btn btn-secondary btn-sm" onclick="setCalView('agenda')" id="cal-btn-agenda">Agenda</button>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:3px">
+          <button class="btn btn-ghost btn-sm" onclick="calNav(-1)" style="padding:4px 10px;font-size:17px;line-height:1">&#8249;</button>
+          <button class="btn btn-secondary btn-sm" onclick="calNav(0)">Today</button>
+          <button class="btn btn-ghost btn-sm" onclick="calNav(1)" style="padding:4px 10px;font-size:17px;line-height:1">&#8250;</button>
+        </div>
+        <span id="cal-title" style="font-family:var(--font-serif);font-size:18px;font-weight:600;letter-spacing:.1px;flex:1;min-width:0"></span>
+        <div style="display:flex;background:var(--surface2);border-radius:20px;padding:3px;gap:1px;flex-shrink:0">
+          <button onclick="setCalView('week')" id="cal-btn-week" class="cal-view-btn">Week</button>
+          <button onclick="setCalView('month')" id="cal-btn-month" class="cal-view-btn">Month</button>
+          <button onclick="setCalView('agenda')" id="cal-btn-agenda" class="cal-view-btn">Agenda</button>
         </div>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px">
-        <span style="font-size:11px;color:var(--text3);margin-right:2px">Key:</span>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius)">
+        <span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-right:4px;flex-shrink:0">Key</span>
         <span class="cal-chip cal-chip-in" style="pointer-events:none;cursor:default;font-size:10px">Move In</span>
         <span class="cal-chip cal-chip-out" style="pointer-events:none;cursor:default;font-size:10px">Move Out</span>
-        <span class="cal-chip cal-chip-in" style="pointer-events:none;cursor:default;font-size:10px;border-style:dashed;opacity:0.75">Lease Start</span>
-        <span class="cal-chip cal-chip-out" style="pointer-events:none;cursor:default;font-size:10px;border-style:dashed;opacity:0.75">Lease End</span>
+        <span class="cal-chip cal-chip-in" style="pointer-events:none;cursor:default;font-size:10px;border-style:dashed">Lease Start</span>
+        <span class="cal-chip cal-chip-out" style="pointer-events:none;cursor:default;font-size:10px;border-style:dashed">Lease End</span>
         <span class="cal-chip cal-chip-task" style="pointer-events:none;cursor:default;font-size:10px">Task</span>
         <span class="cal-chip cal-chip-todo" style="pointer-events:none;cursor:default;font-size:10px">To-Do</span>
         <span class="cal-chip cal-chip-amenity" style="pointer-events:none;cursor:default;font-size:10px">Booking</span>
         <span class="cal-chip" style="pointer-events:none;cursor:default;font-size:10px;background:var(--purple-light);color:var(--purple)">Tour</span>
-        <span style="font-size:10px;color:var(--text3);margin-left:2px">&#8212; Dashed = lease date differs from appointment</span>
+        <span style="font-size:10px;color:var(--text3);margin-left:4px;font-style:italic">Dashed border = lease date only</span>
       </div>
       <div id="cal-body"></div>
     </div>
@@ -8346,8 +8361,8 @@ function getChips(dateStr, unit, viewMode, maxShow) {
 function renderCalendar() {
   ['week','month','agenda'].forEach(function(m) {
     var btn = g('cal-btn-' + m); if (!btn) return;
-    if (m === calMode) { btn.classList.remove('btn-secondary'); btn.classList.add('btn-primary'); }
-    else { btn.classList.remove('btn-primary'); btn.classList.add('btn-secondary'); }
+    if (m === calMode) { btn.classList.add('active'); }
+    else { btn.classList.remove('active'); }
   });
   if (calMode === 'week') renderWeekCal();
   else if (calMode === 'month') renderMonthCal();
