@@ -9,7 +9,7 @@
 <style>
   :root {
     --bg:#F4F0EA;--surface:#FFFFFF;--surface2:#EDE8E1;--border:rgba(26,20,10,0.12);--border2:rgba(26,20,10,0.06);
-    --text:#1A2632;--text2:#455D6E;--text3:#8EA2AE;
+    --text:#1A2632;--text2:#455D6E;--text3:#526B7B;
     --accent:#1A5C3E;--accent-light:rgba(26,92,62,0.10);--accent2:#155030;--primary:#1A5C3E;
     --green:#1A6640;--green-light:#E2EFE8;--red:#C03535;--red-light:#FAEBEB;
     --amber:#B57020;--amber-light:#FBF0DC;--purple:#6044B2;--purple-light:#ECEAFA;
@@ -20,7 +20,7 @@
     --ease-out:cubic-bezier(0.23,1,0.32,1);
     --ease-in-out:cubic-bezier(0.77,0,0.175,1);
   }
-  body.dark-mode{--bg:#0F1923;--surface:#162130;--surface2:#1C2A3A;--border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.05);--text:#E2EAF0;--text2:#8FA8BC;--text3:#506478;--green-light:rgba(26,102,64,0.18);--red-light:rgba(192,53,53,0.15);--amber-light:rgba(181,112,32,0.15);--purple-light:rgba(96,68,178,0.15);--accent-light:rgba(26,92,62,0.18);--shadow:0 1px 4px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);--shadow-md:0 4px 24px rgba(0,0,0,.5),0 2px 4px rgba(0,0,0,.4)}
+  body.dark-mode{--bg:#0F1923;--surface:#162130;--surface2:#1C2A3A;--border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.05);--text:#E2EAF0;--text2:#8FA8BC;--text3:#6E8EA2;--green-light:rgba(26,102,64,0.18);--red-light:rgba(192,53,53,0.15);--amber-light:rgba(181,112,32,0.15);--purple-light:rgba(96,68,178,0.15);--accent-light:rgba(26,92,62,0.18);--shadow:0 1px 4px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);--shadow-md:0 4px 24px rgba(0,0,0,.5),0 2px 4px rgba(0,0,0,.4)}
   body.text-sm #content{zoom:0.9}body.text-sm .modal-ov .modal{zoom:0.9}
   body.text-lg #content{zoom:1.14}body.text-lg .modal-ov .modal{zoom:1.14}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -78,7 +78,7 @@
   @media(max-width:700px){#mob-menu{display:flex;align-items:center}}
   .hdr-title{font-size:15px;font-weight:600;letter-spacing:-.2px}
   .hdr-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:nowrap}
-  #content{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
+  #content{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch;max-width:1280px}
   @media(max-width:700px){#content{padding:12px;padding-bottom:80px}}
   .section{display:none}.section.active{display:block}
 
@@ -149,6 +149,7 @@
   .ks-btn{border:1px solid var(--border2)!important;border-radius:20px!important;padding:3px 10px!important;font-size:11px!important}.ks-btn.active{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}
   .btn-green{background:var(--green-light);color:var(--green);border-color:#C8E4B0}
   .btn-sm{padding:5px 10px;font-size:12px}.btn-xs{padding:3px 7px;font-size:11px;border-radius:5px}
+  @media(max-width:700px){.btn-sm,.btn-xs{min-height:36px;display:inline-flex;align-items:center;justify-content:center}}
 
   /* FORM */
   input,select,textarea{font-family:'DM Sans',sans-serif;font-size:14px;border:1px solid var(--border);border-radius:var(--radius);padding:9px 11px;background:var(--surface);color:var(--text);outline:none;transition:border-color .12s;width:100%}
@@ -468,7 +469,7 @@
   .sub-tab.active{background:#4E8A70;color:#fff;border-color:#4E8A70;font-weight:600}
   .sub-tab:hover{background:var(--surface2)}
   /* Gold focus rings */
-  input:focus,select:focus,textarea:focus{border-color:#4E8A70;box-shadow:0 0 0 2px rgba(78,138,112,0.14)}
+  input:focus,select:focus,textarea:focus{border-color:#4E8A70;box-shadow:0 0 0 2px rgba(78,138,112,0.38)}
   /* Mobile nav — dark */
   #mob-nav{background:#141C1C;border-top:0.5px solid rgba(78,138,112,0.18)}
   .mn-item{color:rgba(255,255,255,0.38)}
@@ -542,6 +543,14 @@
   .pin-dot.filled{background:#1A5C3E;border-color:#1A5C3E}
   .pin-key{background:#122030;border:0.5px solid rgba(255,255,255,0.10);color:rgba(255,255,255,0.78)}
   .pin-key:hover{background:rgba(26,92,62,0.18);color:#7ECBA0}
+  /* SECTION ENTRY STAGGER */
+  @keyframes secIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+  .section.active>*{animation:secIn 160ms ease-out both}
+  .section.active>*:nth-child(2){animation-delay:35ms}
+  .section.active>*:nth-child(3){animation-delay:70ms}
+  .section.active>*:nth-child(4){animation-delay:105ms}
+  .section.active>*:nth-child(n+5){animation-delay:130ms}
+
   @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
