@@ -564,6 +564,11 @@
   .cal-week-tbl th.today-hdr{background:rgba(78,138,112,0.18)!important;color:#2A6050!important;font-weight:700}
   .cal-week-tbl td.today-col{background:rgba(78,138,112,0.07)!important}
 
+  /* ─── Moves section improvements ─── */
+  .move-row.today-move>td:first-child{border-left:3px solid var(--accent)}
+  .appt-badge.no-appt{cursor:pointer}.appt-badge.no-appt:hover{background:rgba(217,119,6,0.22)}
+  .moves-note-cell{max-width:180px;white-space:normal;line-height:1.35;word-break:break-word}
+
   @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -655,10 +660,10 @@
         <div class="sub-tab" onclick="filterMoves('out',this)">Move Outs</div>
         <div class="sub-tab" onclick="filterMoves('today',this)">Today</div>
         <div class="sub-tab" onclick="filterMoves('postmovein',this)">Post Move-In</div>
-        <div class="sub-tab" onclick="filterMoves('turnover',this)">&#128738; Turnover</div>
-        <div class="sub-tab" onclick="filterMoves('needs-appt',this)">&#128197; Needs Appt <span class="badge" id="badge-needs-appt" style="background:var(--amber)"></span></div>
+        <div class="sub-tab" onclick="filterMoves('needs-appt',this)">Needs Appt <span class="badge" id="badge-needs-appt" style="background:var(--amber)"></span></div>
         <div class="sub-tab" onclick="filterMoves('archive',this)">Archive</div>
       </div>
+      <div class="stat-grid" id="moves-stats"></div>
       <div class="card moves-tbl-wrap">
         <div class="card-hdr"><span class="card-title" id="moves-card-title">Scheduled Moves</span><span class="card-count" id="moves-count">0 entries</span>
           <div class="ml-auto flex gap-8" id="moves-admin-actions"><button class="btn btn-ghost btn-sm" id="btn-move-logged" onclick="toggleMoveLogged()" title="Show/hide logged by column">Logged By</button><button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button></div>
@@ -1147,7 +1152,7 @@
     </div>
     <div class="fg"><label>Notes</label><textarea id="mv-notes" rows="3"></textarea></div>
   </div>
-  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-move')">Cancel</button><button class="btn btn-primary" id="move-modal-save-btn" onclick="saveMove()">Save Move</button></div>
+  <div class="modal-ftr"><button class="btn btn-ghost btn-sm" id="move-modal-delete-btn" style="color:var(--red);display:none" onclick="deleteMoveFromModal()">Delete</button><button class="btn btn-secondary" onclick="closeModal('modal-move')">Cancel</button><button class="btn btn-primary" id="move-modal-save-btn" onclick="saveMove()">Save Move</button></div>
 </div></div>
 
 <div class="modal-ov" id="modal-task"><div class="modal">
@@ -2593,10 +2598,7 @@ function navToMoves(filter) {
   var item = document.querySelector('.nav-item[data-sec="moves"]');
   if (!item) return;
   nav(item);
-  setTimeout(function () {
-    var tab = document.querySelector('#moves-tabs .sub-tab[onclick*=\'"' + filter + '"\'\']');
-    if (tab) { moveFilter = filter; document.querySelectorAll('#moves-tabs .sub-tab').forEach(function (t) { t.classList.remove('active'); }); tab.classList.add('active'); renderMoves(); }
-  }, 80);
+  setTimeout(function () { setMoveFilter(filter); }, 80);
 }
 document.addEventListener('click', function (e) { if (!e.target.closest('.search-wrap')) { var r = g('dash-results'); if (r) r.style.display = 'none'; } });
 
@@ -2695,6 +2697,7 @@ function openAddMove() {
   editingMoveId = null;
   g('move-modal-title').textContent = 'Add Move';
   g('move-modal-save-btn').textContent = 'Save Move';
+  var delBtn = g('move-modal-delete-btn'); if (delBtn) delBtn.style.display = 'none';
   ['mv-unit', 'mv-resident', 'mv-total', 'mv-notes', 'mv-date', 'mv-appt-date'].forEach(function (id) { g(id).value = ''; });
   var tdCb = g('mv-date-tbd'); if (tdCb) tdCb.checked = false;
   var dfEl = g('mv-date'); if (dfEl) dfEl.disabled = false;
@@ -2709,12 +2712,18 @@ function openAddMove() {
   openModal('modal-move');
 }
 
+function deleteMoveFromModal() {
+  if (!editingMoveId) return;
+  closeModal('modal-move');
+  deleteMove(editingMoveId);
+}
 function openEditMove(id) {
   var m = (state.moves || []).find(function (x) { return x.id === id; });
   if (!m) return;
   editingMoveId = id;
   g('move-modal-title').textContent = 'Edit Move';
   g('move-modal-save-btn').textContent = 'Save Changes';
+  var delBtn = g('move-modal-delete-btn'); if (delBtn) delBtn.style.display = '';
   g('mv-unit').value = m.unit || '';
   g('mv-resident').value = m.resident || '';
   var isTbdEdit = m.date === 'TBD';
@@ -2801,7 +2810,16 @@ function saveMove() {
     if (!alreadyHasProfile) setTimeout(function(){ openAddResidentFromMove(m); }, 400);
   }
 }
-function filterMoves(f, item) { moveFilter = f; document.querySelectorAll('#moves-tabs .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderMoves(); }
+function filterMoves(f, item) { moveFilter = f; document.querySelectorAll('#moves-tabs .sub-tab').forEach(function (t) { t.classList.remove('active'); }); if (item) item.classList.add('active'); renderMoves(); }
+function setMoveFilter(f) {
+  moveFilter = f;
+  document.querySelectorAll('#moves-tabs .sub-tab').forEach(function(t) {
+    t.classList.remove('active');
+    var oc = t.getAttribute('onclick') || '';
+    if (oc.indexOf('"' + f + '"') !== -1) t.classList.add('active');
+  });
+  renderMoves();
+}
 function toggleMoveLogged() {
   moveShowLogged = !moveShowLogged;
   var th = g('moves-th-logged'); if (th) th.style.display = moveShowLogged ? '' : 'none';
@@ -3023,6 +3041,28 @@ function renderMoves() {
     } else v = a.date.localeCompare(b.date);
     return v * dir;
   });
+  // Pin today's moves to the top in All view (default sort only)
+  if (moveFilter === 'all' && moveSort === 'date') {
+    var todayFirst = list.filter(function(m) { return m.apptDate === t || m.date === t; });
+    var notToday = list.filter(function(m) { return m.apptDate !== t && m.date !== t; });
+    list = todayFirst.concat(notToday);
+  }
+  // Stat strip
+  var statEl = g('moves-stats');
+  if (statEl) {
+    var allActive = (state.moves || []).filter(function(m) { return !m.archivedAt; });
+    var statToday = allActive.filter(function(m) { return m.date === t || m.apptDate === t; });
+    var oneWeekOut = new Date(); oneWeekOut.setDate(oneWeekOut.getDate() + 7);
+    var weekStr = oneWeekOut.toISOString().split('T')[0];
+    var statWeek = allActive.filter(function(m) { return m.date >= t && m.date <= weekStr; });
+    var statNoAppt = allActive.filter(function(m) { return !m.apptDate && m.date >= t; });
+    var statPMI = allActive.filter(function(m) { return m.type === 'in' && (m.tasks||[]).some(function(tk){ return tk.cat === 'Post Move-In' && !tk.done; }); });
+    statEl.innerHTML =
+      '<div class="stat-card stat-clickable' + (moveFilter==='today'?' accent':'') + '" onclick="setMoveFilter(\'today\')"><div class="stat-num">' + statToday.length + '</div><div class="stat-lbl">Today</div></div>' +
+      '<div class="stat-card stat-clickable" onclick="setMoveFilter(\'all\')"><div class="stat-num">' + statWeek.length + '</div><div class="stat-lbl">Next 7 Days</div></div>' +
+      '<div class="stat-card stat-clickable' + (moveFilter==='needs-appt' ? ' accent' : statNoAppt.length > 0 ? ' red' : '') + '" onclick="setMoveFilter(\'needs-appt\')"><div class="stat-num">' + statNoAppt.length + '</div><div class="stat-lbl">No Appointment</div></div>' +
+      '<div class="stat-card stat-clickable' + (statPMI.length > 0 ? ' accent' : '') + '" onclick="setMoveFilter(\'postmovein\')"><div class="stat-num">' + statPMI.length + '</div><div class="stat-lbl">Post Move-In</div></div>';
+  }
   // Stamp sort indicators on column headers
   var sortColMap = { unit:0, name:1, date:2, type:3, appt:4 };
   var theadRow = g('moves-thead-row');
@@ -3079,10 +3119,11 @@ function renderMoves() {
         var isOpen = m.id === openMoveId;
         var isStaffUser = currentUser && currentUser.role === 'staff';
         var archBtn = (!m.archivedAt && !isStaffUser) ? '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();archiveMove(\'' + m.id + '\')">Archive</button>' : '';
-        rows += '<tr class="move-row ' + (isOpen ? 'sel ' : '') + (m.archivedAt ? 'archive-row' : '') + '" onclick="toggleCL(\'' + m.id + '\')">';
+        var isToday = (m.apptDate === t || m.date === t);
+        rows += '<tr class="move-row ' + (isOpen ? 'sel ' : '') + (m.archivedAt ? 'archive-row ' : '') + (isToday ? 'today-move ' : '') + '" data-id="' + m.id + '" onclick="toggleCL(\'' + m.id + '\')">';
         var apptBadge = '';
         if (!m.apptDate) {
-          apptBadge = '<span class="appt-badge no-appt">No Appt</span>';
+          apptBadge = '<span class="appt-badge no-appt" onclick="event.stopPropagation();openEditMove(\'' + m.id + '\')" title="No appointment — click to schedule">No Appt</span>';
         } else {
           var apptConflicts = checkApptConflict(m.apptDate, m.apptTime, m.id);
           if (apptConflicts) {
@@ -3100,13 +3141,12 @@ function renderMoves() {
         rows += '<td><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'Move In' : 'Move Out') + '</span></td>';
         rows += '<td>' + apptBadge + '</td>';
         rows += '<td class="mono text-sm">' + (m.total ? '$' + esc(m.total) : '-') + '</td>';
-        rows += '<td class="text-sm text-2" style="max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (m.notes ? esc(m.notes) : '-') + '</td>';
+        rows += '<td class="text-sm text-2 moves-note-cell" title="' + (m.notes ? esc(m.notes).replace(/"/g,'&quot;') : '') + '">' + (m.notes ? esc(m.notes) : '-') + '</td>';
         if (moveShowLogged) rows += '<td class="text-xs text-3">' + fmtByTag(m.addedBy, m.createdAt) + '</td>';
         rows += '<td><div class="flex gap-4" style="justify-content:flex-end;align-items:center">';
-        rows += pct === 100 ? '<span class="pill pill-resolved" style="font-size:10px">Done</span>' : '<div style="width:40px"><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div><div class="text-xs text-3 mono" style="text-align:right;margin-top:2px">' + dn + '/' + tot + '</div></div>';
+        rows += pct === 100 ? '<span class="pill pill-resolved" style="font-size:10px">Done</span>' : '<div style="width:64px"><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div><div class="text-xs mono" style="text-align:right;margin-top:2px;color:' + bc + ';font-weight:600">' + dn + '/' + tot + '</div></div>';
         if (!isStaffUser) rows += '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openEditMove(\'' + m.id + '\')" title="Edit">&#9998;</button>';
         rows += archBtn;
-        if (!isStaffUser) rows += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="event.stopPropagation();deleteMove(\'' + m.id + '\')">&#x2715;</button>';
         rows += '</div></td></tr>';
         var cls = moveShowLogged ? 9 : 8;
         rows += '<tr class="move-cl-row ' + (isOpen ? 'open' : '') + '" id="cl-' + m.id + '"><td colspan="' + cls + '"><div class="cl-inner">' + buildCL(m, moveFilter) + '</div></td></tr>';
@@ -3157,8 +3197,29 @@ function renderMoves() {
   renderTightTurnovers();
 }
 function toggleCL(id) {
-  openMoveId = openMoveId === id ? null : id; renderMoves();
-  if (openMoveId) { setTimeout(function () { var e = g('cl-' + id) || g('mc-' + id); if (e) e.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 50); }
+  var prev = openMoveId;
+  openMoveId = (openMoveId === id) ? null : id;
+  // Close previously open row
+  if (prev) {
+    var prevCl = g('cl-' + prev); if (prevCl) prevCl.classList.remove('open');
+    var prevRow = document.querySelector('tr.move-row[data-id="' + prev + '"]'); if (prevRow) prevRow.classList.remove('sel');
+    var prevCard = g('mc-' + prev);
+    if (prevCard) {
+      prevCard.classList.remove('expanded');
+      var pch = prevCard.querySelector('.mc-hdr>span:last-child'); if (pch) pch.innerHTML = '&#9660;';
+    }
+  }
+  // Open new row
+  if (openMoveId) {
+    var cl = g('cl-' + id); if (cl) cl.classList.add('open');
+    var row = document.querySelector('tr.move-row[data-id="' + id + '"]'); if (row) row.classList.add('sel');
+    var card = g('mc-' + id);
+    if (card) {
+      card.classList.add('expanded');
+      var ch = card.querySelector('.mc-hdr>span:last-child'); if (ch) ch.innerHTML = '&#9650;';
+    }
+    setTimeout(function () { var e = g('cl-' + id) || g('mc-' + id); if (e) e.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 50);
+  }
 }
 function toggleTask(moveId, taskId, checked) {
   var m = (state.moves || []).find(function (x) { return x.id === moveId; }); if (!m) return;
