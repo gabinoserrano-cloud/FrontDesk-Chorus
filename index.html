@@ -340,6 +340,8 @@
   @media(max-width:500px){.unit-grid{grid-template-columns:repeat(2,1fr)}}
   .unit-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow)}
   .unit-card.sgt-ready{border-left:3px solid var(--green)}.unit-num{font-family:'DM Mono',monospace;font-size:18px;font-weight:600}
+  .ut-card{transition:box-shadow 150ms ease-out,transform 100ms ease-out,border-color 150ms ease-out}.ut-card:hover{box-shadow:0 6px 18px rgba(0,0,0,.12);transform:translateY(-2px);border-color:var(--accent)!important}.ut-card:active{transform:translateY(0) scale(.99)}
+  .ut-floor-hdr{grid-column:1/-1;display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin:16px 0 0;padding-bottom:7px;border-bottom:1px solid var(--border2)}.ut-floor-hdr:first-child{margin-top:0}
   .unit-detail-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
   .unit-det{font-size:11px;color:var(--text3);background:var(--bg);border-radius:4px;padding:2px 6px}
   .pte-badge{font-size:11px;font-weight:600;border-radius:4px;padding:2px 7px;display:inline-block}
@@ -525,7 +527,6 @@
   .pill-reservation{background:rgba(78,138,112,0.14);color:#2A6050}
   /* Cal chip amenity warm gold */
   .cal-chip-amenity{background:#FBF0DC;color:#9E6300}
-  /* LEAD badge in nav */
   .nav-item [style*="background:var(--accent)"]{color:#141C1C!important}
   /* Stat card tints */
   .stat-card.green{background:#E2EFE8;border-color:#A8D4B8}
@@ -630,7 +631,7 @@
   </div>
   <div class="nav-group">
     <div class="nav-label">Management</div>
-    <div class="nav-item" data-sec="team" onclick="nav(this)"><span class="icon" data-icon="users"></span><span class="nav-txt">Team Tracker</span><span style="font-size:9px;background:#4E8A70;color:#141C1C;border-radius:3px;padding:1px 4px;margin-left:4px;font-weight:700;letter-spacing:.3px">LEAD</span></div>
+    <div class="nav-item" data-sec="team" onclick="nav(this)"><span class="icon" data-icon="users"></span><span class="nav-txt">Team Tracker</span></div>
     <div class="nav-item" data-sec="activity" onclick="nav(this)"><span class="icon" data-icon="activity"></span><span class="nav-txt">Activity Log</span></div>
   </div>
   <div class="nav-group">
@@ -785,7 +786,8 @@
           <span class="card-title">Unit Tracker</span>
           <span class="card-count" id="ut-count">0 units</span>
           <div style="display:flex;align-items:center;gap:6px;margin-left:auto;flex-wrap:wrap">
-            <input id="ut-search" type="text" placeholder="&#128269; Search unit or leaseholder&#8230;" oninput="searchUnitRecords(this.value)" style="font-size:13px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);width:220px">
+            <input id="ut-search" type="text" placeholder="&#128269; Search unit or resident&#8230;" oninput="searchUnitRecords(this.value)" style="font-size:13px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);width:220px">
+            <select id="ut-floor-filter" onchange="filterUnitFloor(this.value)" style="font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text)"><option value="all">All floors</option></select>
             <div style="display:flex;gap:4px">
               <button class="btn btn-xs" id="ut-filter-all" onclick="filterUnitRecords('all',this)" style="background:var(--accent);color:#fff;border-color:var(--accent)">All</button>
               <button class="btn btn-xs btn-secondary" id="ut-filter-bg" onclick="filterUnitRecords('blueground',this)">&#128309; BG</button>
@@ -1079,6 +1081,13 @@
         <div id="settings-wt-floors" style="padding:0"></div>
       </div>
       <div class="card mb-12">
+        <div class="card-hdr"><span class="card-title">Amenity Spaces</span><button class="btn btn-ghost btn-sm ml-auto" style="font-size:11px;color:var(--text3)" onclick="resetAmenitySpaces()" title="Restore built-in space list">↺ Reset to defaults</button></div>
+        <div id="settings-amenity-spaces" style="padding:0"></div>
+        <div style="padding:10px 14px;border-top:1px solid var(--border2)">
+          <div class="flex gap-8"><input type="text" id="new-amenity-space" placeholder="New space name..." style="flex:1" onkeydown="if(event.key==='Enter')addAmenitySpace()"><button class="btn btn-primary btn-sm" onclick="addAmenitySpace()">Add</button></div>
+        </div>
+      </div>
+      <div class="card mb-12">
         <div class="card-hdr"><span class="card-title">&#128230; Lost &amp; Found — Disposal Reminder</span></div>
         <div class="card-body">
           <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Flag unclaimed items as pending disposal after this many days. Items past the threshold show an amber warning in the L&amp;F log.</p>
@@ -1160,6 +1169,7 @@
     <div style="background:var(--accent-light);border-radius:var(--radius);padding:10px 13px;margin-bottom:12px">
       <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Lease</div>
       <div class="fr"><div class="fg" style="margin-bottom:0"><label id="mv-label-date">Lease Start Date</label><div style="display:flex;align-items:center;gap:8px"><input id="mv-date" type="date" data-no-autofill style="flex:1"><label style="display:flex;align-items:center;gap:5px;font-weight:400;font-size:12px;white-space:nowrap;margin:0;cursor:pointer;color:var(--text2)"><input type="checkbox" id="mv-date-tbd" style="width:auto;accent-color:var(--accent)" onchange="mvDateTbdChange()"> TBD</label></div></div><div class="fg" style="margin-bottom:0"><label id="mv-label-total">Move-In Total ($)</label><input id="mv-total" type="text" placeholder="e.g. 4500"></div></div>
+      <div class="fg" id="mv-lease-status-row" style="margin-top:8px;margin-bottom:0"><label>Lease Status</label><select id="mv-lease-status"><option value="">— Not set —</option><option value="pending_countersign">Pending Countersign</option><option value="fully_signed">Fully Signed</option><option value="cancelled">Cancelled</option></select></div>
     </div>
     <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px 13px;margin-bottom:12px">
       <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px" id="mv-label-appt-hdr">Move-In Appointment <span style="font-weight:400;color:var(--text3)">(confirm when booked)</span></div>
@@ -1339,20 +1349,7 @@
   <div class="modal-hdr"><span class="modal-title" id="modal-amenity-title">Add Amenity Booking</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-amenity')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Resident Name</label><input id="am-resident" type="text"></div><div class="fg"><label>Unit #</label><input id="am-unit" type="text"></div></div>
-    <div class="fg"><label>Amenity Space(s) <span style="font-size:10px;color:var(--text3);font-weight:400">(select all that apply)</span></label><div id="am-space-wrap" style="border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;display:grid;grid-template-columns:1fr 1fr;gap:5px 14px;font-size:12.5px;background:var(--bg)">
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Belvedere Room (28th fl)"> Belvedere Room (28th fl)</label>
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="28th Floor Terrace"> 28th Floor Terrace</label>
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Chorus Hall (1st fl)"> Chorus Hall (1st fl)</label>
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="3rd Floor Terrace"> 3rd Floor Terrace</label>
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="TV Lounge (2nd fl)"> TV Lounge (2nd fl)</label>
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Speakeasy (2nd fl)"> Speakeasy (2nd fl)</label>
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Fitness Center (10th fl)"> Fitness Center (10th fl)</label>
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Pool / Hot Tub (10th fl)"> Pool / Hot Tub (10th fl)</label>
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Coworking Space (1st fl)"> Coworking Space (1st fl)</label>
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Service Elevator"> &#128696; Service Elevator</label>
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Loading Dock"> &#128666; Loading Dock</label>
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Other"> Other</label>
-    </div></div>
+    <div class="fg"><label>Amenity Space(s) <span style="font-size:10px;color:var(--text3);font-weight:400">(select all that apply)</span></label><div id="am-space-wrap" style="border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;display:grid;grid-template-columns:1fr 1fr;gap:5px 14px;font-size:12.5px;background:var(--bg)"></div></div>
     <div class="fr"><div class="fg"><label>Date</label><input id="am-date" type="date"></div><div class="fg"><label>Type</label><select id="am-type"><option value="reservation">Reservation</option><option value="event">Resident Event</option></select></div></div>
     <div class="fr"><div class="fg"><label>Start Time</label><input id="am-start" type="time"></div><div class="fg"><label>End Time</label><input id="am-end" type="time"></div></div>
     <div class="fr"><div class="fg"><label>Fee (reference)</label><input id="am-fee" type="text" placeholder="e.g. $150"></div><div class="fg"><label>Notes</label><input id="am-notes" type="text"></div></div>
@@ -1452,6 +1449,7 @@
   <div class="modal-hdr"><span class="modal-title" id="ur-unit-title">Edit Unit</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-unit-record')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fg"><label>Leaseholder</label><input id="ur-leaseholder" type="text" placeholder="Primary resident name"></div>
+    <div class="fg"><label>Roommates <span style="font-size:10px;color:var(--text3);font-weight:400">(comma-separated)</span></label><input id="ur-roommates" type="text" placeholder="Additional residents&#8230;"></div>
     <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
       <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">&#128273; Keys</div>
       <div class="fr">
@@ -1857,6 +1855,19 @@ var DEFAULT_OUT_TASKS = [
   { text: 'Unit cleaned and ready for next resident', cat: 'Move Out' },
   { text: 'Unit status updated to Vacant', cat: 'Move Out' },
   { text: 'Notify leasing of completed move-out', cat: 'Move Out' }
+];
+var DEFAULT_AMENITY_SPACES = [
+  'Belvedere Room (28th fl)',
+  '28th Floor Terrace',
+  'Chorus Hall (1st fl)',
+  '3rd Floor Terrace',
+  'TV Lounge (2nd fl)',
+  'Speakeasy (2nd fl)',
+  'Fitness Center (10th fl)',
+  'Pool / Hot Tub (10th fl)',
+  'Coworking Space (1st fl)',
+  'Service Elevator',
+  'Loading Dock'
 ];
 var DEFAULT_SUPPLIES = [
   { name: 'Printer Paper', cat: 'Printer & Paper', unit: 'reams', lowAt: 1 },
@@ -2656,6 +2667,7 @@ function updateMoveModalLabels() {
   var lAppt = g('mv-label-appt-hdr');
   if (lAppt) lAppt.innerHTML = (isIn ? 'Move-In Appointment' : 'Move-Out Appointment') + ' <span style="font-weight:400;color:var(--text3)">(confirm when booked)</span>';
   var totalPh = g('mv-total'); if (totalPh) totalPh.placeholder = isIn ? 'e.g. 4500' : 'e.g. cleaning fee';
+  var lsRow = g('mv-lease-status-row'); if (lsRow) lsRow.style.display = isIn ? '' : 'none';
 }
 
 function buildTimeSlots() {
@@ -2742,6 +2754,7 @@ function openAddMove() {
   var tdCb = g('mv-date-tbd'); if (tdCb) tdCb.checked = false;
   var dfEl = g('mv-date'); if (dfEl) dfEl.disabled = false;
   g('mv-type').value = 'in';
+  var lsSel = g('mv-lease-status'); if (lsSel) lsSel.value = '';
   updateMoveModalLabels();
   buildTimeSlots();
   g('mv-appt-time').value = '';
@@ -2773,6 +2786,7 @@ function openEditMove(id) {
   updateMoveModalLabels();
   g('mv-total').value = m.total || '';
   g('mv-notes').value = m.notes || '';
+  var lsSelE = g('mv-lease-status'); if (lsSelE) lsSelE.value = m.leaseStatus || '';
   buildTimeSlots();
   g('mv-appt-date').value = m.apptDate || '';
   g('mv-appt-time').value = m.apptTime || '';
@@ -2812,6 +2826,7 @@ function saveMove() {
     var _mb = Object.assign({}, m);
     m.unit = unit; m.resident = resident; m.date = date; m.type = moveType;
     m.total = total; m.notes = notes; m.apptDate = apptDate; m.apptTime = apptTime;
+    m.leaseStatus = (m.type === 'in' && g('mv-lease-status')) ? g('mv-lease-status').value : '';
     pushUndo({ sec: 'moves', type: 'EDIT', id: m.id, before: _mb, after: Object.assign({}, m), label: 'move edit — Unit ' + unit });
     editingMoveId = null;
     logActivity('moves', 'edit', 'Updated move — Unit ' + unit + ' (' + (moveType === 'in' ? 'Move In' : 'Move Out') + ') · ' + resident);
@@ -2822,7 +2837,8 @@ function saveMove() {
   var customIn = state.customInTasks || DEFAULT_IN_TASKS;
   var customOut = state.customOutTasks || DEFAULT_OUT_TASKS;
   var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null, paymentTask: t.paymentTask || false }; });
-  var m = { id: uid(), unit: unit, resident: resident, date: date, type: moveType, total: total, notes: notes, apptDate: apptDate, apptTime: apptTime, tasks: tasks, archivedAt: null, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : 'Front Desk' };
+  var leaseStatus = (moveType === 'in' && g('mv-lease-status')) ? g('mv-lease-status').value : '';
+  var m = { id: uid(), unit: unit, resident: resident, date: date, type: moveType, total: total, notes: notes, apptDate: apptDate, apptTime: apptTime, leaseStatus: leaseStatus, tasks: tasks, archivedAt: null, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : 'Front Desk' };
   if (!state.moves) state.moves = [];
   state.moves.push(m);
   if (moveType === 'in') {
@@ -3199,8 +3215,11 @@ function renderMoves() {
         }
         rows += '<td><span class="mono font-600">' + esc(m.unit) + '</span></td>';
         var coResNames = (m.coResidents || []).map(function(c){ return esc(c.name); }).join(', ');
+        var lsMap = { pending_countersign: { label: 'Pending Countersign', color: 'var(--amber)' }, fully_signed: { label: 'Fully Signed', color: 'var(--green)' }, cancelled: { label: 'Cancelled', color: 'var(--red)' } };
+        var lsBadge = (m.type === 'in' && m.leaseStatus && lsMap[m.leaseStatus]) ? '<div class="text-xs" style="color:' + lsMap[m.leaseStatus].color + ';margin-top:2px;font-weight:600">' + lsMap[m.leaseStatus].label + '</div>' : '';
         rows += '<td><div class="font-600">' + esc(m.resident) + '</div>'
           + (coResNames ? '<div class="text-xs text-3">+ ' + coResNames + '</div>' : '')
+          + lsBadge
           + (m.date === t && m.type === 'in' ? '<div class="text-xs" style="color:var(--accent)">Lease starts today</div>' : '') + '</td>';
         rows += '<td class="mono text-sm">' + fmtShort(m.date) + '</td>';
         var stage = getMoveStage(m);
@@ -3226,9 +3245,9 @@ function renderMoves() {
   var cardsEl = g('moves-cards');
   if (cardsEl) {
     if (!list.length) {
-      cardsEl.innerHTML = '<div class="text-3 text-sm" style="text-align:center;padding:24px">No moves.</div><div class="flex" style="justify-content:center"><button class="btn btn-primary" onclick="openAddMove()">+ Add Move</button></div>';
+      cardsEl.innerHTML = '<div class="text-3 text-sm" style="text-align:center;padding:24px">No moves.</div>' + (!isStaffUser ? '<div class="flex" style="justify-content:center"><button class="btn btn-primary" onclick="openAddMove()">+ Add Move</button></div>' : '');
     } else {
-      var html = '<div class="flex gap-8 mb-12"><button class="btn btn-primary" style="flex:1;justify-content:center" onclick="openAddMove()">+ Add Move</button><button class="btn btn-secondary" onclick="generatePassdownFromMoves()">Passdown</button></div>';
+      var html = (!isStaffUser ? '<div class="flex gap-8 mb-12"><button class="btn btn-primary" style="flex:1;justify-content:center" onclick="openAddMove()">+ Add Move</button><button class="btn btn-secondary" onclick="generatePassdownFromMoves()">Passdown</button></div>' : '<div class="flex gap-8 mb-12"><button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="generatePassdownFromMoves()">Passdown</button></div>');
       list.forEach(function (m) {
         var dn = (m.tasks || []).filter(function (t2) { return t2.done; }).length;
         var tot = (m.tasks || []).length;
@@ -3256,7 +3275,7 @@ function renderMoves() {
         html += '<div class="text-xs text-3 mono" style="margin-top:2px">' + dn + '/' + tot + ' tasks</div></div>';
         html += '<span style="color:var(--text3);font-size:18px;flex-shrink:0">' + (isOpen ? '&#9650;' : '&#9660;') + '</span></div>';
         html += '<div class="mc-cl">' + buildCL(m, moveFilter) + '</div>';
-        html += '<div class="mc-actions">' + (!isStaffUser ? '<button class="btn btn-secondary btn-xs" onclick="openEditMove(\'' + m.id + '\')" title="Edit">&#9998; Edit</button>' : '') + archBtn + (!isStaffUser ? '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteMove(\'' + m.id + '\')">Delete</button>' : '') + '<button class="btn btn-secondary btn-xs ml-auto" onclick="openAddTask(\'' + m.id + '\')">+ Task</button></div>';
+        html += '<div class="mc-actions">' + (!isStaffUser ? '<button class="btn btn-secondary btn-xs" onclick="openEditMove(\'' + m.id + '\')" title="Edit">&#9998; Edit</button>' : '') + archBtn + (!isStaffUser ? '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteMove(\'' + m.id + '\')">Delete</button>' : '') + (!isStaffUser ? '<button class="btn btn-secondary btn-xs ml-auto" onclick="openAddTask(\'' + m.id + '\')">+ Task</button>' : '') + '</div>';
         html += '</div>';
       });
       cardsEl.innerHTML = html;
@@ -3339,16 +3358,32 @@ function toggleTask(moveId, taskId, checked) {
   }
   // ── Connection 1: Move-out collect keys task → mark keys returned ──
   if (m.type === 'out' && t.text === 'Collect & Verify All Unit Keys') {
-    var issuedKeys = (state.keys || []).filter(function(k) { return k.unit === m.unit && k.status === 'issued'; });
-    if (issuedKeys.length) {
-      if (checked) {
-        if (confirm('Mark all ' + issuedKeys.length + ' issued key(s) for Unit ' + m.unit + ' as returned?')) {
-          issuedKeys.forEach(function(k) {
-            k.status = 'returned'; k.returnedAt = Date.now();
-            applySupplyAdjustment('Key Cards – Blank Stock', +1, 'Returned — Unit ' + m.unit + ' (move-out checklist)');
-          });
-          renderKeys(); updateBadges(); renderDash();
-        }
+    if (checked) {
+      var issuedKeys = (state.keys || []).filter(function(k) { return k.unit === m.unit && k.status === 'issued'; });
+      if (issuedKeys.length) {
+        issuedKeys.forEach(function(k) {
+          k.status = 'returned'; k.returnedAt = Date.now();
+          applySupplyAdjustment('Key Cards – Blank Stock', +1, 'Returned — Unit ' + m.unit + ' (move-out checklist)');
+        });
+        logActivity('keys', 'complete', 'Keys returned — Unit ' + m.unit + ' · ' + m.resident + ' (move-out checklist)');
+        renderKeys(); updateBadges(); renderDash();
+        toast(issuedKeys.length + ' key' + (issuedKeys.length > 1 ? 's' : '') + ' for Unit ' + m.unit + ' marked returned in Key Tracker');
+      }
+    }
+  }
+  // ── Connection 2: Move-out parking tasks → mark parking credential returned ──
+  if (m.type === 'out' && checked && ['Parking: Transponder returned', 'Parking: Key tag returned', 'Parking: Xpress sticker returned'].indexOf(t.text) !== -1) {
+    var parkTasks = (m.tasks || []).filter(function(tk) { return tk.cat === 'Parking'; });
+    var allParkDone = parkTasks.length > 0 && parkTasks.every(function(tk) { return tk.done; });
+    if (allParkDone) {
+      var activePark = (state.parking || []).find(function(p) { return p.unit === m.unit && p.status === 'active'; });
+      if (activePark) {
+        var _apb = cloneData(activePark);
+        activePark.status = 'returned'; activePark.returnedAt = Date.now();
+        pushUndo({ sec: 'parking', type: 'EDIT', id: activePark.id, before: _apb, after: cloneData(activePark), label: 'parking returned — Unit ' + m.unit });
+        logActivity('parking', 'complete', 'Parking credentials returned — Unit ' + m.unit + ' · ' + activePark.resident + ' (move-out checklist)');
+        scheduleSave(); renderParking();
+        toast('Parking credentials for Unit ' + m.unit + ' marked returned');
       }
     }
   }
@@ -4636,8 +4671,46 @@ function renderSecurity() {
 // ─── AMENITIES ───
 var amenityFilter = 'upcoming';
 function filterAmenities(f, item) { amenityFilter = f; document.querySelectorAll('#section-amenities .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderAmenities(); }
+function getAmenitySpaces() { return (state.amenitySpaces && state.amenitySpaces.length) ? state.amenitySpaces : DEFAULT_AMENITY_SPACES.slice(); }
+function renderAmenitySpaceCheckboxes() {
+  var wrap = g('am-space-wrap'); if (!wrap) return;
+  var spaces = getAmenitySpaces();
+  wrap.innerHTML = spaces.map(function(s) {
+    return '<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="' + esc(s) + '"> ' + esc(s) + '</label>';
+  }).join('') + '<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" name="am-space-cb" value="Other"> Other</label>';
+}
 function getSelectedSpaces() { var cbs=document.querySelectorAll('input[name="am-space-cb"]:checked'),vals=[]; cbs.forEach(function(cb){vals.push(cb.value);}); return vals.join(', '); }
 function clearSpaceCheckboxes() { document.querySelectorAll('input[name="am-space-cb"]').forEach(function(cb){cb.checked=false;}); }
+function renderAmenitySpaceSettings() {
+  var el = g('settings-amenity-spaces'); if (!el) return;
+  var spaces = getAmenitySpaces();
+  if (!spaces.length) { el.innerHTML = '<div class="text-3 text-sm" style="padding:12px 14px">No spaces configured.</div>'; return; }
+  el.innerHTML = spaces.map(function(s, i) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 14px;border-bottom:1px solid var(--border2)">'
+      + '<input type="text" value="' + esc(s) + '" style="flex:1;font-size:13px;border:none;background:transparent;color:var(--text);padding:0;outline:none;font-family:inherit" onblur="saveAmenitySpaceName(' + i + ',this.value)" onkeydown="if(event.key===\'Enter\')this.blur()">'
+      + '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteAmenitySpace(' + i + ')">&#x2715;</button>'
+      + '</div>';
+  }).join('');
+}
+function saveAmenitySpaceName(idx, val) {
+  val = val.trim(); if (!val) { renderAmenitySpaceSettings(); return; }
+  if (!state.amenitySpaces || !state.amenitySpaces.length) state.amenitySpaces = DEFAULT_AMENITY_SPACES.slice();
+  state.amenitySpaces[idx] = val; scheduleSave();
+}
+function addAmenitySpace() {
+  var inp = g('new-amenity-space'); if (!inp) return;
+  var val = inp.value.trim(); if (!val) { toast('Enter a space name'); return; }
+  if (!state.amenitySpaces || !state.amenitySpaces.length) state.amenitySpaces = DEFAULT_AMENITY_SPACES.slice();
+  if (state.amenitySpaces.indexOf(val) !== -1) { toast('Space already exists'); return; }
+  state.amenitySpaces.push(val); inp.value = ''; scheduleSave(); renderAmenitySpaceSettings();
+}
+function deleteAmenitySpace(idx) {
+  if (!state.amenitySpaces || !state.amenitySpaces.length) state.amenitySpaces = DEFAULT_AMENITY_SPACES.slice();
+  state.amenitySpaces.splice(idx, 1); scheduleSave(); renderAmenitySpaceSettings();
+}
+function resetAmenitySpaces() {
+  state.amenitySpaces = DEFAULT_AMENITY_SPACES.slice(); scheduleSave(); renderAmenitySpaceSettings(); toast('Amenity spaces reset to defaults');
+}
 function setSpaceCheckboxes(spaceStr) { clearSpaceCheckboxes(); if(!spaceStr) return; var spaces=spaceStr.split(',').map(function(s){return s.trim();}); document.querySelectorAll('input[name="am-space-cb"]').forEach(function(cb){if(spaces.indexOf(cb.value)!==-1)cb.checked=true;}); }
 function saveAmenity() {
   var resident = g('am-resident').value.trim(), unit = g('am-unit').value.trim(), date = g('am-date').value;
@@ -5846,7 +5919,7 @@ function toggleLAFPassdown(id) { var item = (state.laf || []).find(function(x){ 
 function deleteLAF(id) { if (!confirm('Remove?')) return; var lx=(state.laf||[]).find(function(x){return x.id===id;}); if (lx) pushUndo({ sec: 'laf', type: 'DELETE', id: id, data: Object.assign({}, lx), label: 'delete L&F — ' + lx.desc }); logActivity('laf','delete','Removed L&F item'+(lx?' — '+lx.desc:'')); state.laf = (state.laf || []).filter(function (i) { return i.id !== id; }); scheduleSave(); renderLAF(); updateBadges(); toast('Removed'); }
 
 // ─── UNIT TRACKER ───
-var utFilter = 'all', utSearch = '', editingUnitRecordId = null;
+var utFilter = 'all', utSearch = '', utFloor = 'all', editingUnitRecordId = null;
 // ===== [UNIT TRACKER] ========================================================
 function filterUnitRecords(f, btn) {
   utFilter = f;
@@ -5858,6 +5931,7 @@ function filterUnitRecords(f, btn) {
   renderResidents();
 }
 function searchUnitRecords(val) { utSearch = val.toLowerCase(); renderResidents(); }
+function filterUnitFloor(v) { utFloor = v; renderResidents(); }
 
 function openEditUnitRecord(id) {
   var r = (state.unitRecords || []).find(function(x) { return x.id === id; });
@@ -5865,6 +5939,7 @@ function openEditUnitRecord(id) {
   editingUnitRecordId = id;
   var titleEl = g('ur-unit-title'); if (titleEl) titleEl.textContent = 'Unit ' + r.unit;
   g('ur-leaseholder').value = r.leaseholder || '';
+  g('ur-roommates').value = r.roommates || '';
   g('ur-unit-keys-issued').value = r.unitKeysIssued || 0;
   g('ur-mailbox-keys-issued').value = r.mailboxKeysIssued || 0;
   g('ur-unit-keys-replacement').value = r.unitKeysReplacement || 0;
@@ -5889,6 +5964,7 @@ function saveUnitRecord() {
   if (!r) return;
   var before = Object.assign({}, r);
   r.leaseholder = g('ur-leaseholder').value.trim();
+  r.roommates = g('ur-roommates').value.trim();
   r.unitKeysIssued = parseInt(g('ur-unit-keys-issued').value) || 0;
   r.mailboxKeysIssued = parseInt(g('ur-mailbox-keys-issued').value) || 0;
   r.unitKeysReplacement = parseInt(g('ur-unit-keys-replacement').value) || 0;
@@ -6516,10 +6592,28 @@ function renderResidents() {
   var t = today();
   var d15 = new Date(); d15.setDate(d15.getDate()+15); var d15s = d15.toISOString().split('T')[0];
   var allRecs = state.unitRecords || [];
+
+  // one-time self-heal: lift migrated roommate lines ("+ Name, Name") out of notes into a roommates field
+  var _rmMigrated = false;
+  allRecs.forEach(function(r){
+    if (r.roommates === undefined && r.notes && /^\+\s/.test(r.notes)) {
+      var rm = '', rest = [];
+      r.notes.split('\n').forEach(function(ln){
+        if (/^\+\s/.test(ln) && !rm) rm = ln.replace(/^\+\s*/,'').trim();
+        else rest.push(ln);
+      });
+      r.roommates = rm; r.notes = rest.join('\n').trim(); _rmMigrated = true;
+    }
+  });
+  if (_rmMigrated) scheduleSave();
+
+  var floorOf = function(u){ var n = parseInt(u,10); return isNaN(n) ? null : Math.floor(n/100); };
+
   var list = allRecs.slice();
   if (utFilter === 'blueground') list = list.filter(function(r){ return r.blueground; });
   else if (utFilter === 'wifi') list = list.filter(function(r){ return r.wifiExpiry && r.wifiExpiry <= d15s; });
-  if (utSearch) list = list.filter(function(r){ return (r.unit||'').includes(utSearch)||(r.leaseholder||'').toLowerCase().includes(utSearch); });
+  if (utFloor !== 'all') list = list.filter(function(r){ return String(floorOf(r.unit)) === utFloor; });
+  if (utSearch) list = list.filter(function(r){ return (r.unit||'').includes(utSearch)||(r.leaseholder||'').toLowerCase().includes(utSearch)||(r.roommates||'').toLowerCase().includes(utSearch); });
   list.sort(function(a,b){ return parseInt(a.unit)-parseInt(b.unit); });
 
   // WiFi banner
@@ -6541,31 +6635,52 @@ function renderResidents() {
   var parkCount = allRecs.filter(function(r){ return r.transponder||r.xpressSticker||r.keyTag; }).length;
   var wifiCount = allRecs.filter(function(r){ return r.wifiExpiry; }).length;
   var statsEl = g('ut-stats');
-  if (statsEl) statsEl.innerHTML = '<div class="stat-card"><div class="stat-num">'+allRecs.length+'</div><div class="stat-lbl">Total Units</div></div><div class="stat-card" style="border-left:3px solid #3b82f6"><div class="stat-num">'+bgCount+'</div><div class="stat-lbl">Blueground</div></div><div class="stat-card green"><div class="stat-num">'+parkCount+'</div><div class="stat-lbl">Parking Issued</div></div><div class="stat-card"><div class="stat-num">'+wifiCount+'</div><div class="stat-lbl">WiFi Tracked</div></div>';
+  if (statsEl) statsEl.innerHTML = '<div class="stat-card stat-clickable" onclick="filterUnitRecords(\'all\',g(\'ut-filter-all\'))"><div class="stat-num">'+allRecs.length+'</div><div class="stat-lbl">Total Units</div></div><div class="stat-card stat-clickable" style="border-left:3px solid #3b82f6" onclick="filterUnitRecords(\'blueground\',g(\'ut-filter-bg\'))"><div class="stat-num">'+bgCount+'</div><div class="stat-lbl">Blueground</div></div><div class="stat-card green"><div class="stat-num">'+parkCount+'</div><div class="stat-lbl">Parking Issued</div></div><div class="stat-card stat-clickable" onclick="filterUnitRecords(\'wifi\',g(\'ut-filter-wifi\'))"><div class="stat-num">'+wifiCount+'</div><div class="stat-lbl">WiFi Tracked</div></div>';
+
+  // Floor dropdown options
+  var floorSel = g('ut-floor-filter');
+  if (floorSel) {
+    var floorsSeen = {};
+    allRecs.forEach(function(r){ var f = floorOf(r.unit); if (f!==null) floorsSeen[f] = true; });
+    var fkeys = Object.keys(floorsSeen).map(Number).sort(function(a,b){ return a-b; });
+    var opts = '<option value="all">All floors</option>' + fkeys.map(function(f){ return '<option value="'+f+'">Floor '+f+'</option>'; }).join('');
+    if (floorSel.innerHTML !== opts) floorSel.innerHTML = opts;
+    floorSel.value = utFloor;
+  }
 
   var cnt = g('ut-count'); if (cnt) cnt.textContent = list.length + ' unit' + (list.length!==1?'s':'');
   var grid = g('ut-grid');
   if (!grid) return;
   if (!list.length) { grid.innerHTML = '<div class="text-3 text-sm">No units match your search.</div>'; return; }
 
+  var showFloorHdrs = (utFloor === 'all' && !utSearch);
+  var lastFloor = '__none__';
   var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">';
   list.forEach(function(r) {
+    if (showFloorHdrs) {
+      var fl = floorOf(r.unit);
+      if (fl !== lastFloor) {
+        lastFloor = fl;
+        var flCount = list.filter(function(x){ return floorOf(x.unit) === fl; }).length;
+        html += '<div class="ut-floor-hdr">Floor ' + (fl===null?'&mdash;':fl) + ' <span style="color:var(--text3);font-weight:400">' + flCount + ' unit' + (flCount!==1?'s':'') + '</span></div>';
+      }
+    }
     var isExpired = r.wifiExpiry && r.wifiExpiry < t;
     var isSoon = r.wifiExpiry && !isExpired && r.wifiExpiry <= d15s;
     var borderColor = r.blueground ? '#93c5fd' : isExpired ? 'var(--red)' : isSoon ? '#fcd34d' : 'var(--border)';
-    html += '<div style="background:var(--surface);border:1px solid '+borderColor+';border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)">';
+    html += '<div class="ut-card" onclick="openEditUnitRecord(\''+r.id+'\')" style="background:var(--surface);border:1px solid '+borderColor+';border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);cursor:pointer">';
     // Header
     html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">';
     html += '<span class="unit-num" style="font-size:15px">Unit '+esc(r.unit)+'</span>';
     if (r.blueground) html += '<span style="font-size:10px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600">&#128309; BG</span>';
-    html += '<button class="btn btn-ghost btn-xs" style="margin-left:auto" onclick="openEditUnitRecord(\''+r.id+'\')">&#9998;</button>';
     html += '</div>';
-    // Leaseholder
-    if (r.leaseholder) html += '<div style="font-size:13px;font-weight:600;margin-bottom:8px">'+esc(r.leaseholder)+'</div>';
-    // Keys
+    // Leaseholder + roommates
+    if (r.leaseholder) html += '<div style="font-size:13px;font-weight:600;margin-bottom:'+(r.roommates?'1px':'8px')+'">'+esc(r.leaseholder)+'</div>';
+    if (r.roommates) html += '<div style="font-size:11px;color:var(--text3);margin-bottom:8px">&#43; '+esc(r.roommates)+'</div>';
+    // Keys (only when set)
     var unitTotal = (r.unitKeysIssued||0)+(r.unitKeysReplacement||0);
     var mailTotal = (r.mailboxKeysIssued||0)+(r.mailboxKeysReplacement||0);
-    html += '<div style="font-size:12px;color:var(--text2);margin-bottom:6px">&#128273; Unit: <strong>'+unitTotal+'</strong>'+(r.unitKeysReplacement?'<span style="font-size:10px;color:#92400e"> (+'+r.unitKeysReplacement+' repl)</span>':'')+' &nbsp;&middot;&nbsp; &#128236; Mailbox: <strong>'+mailTotal+'</strong>'+(r.mailboxKeysReplacement?'<span style="font-size:10px;color:#92400e"> (+'+r.mailboxKeysReplacement+' repl)</span>':'')+'</div>';
+    if (unitTotal || mailTotal) html += '<div style="font-size:12px;color:var(--text2);margin-bottom:6px">&#128273; Unit: <strong>'+unitTotal+'</strong>'+(r.unitKeysReplacement?'<span style="font-size:10px;color:#92400e"> (+'+r.unitKeysReplacement+' repl)</span>':'')+' &nbsp;&middot;&nbsp; &#128236; Mailbox: <strong>'+mailTotal+'</strong>'+(r.mailboxKeysReplacement?'<span style="font-size:10px;color:#92400e"> (+'+r.mailboxKeysReplacement+' repl)</span>':'')+'</div>';
     // Parking
     var parkBits = [];
     if (r.transponder) parkBits.push('Transponder');
@@ -7997,7 +8112,7 @@ function openAddAmenity() {
   ['am-resident','am-unit','am-fee','am-notes'].forEach(function(id){g(id).value='';});
   g('am-start').value=''; g('am-end').value=''; g('am-date').value=today();
   g('am-type').value='reservation';
-  clearSpaceCheckboxes();
+  renderAmenitySpaceCheckboxes();
   openModal('modal-amenity');
 }
 function openEditAmenity(id) {
@@ -8008,6 +8123,7 @@ function openEditAmenity(id) {
   g('am-fee').value=a.fee||''; g('am-notes').value=a.notes||'';
   g('am-date').value=a.date||today(); g('am-start').value=a.start||''; g('am-end').value=a.end||'';
   g('am-type').value=a.type||'reservation';
+  renderAmenitySpaceCheckboxes();
   setSpaceCheckboxes(a.space||'');
   openModal('modal-amenity');
 }
@@ -9109,6 +9225,7 @@ function renderSettings() {
   renderTaskList('in');
   renderTaskList('out');
   renderSettingsWTFloors();
+  renderAmenitySpaceSettings();
   renderTeamStaff();
   renderNavVisibilitySettings();
   renderStaffNavVisibilitySettings();
