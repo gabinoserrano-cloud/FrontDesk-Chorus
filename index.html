@@ -2301,7 +2301,7 @@ function mobNav(item) {
   curSec = sec; renderSection(sec);
 }
 function renderSection(sec) {
-  var map = { dashboard: renderDash, moves: renderMoves, vacant: renderUnits, maintenance: renderMaint, guests: renderGuests, keys: renderKeysSection, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, templates: renderTemplates, guide: renderGuide, security: renderSecurity, supplies: renderSupplies, activity: renderActivityLog, parking: renderParking };
+  var map = { dashboard: renderDash, moves: renderMoves, maintenance: renderMaint, guests: renderGuests, keys: renderKeysSection, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, templates: renderTemplates, guide: renderGuide, security: renderSecurity, supplies: renderSupplies, activity: renderActivityLog, parking: renderParking };
   if (map[sec]) map[sec]();
 }
 function renderAll() { renderSection(curSec); updateBadges(); }
