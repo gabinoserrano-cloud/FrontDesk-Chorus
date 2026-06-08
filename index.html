@@ -792,6 +792,7 @@
               <button class="btn btn-xs" id="ut-filter-all" onclick="filterUnitRecords('all',this)" style="background:var(--accent);color:#fff;border-color:var(--accent)">All</button>
               <button class="btn btn-xs btn-secondary" id="ut-filter-bg" onclick="filterUnitRecords('blueground',this)">&#128309; BG</button>
               <button class="btn btn-xs btn-secondary" id="ut-filter-wifi" onclick="filterUnitRecords('wifi',this)">&#128246; WiFi Expiring</button>
+              <button class="btn btn-xs btn-secondary" id="ut-filter-unassigned" onclick="filterUnitRecords('unassigned',this)">&#127968; Unassigned</button>
             </div>
           </div>
         </div>
@@ -1448,6 +1449,7 @@
 <div class="modal-ov" id="modal-unit-record"><div class="modal" style="max-width:480px">
   <div class="modal-hdr"><span class="modal-title" id="ur-unit-title">Edit Unit</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-unit-record')">&#x2715;</button></div>
   <div class="modal-bdy">
+    <div class="fg" id="ur-unit-field" style="display:none"><label>Unit #</label><input id="ur-unit-num" type="text" placeholder="e.g. 617"></div>
     <div class="fg"><label>Leaseholder</label><input id="ur-leaseholder" type="text" placeholder="Primary resident name"></div>
     <div class="fg"><label>Roommates <span style="font-size:10px;color:var(--text3);font-weight:400">(comma-separated)</span></label><input id="ur-roommates" type="text" placeholder="Additional residents&#8230;"></div>
     <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
@@ -1475,6 +1477,9 @@
         <div class="fg"><label>Expiration Date</label><input id="ur-wifi-expiry" type="date" data-no-autofill></div>
         <div class="fg" id="ur-wifi-hint" style="display:flex;align-items:flex-end;padding-bottom:8px;font-size:12px;color:var(--text3)"></div>
       </div>
+    </div>
+    <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="ur-blueground"> &#128309; Blueground Unit</label>
     </div>
     <div class="fg"><label>Notes</label><textarea id="ur-notes" rows="3" placeholder="Any front desk notes for this unit&#8230;"></textarea></div>
   </div>
@@ -2274,7 +2279,7 @@ var SEC_ACTIONS = {
   laf: '<button class="btn btn-primary btn-sm" onclick="openAddLAF()">+ Log Item</button>',
   vacant: '<button class="btn btn-primary btn-sm" onclick="openAddUnit()">+ Add Unit</button>',
   concierge: '<button class="btn btn-primary btn-sm" onclick="openAddConcierge()">+ Log Request</button>',
-  residents: '<button class="btn btn-primary btn-sm" onclick="openAddResident()">+ Add Profile</button>',
+  residents: '<button class="btn btn-primary btn-sm" onclick="openAddUnitRecord()">+ Add Unit Record</button>',
   passdown: '',
   todos: '',
   templates: '<button class="btn btn-primary btn-sm" onclick="openAddTemplate()">+ Add Template</button>'
@@ -5923,7 +5928,7 @@ var utFilter = 'all', utSearch = '', utFloor = 'all', editingUnitRecordId = null
 // ===== [UNIT TRACKER] ========================================================
 function filterUnitRecords(f, btn) {
   utFilter = f;
-  ['ut-filter-all','ut-filter-bg','ut-filter-wifi'].forEach(function(id) {
+  ['ut-filter-all','ut-filter-bg','ut-filter-wifi','ut-filter-unassigned'].forEach(function(id) {
     var b = g(id); if (!b) return;
     b.style.background = ''; b.style.color = ''; b.style.borderColor = '';
   });
@@ -5938,6 +5943,7 @@ function openEditUnitRecord(id) {
   if (!r) return;
   editingUnitRecordId = id;
   var titleEl = g('ur-unit-title'); if (titleEl) titleEl.textContent = 'Unit ' + r.unit;
+  var uf = g('ur-unit-field'); if (uf) uf.style.display = 'none';
   g('ur-leaseholder').value = r.leaseholder || '';
   g('ur-roommates').value = r.roommates || '';
   g('ur-unit-keys-issued').value = r.unitKeysIssued || 0;
@@ -5947,6 +5953,7 @@ function openEditUnitRecord(id) {
   g('ur-transponder').checked = !!r.transponder;
   g('ur-xpress').checked = !!r.xpressSticker;
   g('ur-keytag').checked = !!r.keyTag;
+  var bgEl = g('ur-blueground'); if (bgEl) bgEl.checked = !!r.blueground;
   g('ur-wifi-expiry').value = r.wifiExpiry || '';
   g('ur-notes').value = r.notes || '';
   var hint = g('ur-wifi-hint');
@@ -5959,7 +5966,39 @@ function openEditUnitRecord(id) {
   openModal('modal-unit-record');
 }
 
+function openAddUnitRecord() {
+  editingUnitRecordId = null;
+  var titleEl = g('ur-unit-title'); if (titleEl) titleEl.textContent = 'Add Unit Record';
+  var uf = g('ur-unit-field'); if (uf) uf.style.display = '';
+  g('ur-unit-num').value = '';
+  g('ur-leaseholder').value = '';
+  g('ur-roommates').value = '';
+  g('ur-unit-keys-issued').value = 0;
+  g('ur-mailbox-keys-issued').value = 0;
+  g('ur-unit-keys-replacement').value = 0;
+  g('ur-mailbox-keys-replacement').value = 0;
+  g('ur-transponder').checked = false;
+  g('ur-xpress').checked = false;
+  g('ur-keytag').checked = false;
+  var bgEl = g('ur-blueground'); if (bgEl) bgEl.checked = false;
+  g('ur-wifi-expiry').value = '';
+  g('ur-notes').value = '';
+  var hint = g('ur-wifi-hint'); if (hint) hint.innerHTML = '';
+  openModal('modal-unit-record');
+}
+
 function saveUnitRecord() {
+  if (!editingUnitRecordId) {
+    var unit = g('ur-unit-num') ? g('ur-unit-num').value.trim() : '';
+    if (!unit) { toast('Unit # is required'); return; }
+    var newR = { id: uid(), unit: unit, leaseholder: g('ur-leaseholder').value.trim(), roommates: g('ur-roommates').value.trim(), unitKeysIssued: parseInt(g('ur-unit-keys-issued').value)||0, mailboxKeysIssued: parseInt(g('ur-mailbox-keys-issued').value)||0, unitKeysReplacement: parseInt(g('ur-unit-keys-replacement').value)||0, mailboxKeysReplacement: parseInt(g('ur-mailbox-keys-replacement').value)||0, transponder: g('ur-transponder').checked, xpressSticker: g('ur-xpress').checked, keyTag: g('ur-keytag').checked, blueground: g('ur-blueground') ? g('ur-blueground').checked : false, wifiExpiry: g('ur-wifi-expiry').value||'', notes: g('ur-notes').value.trim(), createdAt: Date.now() };
+    if (!state.unitRecords) state.unitRecords = [];
+    state.unitRecords.push(newR);
+    pushUndo({ sec: 'residents', type: 'ADD', id: newR.id, data: newR, label: 'add unit record — Unit ' + unit });
+    logActivity('residents', 'create', 'Added unit record — Unit ' + unit);
+    scheduleSave(); closeModal('modal-unit-record'); renderResidents(); toast('Unit record added');
+    return;
+  }
   var r = (state.unitRecords || []).find(function(x) { return x.id === editingUnitRecordId; });
   if (!r) return;
   var before = Object.assign({}, r);
@@ -5972,6 +6011,7 @@ function saveUnitRecord() {
   r.transponder = g('ur-transponder').checked;
   r.xpressSticker = g('ur-xpress').checked;
   r.keyTag = g('ur-keytag').checked;
+  r.blueground = g('ur-blueground') ? g('ur-blueground').checked : !!r.blueground;
   r.wifiExpiry = g('ur-wifi-expiry').value || '';
   r.notes = g('ur-notes').value.trim();
   pushUndo({ sec: 'residents', type: 'EDIT', id: r.id, before: before, after: Object.assign({}, r), label: 'unit record — Unit ' + r.unit });
@@ -6612,6 +6652,7 @@ function renderResidents() {
   var list = allRecs.slice();
   if (utFilter === 'blueground') list = list.filter(function(r){ return r.blueground; });
   else if (utFilter === 'wifi') list = list.filter(function(r){ return r.wifiExpiry && r.wifiExpiry <= d15s; });
+  else if (utFilter === 'unassigned') list = list.filter(function(r){ return !r.leaseholder && !r.blueground; });
   if (utFloor !== 'all') list = list.filter(function(r){ return String(floorOf(r.unit)) === utFloor; });
   if (utSearch) list = list.filter(function(r){ return (r.unit||'').includes(utSearch)||(r.leaseholder||'').toLowerCase().includes(utSearch)||(r.roommates||'').toLowerCase().includes(utSearch); });
   list.sort(function(a,b){ return parseInt(a.unit)-parseInt(b.unit); });
@@ -6632,10 +6673,11 @@ function renderResidents() {
 
   // Stats
   var bgCount = allRecs.filter(function(r){ return r.blueground; }).length;
+  var unassignedCount = allRecs.filter(function(r){ return !r.leaseholder && !r.blueground; }).length;
   var parkCount = allRecs.filter(function(r){ return r.transponder||r.xpressSticker||r.keyTag; }).length;
   var wifiCount = allRecs.filter(function(r){ return r.wifiExpiry; }).length;
   var statsEl = g('ut-stats');
-  if (statsEl) statsEl.innerHTML = '<div class="stat-card stat-clickable" onclick="filterUnitRecords(\'all\',g(\'ut-filter-all\'))"><div class="stat-num">'+allRecs.length+'</div><div class="stat-lbl">Total Units</div></div><div class="stat-card stat-clickable" style="border-left:3px solid #3b82f6" onclick="filterUnitRecords(\'blueground\',g(\'ut-filter-bg\'))"><div class="stat-num">'+bgCount+'</div><div class="stat-lbl">Blueground</div></div><div class="stat-card green"><div class="stat-num">'+parkCount+'</div><div class="stat-lbl">Parking Issued</div></div><div class="stat-card stat-clickable" onclick="filterUnitRecords(\'wifi\',g(\'ut-filter-wifi\'))"><div class="stat-num">'+wifiCount+'</div><div class="stat-lbl">WiFi Tracked</div></div>';
+  if (statsEl) statsEl.innerHTML = '<div class="stat-card stat-clickable" onclick="filterUnitRecords(\'all\',g(\'ut-filter-all\'))"><div class="stat-num">'+allRecs.length+'</div><div class="stat-lbl">Total Units</div></div><div class="stat-card stat-clickable" style="border-left:3px solid #3b82f6" onclick="filterUnitRecords(\'blueground\',g(\'ut-filter-bg\'))"><div class="stat-num">'+bgCount+'</div><div class="stat-lbl">Blueground</div></div><div class="stat-card stat-clickable" onclick="filterUnitRecords(\'unassigned\',g(\'ut-filter-unassigned\'))"><div class="stat-num">'+unassignedCount+'</div><div class="stat-lbl">Unassigned</div></div><div class="stat-card green"><div class="stat-num">'+parkCount+'</div><div class="stat-lbl">Parking Issued</div></div><div class="stat-card stat-clickable" onclick="filterUnitRecords(\'wifi\',g(\'ut-filter-wifi\'))"><div class="stat-num">'+wifiCount+'</div><div class="stat-lbl">WiFi Tracked</div></div>';
 
   // Floor dropdown options
   var floorSel = g('ut-floor-filter');
@@ -10259,6 +10301,7 @@ async function init() {
   migrateTaskUpdatesV2();
   migrateTaskUpdatesV3();
   seedDefaultTemplates();
+  seedUnitRecords();
   updatePropertyUI();
   lastSyncTs = Date.now();
   if (pendingScanId) {
@@ -10614,6 +10657,48 @@ function seedDefaultTemplates() {
     state.templatesSeedV2 = true;
     scheduleSave();
   }
+}
+
+function seedUnitRecords() {
+  if (state.unitRecordsSeedV1) return;
+  if (!state.unitRecords) state.unitRecords = [];
+  var byUnit = {};
+  state.unitRecords.forEach(function(r){ byUnit[r.unit] = r; });
+  var toAdd = [
+    { unit: '245', leaseholder: '', roommates: '', blueground: false, notes: '' },
+    { unit: '331', leaseholder: '', roommates: '', blueground: false, notes: '' },
+    { unit: '635', leaseholder: '', roommates: '', blueground: true, notes: '' },
+    { unit: '646', leaseholder: 'Ben Joshua Enriquez', roommates: 'Torrey Guan, Matthew Isaac Rodriguez', blueground: false, notes: '' },
+    { unit: '710', leaseholder: '', roommates: '', blueground: true, notes: '' },
+    { unit: '713', leaseholder: '', roommates: '', blueground: false, notes: '' },
+    { unit: '723', leaseholder: '', roommates: '', blueground: true, notes: '' },
+    { unit: '731', leaseholder: 'Ryan Tiu', roommates: '', blueground: false, notes: '' },
+    { unit: '826', leaseholder: '', roommates: '', blueground: false, notes: '' },
+    { unit: '835', leaseholder: '', roommates: '', blueground: true, notes: '' },
+    { unit: '1009', leaseholder: '', roommates: '', blueground: true, notes: '' },
+    { unit: '1709', leaseholder: '', roommates: '', blueground: true, notes: '' },
+    { unit: '2506', leaseholder: 'Margaret Garcia de Duran', roommates: 'Sevilla Duran', blueground: false, notes: 'Application pending' }
+  ];
+  toAdd.forEach(function(u) {
+    if (!byUnit[u.unit]) {
+      state.unitRecords.push({ id: uid(), unit: u.unit, leaseholder: u.leaseholder, roommates: u.roommates, unitKeysIssued: 0, mailboxKeysIssued: 0, unitKeysReplacement: 0, mailboxKeysReplacement: 0, transponder: false, xpressSticker: false, keyTag: false, blueground: u.blueground, wifiExpiry: '', notes: u.notes, createdAt: Date.now() });
+    }
+  });
+  var toUpdate = [
+    { unit: '433', leaseholder: 'Justino Antonio Mejorada Pier', roommates: 'Ma de la Luz Pier Garza' },
+    { unit: '535', leaseholder: 'Ethan Lee', roommates: 'Lawrence Cheung' },
+    { unit: '737', leaseholder: 'Jose Abadi', roommates: 'Hans Benito' },
+    { unit: '1403', leaseholder: 'John Maerzke', roommates: '' },
+    { unit: '1501', leaseholder: 'Kim Daye', roommates: '' },
+    { unit: '2204', leaseholder: 'Scott Brookes', roommates: '' },
+    { unit: '2303', leaseholder: 'Dorian Pirau', roommates: 'Ana Maria Pirau' }
+  ];
+  toUpdate.forEach(function(u) {
+    var existing = state.unitRecords.find(function(r){ return r.unit === u.unit; });
+    if (existing) { existing.leaseholder = u.leaseholder; existing.roommates = u.roommates; }
+  });
+  state.unitRecordsSeedV1 = true;
+  scheduleSave();
 }
 
 function renderTemplates() {
