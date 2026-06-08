@@ -607,7 +607,6 @@
   <div class="nav-group">
     <div class="nav-label">Operations</div>
     <div class="nav-item" data-sec="moves" onclick="nav(this)"><span class="icon" data-icon="truck"></span><span class="nav-txt">Move Ins / Outs</span><span class="badge" id="badge-moves"></span></div>
-    <div class="nav-item" data-sec="vacant" onclick="nav(this)"><span class="icon" data-icon="building"></span><span class="nav-txt">Vacant Units</span><span class="badge" id="badge-vacant"></span></div>
     <div class="nav-item" data-sec="walkthrough" onclick="nav(this)"><span class="icon" data-icon="shield"></span><span class="nav-txt">Security Patrols</span></div>
     <div class="nav-item" data-sec="maintenance" onclick="nav(this)"><span class="icon" data-icon="wrench"></span><span class="nav-txt">Maintenance</span><span class="badge" id="badge-maint"></span></div>
     <div class="nav-item" data-sec="security" onclick="nav(this)"><span class="icon" data-icon="alert-triangle"></span><span class="nav-txt">Incident Log</span><span class="badge" id="badge-security"></span></div>
@@ -689,11 +688,6 @@
       </div>
       <div id="moves-cards"></div>
       <div class="card" id="tight-panel" style="display:none"><div class="card-hdr"><span class="card-title">Tight Turnovers</span></div><div class="card-body" id="tight-body"></div></div>
-    </div>
-    <div class="section" id="section-vacant">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterUnits('all',this)">All Units</div><div class="sub-tab" onclick="filterUnits('vacant',this)">Vacant</div><div class="sub-tab" onclick="filterUnits('sgt',this)">SGT Ready</div><div class="sub-tab" onclick="filterUnits('blueground',this)">&#127968; Blueground</div></div>
-      <div id="blueground-banner" style="display:none;margin-bottom:10px;padding:10px 14px;background:#eff6ff;border:1px solid #93c5fd;border-radius:var(--radius);font-size:13px;color:#1e40af"><strong>&#127968; Blueground Units</strong> — Managed by Blueground. Do not enter or send maintenance without Blueground coordination.</div>
-      <div class="stat-grid" id="units-stats"></div><div class="unit-grid" id="units-grid"></div>
     </div>
     <div class="section" id="section-maintenance">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterMaint('all',this)">All</div><div class="sub-tab" onclick="filterMaint('open',this)">Open</div><div class="sub-tab" onclick="filterMaint('in-progress',this)">In Progress</div><div class="sub-tab" onclick="filterMaint('resolved',this)">Resolved</div></div>
@@ -792,7 +786,7 @@
               <button class="btn btn-xs" id="ut-filter-all" onclick="filterUnitRecords('all',this)" style="background:var(--accent);color:#fff;border-color:var(--accent)">All</button>
               <button class="btn btn-xs btn-secondary" id="ut-filter-bg" onclick="filterUnitRecords('blueground',this)">&#128309; BG</button>
               <button class="btn btn-xs btn-secondary" id="ut-filter-wifi" onclick="filterUnitRecords('wifi',this)">&#128246; WiFi Expiring</button>
-              <button class="btn btn-xs btn-secondary" id="ut-filter-unassigned" onclick="filterUnitRecords('unassigned',this)">&#127968; Unassigned</button>
+              <button class="btn btn-xs btn-secondary" id="ut-filter-unassigned" onclick="filterUnitRecords('unassigned',this)">&#127968; Vacant</button>
             </div>
           </div>
         </div>
@@ -1400,24 +1394,6 @@
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-laf-claim')">Cancel</button><button class="btn btn-primary" onclick="saveClaimLAF()">Mark Claimed</button></div>
 </div></div>
 
-<div class="modal-ov" id="modal-unit"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="modal-unit-title">Add Unit</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-unit')">&#x2715;</button></div>
-  <div class="modal-bdy">
-    <div class="fr"><div class="fg"><label>Unit #</label><input id="un-unit" type="text" placeholder="e.g. 1204"></div><div class="fg"><label>Floor</label><input id="un-floor" type="text" placeholder="e.g. 12"></div></div>
-    <div class="fr"><div class="fg"><label>Bed / Bath</label><input id="un-bed" type="text" placeholder="e.g. 1BD/1BA"></div><div class="fg"><label>Sq Ft</label><input id="un-sqft" type="text" placeholder="e.g. 650"></div></div>
-    <div class="fr"><div class="fg"><label>Status</label><select id="un-status"><option value="vacant">Vacant</option><option value="occupied">Occupied</option></select></div><div class="fg"><label>Asking Rent</label><input id="un-rent" type="text" placeholder="e.g. $3,200/mo"></div></div>
-    <div class="fr"><div class="fg"><label>Available Date</label><input id="un-avail" type="date" data-no-autofill></div><div class="fg" style="display:flex;align-items:flex-end;padding-bottom:2px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="un-sgt"> SGT Ready</label></div></div>
-    <div style="padding:8px 10px;background:#eff6ff;border:1px solid #93c5fd;border-radius:6px;margin-bottom:4px">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="un-blueground" onchange="bgToggle()"> <span><strong>Blueground Unit</strong></span></label>
-      <div id="un-bg-fields" style="display:none;margin-top:8px">
-        <div class="fr"><div class="fg"><label>Current Resident</label><input id="un-bg-resident" type="text" placeholder="Resident name"></div></div>
-        <div class="fr"><div class="fg"><label>Check-In</label><input id="un-bg-checkin" type="date" data-no-autofill></div><div class="fg"><label>Check-Out</label><input id="un-bg-checkout" type="date" data-no-autofill></div></div>
-      </div>
-    </div>
-    <div class="fg"><label>Notes</label><textarea id="un-notes" rows="3" placeholder="Additional details..."></textarea></div>
-  </div>
-  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-unit')">Cancel</button><button class="btn btn-primary" id="modal-unit-savebtn" onclick="saveUnit()">Add Unit</button></div>
-</div></div>
 
 <div class="modal-ov" id="modal-concierge"><div class="modal">
   <div class="modal-hdr"><span class="modal-title" id="modal-concierge-title">Log Concierge Request</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-concierge')">&#x2715;</button></div>
@@ -2277,7 +2253,6 @@ var SEC_ACTIONS = {
   tours: '<button class="btn btn-primary btn-sm" onclick="openAddTour()">+ Log Tour</button>',
   walkthrough: '<button class="btn btn-secondary btn-sm" onclick="openModal(\'modal-flag\')">Flag Issue</button>',
   laf: '<button class="btn btn-primary btn-sm" onclick="openAddLAF()">+ Log Item</button>',
-  vacant: '<button class="btn btn-primary btn-sm" onclick="openAddUnit()">+ Add Unit</button>',
   concierge: '<button class="btn btn-primary btn-sm" onclick="openAddConcierge()">+ Log Request</button>',
   residents: '<button class="btn btn-primary btn-sm" onclick="openAddUnitRecord()">+ Add Unit Record</button>',
   passdown: '',
@@ -2449,14 +2424,13 @@ function updateBadges() {
   var trN = (state.tours || []).filter(function (t) { return t.date === today(); }).length;
   var tdN = getCurrentTodos().filter(function (t) { return !t.done; }).length;
   var lN = (state.laf || []).filter(function (i) { return !i.claimedAt; }).length;
-  var vN = (state.units || []).filter(function (u) { return u.status === 'vacant'; }).length;
   var naN = (state.moves || []).filter(function (m) { return !m.archivedAt && !m.apptDate && m.date >= today(); }).length;
   setBadge('badge-needs-appt', naN);
   var crN = (state.concierge || []).filter(function (c) { return c.status === 'open'; }).length;
   var secN = (state.security||[]).filter(function(s){ return s.date===today() || s.status==='monitoring'; }).length;
   var supLow = (state.supplies || []).filter(function(s){ return s.lowAt != null && s.qty <= s.lowAt; }).length;
   var supOut = (state.supplies || []).filter(function(s){ return s.qty === 0; }).length;
-  setBadge('badge-moves', mN); setBadge('badge-vacant', vN); setBadge('badge-maint', mtN);
+  setBadge('badge-moves', mN); setBadge('badge-maint', mtN);
   setBadge('badge-guests', gN); setBadge('badge-keys', kN); setBadge('badge-amenities', aN);
   setBadge('badge-tours', trN); setBadge('badge-todos', tdN); setBadge('badge-laf', lN);
   setBadge('badge-concierge', crN); setBadge('badge-security', secN); setBadge('badge-supplies', supLow);
@@ -3497,25 +3471,26 @@ function archiveMove(id) {
     var vacUnit = (state.units || []).find(function(u){ return u.unit === m.unit; });
     if (vacUnit && vacUnit.status !== 'occupied') { vacUnit.status = 'occupied'; scheduleSave(); }
   }
-  // ── Connection: Move-out archive → offer to archive Resident Profile → return to Vacant ──
+  // ── Connection: Move-out archive → offer to archive Resident Profile → mark as Unassigned ──
   if (m.type === 'out') {
     var _archM = m;
     var profile = (state.residentProfiles || []).find(function(p) { return p.unit === _archM.unit && !p.archivedAt; });
     var _doReturnVacant = function() {
       showConfirm(
-        'Return to Vacant?',
-        'Return Unit <strong>' + esc(_archM.unit) + '</strong> to Vacant inventory as "Pending Turn"?',
-        'Return to Vacant', 'Not Now',
+        'Mark as Unassigned?',
+        'Clear the resident info for Unit <strong>' + esc(_archM.unit) + '</strong> in the Unit Tracker?',
+        'Mark Unassigned', 'Not Now',
         function() {
-          if (!state.units) state.units = [];
-          var existing = state.units.find(function(u){ return u.unit === _archM.unit; });
+          if (!state.unitRecords) state.unitRecords = [];
+          var existing = state.unitRecords.find(function(r){ return r.unit === _archM.unit; });
           if (existing) {
-            existing.status = 'vacant';
-            existing.notes = (existing.notes ? existing.notes + '\n' : '') + 'Returned to vacant — ' + fmtShort(today()) + ' (move-out: ' + _archM.resident + ')';
+            existing.leaseholder = '';
+            existing.roommates = '';
+            existing.notes = (existing.notes ? existing.notes + '\n' : '') + 'Cleared — move-out: ' + _archM.resident + ' (' + fmtShort(today()) + ')';
           } else {
-            state.units.push({ id: crypto.randomUUID(), unit: _archM.unit, floor: '', bed: '', sqft: '', rent: '', notes: 'Pending Turn — move-out: ' + _archM.resident, availDate: '', status: 'vacant', sgt: false, blueground: false, createdAt: Date.now() });
+            state.unitRecords.push({ id: uid(), unit: _archM.unit, leaseholder: '', roommates: '', unitKeysIssued: 0, mailboxKeysIssued: 0, unitKeysReplacement: 0, mailboxKeysReplacement: 0, transponder: false, xpressSticker: false, keyTag: false, blueground: false, wifiExpiry: '', notes: 'Pending Turn — move-out: ' + _archM.resident, createdAt: Date.now() });
           }
-          scheduleSave(); renderUnits(); updateBadges(); toast('Unit ' + _archM.unit + ' returned to vacant inventory');
+          scheduleSave(); renderResidents(); updateBadges(); toast('Unit ' + _archM.unit + ' marked as unassigned');
         }
       );
     };
@@ -3560,112 +3535,6 @@ function renderTightTurnovers() {
 }
 function generatePassdownFromMoves() { var item = document.querySelector('.nav-item[data-sec="passdown"]'); if (item) nav(item); setTimeout(autoGeneratePassdown, 100); }
 
-// ─── VACANT UNITS ───
-var unitFilter = 'all', editingUnitId = null;
-function bgToggle() {
-  var isBG = g('un-blueground').checked;
-  var fields = g('un-bg-fields');
-  if (fields) fields.style.display = isBG ? '' : 'none';
-}
-function filterUnits(f, item) { unitFilter = f; document.querySelectorAll('#section-vacant .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderUnits(); }
-function openAddUnit() {
-  editingUnitId = null;
-  ['un-unit','un-floor','un-bed','un-sqft','un-rent','un-notes','un-avail','un-bg-resident','un-bg-checkin','un-bg-checkout'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
-  g('un-status').value = 'vacant';
-  g('un-sgt').checked = false;
-  g('un-blueground').checked = false;
-  var bgf = g('un-bg-fields'); if (bgf) bgf.style.display = 'none';
-  setModalMode('modal-unit-title','modal-unit-savebtn','Add Unit','Add Unit');
-  openModal('modal-unit');
-}
-function openEditUnit(id) {
-  var u = (state.units || []).find(function(x){ return x.id===id; }); if (!u) return;
-  editingUnitId = id;
-  g('un-unit').value = u.unit || '';
-  g('un-floor').value = u.floor || '';
-  g('un-bed').value = u.bed || '';
-  g('un-sqft').value = u.sqft || '';
-  g('un-rent').value = u.rent || '';
-  g('un-notes').value = u.notes || '';
-  g('un-avail').value = u.availDate || '';
-  g('un-status').value = u.status || 'vacant';
-  g('un-sgt').checked = !!u.sgt;
-  g('un-blueground').checked = !!u.blueground;
-  var bgf = g('un-bg-fields'); if (bgf) bgf.style.display = u.blueground ? '' : 'none';
-  g('un-bg-resident').value = u.bgResident || '';
-  g('un-bg-checkin').value = u.bgCheckin || '';
-  g('un-bg-checkout').value = u.bgCheckout || '';
-  setModalMode('modal-unit-title','modal-unit-savebtn','Edit Unit','Save Changes');
-  openModal('modal-unit');
-}
-function saveUnit() {
-  var unit = g('un-unit').value.trim(); if (!unit) { toast('Unit # is required'); return; }
-  var isBG = g('un-blueground').checked;
-  if (editingUnitId) {
-    var u = (state.units || []).find(function(x){ return x.id===editingUnitId; }); if (!u) return;
-    var _ub = cloneData(u);
-    u.unit=unit; u.floor=g('un-floor').value.trim(); u.bed=g('un-bed').value.trim(); u.sqft=g('un-sqft').value.trim(); u.rent=g('un-rent').value.trim(); u.notes=g('un-notes').value.trim(); u.availDate=g('un-avail').value; u.status=g('un-status').value; u.sgt=g('un-sgt').checked; u.blueground=isBG;
-    u.bgResident=isBG ? g('un-bg-resident').value.trim() : ''; u.bgCheckin=isBG ? g('un-bg-checkin').value : ''; u.bgCheckout=isBG ? g('un-bg-checkout').value : '';
-    pushUndo({ sec: 'units', type: 'EDIT', id: u.id, before: _ub, after: cloneData(u), label: 'unit edit — ' + unit });
-    logActivity('units', 'edit', 'Updated unit ' + unit, 'Status: ' + u.status + (u.rent ? ' · Rent: $' + u.rent : '') + (u.bed ? ' · ' + u.bed + ' bed' : ''));
-    editingUnitId=null; scheduleSave(); closeModal('modal-unit'); renderUnits(); updateBadges(); toast('Unit updated'); return;
-  }
-  var newU = { id: uid(), unit: unit, floor: g('un-floor').value.trim(), bed: g('un-bed').value.trim(), sqft: g('un-sqft').value.trim(), rent: g('un-rent').value.trim(), notes: g('un-notes').value.trim(), availDate: g('un-avail').value, status: g('un-status').value, sgt: g('un-sgt').checked, blueground: isBG, bgResident: isBG ? g('un-bg-resident').value.trim() : '', bgCheckin: isBG ? g('un-bg-checkin').value : '', bgCheckout: isBG ? g('un-bg-checkout').value : '', createdAt: Date.now() };
-  if (!state.units) state.units = [];
-  state.units.push(newU);
-  pushUndo({ sec: 'units', type: 'ADD', id: newU.id, data: newU, label: 'add unit — ' + unit });
-  logActivity('units', 'create', 'Added unit ' + unit, 'Status: ' + newU.status + (newU.rent ? ' · Rent: $' + newU.rent : '') + (newU.bed ? ' · ' + newU.bed + ' bed' : ''));
-  scheduleSave(); closeModal('modal-unit'); renderUnits(); updateBadges(); toast('Unit added');
-}
-function renderUnits() {
-  var all = state.units || [];
-  var list = all.slice();
-  if (unitFilter === 'vacant') list = list.filter(function (u) { return u.status === 'vacant' && !u.blueground; });
-  else if (unitFilter === 'sgt') list = list.filter(function (u) { return u.sgt; });
-  else if (unitFilter === 'blueground') list = list.filter(function (u) { return u.blueground; });
-  list.sort(function (a, b) { return parseInt(a.unit) - parseInt(b.unit); });
-  var vacant = all.filter(function (u) { return u.status === 'vacant' && !u.blueground; }).length;
-  var sgt = all.filter(function (u) { return u.sgt; }).length;
-  var bgCount = all.filter(function (u) { return u.blueground; }).length;
-  var total = all.length, occ = total ? Math.round((total - vacant) / total * 100) : 0;
-  var banner = g('blueground-banner');
-  if (banner) banner.style.display = unitFilter === 'blueground' ? '' : 'none';
-  g('units-stats').innerHTML = '<div class="stat-card"><div class="stat-num">' + vacant + '</div><div class="stat-lbl">Vacant Now</div></div><div class="stat-card green"><div class="stat-num">' + sgt + '</div><div class="stat-lbl">SGT Ready</div></div><div class="stat-card" style="border-left:3px solid #3b82f6"><div class="stat-num">' + bgCount + '</div><div class="stat-lbl">Blueground</div></div><div class="stat-card"><div class="stat-num">' + total + '</div><div class="stat-lbl">Total Units</div></div><div class="stat-card accent"><div class="stat-num">' + occ + '%</div><div class="stat-lbl">Occupancy</div></div>';
-  if (!list.length) { g('units-grid').innerHTML = '<div class="text-3 text-sm">' + (unitFilter === 'blueground' ? 'No Blueground units added yet. Use + Add Unit and check the Blueground box.' : 'No units match this filter.') + '</div>'; return; }
-  var html = '';
-  list.forEach(function (u) {
-    var isBG = !!u.blueground;
-    var borderStyle = isBG ? 'border-left:3px solid #3b82f6' : (u.sgt ? '' : '');
-    var sgtSpan = u.sgt ? '<span class="pill" style="background:var(--green-light);color:var(--green);font-size:10px">SGT</span>' : '';
-    var bgSpan = isBG ? '<span style="font-size:10px;font-weight:700;background:#dbeafe;color:#1d4ed8;border-radius:4px;padding:1px 6px">BLUEGROUND</span>' : '';
-    html += '<div class="unit-card ' + (u.sgt && !isBG ? 'sgt-ready' : '') + '" style="' + borderStyle + '">';
-    html += '<div class="flex items-center gap-6 mb-6" style="flex-wrap:wrap"><span class="unit-num">' + u.unit + '</span><span class="pill ' + (u.status === 'vacant' ? 'pill-open' : 'pill-resolved') + '" style="font-size:10px">' + u.status + '</span>' + sgtSpan + bgSpan + '</div>';
-    if (isBG) {
-      var bgLine = '';
-      if (u.bgResident) bgLine += '<span style="font-weight:600">' + u.bgResident + '</span>';
-      if (u.bgCheckin || u.bgCheckout) {
-        var ci = u.bgCheckin ? fmtShort(u.bgCheckin) : '?';
-        var co = u.bgCheckout ? fmtShort(u.bgCheckout) : '?';
-        bgLine += (bgLine ? ' &mdash; ' : '') + ci + ' &rarr; ' + co;
-      }
-      if (!bgLine) bgLine = 'Occupied';
-      html += '<div style="font-size:11px;color:#1d4ed8;margin-bottom:5px">' + bgLine + '</div>';
-    }
-    var details = [];
-    if (u.bed) details.push(u.bed);
-    if (u.floor) details.push('Fl ' + u.floor);
-    if (u.sqft) details.push(u.sqft + ' sqft');
-    if (details.length) html += '<div class="unit-detail-row">' + details.map(function(d){ return '<span class="unit-det">' + d + '</span>'; }).join('') + '</div>';
-    if (u.rent && !isBG) html += '<div style="font-size:12px;font-weight:600;color:var(--accent);margin-top:5px">' + u.rent + '</div>';
-    if (u.availDate && !isBG) html += '<div style="font-size:11px;color:var(--text3);margin-top:2px">Avail: ' + fmtShort(u.availDate) + '</div>';
-    if (u.notes) html += '<div style="font-size:11px;color:var(--text2);margin-top:4px;line-height:1.4">' + u.notes + '</div>';
-    html += '<div class="flex gap-4 mt-8"><button class="btn btn-ghost btn-xs" onclick="openEditUnit(\'' + u.id + '\')">&#9998; Edit</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteUnit(\'' + u.id + '\')">&#215;</button></div>';
-    html += '</div>';
-  });
-  g('units-grid').innerHTML = html;
-  setBadge('badge-vacant', vacant);
-}
-function deleteUnit(id) { if (!confirm('Remove this unit?')) return; state.units = (state.units || []).filter(function (u) { return u.id !== id; }); scheduleSave(); renderUnits(); updateBadges(); toast('Removed'); }
 
 // ─── CONCIERGE LOG ───
 var conciergeFilter = 'all', editingConciergeId = null;
@@ -6677,7 +6546,7 @@ function renderResidents() {
   var parkCount = allRecs.filter(function(r){ return r.transponder||r.xpressSticker||r.keyTag; }).length;
   var wifiCount = allRecs.filter(function(r){ return r.wifiExpiry; }).length;
   var statsEl = g('ut-stats');
-  if (statsEl) statsEl.innerHTML = '<div class="stat-card stat-clickable" onclick="filterUnitRecords(\'all\',g(\'ut-filter-all\'))"><div class="stat-num">'+allRecs.length+'</div><div class="stat-lbl">Total Units</div></div><div class="stat-card stat-clickable" style="border-left:3px solid #3b82f6" onclick="filterUnitRecords(\'blueground\',g(\'ut-filter-bg\'))"><div class="stat-num">'+bgCount+'</div><div class="stat-lbl">Blueground</div></div><div class="stat-card stat-clickable" onclick="filterUnitRecords(\'unassigned\',g(\'ut-filter-unassigned\'))"><div class="stat-num">'+unassignedCount+'</div><div class="stat-lbl">Unassigned</div></div><div class="stat-card green"><div class="stat-num">'+parkCount+'</div><div class="stat-lbl">Parking Issued</div></div><div class="stat-card stat-clickable" onclick="filterUnitRecords(\'wifi\',g(\'ut-filter-wifi\'))"><div class="stat-num">'+wifiCount+'</div><div class="stat-lbl">WiFi Tracked</div></div>';
+  if (statsEl) statsEl.innerHTML = '<div class="stat-card stat-clickable" onclick="filterUnitRecords(\'all\',g(\'ut-filter-all\'))"><div class="stat-num">'+allRecs.length+'</div><div class="stat-lbl">Total Units</div></div><div class="stat-card stat-clickable" style="border-left:3px solid #3b82f6" onclick="filterUnitRecords(\'blueground\',g(\'ut-filter-bg\'))"><div class="stat-num">'+bgCount+'</div><div class="stat-lbl">Blueground</div></div><div class="stat-card stat-clickable" onclick="filterUnitRecords(\'unassigned\',g(\'ut-filter-unassigned\'))"><div class="stat-num">'+unassignedCount+'</div><div class="stat-lbl">Vacant</div></div><div class="stat-card green"><div class="stat-num">'+parkCount+'</div><div class="stat-lbl">Parking Issued</div></div><div class="stat-card stat-clickable" onclick="filterUnitRecords(\'wifi\',g(\'ut-filter-wifi\'))"><div class="stat-num">'+wifiCount+'</div><div class="stat-lbl">WiFi Tracked</div></div>';
 
   // Floor dropdown options
   var floorSel = g('ut-floor-filter');
@@ -8790,8 +8659,6 @@ var GUIDE_DATA = [
   { id:'g-moves', icon:'🚛', title:'Move Ins / Outs', keywords:'move in out lease resident unit task checklist appointment appt archive post turnover staff admin conflict elevator total',
     html:'<h4>Tabs</h4><ul><li><strong>Move-Ins / Move-Outs</strong> — all active (non-archived) moves split by type</li><li><strong>Today</strong> — moves whose lease or appointment date is today</li><li><strong>Needs Appt</strong> — move-ins with no appointment date scheduled yet (amber badge)</li><li><strong>Post Move-In</strong> — residents already moved in (lease start in the past) who still have incomplete tasks tagged "Post Move-In"</li><li><strong>Turnover</strong> — units with all move-out tasks complete, ready for inspection</li><li><strong>Archive</strong> — completed moves that have been archived</li></ul><h4>Adding a Move</h4><p>Click <strong>+ Add Move</strong> (admin only). Fill in unit, resident name, lease date, type (in or out), and optionally an appointment date/time, move-in total, elevator reservation, and notes. The checklist is pre-populated from your default task list (configurable in Settings).</p><h4>Checklist &amp; Tasks</h4><p>Click any move row to expand its checklist. Check off tasks as they\'re completed. Tasks can be tagged by category — tasks tagged "Post Move-In" appear in the Post Move-In tab after the resident\'s lease start date has passed.</p><h4>Appointment Conflict Detection</h4><p>If two moves share the same appointment date and time, an orange <strong>⚠ Conflict</strong> badge appears on both. Reschedule to avoid overlap.</p><h4>Completion Status</h4><p>Once a move\'s appointment date has passed and all main tasks are checked off, the move shows a green <strong>✓ Completed</strong> badge and automatically reflects that status in the Daily Passdown.</p><h4>Archiving</h4><p>Once a move is fully complete, click <strong>Archive</strong> to remove it from the active list. Archived moves remain visible in the Archive tab.</p><div class="guide-tip">💡 Click the <strong>Passdown</strong> button in Moves to jump directly to the Daily Passdown with today\'s moves pre-filled.</div><div class="guide-note">🔒 Staff cannot add, edit, or delete moves — only check off tasks on the checklist.</div>' },
 
-  { id:'g-vacant', icon:'🏘', title:'Vacant Units', keywords:'vacant unit floor bed bath sqft rent available lease sgt self guided tour note active leased',
-    html:'<h4>What It Tracks</h4><p>Vacant units available for touring or leasing. Each unit record has: unit number, floor, bed/bath count, square footage, asking rent, available date, SGT (Self-Guided Tour) eligibility, and notes.</p><h4>Adding / Editing</h4><p>Click <strong>+ Add Unit</strong> to open the form. Fill in the fields and save. Click the <strong>Edit</strong> button on any unit to update its details.</p><h4>Tabs</h4><ul><li><strong>Active</strong> — units currently vacant and available</li><li><strong>Leased</strong> — units that have been marked inactive / leased</li></ul>' },
 
   { id:'g-patrol', icon:'🛡', title:'Security Patrols', keywords:'patrol walkthrough security floor area flag issue qr scan checkpoint pin alert overdue hours',
     html:'<h4>What It Does</h4><p>Tracks building walkthroughs and QR checkpoint scans. Floors and areas are configured in <strong>Settings → Property → Walkthrough Floors &amp; Areas</strong>.</p><h4>Logging a Walkthrough</h4><p>Select a floor/area and mark it as checked. Add flags for any issues observed — each flag has a priority level and description. Active flags appear on the Dashboard and feed into the Daily Passdown.</p><h4>QR Checkpoint Scans</h4><p>Each checkpoint has a printable QR code. When scanned, the user selects their name and enters the QR PIN to confirm the scan. All scans are logged with a timestamp on the patrol timeline.</p><h4>Patrol Alert Threshold</h4><p>Set in <strong>Settings → Security Patrols → Patrol Alert Threshold</strong>. If no scan is logged within that window (default 4 hours), a warning appears on the Dashboard.</p><div class="guide-note">📌 The QR scan confirmation page never exposes the full dashboard — it only shows a success screen, keeping the app secure on shared devices.</div>' },
@@ -9100,7 +8967,6 @@ function openTeamEntryModal(entry) {
 
 var TOGGLEABLE_SECTIONS = [
   { id: 'moves', label: 'Move Ins / Outs' },
-  { id: 'vacant', label: 'Vacant Units' },
   { id: 'walkthrough', label: 'Security Patrols' },
   { id: 'maintenance', label: 'Maintenance' },
   { id: 'security', label: 'Incident Log' },
@@ -10699,6 +10565,18 @@ function seedUnitRecords() {
   });
   state.unitRecordsSeedV1 = true;
   scheduleSave();
+  if (!state.unitRecordsSeedV2) {
+    var recs2 = state.unitRecords || [];
+    var unitSet2 = {};
+    recs2.forEach(function(r){ unitSet2[r.unit] = true; });
+    (state.units || []).forEach(function(u) {
+      if (!unitSet2[u.unit]) {
+        state.unitRecords.push({ id: uid(), unit: u.unit, leaseholder: u.blueground ? '' : '', roommates: '', unitKeysIssued: 0, mailboxKeysIssued: 0, unitKeysReplacement: 0, mailboxKeysReplacement: 0, transponder: false, xpressSticker: false, keyTag: false, blueground: !!u.blueground, wifiExpiry: '', notes: u.notes || '', createdAt: Date.now() });
+      }
+    });
+    state.unitRecordsSeedV2 = true;
+    scheduleSave();
+  }
 }
 
 function renderTemplates() {
