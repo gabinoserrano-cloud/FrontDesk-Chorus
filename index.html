@@ -1410,26 +1410,16 @@
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-concierge')">Cancel</button><button class="btn btn-primary" id="modal-concierge-savebtn" onclick="saveConcierge()">Log Request</button></div>
 </div></div>
 
-<div class="modal-ov" id="modal-resident"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="modal-resident-title">Add Resident Profile</span><span id="modal-resident-nav" style="display:none;align-items:center;gap:6px;margin-left:auto;margin-right:10px"><button class="btn btn-ghost btn-xs" id="modal-resident-prev" onclick="navigateResident(-1)" style="font-size:16px;padding:2px 8px;line-height:1">&#8592;</button><span id="modal-resident-pos" style="font-size:11px;color:var(--text3);white-space:nowrap"></span><button class="btn btn-ghost btn-xs" id="modal-resident-next" onclick="navigateResident(1)" style="font-size:16px;padding:2px 8px;line-height:1">&#8594;</button></span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-resident')">&#x2715;</button></div>
-  <div class="modal-bdy">
-    <div class="fr"><div class="fg"><label>Unit #</label><input id="rp-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Resident Name</label><input id="rp-name" type="text"></div></div>
-    <div style="padding:4px 0 2px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="rp-blueground"> <span>&#128309; <strong>Blueground Unit</strong> — Managed by Blueground</span></label></div>
-    <div class="fr"><div class="fg"><label>&#128246; WiFi Expiration Date</label><input id="rp-wifi-expiry" type="date" data-no-autofill></div><div class="fg" id="rp-wifi-hint" style="display:flex;align-items:flex-end;padding-bottom:6px;font-size:12px;color:var(--text3)"></div></div>
-    <div class="fr"><div class="fg"><label>&#128204; Notice Date</label><input id="rp-notice-date" type="date" data-no-autofill placeholder="Date resident gave notice"></div><div class="fg"><label>&#128197; Move-Out Date</label><input id="rp-moveout-date" type="date" data-no-autofill></div></div>
-    <div class="fg"><label>&#128230; PTE — Permission to Enter (Packages)</label><select id="rp-pte"><option value="not-set">Not Set</option><option value="granted">Granted — OK to enter for package delivery</option><option value="denied">Denied — Do NOT enter unit</option></select></div>
-    <div class="fg" style="margin-top:4px"><label style="font-size:11px;color:var(--text3)">Parking, bike, storage, pet, and vehicle details are tracked in RiseIO. Use the Parking tab in Key Tracker for credential tracking.</label></div>
-  </div>
-  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-resident')">Cancel</button><button class="btn btn-primary" id="modal-resident-savebtn" onclick="saveResident()">Save Profile</button></div>
-</div></div>
+
 
 <div class="modal-ov" id="modal-unit-record"><div class="modal" style="max-width:480px">
   <div class="modal-hdr"><span class="modal-title" id="ur-unit-title">Edit Unit</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-unit-record')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fg" id="ur-unit-field" style="display:none"><label>Unit #</label><input id="ur-unit-num" type="text" placeholder="e.g. 617"></div>
     <div class="fg"><label>Unit Type</label><select id="ur-unit-type"><option value="">— Select —</option><option value="studio">Studio</option><option value="1br">1 Bedroom</option><option value="2br">2 Bedroom</option><option value="3br">3 Bedroom</option><option value="other">Other</option></select></div>
-    <div class="fg"><label>Leaseholder</label><input id="ur-leaseholder" type="text" placeholder="Primary resident name"></div>
+    <div class="fr"><div class="fg"><label>Leaseholder</label><input id="ur-leaseholder" type="text" placeholder="Primary resident name"></div><div class="fg"><label>Preferred Name <span style="font-size:10px;color:var(--text3);font-weight:400">(if different)</span></label><input id="ur-preferred-name" type="text" placeholder="Goes by…"></div></div>
     <div class="fg"><label>Roommates <span style="font-size:10px;color:var(--text3);font-weight:400">(comma-separated)</span></label><input id="ur-roommates" type="text" placeholder="Additional residents&#8230;"></div>
+    <div class="fg"><label>&#128230; PTE — Permission to Enter</label><select id="ur-pte"><option value="not-set">Not Set</option><option value="granted">Granted — OK to enter for package delivery</option><option value="denied">Denied — Do NOT enter unit</option></select></div>
     <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
       <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">&#128273; Keys</div>
       <div class="fr">
@@ -2025,7 +2015,7 @@ var redoStack = [];
 var UNDO_LIMIT = 30;
 
 function _secStateKey(sec) {
-  if (sec === 'residents') return 'residentProfiles';
+  if (sec === 'residents') return 'unitRecords';
   return sec;
 }
 
@@ -2524,7 +2514,7 @@ function renderDash() {
       var expired = r.wifiExpiry < wt2;
       var daysLeft = Math.floor((new Date(r.wifiExpiry+'T00:00:00') - new Date(wt2+'T00:00:00')) / 86400000);
       var label = expired ? '<span style="color:var(--red);font-weight:600">EXPIRED ' + fmtShort(r.wifiExpiry) + '</span>' : '<span style="color:#92400E">Expires ' + fmtShort(r.wifiExpiry) + (daysLeft === 0 ? ' (today)' : ' (' + daysLeft + 'd)') + '</span>';
-      html += '<div class="tight-row"><strong>Unit ' + esc(r.unit) + '</strong> — ' + esc(r.residentName) + ' &nbsp;' + label + '<button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="navToSec(\'residents\');setTimeout(function(){openEditResident(\'' + r.id + '\')},150)">Renew</button></div>';
+      html += '<div class="tight-row"><strong>Unit ' + esc(r.unit) + '</strong> — ' + esc(r.leaseholder||r.residentName||'') + ' &nbsp;' + label + '<button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="navToSec(\'residents\');setTimeout(function(){openEditUnitRecord(\'' + r.id + '\')},150)">Renew</button></div>';
     });
     html += '</div>';
   }
@@ -2591,7 +2581,7 @@ function dashSearch(q) {
   var ql = q.toLowerCase(), results = [];
   (state.moves || []).filter(function (m) { return (m.resident || '').toLowerCase().includes(ql) || (m.unit || '').toLowerCase().includes(ql); }).forEach(function (m) { results.push({ label: m.resident + ' — Unit ' + m.unit, sub: (m.type === 'in' ? 'Move In' : 'Move Out') + ' · ' + fmtShort(m.date), sec: 'moves' }); });
   (state.guests || []).filter(function (gst) { return (gst.name || '').toLowerCase().includes(ql) || (gst.unit || '').toLowerCase().includes(ql); }).forEach(function (gst) { results.push({ label: gst.name + ' (Guest)', sub: 'Unit ' + gst.unit + ' · ' + gst.status, sec: 'guests' }); });
-  (state.residentProfiles || []).filter(function (r) { return (r.residentName || '').toLowerCase().includes(ql) || (r.preferredName || '').toLowerCase().includes(ql) || (r.unit || '').toLowerCase().includes(ql); }).forEach(function (r) { results.push({ label: (r.residentName || 'Resident') + ' — Unit ' + r.unit, sub: 'Resident Profile' + (r.preferredName ? ' · "' + r.preferredName + '"' : ''), sec: 'residents' }); });
+  (state.unitRecords || []).filter(function (r) { return (r.leaseholder || '').toLowerCase().includes(ql) || (r.preferredName || '').toLowerCase().includes(ql) || (r.unit || '').toLowerCase().includes(ql); }).forEach(function (r) { results.push({ label: (r.leaseholder || 'Unit') + ' — Unit ' + r.unit, sub: 'Unit Tracker' + (r.preferredName ? ' · "' + r.preferredName + '"' : ''), sec: 'residents' }); });
   (state.keys || []).filter(function (k) { return (k.name || '').toLowerCase().includes(ql) || (k.unit || '').toLowerCase().includes(ql) || (k.fob || '').toLowerCase().includes(ql); }).forEach(function (k) { results.push({ label: k.name + ' — Unit ' + k.unit, sub: 'Key Tracker · ' + k.type + ' · ' + k.status, sec: 'keys' }); });
   (state.maintenance || []).filter(function (m) { return (m.unit || '').toLowerCase().includes(ql) || (m.issue || '').toLowerCase().includes(ql); }).forEach(function (m) { results.push({ label: m.issue + ' — Unit ' + m.unit, sub: 'Maintenance · ' + m.status, sec: 'maintenance' }); });
   (state.concierge || []).filter(function (c) { return (c.resident || '').toLowerCase().includes(ql) || (c.unit || '').toLowerCase().includes(ql); }).forEach(function (c) { results.push({ label: c.resident + ' — Unit ' + c.unit, sub: 'Concierge · ' + c.type + ' · ' + c.status, sec: 'concierge' }); });
@@ -2833,11 +2823,6 @@ function saveMove() {
     var myTodos = getCurrentTodos();
     myTodos.push({ id: uid(), text: 'Pre-move call \u2014 ' + resident + ', Unit ' + unit, dueDate: preCallDate, priority: 'normal', done: false, note: '1 week before lease start \u2014 confirm everything is ready, any remaining tasks on their end', createdAt: Date.now(), moveRef: m.id });
     myTodos.push({ id: uid(), text: 'Post move-in call \u2014 ' + resident + ', Unit ' + unit, dueDate: postCallDate, priority: 'normal', done: false, note: '3 days after lease start \u2014 how did the move go? any questions?', createdAt: Date.now(), moveRef: m.id });
-    // Connection: mark matching vacant unit as pending move-in
-    var vacMatch = (state.units || []).find(function(u){ return u.unit === unit && u.status !== 'occupied'; });
-    if (vacMatch && confirm('Mark Unit ' + unit + ' as occupied in Vacant Units?')) {
-      vacMatch.status = 'occupied';
-    }
   }
   if (moveType === 'out') {
     var outTodosRef = getCurrentTodos();
@@ -2850,10 +2835,6 @@ function saveMove() {
   scheduleSave(); closeModal('modal-move'); openMoveId = m.id; renderMoves(); updateBadges(); renderDash();
   ['mv-unit', 'mv-resident', 'mv-total', 'mv-notes'].forEach(function (id) { g(id).value = ''; });
   toast(moveType === 'in' ? 'Move added \u2014 pre-move & post move-in call to-dos created' : 'Move added \u2014 move-out reminder to-do created');
-  if (moveType === 'in') {
-    var alreadyHasProfile = (state.residentProfiles || []).some(function(p){ return p.unit === m.unit && !p.archivedAt; });
-    if (!alreadyHasProfile) setTimeout(function(){ openAddResidentFromMove(m); }, 400);
-  }
 }
 function filterMoves(f, item) { moveFilter = f; document.querySelectorAll('#moves-tabs .sub-tab').forEach(function (t) { t.classList.remove('active'); }); if (item) item.classList.add('active'); renderMoves(); }
 function setMoveFilter(f) {
@@ -2916,11 +2897,7 @@ function buildCL(m, filterCat) {
     if (isParkingTask && !hadParkingHeader) {
       html += '<div class="cl-parking-hdr">&#128663; Parking Credentials</div>';
       hadParkingHeader = true;
-      var clProfile = (state.residentProfiles||[]).find(function(p){ return p.unit===m.unit && !p.archivedAt; });
       var clPark = (state.parking||[]).find(function(p){ return p.unit===m.unit && p.status==='active'; });
-      if (clProfile && clProfile.hasVehicle && clProfile.vehicleInfo) {
-        html += '<div style="font-size:11px;color:var(--text2);padding:2px 2px 4px 14px">&#128663; ' + esc(clProfile.vehicleInfo) + '</div>';
-      }
       if (clPark) {
         var credParts = [
           (clPark.transponder && clPark.transponder.issued ? '<span style="color:var(--green)">&#10003; Transponder</span>' : '<span style="color:var(--red)">&#10007; Transponder</span>'),
@@ -3462,21 +3439,11 @@ function archiveMove(id) {
   pushUndo({ sec: 'moves', type: 'EDIT', id: m.id, before: { archivedAt: _arch }, after: { archivedAt: m.archivedAt }, label: 'archive move — Unit ' + m.unit });
   logActivity('moves', 'archive', 'Archived move — Unit ' + m.unit + ' (' + (m.type === 'in' ? 'Move In' : 'Move Out') + ') · ' + m.resident);
   scheduleSave(); renderMoves(); updateBadges(); renderDash(); toast('Archived');
-  // ── Connection: Move-in archive → Resident Profiles ──
   if (m.type === 'in') {
-    var alreadyHasProfile = (state.residentProfiles || []).some(function(p) { return p.unit === m.unit; });
-    if (!alreadyHasProfile) {
-      if (!state.residentProfiles) state.residentProfiles = [];
-      openAddResidentFromMove(m);
-    }
-    // Ensure vacant unit is marked occupied on archive
-    var vacUnit = (state.units || []).find(function(u){ return u.unit === m.unit; });
-    if (vacUnit && vacUnit.status !== 'occupied') { vacUnit.status = 'occupied'; scheduleSave(); }
   }
   // ── Connection: Move-out archive → offer to archive Resident Profile → mark as Unassigned ──
   if (m.type === 'out') {
     var _archM = m;
-    var profile = (state.residentProfiles || []).find(function(p) { return p.unit === _archM.unit && !p.archivedAt; });
     var _doReturnVacant = function() {
       showConfirm(
         'Mark as Unassigned?',
@@ -3605,8 +3572,8 @@ function renderConcierge() {
     var logBtnLabel = logCount > 1 ? '&#128221; ' + logCount + ' updates' : '&#128221; Log';
     html += '<tr>';
     html += '<td class="mono font-600">' + esc(c.unit) + '</td>';
-    var cProf = (state.residentProfiles||[]).find(function(p){ return p.unit===c.unit; });
-    var cPte = cProf && cProf.pte==='granted' ? ' <span style="font-size:9px;background:#dcfce7;color:#166534;border-radius:3px;padding:1px 5px;font-weight:600;vertical-align:middle">PTE ✓</span>' : cProf && cProf.pte==='denied' ? ' <span style="font-size:9px;background:#fde8e8;color:var(--red);border-radius:3px;padding:1px 5px;font-weight:600;vertical-align:middle">NO PTE</span>' : '';
+    var cRec = (state.unitRecords||[]).find(function(r){ return r.unit===c.unit; });
+    var cPte = cRec && cRec.pte==='granted' ? ' <span style="font-size:9px;background:#dcfce7;color:#166534;border-radius:3px;padding:1px 5px;font-weight:600;vertical-align:middle">PTE ✓</span>' : cRec && cRec.pte==='denied' ? ' <span style="font-size:9px;background:#fde8e8;color:var(--red);border-radius:3px;padding:1px 5px;font-weight:600;vertical-align:middle">NO PTE</span>' : '';
     html += '<td>' + esc(c.resident) + cPte + byTag + '</td>';
     html += '<td><span class="pill" style="background:var(--accent-light);color:var(--accent);font-size:10px">' + esc(c.type) + '</span></td>';
     html += '<td style="max-width:160px;white-space:normal;font-size:12px;color:var(--text2)">' + (c.notes ? esc(c.notes) : '—') + '</td>';
@@ -5839,6 +5806,8 @@ function openEditUnitRecord(id) {
   var uf = g('ur-unit-field'); if (uf) uf.style.display = 'none';
   var utEl = g('ur-unit-type'); if (utEl) utEl.value = r.unitType || '';
   g('ur-leaseholder').value = r.leaseholder || '';
+  var pnEl = g('ur-preferred-name'); if (pnEl) pnEl.value = r.preferredName || '';
+  var pteEl = g('ur-pte'); if (pteEl) pteEl.value = r.pte || 'not-set';
   g('ur-roommates').value = r.roommates || '';
   g('ur-unit-keys-issued').value = r.unitKeysIssued || 0;
   g('ur-mailbox-keys-issued').value = r.mailboxKeysIssued || 0;
@@ -5873,6 +5842,8 @@ function openAddUnitRecord() {
   g('ur-unit-num').value = '';
   var utEl = g('ur-unit-type'); if (utEl) utEl.value = '';
   g('ur-leaseholder').value = '';
+  var pnEl = g('ur-preferred-name'); if (pnEl) pnEl.value = '';
+  var pteEl = g('ur-pte'); if (pteEl) pteEl.value = 'not-set';
   g('ur-roommates').value = '';
   g('ur-unit-keys-issued').value = 0;
   g('ur-mailbox-keys-issued').value = 0;
@@ -5898,7 +5869,7 @@ function saveUnitRecord() {
   if (!editingUnitRecordId) {
     var unit = g('ur-unit-num') ? g('ur-unit-num').value.trim() : '';
     if (!unit) { toast('Unit # is required'); return; }
-    var newR = { id: uid(), unit: unit, unitType: g('ur-unit-type')?g('ur-unit-type').value:'', leaseholder: g('ur-leaseholder').value.trim(), roommates: g('ur-roommates').value.trim(), unitKeysIssued: parseInt(g('ur-unit-keys-issued').value)||0, mailboxKeysIssued: parseInt(g('ur-mailbox-keys-issued').value)||0, unitKeysReplacement: parseInt(g('ur-unit-keys-replacement').value)||0, mailboxKeysReplacement: parseInt(g('ur-mailbox-keys-replacement').value)||0, transponder: g('ur-transponder').checked, transponderReplacement: parseInt(g('ur-transponder-repl')?g('ur-transponder-repl').value:0)||0, xpressSticker: g('ur-xpress').checked, xpressReplacement: parseInt(g('ur-xpress-repl')?g('ur-xpress-repl').value:0)||0, keyTag: g('ur-keytag').checked, keyTagReplacement: parseInt(g('ur-keytag-repl')?g('ur-keytag-repl').value:0)||0, hasBike: !!(g('ur-bike')&&g('ur-bike').checked), bikeSticker: g('ur-bike-sticker')?g('ur-bike-sticker').value.trim():'', blueground: g('ur-blueground') ? g('ur-blueground').checked : false, wifiExpiry: g('ur-wifi-expiry').value||'', notes: g('ur-notes').value.trim(), createdAt: Date.now() };
+    var newR = { id: uid(), unit: unit, unitType: g('ur-unit-type')?g('ur-unit-type').value:'', leaseholder: g('ur-leaseholder').value.trim(), preferredName: g('ur-preferred-name')?g('ur-preferred-name').value.trim():'', pte: g('ur-pte')?g('ur-pte').value:'not-set', roommates: g('ur-roommates').value.trim(), unitKeysIssued: parseInt(g('ur-unit-keys-issued').value)||0, mailboxKeysIssued: parseInt(g('ur-mailbox-keys-issued').value)||0, unitKeysReplacement: parseInt(g('ur-unit-keys-replacement').value)||0, mailboxKeysReplacement: parseInt(g('ur-mailbox-keys-replacement').value)||0, transponder: g('ur-transponder').checked, transponderReplacement: parseInt(g('ur-transponder-repl')?g('ur-transponder-repl').value:0)||0, xpressSticker: g('ur-xpress').checked, xpressReplacement: parseInt(g('ur-xpress-repl')?g('ur-xpress-repl').value:0)||0, keyTag: g('ur-keytag').checked, keyTagReplacement: parseInt(g('ur-keytag-repl')?g('ur-keytag-repl').value:0)||0, hasBike: !!(g('ur-bike')&&g('ur-bike').checked), bikeSticker: g('ur-bike-sticker')?g('ur-bike-sticker').value.trim():'', blueground: g('ur-blueground') ? g('ur-blueground').checked : false, wifiExpiry: g('ur-wifi-expiry').value||'', notes: g('ur-notes').value.trim(), createdAt: Date.now() };
     if (!state.unitRecords) state.unitRecords = [];
     state.unitRecords.push(newR);
     pushUndo({ sec: 'residents', type: 'ADD', id: newR.id, data: newR, label: 'add unit record — Unit ' + unit });
@@ -5916,6 +5887,9 @@ function saveUnitRecord() {
   r.unitKeysReplacement = parseInt(g('ur-unit-keys-replacement').value) || 0;
   r.mailboxKeysReplacement = parseInt(g('ur-mailbox-keys-replacement').value) || 0;
   r.unitType = g('ur-unit-type') ? g('ur-unit-type').value : (r.unitType || '');
+  r.leaseholder = g('ur-leaseholder').value.trim();
+  r.preferredName = g('ur-preferred-name') ? g('ur-preferred-name').value.trim() : (r.preferredName || '');
+  r.pte = g('ur-pte') ? g('ur-pte').value : (r.pte || 'not-set');
   r.transponder = g('ur-transponder').checked;
   r.transponderReplacement = parseInt(g('ur-transponder-repl')?g('ur-transponder-repl').value:0)||0;
   r.xpressSticker = g('ur-xpress').checked;
@@ -5948,42 +5922,37 @@ function viewResidentProfile(unit) {
 }
 function openUnitView(unit) {
   var t = today();
-  var profile = (state.residentProfiles||[]).find(function(p){ return p.unit===unit && !p.archivedAt; });
+  var rec = (state.unitRecords||[]).find(function(r){ return r.unit===unit; });
   var titleEl = g('unit-view-title');
-  if (titleEl) titleEl.textContent = 'Unit ' + unit + (profile ? ' — ' + (profile.preferredName || profile.residentName) : '');
-  var pteLabel = { granted: '&#9989; PTE Granted', denied: '&#128683; PTE Denied', 'not-set': 'PTE Not Set' };
-  var pteClass = { granted: 'pte-granted', denied: 'pte-denied', 'not-set': 'pte-not-set' };
+  if (titleEl) titleEl.textContent = 'Unit ' + unit + (rec && rec.leaseholder ? ' — ' + (rec.preferredName || rec.leaseholder) : '');
   var html = '';
-  // ── Profile card ──
+  // ── Unit record card ──
   html += '<div style="padding:14px 16px;border-bottom:1px solid var(--border)">';
-  if (profile) {
-    var pte = profile.pte || 'not-set';
-    html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">';
-    html += '<span class="unit-num" style="font-size:15px">Unit ' + esc(unit) + '</span>';
-    html += '<span class="pte-badge ' + pteClass[pte] + '">' + pteLabel[pte] + '</span>';
-    if (profile.blueground) html += '<span style="font-size:10px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600">&#128309; Blueground</span>';
-    html += '<button class="btn btn-primary btn-xs ml-auto" onclick="closeModal(\'modal-unit-view\');openEditResident(\'' + profile.id + '\')">&#9998; Edit Profile</button>';
-    html += '</div>';
-    html += '<div style="font-weight:600;font-size:14px">' + esc(profile.residentName) + (profile.preferredName ? ' <span style="font-weight:400;color:var(--text3);font-size:12px">(' + esc(profile.preferredName) + ')</span>' : '') + '</div>';
-    if (profile.phone) html += '<div style="font-size:12px;color:var(--text3);margin-top:2px">&#128222; ' + esc(profile.phone) + '</div>';
-    var dateBits = [];
-    if (profile.wifiExpiry) dateBits.push('WiFi exp. ' + fmtShort(profile.wifiExpiry));
-    if (dateBits.length) html += '<div style="font-size:11px;color:var(--text2);margin-top:4px">' + dateBits.join(' &middot; ') + '</div>';
-    var credBits = [];
-    if (profile.parking === 'yes') credBits.push('&#128664; Parking' + (profile.parkingInfo ? ': ' + esc(profile.parkingInfo) : ''));
-    if (profile.bike && profile.bike !== 'none') credBits.push('&#128690; Bike ×' + esc(profile.bike));
-    if (profile.storage === 'yes') credBits.push('&#128230; Storage' + (profile.storageUnit ? ' ' + esc(profile.storageUnit) : ''));
-    if (profile.hasPet) credBits.push('&#128062; Pet' + (profile.petNotes ? ': ' + esc(profile.petNotes) : ''));
-    if (profile.hasVehicle) credBits.push('&#128663; Vehicle' + (profile.vehicleInfo ? ': ' + esc(profile.vehicleInfo) : ''));
-    if (credBits.length) html += '<div style="font-size:11px;color:var(--text2);margin-top:4px">' + credBits.join(' &middot; ') + '</div>';
-    if (profile.instructions) html += '<div style="font-size:12px;background:var(--bg);border-radius:5px;padding:6px 8px;margin-top:8px;color:var(--text2);line-height:1.5"><strong>Instructions:</strong> ' + esc(profile.instructions) + '</div>';
-    if (profile.notes) html += '<div style="font-size:11px;color:var(--text3);margin-top:6px;font-style:italic">' + esc(profile.notes) + '</div>';
+  html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">';
+  html += '<span class="unit-num" style="font-size:15px">Unit ' + esc(unit) + '</span>';
+  if (rec) {
+    if (rec.pte && rec.pte !== 'not-set') html += '<span class="pte-badge ' + (rec.pte==='granted'?'pte-granted':'pte-denied') + '">' + (rec.pte==='granted'?'&#9989; PTE Granted':'&#128683; PTE Denied') + '</span>';
+    if (rec.blueground) html += '<span style="font-size:10px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600">&#128309; Blueground</span>';
+    html += '<button class="btn btn-primary btn-xs ml-auto" onclick="closeModal(\'modal-unit-view\');openEditUnitRecord(\'' + rec.id + '\')">&#9998; Edit</button>';
+  }
+  html += '</div>';
+  if (rec && rec.leaseholder) {
+    html += '<div style="font-weight:600;font-size:14px">' + esc(rec.leaseholder) + (rec.preferredName ? ' <span style="font-weight:400;color:var(--text3);font-size:12px">(' + esc(rec.preferredName) + ')</span>' : '') + '</div>';
+    if (rec.roommates) html += '<div style="font-size:12px;color:var(--text3);margin-top:2px">&#43; ' + esc(rec.roommates) + '</div>';
+    var infoBits = [];
+    if (rec.wifiExpiry) infoBits.push('&#128246; WiFi exp. ' + fmtShort(rec.wifiExpiry));
+    if (infoBits.length) html += '<div style="font-size:11px;color:var(--text2);margin-top:4px">' + infoBits.join(' &middot; ') + '</div>';
+    var parkBits = [];
+    if (rec.transponder) parkBits.push('Transponder');
+    if (rec.xpressSticker) parkBits.push('Xpress');
+    if (rec.keyTag) parkBits.push('Key Tag');
+    if (rec.hasBike) parkBits.push('&#128690; Bike' + (rec.bikeSticker ? ' #' + esc(rec.bikeSticker) : ''));
+    if (parkBits.length) html += '<div style="font-size:11px;color:var(--text2);margin-top:4px">&#128664; ' + parkBits.join(' &middot; ') + '</div>';
+    if (rec.notes) html += '<div style="font-size:11px;color:var(--text3);margin-top:6px;font-style:italic">' + esc(rec.notes) + '</div>';
+  } else if (!rec) {
+    html += '<div style="font-size:12px;color:var(--text3);margin-top:4px">No unit record found.</div>';
   } else {
-    html += '<div style="display:flex;align-items:center;justify-content:space-between">';
-    html += '<span class="unit-num" style="font-size:15px">Unit ' + esc(unit) + '</span>';
-    html += '<button class="btn btn-primary btn-xs" onclick="closeModal(\'modal-unit-view\');openAddResident()">+ Create Profile</button>';
-    html += '</div>';
-    html += '<div style="font-size:12px;color:var(--text3);margin-top:6px">No active resident profile for this unit.</div>';
+    html += '<div style="font-size:12px;color:var(--text3);margin-top:4px">Vacant</div>';
   }
   html += '</div>';
   // ── Section helper ──
@@ -6044,134 +6013,6 @@ function openUnitView(unit) {
 }
 function sortResidents(s) { residentsSort = s; document.querySelectorAll('#section-residents [data-sort]').forEach(function(b){ var on=b.dataset.sort===s; b.style.background=on?'var(--accent)':''; b.style.color=on?'#fff':''; b.style.borderColor=on?'var(--accent)':''; }); renderResidents(); }
 function searchResidents(val) { residentsSearch = val.toLowerCase(); renderResidents(); }
-function openAddResidentFromMoveId(moveId) {
-  var m = (state.moves || []).find(function(x){ return x.id === moveId; });
-  if (m) openAddResidentFromMove(m);
-}
-function openAddResidentFromMove(m) {
-  editingResidentId = null;
-  ['rp-unit','rp-name','rp-wifi-expiry','rp-notice-date','rp-moveout-date','rp-notes','rp-parking-info','rp-vehicle-type','rp-bike-sticker','rp-storage-unit','rp-keys-qty'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
-  var wh = g('rp-wifi-hint'); if (wh) wh.innerHTML = '';
-  g('rp-pte').value = 'not-set'; g('rp-parking').value = 'none'; g('rp-storage').value = 'none';
-  ['rp-blueground','rp-has-pet','rp-has-bike'].forEach(function(id){ var el=g(id); if(el) el.checked=false; });
-  g('rp-unit').value = m.unit || '';
-  g('rp-name').value = m.resident || '';
-  var notesEl = g('rp-notes');
-  if (notesEl) {
-    var moveNotes = 'Moved in ' + fmtShort(m.date);
-    if (m.coResidents && m.coResidents.length) {
-      moveNotes += ' · Roommate(s): ' + m.coResidents.map(function(cr){ return cr.name; }).join(', ');
-    }
-    notesEl.value = moveNotes;
-  }
-  // Pre-fill keys qty from key tracker if available
-  var issuedResKeys = (state.keys||[]).filter(function(k){ return k.unit===m.unit && k.status==='issued' && (k.type==='resident'||k.type==='joiner'); }).length;
-  var kqF = g('rp-keys-qty'); if (kqF && issuedResKeys > 0) kqF.value = issuedResKeys;
-  setModalMode('modal-resident-title','modal-resident-savebtn','Create Resident Profile','Save Profile');
-  var nav = g('modal-resident-nav'); if (nav) nav.style.display = 'none';
-  openModal('modal-resident');
-}
-function openAddResident() {
-  editingResidentId = null;
-  var nav = g('modal-resident-nav'); if (nav) nav.style.display = 'none';
-  ['rp-unit','rp-name','rp-wifi-expiry','rp-notice-date','rp-moveout-date','rp-notes','rp-parking-info','rp-vehicle-type','rp-bike-sticker','rp-storage-unit','rp-keys-qty'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
-  var wh = g('rp-wifi-hint'); if (wh) wh.innerHTML = '';
-  var m2m = g('rp-m2m'); if (m2m) m2m.checked = false;
-  g('rp-pte').value = 'not-set';
-  g('rp-parking').value = 'none';
-  g('rp-storage').value = 'none';
-  var bgCb = g('rp-blueground'); if (bgCb) bgCb.checked = false;
-  var hasPetCb = g('rp-has-pet'); if (hasPetCb) hasPetCb.checked = false;
-  var hasBikeCb = g('rp-has-bike'); if (hasBikeCb) hasBikeCb.checked = false;
-  setModalMode('modal-resident-title','modal-resident-savebtn','Add Resident Profile','Save Profile');
-  openModal('modal-resident');
-}
-function openEditResident(id) {
-  var r = (state.residentProfiles || []).find(function(x){ return x.id===id; }); if (!r) return;
-  editingResidentId = id;
-  g('rp-unit').value = r.unit || '';
-  g('rp-name').value = r.residentName || '';
-  g('rp-pte').value = r.pte || 'not-set';
-  // Merge instructions + notes into Front Desk Notes
-  var mergedNotes = [r.notes, r.instructions].filter(Boolean).join('\n\n');
-  g('rp-notes').value = mergedNotes;
-  g('rp-parking').value = r.parking || 'none';
-  g('rp-parking-info').value = r.parkingInfo || '';
-  var vtF = g('rp-vehicle-type'); if (vtF) vtF.value = r.vehicleType || r.vehicleInfo || '';
-  var hasBikeCb = g('rp-has-bike'); if (hasBikeCb) hasBikeCb.checked = !!(r.hasBike || (r.bike && r.bike !== 'none'));
-  var bikeStickerF = g('rp-bike-sticker'); if (bikeStickerF) bikeStickerF.value = r.bikeSticker || r.bikeNotes || '';
-  g('rp-storage').value = r.storage || 'none';
-  g('rp-storage-unit').value = r.storageUnit || '';
-  var kqF = g('rp-keys-qty'); if (kqF) kqF.value = r.keysQty != null ? r.keysQty : '';
-  var bgCb = g('rp-blueground'); if (bgCb) bgCb.checked = !!r.blueground;
-  var hasPetCbE = g('rp-has-pet'); if (hasPetCbE) hasPetCbE.checked = !!r.hasPet;
-  var ndf = g('rp-notice-date'); if (ndf) ndf.value = r.noticeDate || '';
-  var mof = g('rp-moveout-date'); if (mof) mof.value = r.moveoutDate || '';
-  var wifiField = g('rp-wifi-expiry'), wifiHint = g('rp-wifi-hint');
-  var t0 = today();
-  var warn3 = new Date(); warn3.setDate(warn3.getDate() + 3); var warn3s = warn3.toISOString().split('T')[0];
-  if (r.wifiExpiry && r.wifiExpiry <= warn3s) {
-    var auto12 = new Date(); auto12.setFullYear(auto12.getFullYear() + 1); var auto12s = auto12.toISOString().split('T')[0];
-    if (wifiField) wifiField.value = auto12s;
-    if (wifiHint) wifiHint.innerHTML = r.wifiExpiry < t0 ? '<span style="color:var(--red)">&#9888; Expired ' + fmtShort(r.wifiExpiry) + ' — confirm new date to resolve</span>' : '<span style="color:#92400E">&#9650; Expiring soon — confirm new date to resolve</span>';
-  } else {
-    if (wifiField) wifiField.value = r.wifiExpiry || '';
-    if (wifiHint) wifiHint.innerHTML = '';
-  }
-  setModalMode('modal-resident-title','modal-resident-savebtn','Edit Profile','Save Changes');
-  var nav = g('modal-resident-nav');
-  if (nav && residentNavList.length > 1) {
-    var idx = residentNavList.indexOf(id);
-    nav.style.display = 'flex';
-    g('modal-resident-pos').textContent = (idx + 1) + ' of ' + residentNavList.length;
-    g('modal-resident-prev').disabled = idx <= 0;
-    g('modal-resident-next').disabled = idx >= residentNavList.length - 1;
-  } else if (nav) { nav.style.display = 'none'; }
-  openModal('modal-resident');
-}
-function navigateResident(dir) {
-  var idx = residentNavList.indexOf(editingResidentId);
-  var next = residentNavList[idx + dir];
-  if (next) openEditResident(next);
-}
-function saveResident() {
-  var unit = g('rp-unit').value.trim(), name = g('rp-name').value.trim();
-  if (!unit || !name) { toast('Unit and resident name are required'); return; }
-  if (editingResidentId) {
-    var r = (state.residentProfiles || []).find(function(x){ return x.id===editingResidentId; }); if (!r) return;
-    var _rb = Object.assign({}, r);
-    var bgCbS = g('rp-blueground');
-    var prevMoveoutDate = _rb.moveoutDate || '';
-    r.unit=unit; r.residentName=name; r.pte=g('rp-pte').value; r.notes=g('rp-notes').value.trim(); r.instructions=''; r.wifiExpiry=g('rp-wifi-expiry').value||''; r.noticeDate=g('rp-notice-date')?g('rp-notice-date').value||'':''; r.moveoutDate=g('rp-moveout-date')?g('rp-moveout-date').value||'':'';
-    r.parking=g('rp-parking').value; r.parkingInfo=g('rp-parking-info').value.trim(); r.vehicleType=g('rp-vehicle-type')?g('rp-vehicle-type').value.trim():''; r.hasBike=!!(g('rp-has-bike')&&g('rp-has-bike').checked); r.bikeSticker=g('rp-bike-sticker')?g('rp-bike-sticker').value.trim():''; r.storage=g('rp-storage').value; r.storageUnit=g('rp-storage-unit').value.trim(); r.blueground=bgCbS?!!bgCbS.checked:false;
-    r.hasPet=!!(g('rp-has-pet')&&g('rp-has-pet').checked); r.keysQty=g('rp-keys-qty')&&g('rp-keys-qty').value!==''?parseInt(g('rp-keys-qty').value)||0:r.keysQty;
-    pushUndo({ sec: 'residents', type: 'EDIT', id: r.id, before: _rb, after: Object.assign({}, r), label: 'profile edit — Unit ' + unit });
-    editingResidentId=null; logActivity('residents','edit','Updated resident profile — Unit '+unit+' · '+name); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile updated');
-    if (r.moveoutDate && r.moveoutDate !== prevMoveoutDate) {
-      var existingOut = (state.moves||[]).find(function(mv){ return mv.type==='out' && mv.unit===unit && !mv.archivedAt; });
-      if (!existingOut && confirm('Create a move-out entry for ' + name + ', Unit ' + unit + ' on ' + fmtShort(r.moveoutDate) + '?')) {
-        var outTasks = (state.customOutTasks || DEFAULT_OUT_TASKS).map(function(t){ return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint||null }; });
-        var outEntry = { id: uid(), unit: unit, resident: name, date: r.moveoutDate, type: 'out', total: '', notes: r.noticeDate ? 'Notice given ' + fmtShort(r.noticeDate) : '', apptDate: '', apptTime: '', tasks: outTasks, archivedAt: null, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : 'Front Desk' };
-        if (!state.moves) state.moves = [];
-        state.moves.push(outEntry);
-        pushUndo({ sec: 'moves', type: 'ADD', id: outEntry.id, data: Object.assign({}, outEntry), label: 'move-out — Unit ' + unit });
-        logActivity('moves', 'create', 'Move-out created from profile — Unit ' + unit + ' · ' + name);
-        scheduleSave(); renderMoves(); updateBadges(); renderDash(); toast('Move-out entry created');
-      }
-    }
-    return;
-  }
-  var existingForUnit = (state.residentProfiles || []).filter(function(p){ return p.unit === unit; });
-  if (existingForUnit.length) {
-    var names = existingForUnit.map(function(p){ return p.residentName; }).join(', ');
-    if (!confirm('Unit ' + unit + ' already has a profile (' + names + '). Add another profile for this unit?')) return;
-  }
-  var bgCbN = g('rp-blueground');
-  var entry = { id: uid(), unit: unit, residentName: name, pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), instructions: '', wifiExpiry: g('rp-wifi-expiry').value||'', noticeDate: g('rp-notice-date')?g('rp-notice-date').value||'':'', moveoutDate: g('rp-moveout-date')?g('rp-moveout-date').value||'':'', parking: g('rp-parking').value, parkingInfo: g('rp-parking-info').value.trim(), vehicleType: g('rp-vehicle-type')?g('rp-vehicle-type').value.trim():'', hasBike: !!(g('rp-has-bike')&&g('rp-has-bike').checked), bikeSticker: g('rp-bike-sticker')?g('rp-bike-sticker').value.trim():'', storage: g('rp-storage').value, storageUnit: g('rp-storage-unit').value.trim(), blueground: bgCbN?!!bgCbN.checked:false, hasPet: !!(g('rp-has-pet')&&g('rp-has-pet').checked), keysQty: g('rp-keys-qty')&&g('rp-keys-qty').value!==''?parseInt(g('rp-keys-qty').value)||0:null, createdAt: Date.now() };
-  if (!state.residentProfiles) state.residentProfiles = [];
-  state.residentProfiles.push(entry); pushUndo({ sec: 'residents', type: 'ADD', id: entry.id, data: Object.assign({}, entry), label: 'add profile — Unit ' + unit }); logActivity('residents','create','Added resident profile — Unit '+unit+' · '+name); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile saved');
-}
-function deleteResident(id) { if (!confirm('Remove this profile?')) return; var rx=(state.residentProfiles||[]).find(function(x){return x.id===id;}); if (rx) pushUndo({ sec: 'residents', type: 'DELETE', id: id, data: Object.assign({}, rx), label: 'delete profile — Unit ' + rx.unit }); logActivity('residents','delete','Removed resident profile'+(rx?' — Unit '+rx.unit+' · '+rx.residentName:'')); state.residentProfiles = (state.residentProfiles || []).filter(function(r){ return r.id!==id; }); scheduleSave(); renderResidents(); toast('Removed'); }
 
 // ─── SUPPLIES ───
 var editingSupplyId = null;
@@ -6624,7 +6465,8 @@ function renderResidents() {
     if (r.blueground) html += '<span style="font-size:10px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600">&#128309; BG</span>';
     html += '</div>';
     // Leaseholder + roommates
-    if (r.leaseholder) html += '<div style="font-size:13px;font-weight:600;margin-bottom:'+(r.roommates?'1px':'8px')+'">'+esc(r.leaseholder)+'</div>';
+    if (r.leaseholder) html += '<div style="font-size:13px;font-weight:600;margin-bottom:2px">'+esc(r.leaseholder)+(r.preferredName?'<span style="font-size:11px;font-weight:400;color:var(--text3)"> ('+esc(r.preferredName)+')</span>':'')+'</div>';
+    if (r.pte && r.pte !== 'not-set') { var pteCls = r.pte==='granted'?'pte-granted':'pte-denied'; html += '<span class="pte-badge '+pteCls+'" style="font-size:10px;margin-bottom:6px;display:inline-block">'+(r.pte==='granted'?'&#9989; PTE Granted':'&#128683; PTE Denied')+'</span>'; }
     if (r.roommates) html += '<div style="font-size:11px;color:var(--text3);margin-bottom:8px">&#43; '+esc(r.roommates)+'</div>';
     // Keys (only when set)
     var unitTotal = (r.unitKeysIssued||0)+(r.unitKeysReplacement||0);
@@ -6650,14 +6492,6 @@ function renderResidents() {
   html += '</div>';
   grid.innerHTML = html;
 
-  // ── legacy path (no-op fallback) ──
-  if (false) {
-  var isArchived = residentsFilter === 'archived';
-  var list = (state.residentProfiles || []).filter(function(r){ return isArchived ? !!r.archivedAt : !r.archivedAt; });
-  if (residentsFilter === 'pte-granted') list = list.filter(function(r){ return r.pte==='granted'; });
-  else if (residentsFilter === 'pte-denied') list = list.filter(function(r){ return r.pte==='denied'; });
-  else if (residentsFilter === 'pte-not-set') list = list.filter(function(r){ return !r.pte || r.pte==='not-set'; });
-  } // end if(false) legacy block
 }
 
 function getWifiRenewals() {
