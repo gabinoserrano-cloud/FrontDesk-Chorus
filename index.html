@@ -1413,8 +1413,6 @@
     <div class="fr"><div class="fg"><label>Unit #</label><input id="rp-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Resident Name</label><input id="rp-name" type="text"></div></div>
     <div style="padding:4px 0 2px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="rp-blueground"> <span>&#128309; <strong>Blueground Unit</strong> — Managed by Blueground</span></label></div>
     <div class="fr"><div class="fg"><label>&#128246; WiFi Expiration Date</label><input id="rp-wifi-expiry" type="date" data-no-autofill></div><div class="fg" id="rp-wifi-hint" style="display:flex;align-items:flex-end;padding-bottom:6px;font-size:12px;color:var(--text3)"></div></div>
-    <div class="fr"><div class="fg"><label>&#128203; Lease Start Date</label><input id="rp-lease-start" type="date" data-no-autofill></div><div class="fg"><label>Lease End Date</label><input id="rp-lease-end" type="date" data-no-autofill></div></div>
-    <div style="padding:2px 0 4px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="rp-m2m"> <span>Month-to-month (no fixed end date)</span></label></div>
     <div class="fr"><div class="fg"><label>&#128204; Notice Date</label><input id="rp-notice-date" type="date" data-no-autofill placeholder="Date resident gave notice"></div><div class="fg"><label>&#128197; Move-Out Date</label><input id="rp-moveout-date" type="date" data-no-autofill></div></div>
     <div class="fg"><label>&#128230; PTE — Permission to Enter (Packages)</label><select id="rp-pte"><option value="not-set">Not Set</option><option value="granted">Granted — OK to enter for package delivery</option><option value="denied">Denied — Do NOT enter unit</option></select></div>
     <div class="fg" style="margin-top:4px"><label style="font-size:11px;color:var(--text3)">Parking, bike, storage, pet, and vehicle details are tracked in RiseIO. Use the Parking tab in Key Tracker for credential tracking.</label></div>
@@ -5910,9 +5908,6 @@ function openUnitView(unit) {
     html += '<div style="font-weight:600;font-size:14px">' + esc(profile.residentName) + (profile.preferredName ? ' <span style="font-weight:400;color:var(--text3);font-size:12px">(' + esc(profile.preferredName) + ')</span>' : '') + '</div>';
     if (profile.phone) html += '<div style="font-size:12px;color:var(--text3);margin-top:2px">&#128222; ' + esc(profile.phone) + '</div>';
     var dateBits = [];
-    if (profile.leaseEnd) dateBits.push('Lease ends ' + fmtShort(profile.leaseEnd));
-    else if (profile.leaseStart) dateBits.push('Lease started ' + fmtShort(profile.leaseStart));
-    if (profile.monthToMonth) dateBits.push('Month-to-month');
     if (profile.wifiExpiry) dateBits.push('WiFi exp. ' + fmtShort(profile.wifiExpiry));
     if (dateBits.length) html += '<div style="font-size:11px;color:var(--text2);margin-top:4px">' + dateBits.join(' &middot; ') + '</div>';
     var credBits = [];
@@ -5996,13 +5991,12 @@ function openAddResidentFromMoveId(moveId) {
 }
 function openAddResidentFromMove(m) {
   editingResidentId = null;
-  ['rp-unit','rp-name','rp-wifi-expiry','rp-lease-start','rp-lease-end','rp-notice-date','rp-moveout-date','rp-notes','rp-parking-info','rp-vehicle-type','rp-bike-sticker','rp-storage-unit','rp-keys-qty'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  ['rp-unit','rp-name','rp-wifi-expiry','rp-notice-date','rp-moveout-date','rp-notes','rp-parking-info','rp-vehicle-type','rp-bike-sticker','rp-storage-unit','rp-keys-qty'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
   var wh = g('rp-wifi-hint'); if (wh) wh.innerHTML = '';
   g('rp-pte').value = 'not-set'; g('rp-parking').value = 'none'; g('rp-storage').value = 'none';
-  ['rp-m2m','rp-blueground','rp-has-pet','rp-has-bike'].forEach(function(id){ var el=g(id); if(el) el.checked=false; });
+  ['rp-blueground','rp-has-pet','rp-has-bike'].forEach(function(id){ var el=g(id); if(el) el.checked=false; });
   g('rp-unit').value = m.unit || '';
   g('rp-name').value = m.resident || '';
-  var lsf = g('rp-lease-start'); if (lsf && m.date) lsf.value = m.date;
   var notesEl = g('rp-notes');
   if (notesEl) {
     var moveNotes = 'Moved in ' + fmtShort(m.date);
@@ -6021,7 +6015,7 @@ function openAddResidentFromMove(m) {
 function openAddResident() {
   editingResidentId = null;
   var nav = g('modal-resident-nav'); if (nav) nav.style.display = 'none';
-  ['rp-unit','rp-name','rp-wifi-expiry','rp-lease-start','rp-lease-end','rp-notice-date','rp-moveout-date','rp-notes','rp-parking-info','rp-vehicle-type','rp-bike-sticker','rp-storage-unit','rp-keys-qty'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  ['rp-unit','rp-name','rp-wifi-expiry','rp-notice-date','rp-moveout-date','rp-notes','rp-parking-info','rp-vehicle-type','rp-bike-sticker','rp-storage-unit','rp-keys-qty'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
   var wh = g('rp-wifi-hint'); if (wh) wh.innerHTML = '';
   var m2m = g('rp-m2m'); if (m2m) m2m.checked = false;
   g('rp-pte').value = 'not-set';
@@ -6052,9 +6046,6 @@ function openEditResident(id) {
   var kqF = g('rp-keys-qty'); if (kqF) kqF.value = r.keysQty != null ? r.keysQty : '';
   var bgCb = g('rp-blueground'); if (bgCb) bgCb.checked = !!r.blueground;
   var hasPetCbE = g('rp-has-pet'); if (hasPetCbE) hasPetCbE.checked = !!r.hasPet;
-  var lsf = g('rp-lease-start'); if (lsf) lsf.value = r.leaseStart || '';
-  var lef = g('rp-lease-end'); if (lef) lef.value = r.leaseEnd || '';
-  var m2m = g('rp-m2m'); if (m2m) m2m.checked = !!r.monthToMonth;
   var ndf = g('rp-notice-date'); if (ndf) ndf.value = r.noticeDate || '';
   var mof = g('rp-moveout-date'); if (mof) mof.value = r.moveoutDate || '';
   var wifiField = g('rp-wifi-expiry'), wifiHint = g('rp-wifi-hint');
@@ -6092,7 +6083,7 @@ function saveResident() {
     var _rb = Object.assign({}, r);
     var bgCbS = g('rp-blueground');
     var prevMoveoutDate = _rb.moveoutDate || '';
-    r.unit=unit; r.residentName=name; r.pte=g('rp-pte').value; r.notes=g('rp-notes').value.trim(); r.instructions=''; r.wifiExpiry=g('rp-wifi-expiry').value||''; r.leaseStart=g('rp-lease-start').value||''; r.leaseEnd=g('rp-lease-end').value||''; r.monthToMonth=!!(g('rp-m2m')&&g('rp-m2m').checked); r.noticeDate=g('rp-notice-date')?g('rp-notice-date').value||'':''; r.moveoutDate=g('rp-moveout-date')?g('rp-moveout-date').value||'':'';
+    r.unit=unit; r.residentName=name; r.pte=g('rp-pte').value; r.notes=g('rp-notes').value.trim(); r.instructions=''; r.wifiExpiry=g('rp-wifi-expiry').value||''; r.noticeDate=g('rp-notice-date')?g('rp-notice-date').value||'':''; r.moveoutDate=g('rp-moveout-date')?g('rp-moveout-date').value||'':'';
     r.parking=g('rp-parking').value; r.parkingInfo=g('rp-parking-info').value.trim(); r.vehicleType=g('rp-vehicle-type')?g('rp-vehicle-type').value.trim():''; r.hasBike=!!(g('rp-has-bike')&&g('rp-has-bike').checked); r.bikeSticker=g('rp-bike-sticker')?g('rp-bike-sticker').value.trim():''; r.storage=g('rp-storage').value; r.storageUnit=g('rp-storage-unit').value.trim(); r.blueground=bgCbS?!!bgCbS.checked:false;
     r.hasPet=!!(g('rp-has-pet')&&g('rp-has-pet').checked); r.keysQty=g('rp-keys-qty')&&g('rp-keys-qty').value!==''?parseInt(g('rp-keys-qty').value)||0:r.keysQty;
     pushUndo({ sec: 'residents', type: 'EDIT', id: r.id, before: _rb, after: Object.assign({}, r), label: 'profile edit — Unit ' + unit });
@@ -6117,7 +6108,7 @@ function saveResident() {
     if (!confirm('Unit ' + unit + ' already has a profile (' + names + '). Add another profile for this unit?')) return;
   }
   var bgCbN = g('rp-blueground');
-  var entry = { id: uid(), unit: unit, residentName: name, pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), instructions: '', wifiExpiry: g('rp-wifi-expiry').value||'', leaseStart: g('rp-lease-start').value||'', leaseEnd: g('rp-lease-end').value||'', monthToMonth: !!(g('rp-m2m')&&g('rp-m2m').checked), noticeDate: g('rp-notice-date')?g('rp-notice-date').value||'':'', moveoutDate: g('rp-moveout-date')?g('rp-moveout-date').value||'':'', parking: g('rp-parking').value, parkingInfo: g('rp-parking-info').value.trim(), vehicleType: g('rp-vehicle-type')?g('rp-vehicle-type').value.trim():'', hasBike: !!(g('rp-has-bike')&&g('rp-has-bike').checked), bikeSticker: g('rp-bike-sticker')?g('rp-bike-sticker').value.trim():'', storage: g('rp-storage').value, storageUnit: g('rp-storage-unit').value.trim(), blueground: bgCbN?!!bgCbN.checked:false, hasPet: !!(g('rp-has-pet')&&g('rp-has-pet').checked), keysQty: g('rp-keys-qty')&&g('rp-keys-qty').value!==''?parseInt(g('rp-keys-qty').value)||0:null, createdAt: Date.now() };
+  var entry = { id: uid(), unit: unit, residentName: name, pte: g('rp-pte').value, notes: g('rp-notes').value.trim(), instructions: '', wifiExpiry: g('rp-wifi-expiry').value||'', noticeDate: g('rp-notice-date')?g('rp-notice-date').value||'':'', moveoutDate: g('rp-moveout-date')?g('rp-moveout-date').value||'':'', parking: g('rp-parking').value, parkingInfo: g('rp-parking-info').value.trim(), vehicleType: g('rp-vehicle-type')?g('rp-vehicle-type').value.trim():'', hasBike: !!(g('rp-has-bike')&&g('rp-has-bike').checked), bikeSticker: g('rp-bike-sticker')?g('rp-bike-sticker').value.trim():'', storage: g('rp-storage').value, storageUnit: g('rp-storage-unit').value.trim(), blueground: bgCbN?!!bgCbN.checked:false, hasPet: !!(g('rp-has-pet')&&g('rp-has-pet').checked), keysQty: g('rp-keys-qty')&&g('rp-keys-qty').value!==''?parseInt(g('rp-keys-qty').value)||0:null, createdAt: Date.now() };
   if (!state.residentProfiles) state.residentProfiles = [];
   state.residentProfiles.push(entry); pushUndo({ sec: 'residents', type: 'ADD', id: entry.id, data: Object.assign({}, entry), label: 'add profile — Unit ' + unit }); logActivity('residents','create','Added resident profile — Unit '+unit+' · '+name); scheduleSave(); closeModal('modal-resident'); renderResidents(); toast('Profile saved');
 }
@@ -6612,11 +6603,6 @@ function getWifiRenewals() {
   var d15 = new Date(); d15.setDate(d15.getDate()+15); var d15s = d15.toISOString().split('T')[0];
   return (state.unitRecords||[]).filter(function(r){ return r.wifiExpiry && r.wifiExpiry <= d15s; }).sort(function(a,b){ return a.wifiExpiry < b.wifiExpiry ? -1 : 1; });
 }
-function getLeaseExpirations() {
-  var le30 = new Date(); le30.setDate(le30.getDate()+30); var le30s = le30.toISOString().split('T')[0];
-  return (state.residentProfiles||[]).filter(function(r){ return r.leaseEnd && !r.monthToMonth && r.leaseEnd <= le30s; }).sort(function(a,b){ return a.leaseEnd < b.leaseEnd ? -1 : 1; });
-}
-
 // ─── PASSDOWN ───
 var pdSections = { keysAccess: [], residentMatters: [], thisShift: [], shiftNotes: [], policyReminders: [] };
 var pdExcluded = {};
@@ -9703,31 +9689,6 @@ function checkCarriedItemsOnLogin() {
     + '<button class="btn btn-primary" onclick="addCarriedItemsToTodos()">Add Selected to My To-Do →</button></div></div>';
   openModal('modal-login-carried');
 }
-function loginLeaseRenewing(residentId) {
-  var row = g('lease-row-' + residentId), actions = g('lease-actions-' + residentId);
-  if (row) row.style.opacity = '0.45';
-  if (actions) actions.innerHTML = '<span style="font-size:12px;color:var(--accent);font-weight:600">✓ Marked as renewing</span>';
-}
-function loginLeaseMovingOut(residentId, unit, residentName, leaseEnd) {
-  var existing = (state.moves||[]).find(function(x){ return x.type==='out' && x.unit===unit && !x.archivedAt; });
-  var row = g('lease-row-' + residentId), actions = g('lease-actions-' + residentId);
-  if (existing) {
-    if (row) row.style.opacity = '0.45';
-    if (actions) actions.innerHTML = '<span style="font-size:12px;color:#92400E;font-weight:600">Move-out already exists</span>';
-    return;
-  }
-  var customOut = state.customOutTasks || DEFAULT_OUT_TASKS;
-  var tasks = customOut.map(function(t){ return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint||null }; });
-  var m = { id: uid(), unit: unit, resident: residentName, date: leaseEnd, type: 'out', total: '', notes: 'Created from lease expiry prompt at login.', apptDate: '', apptTime: '', tasks: tasks, archivedAt: null, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : 'Front Desk' };
-  if (!state.moves) state.moves = [];
-  state.moves.push(m);
-  pushUndo({ sec: 'moves', type: 'ADD', id: m.id, data: Object.assign({}, m), label: 'add move-out — Unit ' + unit });
-  logActivity('moves', 'create', 'Move-out created from login prompt — Unit ' + unit + ' · ' + residentName);
-  scheduleSave(); updateBadges();
-  if (row) row.style.opacity = '0.45';
-  if (actions) actions.innerHTML = '<span style="font-size:12px;color:var(--accent);font-weight:600">✓ Move-out created</span>';
-  toast('Move-out created for Unit ' + unit + ' — ' + residentName);
-}
 function addCarriedItemsToTodos() {
   var ov = g('modal-login-carried'); if (!ov) return;
   var todos = getCurrentTodos();
@@ -9736,11 +9697,6 @@ function addCarriedItemsToTodos() {
     var idx = parseInt(cb.getAttribute('data-carried-idx'), 10);
     var item = ov._carriedItems[idx];
     if (item) { todos.push({ id: uid(), text: item.label, priority: 'normal', dueDate: null, done: false, createdAt: Date.now() }); added++; }
-  });
-  ov.querySelectorAll('input[data-lease-id]:checked').forEach(function(cb) {
-    var lid = cb.getAttribute('data-lease-id');
-    var r = (state.residentProfiles||[]).find(function(x){ return x.id===lid; });
-    if (r) { todos.push({ id: uid(), text: '&#128203; Lease expiration — Unit ' + r.unit + ' · ' + r.residentName + ' · Ends ' + fmtShort(r.leaseEnd), priority: 'high', dueDate: r.leaseEnd, done: false, createdAt: Date.now() }); added++; }
   });
   if (added) { setCurrentTodos(todos); scheduleSave(); renderTodos(); updateBadges(); renderDash(); }
   closeModal('modal-login-carried');
