@@ -561,6 +561,8 @@
   .cal-month-day{min-height:82px;padding:6px 5px}
   .cal-month-day.today{border-color:rgba(78,138,112,0.4)!important;background:rgba(78,138,112,0.04)!important}
   .cal-month-day.today .cal-day-num{background:#4E8A70;color:#fff!important;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;margin-bottom:3px}
+  .cal-month-day.today .cal-chip-in{background:#bbf7d0;color:#14532d;font-weight:600}
+  .cal-month-day.today .cal-chip-out{background:#fecaca;color:#991b1b;font-weight:600}
   .cal-month-grid{gap:4px}
   .cal-week-tbl th.today-hdr{background:rgba(78,138,112,0.18)!important;color:#2A6050!important;font-weight:700}
   .cal-week-tbl td.today-col{background:rgba(78,138,112,0.07)!important}
@@ -1355,7 +1357,8 @@
 <div class="modal-ov" id="modal-tour"><div class="modal">
   <div class="modal-hdr"><span class="modal-title" id="modal-tour-title">Log Tour</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-tour')">&#x2715;</button></div>
   <div class="modal-bdy">
-    <div class="fr"><div class="fg"><label>Prospect Name</label><input id="tr-name" type="text"></div><div class="fg"><label>Unit(s) Shown</label><input id="tr-unit" type="text" placeholder="e.g. 804, 1102" oninput="showTourUnitInfo()"><div id="tr-unit-info" style="margin-top:4px;font-size:11px;color:var(--accent);font-weight:500;line-height:1.5"></div></div></div>
+    <div class="fr"><div class="fg"><label>Prospect Name</label><input id="tr-name" type="text"></div><div class="fg"><label>Unit Type <span style="font-size:10px;color:var(--text3);font-weight:400">— suggests vacant units</span></label><select id="tr-unit-type" onchange="showTourUnitInfo()"><option value="">Any type</option><option value="studio">Studio</option><option value="1br">1 Bedroom</option><option value="2br">2 Bedroom</option><option value="3br">3 Bedroom</option><option value="other">Other</option></select></div></div>
+    <div class="fr"><div class="fg"><label>Unit(s) Shown</label><input id="tr-unit" type="text" placeholder="e.g. 804, 1102" oninput="showTourUnitInfo()"><div id="tr-unit-info" style="margin-top:4px;font-size:11px;line-height:1.6"></div></div></div>
     <div class="fr"><div class="fg"><label>Tour Type</label><select id="tr-type"><option value="sgt">SGT (Self-Guided)</option><option value="guided">Guided</option></select></div><div class="fg"><label>Date</label><input id="tr-date" type="date"></div></div>
     <div class="fr"><div class="fg"><label>Time</label><input id="tr-time" type="time"></div><div class="fg"><label>Contact</label><input id="tr-contact" type="text"></div></div>
     <div class="fg"><label>Outcome / Notes</label><textarea id="tr-notes" rows="3"></textarea></div>
@@ -1424,6 +1427,7 @@
   <div class="modal-hdr"><span class="modal-title" id="ur-unit-title">Edit Unit</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-unit-record')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fg" id="ur-unit-field" style="display:none"><label>Unit #</label><input id="ur-unit-num" type="text" placeholder="e.g. 617"></div>
+    <div class="fg"><label>Unit Type</label><select id="ur-unit-type"><option value="">— Select —</option><option value="studio">Studio</option><option value="1br">1 Bedroom</option><option value="2br">2 Bedroom</option><option value="3br">3 Bedroom</option><option value="other">Other</option></select></div>
     <div class="fg"><label>Leaseholder</label><input id="ur-leaseholder" type="text" placeholder="Primary resident name"></div>
     <div class="fg"><label>Roommates <span style="font-size:10px;color:var(--text3);font-weight:400">(comma-separated)</span></label><input id="ur-roommates" type="text" placeholder="Additional residents&#8230;"></div>
     <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
@@ -1440,9 +1444,22 @@
     <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
       <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">&#128664; Parking Credentials</div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="ur-transponder"> Garage Transponder</label>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="ur-xpress"> Xpress Sticker</label>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="ur-keytag"> Key Tag</label>
+        <div style="display:flex;align-items:center;gap:12px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;min-width:180px"><input type="checkbox" id="ur-transponder"> Garage Transponder</label>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)">Replacements: <input id="ur-transponder-repl" type="number" min="0" value="0" style="width:54px;font-size:12px"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;min-width:180px"><input type="checkbox" id="ur-xpress"> Xpress Sticker</label>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)">Replacements: <input id="ur-xpress-repl" type="number" min="0" value="0" style="width:54px;font-size:12px"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;min-width:180px"><input type="checkbox" id="ur-keytag"> Key Tag</label>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)">Replacements: <input id="ur-keytag-repl" type="number" min="0" value="0" style="width:54px;font-size:12px"></div>
+        </div>
+        <div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="ur-bike" onchange="var w=g('ur-bike-sticker-wrap');if(w)w.style.display=this.checked?'':'none'"> Bicycle</label>
+          <div id="ur-bike-sticker-wrap" style="display:none;margin-top:6px;padding-left:26px"><input id="ur-bike-sticker" type="text" placeholder="Bike sticker #" style="font-size:12px;width:160px"></div>
+        </div>
       </div>
     </div>
     <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
@@ -4675,21 +4692,43 @@ function filterTours(f, item) { tourFilter = f; document.querySelectorAll('#sect
 function showTourUnitInfo() {
   var el = g('tr-unit-info'); if (!el) return;
   var raw = (g('tr-unit') ? g('tr-unit').value : '').trim();
-  if (!raw || !state.units || !state.units.length) { el.innerHTML = ''; return; }
-  var nums = raw.split(/[,\s]+/).map(function(s){ return s.trim(); }).filter(Boolean);
-  var chips = [];
-  nums.forEach(function(num) {
-    var u = state.units.find(function(x){ return x.unit === num && x.status !== 'occupied'; });
-    if (!u) return;
-    var parts = [];
-    if (u.bed) parts.push(u.bed);
-    if (u.sqft) parts.push(u.sqft + ' sqft');
-    if (u.rent) parts.push(u.rent);
-    if (u.availDate) parts.push('Avail ' + fmtShort(u.availDate));
-    if (u.sgt) parts.push('SGT ✓');
-    if (parts.length) chips.push('Unit ' + num + ' · ' + parts.join(' · '));
-  });
-  el.innerHTML = chips.join('<br>');
+  var unitType = g('tr-unit-type') ? g('tr-unit-type').value : '';
+  var recs = state.unitRecords || [];
+  var typeLabels = { studio: 'Studio', '1br': '1BR', '2br': '2BR', '3br': '3BR', other: 'Other' };
+
+  // If a specific unit is typed, show info for that unit
+  if (raw) {
+    var nums = raw.split(/[,\s]+/).map(function(s){ return s.trim(); }).filter(Boolean);
+    var lines = [];
+    nums.forEach(function(num) {
+      var r = recs.find(function(x){ return x.unit === num; });
+      if (!r) return;
+      var parts = [];
+      if (r.unitType) parts.push(typeLabels[r.unitType] || r.unitType);
+      var isVacant = !r.leaseholder && !r.blueground;
+      parts.push(isVacant ? '<span style="color:var(--accent);font-weight:600">Vacant</span>' : '<span style="color:var(--text3)">Occupied — ' + esc(r.leaseholder) + '</span>');
+      lines.push('Unit ' + esc(num) + ' · ' + parts.join(' · '));
+    });
+    el.innerHTML = lines.join('<br>');
+    return;
+  }
+
+  // If a unit type is selected, show vacant units of that type as clickable suggestions
+  if (unitType) {
+    var vacant = recs.filter(function(r){ return r.unitType === unitType && !r.leaseholder && !r.blueground; });
+    if (!vacant.length) {
+      el.innerHTML = '<span style="color:var(--text3)">No vacant ' + (typeLabels[unitType]||unitType) + ' units found in Unit Tracker.</span>';
+      return;
+    }
+    var html = '<span style="color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Vacant ' + (typeLabels[unitType]||unitType) + ' units — click to fill:</span><br>';
+    html += vacant.map(function(r){
+      return '<button type="button" onclick="var f=g(\'tr-unit\');if(f){f.value=f.value?(f.value+\', \'+' + JSON.stringify(r.unit) + '):' + JSON.stringify(r.unit) + ';showTourUnitInfo();}" style="margin:2px 4px 2px 0;padding:2px 10px;font-size:11px;font-weight:600;background:var(--accent-light);color:var(--accent);border:1px solid rgba(61,107,79,0.25);border-radius:4px;cursor:pointer">Unit ' + esc(r.unit) + '</button>';
+    }).join('');
+    el.innerHTML = html;
+    return;
+  }
+
+  el.innerHTML = '';
 }
 function saveTour() {
   var name = g('tr-name').value.trim(), date = g('tr-date').value;
@@ -4704,7 +4743,7 @@ function saveTour() {
   var tr = { id: uid(), name: name, unit: g('tr-unit').value.trim(), type: g('tr-type').value, date: date, time: g('tr-time').value, contact: g('tr-contact').value.trim(), notes: g('tr-notes').value.trim(), addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
   if (!state.tours) state.tours = [];
   state.tours.push(tr); pushUndo({ sec: 'tours', type: 'ADD', id: tr.id, data: Object.assign({}, tr), label: 'add tour — ' + name }); logActivity('tours','create','Logged tour — '+name+' · '+fmtShort(date)+' ('+g('tr-type').value+')'); scheduleSave(); closeModal('modal-tour'); renderTours(); updateBadges();
-  ['tr-name', 'tr-unit', 'tr-contact', 'tr-notes'].forEach(function (id) { g(id).value = ''; }); g('tr-time').value = ''; toast('Tour logged');
+  ['tr-name', 'tr-unit', 'tr-contact', 'tr-notes'].forEach(function (id) { g(id).value = ''; }); g('tr-time').value = ''; var ttEl=g('tr-unit-type');if(ttEl)ttEl.value=''; var uInfo=g('tr-unit-info');if(uInfo)uInfo.innerHTML=''; toast('Tour logged');
 }
 function renderTours() {
   var list = (state.tours || []).slice(), t = today();
@@ -5798,6 +5837,7 @@ function openEditUnitRecord(id) {
   editingUnitRecordId = id;
   var titleEl = g('ur-unit-title'); if (titleEl) titleEl.textContent = 'Unit ' + r.unit;
   var uf = g('ur-unit-field'); if (uf) uf.style.display = 'none';
+  var utEl = g('ur-unit-type'); if (utEl) utEl.value = r.unitType || '';
   g('ur-leaseholder').value = r.leaseholder || '';
   g('ur-roommates').value = r.roommates || '';
   g('ur-unit-keys-issued').value = r.unitKeysIssued || 0;
@@ -5805,8 +5845,14 @@ function openEditUnitRecord(id) {
   g('ur-unit-keys-replacement').value = r.unitKeysReplacement || 0;
   g('ur-mailbox-keys-replacement').value = r.mailboxKeysReplacement || 0;
   g('ur-transponder').checked = !!r.transponder;
+  var trEl = g('ur-transponder-repl'); if (trEl) trEl.value = r.transponderReplacement || 0;
   g('ur-xpress').checked = !!r.xpressSticker;
+  var xrEl = g('ur-xpress-repl'); if (xrEl) xrEl.value = r.xpressReplacement || 0;
   g('ur-keytag').checked = !!r.keyTag;
+  var krEl = g('ur-keytag-repl'); if (krEl) krEl.value = r.keyTagReplacement || 0;
+  var bikeEl = g('ur-bike'); if (bikeEl) bikeEl.checked = !!r.hasBike;
+  var bsEl = g('ur-bike-sticker'); if (bsEl) bsEl.value = r.bikeSticker || '';
+  var bsWrap = g('ur-bike-sticker-wrap'); if (bsWrap) bsWrap.style.display = r.hasBike ? '' : 'none';
   var bgEl = g('ur-blueground'); if (bgEl) bgEl.checked = !!r.blueground;
   g('ur-wifi-expiry').value = r.wifiExpiry || '';
   g('ur-notes').value = r.notes || '';
@@ -5825,6 +5871,7 @@ function openAddUnitRecord() {
   var titleEl = g('ur-unit-title'); if (titleEl) titleEl.textContent = 'Add Unit Record';
   var uf = g('ur-unit-field'); if (uf) uf.style.display = '';
   g('ur-unit-num').value = '';
+  var utEl = g('ur-unit-type'); if (utEl) utEl.value = '';
   g('ur-leaseholder').value = '';
   g('ur-roommates').value = '';
   g('ur-unit-keys-issued').value = 0;
@@ -5832,8 +5879,14 @@ function openAddUnitRecord() {
   g('ur-unit-keys-replacement').value = 0;
   g('ur-mailbox-keys-replacement').value = 0;
   g('ur-transponder').checked = false;
+  var trEl = g('ur-transponder-repl'); if (trEl) trEl.value = 0;
   g('ur-xpress').checked = false;
+  var xrEl = g('ur-xpress-repl'); if (xrEl) xrEl.value = 0;
   g('ur-keytag').checked = false;
+  var krEl = g('ur-keytag-repl'); if (krEl) krEl.value = 0;
+  var bikeEl = g('ur-bike'); if (bikeEl) bikeEl.checked = false;
+  var bsEl = g('ur-bike-sticker'); if (bsEl) bsEl.value = '';
+  var bsWrap = g('ur-bike-sticker-wrap'); if (bsWrap) bsWrap.style.display = 'none';
   var bgEl = g('ur-blueground'); if (bgEl) bgEl.checked = false;
   g('ur-wifi-expiry').value = '';
   g('ur-notes').value = '';
@@ -5845,7 +5898,7 @@ function saveUnitRecord() {
   if (!editingUnitRecordId) {
     var unit = g('ur-unit-num') ? g('ur-unit-num').value.trim() : '';
     if (!unit) { toast('Unit # is required'); return; }
-    var newR = { id: uid(), unit: unit, leaseholder: g('ur-leaseholder').value.trim(), roommates: g('ur-roommates').value.trim(), unitKeysIssued: parseInt(g('ur-unit-keys-issued').value)||0, mailboxKeysIssued: parseInt(g('ur-mailbox-keys-issued').value)||0, unitKeysReplacement: parseInt(g('ur-unit-keys-replacement').value)||0, mailboxKeysReplacement: parseInt(g('ur-mailbox-keys-replacement').value)||0, transponder: g('ur-transponder').checked, xpressSticker: g('ur-xpress').checked, keyTag: g('ur-keytag').checked, blueground: g('ur-blueground') ? g('ur-blueground').checked : false, wifiExpiry: g('ur-wifi-expiry').value||'', notes: g('ur-notes').value.trim(), createdAt: Date.now() };
+    var newR = { id: uid(), unit: unit, unitType: g('ur-unit-type')?g('ur-unit-type').value:'', leaseholder: g('ur-leaseholder').value.trim(), roommates: g('ur-roommates').value.trim(), unitKeysIssued: parseInt(g('ur-unit-keys-issued').value)||0, mailboxKeysIssued: parseInt(g('ur-mailbox-keys-issued').value)||0, unitKeysReplacement: parseInt(g('ur-unit-keys-replacement').value)||0, mailboxKeysReplacement: parseInt(g('ur-mailbox-keys-replacement').value)||0, transponder: g('ur-transponder').checked, transponderReplacement: parseInt(g('ur-transponder-repl')?g('ur-transponder-repl').value:0)||0, xpressSticker: g('ur-xpress').checked, xpressReplacement: parseInt(g('ur-xpress-repl')?g('ur-xpress-repl').value:0)||0, keyTag: g('ur-keytag').checked, keyTagReplacement: parseInt(g('ur-keytag-repl')?g('ur-keytag-repl').value:0)||0, hasBike: !!(g('ur-bike')&&g('ur-bike').checked), bikeSticker: g('ur-bike-sticker')?g('ur-bike-sticker').value.trim():'', blueground: g('ur-blueground') ? g('ur-blueground').checked : false, wifiExpiry: g('ur-wifi-expiry').value||'', notes: g('ur-notes').value.trim(), createdAt: Date.now() };
     if (!state.unitRecords) state.unitRecords = [];
     state.unitRecords.push(newR);
     pushUndo({ sec: 'residents', type: 'ADD', id: newR.id, data: newR, label: 'add unit record — Unit ' + unit });
@@ -5862,9 +5915,15 @@ function saveUnitRecord() {
   r.mailboxKeysIssued = parseInt(g('ur-mailbox-keys-issued').value) || 0;
   r.unitKeysReplacement = parseInt(g('ur-unit-keys-replacement').value) || 0;
   r.mailboxKeysReplacement = parseInt(g('ur-mailbox-keys-replacement').value) || 0;
+  r.unitType = g('ur-unit-type') ? g('ur-unit-type').value : (r.unitType || '');
   r.transponder = g('ur-transponder').checked;
+  r.transponderReplacement = parseInt(g('ur-transponder-repl')?g('ur-transponder-repl').value:0)||0;
   r.xpressSticker = g('ur-xpress').checked;
+  r.xpressReplacement = parseInt(g('ur-xpress-repl')?g('ur-xpress-repl').value:0)||0;
   r.keyTag = g('ur-keytag').checked;
+  r.keyTagReplacement = parseInt(g('ur-keytag-repl')?g('ur-keytag-repl').value:0)||0;
+  r.hasBike = !!(g('ur-bike')&&g('ur-bike').checked);
+  r.bikeSticker = g('ur-bike-sticker') ? g('ur-bike-sticker').value.trim() : '';
   r.blueground = g('ur-blueground') ? g('ur-blueground').checked : !!r.blueground;
   r.wifiExpiry = g('ur-wifi-expiry').value || '';
   r.notes = g('ur-notes').value.trim();
@@ -6561,6 +6620,7 @@ function renderResidents() {
     // Header
     html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">';
     html += '<span class="unit-num" style="font-size:15px">Unit '+esc(r.unit)+'</span>';
+    if (r.unitType) { var utLabels={'studio':'Studio','1br':'1BR','2br':'2BR','3br':'3BR','other':'Other'}; html += '<span style="font-size:10px;background:var(--surface2);color:var(--text2);border-radius:3px;padding:1px 6px;font-weight:500">'+esc(utLabels[r.unitType]||r.unitType)+'</span>'; }
     if (r.blueground) html += '<span style="font-size:10px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600">&#128309; BG</span>';
     html += '</div>';
     // Leaseholder + roommates
@@ -6572,9 +6632,10 @@ function renderResidents() {
     if (unitTotal || mailTotal) html += '<div style="font-size:12px;color:var(--text2);margin-bottom:6px">&#128273; Unit: <strong>'+unitTotal+'</strong>'+(r.unitKeysReplacement?'<span style="font-size:10px;color:#92400e"> (+'+r.unitKeysReplacement+' repl)</span>':'')+' &nbsp;&middot;&nbsp; &#128236; Mailbox: <strong>'+mailTotal+'</strong>'+(r.mailboxKeysReplacement?'<span style="font-size:10px;color:#92400e"> (+'+r.mailboxKeysReplacement+' repl)</span>':'')+'</div>';
     // Parking
     var parkBits = [];
-    if (r.transponder) parkBits.push('Transponder');
-    if (r.xpressSticker) parkBits.push('Xpress Sticker');
-    if (r.keyTag) parkBits.push('Key Tag');
+    if (r.transponder) parkBits.push('Transponder'+(r.transponderReplacement?'<span style="font-size:9px;opacity:.7"> +'+r.transponderReplacement+'r</span>':''));
+    if (r.xpressSticker) parkBits.push('Xpress'+(r.xpressReplacement?'<span style="font-size:9px;opacity:.7"> +'+r.xpressReplacement+'r</span>':''));
+    if (r.keyTag) parkBits.push('Key Tag'+(r.keyTagReplacement?'<span style="font-size:9px;opacity:.7"> +'+r.keyTagReplacement+'r</span>':''));
+    if (r.hasBike) parkBits.push('&#128690; Bike'+(r.bikeSticker?' #'+esc(r.bikeSticker):''));
     if (parkBits.length) html += '<div style="margin-bottom:6px"><span style="font-size:11px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:2px 7px;font-weight:600">&#128664; '+parkBits.join(' &middot; ')+'</span></div>';
     // WiFi
     if (r.wifiExpiry) {
@@ -8019,6 +8080,7 @@ function openAddTour() {
   setModalMode('modal-tour-title','modal-tour-savebtn','Log Tour','Log Tour');
   ['tr-name','tr-unit','tr-contact','tr-notes'].forEach(function(id){g(id).value='';});
   g('tr-time').value=''; g('tr-date').value=today(); g('tr-type').value='sgt';
+  var ttEl = g('tr-unit-type'); if (ttEl) ttEl.value = '';
   var uInfo = g('tr-unit-info'); if (uInfo) uInfo.innerHTML = '';
   openModal('modal-tour');
 }
@@ -10481,18 +10543,6 @@ function seedUnitRecords() {
   });
   state.unitRecordsSeedV1 = true;
   scheduleSave();
-  if (!state.unitRecordsSeedV2) {
-    var recs2 = state.unitRecords || [];
-    var unitSet2 = {};
-    recs2.forEach(function(r){ unitSet2[r.unit] = true; });
-    (state.units || []).forEach(function(u) {
-      if (!unitSet2[u.unit]) {
-        state.unitRecords.push({ id: uid(), unit: u.unit, leaseholder: u.blueground ? '' : '', roommates: '', unitKeysIssued: 0, mailboxKeysIssued: 0, unitKeysReplacement: 0, mailboxKeysReplacement: 0, transponder: false, xpressSticker: false, keyTag: false, blueground: !!u.blueground, wifiExpiry: '', notes: u.notes || '', createdAt: Date.now() });
-      }
-    });
-    state.unitRecordsSeedV2 = true;
-    scheduleSave();
-  }
 }
 
 function renderTemplates() {
