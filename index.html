@@ -1417,7 +1417,7 @@
   <div class="modal-bdy">
     <div class="fg" id="ur-unit-field" style="display:none"><label>Unit #</label><input id="ur-unit-num" type="text" placeholder="e.g. 617"></div>
     <div class="fg"><label>Unit Type</label><select id="ur-unit-type"><option value="">— Select —</option><option value="studio">Studio</option><option value="1br">1 Bedroom</option><option value="2br">2 Bedroom</option><option value="3br">3 Bedroom</option><option value="other">Other</option></select></div>
-    <div class="fr"><div class="fg"><label>Leaseholder</label><input id="ur-leaseholder" type="text" placeholder="Primary resident name"></div><div class="fg"><label>Preferred Name <span style="font-size:10px;color:var(--text3);font-weight:400">(if different)</span></label><input id="ur-preferred-name" type="text" placeholder="Goes by…"></div></div>
+    <div class="fg"><label>Leaseholder</label><input id="ur-leaseholder" type="text" placeholder="Primary resident name"></div>
     <div class="fg"><label>Roommates <span style="font-size:10px;color:var(--text3);font-weight:400">(comma-separated)</span></label><input id="ur-roommates" type="text" placeholder="Additional residents&#8230;"></div>
     <div class="fg"><label>&#128230; PTE — Permission to Enter</label><select id="ur-pte"><option value="not-set">Not Set</option><option value="granted">Granted — OK to enter for package delivery</option><option value="denied">Denied — Do NOT enter unit</option></select></div>
     <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
@@ -2581,7 +2581,7 @@ function dashSearch(q) {
   var ql = q.toLowerCase(), results = [];
   (state.moves || []).filter(function (m) { return (m.resident || '').toLowerCase().includes(ql) || (m.unit || '').toLowerCase().includes(ql); }).forEach(function (m) { results.push({ label: m.resident + ' — Unit ' + m.unit, sub: (m.type === 'in' ? 'Move In' : 'Move Out') + ' · ' + fmtShort(m.date), sec: 'moves' }); });
   (state.guests || []).filter(function (gst) { return (gst.name || '').toLowerCase().includes(ql) || (gst.unit || '').toLowerCase().includes(ql); }).forEach(function (gst) { results.push({ label: gst.name + ' (Guest)', sub: 'Unit ' + gst.unit + ' · ' + gst.status, sec: 'guests' }); });
-  (state.unitRecords || []).filter(function (r) { return (r.leaseholder || '').toLowerCase().includes(ql) || (r.preferredName || '').toLowerCase().includes(ql) || (r.unit || '').toLowerCase().includes(ql); }).forEach(function (r) { results.push({ label: (r.leaseholder || 'Unit') + ' — Unit ' + r.unit, sub: 'Unit Tracker' + (r.preferredName ? ' · "' + r.preferredName + '"' : ''), sec: 'residents' }); });
+  (state.unitRecords || []).filter(function (r) { return (r.leaseholder || '').toLowerCase().includes(ql) || (r.unit || '').toLowerCase().includes(ql); }).forEach(function (r) { results.push({ label: (r.leaseholder || 'Unit') + ' — Unit ' + r.unit, sub: 'Unit Tracker', sec: 'residents' }); });
   (state.keys || []).filter(function (k) { return (k.name || '').toLowerCase().includes(ql) || (k.unit || '').toLowerCase().includes(ql) || (k.fob || '').toLowerCase().includes(ql); }).forEach(function (k) { results.push({ label: k.name + ' — Unit ' + k.unit, sub: 'Key Tracker · ' + k.type + ' · ' + k.status, sec: 'keys' }); });
   (state.maintenance || []).filter(function (m) { return (m.unit || '').toLowerCase().includes(ql) || (m.issue || '').toLowerCase().includes(ql); }).forEach(function (m) { results.push({ label: m.issue + ' — Unit ' + m.unit, sub: 'Maintenance · ' + m.status, sec: 'maintenance' }); });
   (state.concierge || []).filter(function (c) { return (c.resident || '').toLowerCase().includes(ql) || (c.unit || '').toLowerCase().includes(ql); }).forEach(function (c) { results.push({ label: c.resident + ' — Unit ' + c.unit, sub: 'Concierge · ' + c.type + ' · ' + c.status, sec: 'concierge' }); });
@@ -5806,7 +5806,6 @@ function openEditUnitRecord(id) {
   var uf = g('ur-unit-field'); if (uf) uf.style.display = 'none';
   var utEl = g('ur-unit-type'); if (utEl) utEl.value = r.unitType || '';
   g('ur-leaseholder').value = r.leaseholder || '';
-  var pnEl = g('ur-preferred-name'); if (pnEl) pnEl.value = r.preferredName || '';
   var pteEl = g('ur-pte'); if (pteEl) pteEl.value = r.pte || 'not-set';
   g('ur-roommates').value = r.roommates || '';
   g('ur-unit-keys-issued').value = r.unitKeysIssued || 0;
@@ -5842,7 +5841,6 @@ function openAddUnitRecord() {
   g('ur-unit-num').value = '';
   var utEl = g('ur-unit-type'); if (utEl) utEl.value = '';
   g('ur-leaseholder').value = '';
-  var pnEl = g('ur-preferred-name'); if (pnEl) pnEl.value = '';
   var pteEl = g('ur-pte'); if (pteEl) pteEl.value = 'not-set';
   g('ur-roommates').value = '';
   g('ur-unit-keys-issued').value = 0;
@@ -5869,7 +5867,7 @@ function saveUnitRecord() {
   if (!editingUnitRecordId) {
     var unit = g('ur-unit-num') ? g('ur-unit-num').value.trim() : '';
     if (!unit) { toast('Unit # is required'); return; }
-    var newR = { id: uid(), unit: unit, unitType: g('ur-unit-type')?g('ur-unit-type').value:'', leaseholder: g('ur-leaseholder').value.trim(), preferredName: g('ur-preferred-name')?g('ur-preferred-name').value.trim():'', pte: g('ur-pte')?g('ur-pte').value:'not-set', roommates: g('ur-roommates').value.trim(), unitKeysIssued: parseInt(g('ur-unit-keys-issued').value)||0, mailboxKeysIssued: parseInt(g('ur-mailbox-keys-issued').value)||0, unitKeysReplacement: parseInt(g('ur-unit-keys-replacement').value)||0, mailboxKeysReplacement: parseInt(g('ur-mailbox-keys-replacement').value)||0, transponder: g('ur-transponder').checked, transponderReplacement: parseInt(g('ur-transponder-repl')?g('ur-transponder-repl').value:0)||0, xpressSticker: g('ur-xpress').checked, xpressReplacement: parseInt(g('ur-xpress-repl')?g('ur-xpress-repl').value:0)||0, keyTag: g('ur-keytag').checked, keyTagReplacement: parseInt(g('ur-keytag-repl')?g('ur-keytag-repl').value:0)||0, hasBike: !!(g('ur-bike')&&g('ur-bike').checked), bikeSticker: g('ur-bike-sticker')?g('ur-bike-sticker').value.trim():'', blueground: g('ur-blueground') ? g('ur-blueground').checked : false, wifiExpiry: g('ur-wifi-expiry').value||'', notes: g('ur-notes').value.trim(), createdAt: Date.now() };
+    var newR = { id: uid(), unit: unit, unitType: g('ur-unit-type')?g('ur-unit-type').value:'', leaseholder: g('ur-leaseholder').value.trim(), pte: g('ur-pte')?g('ur-pte').value:'not-set', roommates: g('ur-roommates').value.trim(), unitKeysIssued: parseInt(g('ur-unit-keys-issued').value)||0, mailboxKeysIssued: parseInt(g('ur-mailbox-keys-issued').value)||0, unitKeysReplacement: parseInt(g('ur-unit-keys-replacement').value)||0, mailboxKeysReplacement: parseInt(g('ur-mailbox-keys-replacement').value)||0, transponder: g('ur-transponder').checked, transponderReplacement: parseInt(g('ur-transponder-repl')?g('ur-transponder-repl').value:0)||0, xpressSticker: g('ur-xpress').checked, xpressReplacement: parseInt(g('ur-xpress-repl')?g('ur-xpress-repl').value:0)||0, keyTag: g('ur-keytag').checked, keyTagReplacement: parseInt(g('ur-keytag-repl')?g('ur-keytag-repl').value:0)||0, hasBike: !!(g('ur-bike')&&g('ur-bike').checked), bikeSticker: g('ur-bike-sticker')?g('ur-bike-sticker').value.trim():'', blueground: g('ur-blueground') ? g('ur-blueground').checked : false, wifiExpiry: g('ur-wifi-expiry').value||'', notes: g('ur-notes').value.trim(), createdAt: Date.now() };
     if (!state.unitRecords) state.unitRecords = [];
     state.unitRecords.push(newR);
     pushUndo({ sec: 'residents', type: 'ADD', id: newR.id, data: newR, label: 'add unit record — Unit ' + unit });
@@ -5888,7 +5886,6 @@ function saveUnitRecord() {
   r.mailboxKeysReplacement = parseInt(g('ur-mailbox-keys-replacement').value) || 0;
   r.unitType = g('ur-unit-type') ? g('ur-unit-type').value : (r.unitType || '');
   r.leaseholder = g('ur-leaseholder').value.trim();
-  r.preferredName = g('ur-preferred-name') ? g('ur-preferred-name').value.trim() : (r.preferredName || '');
   r.pte = g('ur-pte') ? g('ur-pte').value : (r.pte || 'not-set');
   r.transponder = g('ur-transponder').checked;
   r.transponderReplacement = parseInt(g('ur-transponder-repl')?g('ur-transponder-repl').value:0)||0;
@@ -5924,7 +5921,7 @@ function openUnitView(unit) {
   var t = today();
   var rec = (state.unitRecords||[]).find(function(r){ return r.unit===unit; });
   var titleEl = g('unit-view-title');
-  if (titleEl) titleEl.textContent = 'Unit ' + unit + (rec && rec.leaseholder ? ' — ' + (rec.preferredName || rec.leaseholder) : '');
+  if (titleEl) titleEl.textContent = 'Unit ' + unit + (rec && rec.leaseholder ? ' — ' + rec.leaseholder : '');
   var html = '';
   // ── Unit record card ──
   html += '<div style="padding:14px 16px;border-bottom:1px solid var(--border)">';
@@ -5937,7 +5934,7 @@ function openUnitView(unit) {
   }
   html += '</div>';
   if (rec && rec.leaseholder) {
-    html += '<div style="font-weight:600;font-size:14px">' + esc(rec.leaseholder) + (rec.preferredName ? ' <span style="font-weight:400;color:var(--text3);font-size:12px">(' + esc(rec.preferredName) + ')</span>' : '') + '</div>';
+    html += '<div style="font-weight:600;font-size:14px">' + esc(rec.leaseholder) + '</div>';
     if (rec.roommates) html += '<div style="font-size:12px;color:var(--text3);margin-top:2px">&#43; ' + esc(rec.roommates) + '</div>';
     var infoBits = [];
     if (rec.wifiExpiry) infoBits.push('&#128246; WiFi exp. ' + fmtShort(rec.wifiExpiry));
@@ -6465,7 +6462,7 @@ function renderResidents() {
     if (r.blueground) html += '<span style="font-size:10px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600">&#128309; BG</span>';
     html += '</div>';
     // Leaseholder + roommates
-    if (r.leaseholder) html += '<div style="font-size:13px;font-weight:600;margin-bottom:2px">'+esc(r.leaseholder)+(r.preferredName?'<span style="font-size:11px;font-weight:400;color:var(--text3)"> ('+esc(r.preferredName)+')</span>':'')+'</div>';
+    if (r.leaseholder) html += '<div style="font-size:13px;font-weight:600;margin-bottom:2px">'+esc(r.leaseholder)+'</div>';
     if (r.pte && r.pte !== 'not-set') { var pteCls = r.pte==='granted'?'pte-granted':'pte-denied'; html += '<span class="pte-badge '+pteCls+'" style="font-size:10px;margin-bottom:6px;display:inline-block">'+(r.pte==='granted'?'&#9989; PTE Granted':'&#128683; PTE Denied')+'</span>'; }
     if (r.roommates) html += '<div style="font-size:11px;color:var(--text3);margin-bottom:8px">&#43; '+esc(r.roommates)+'</div>';
     // Keys (only when set)
