@@ -589,6 +589,27 @@
   .pay-mismatch{color:var(--red);font-size:10px;font-weight:700}
 
   @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+  /* ===== DASHBOARD 3D / VISUAL FEATURES ===== */
+  .dash-greeting-wrap{position:relative;margin-bottom:14px;overflow:hidden;border-radius:8px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow)}
+  #dash-bg-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0.6}
+  .dash-greeting-content{position:relative;z-index:1}
+  .unit-map-section{margin-bottom:14px}
+  .unit-map-floors{display:flex;flex-direction:column;gap:4px}
+  .unit-map-floor{display:flex;align-items:center;gap:6px}
+  .unit-map-lbl{font-size:10px;font-weight:600;color:var(--text3);font-family:var(--font-mono);width:32px;text-align:right;flex-shrink:0}
+  .unit-map-cells{display:flex;flex-wrap:wrap;gap:3px}
+  .unit-dot{width:24px;height:22px;border-radius:4px;cursor:pointer;position:relative;transition:transform 100ms ease-out,box-shadow 100ms ease-out;flex-shrink:0}
+  .unit-dot:hover{transform:translateY(-2px) scale(1.15);box-shadow:0 4px 10px rgba(0,0,0,0.2);z-index:10}
+  .unit-dot .unit-tip{display:none;position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:#1a2632;color:#fff;font-size:10px;font-family:var(--font-mono);padding:4px 8px;border-radius:4px;white-space:nowrap;z-index:100;pointer-events:none;line-height:1.5}
+  .unit-dot:hover .unit-tip{display:block}
+  .unit-dot.ud-occupied{background:var(--green-light);border:1px solid #C8E4B0}
+  .unit-dot.ud-vacant{background:var(--red-light);border:1px solid #F0BFBF}
+  .unit-dot.ud-blueground{background:#E8F0FF;border:1px solid #B8CCEE}
+  .unit-dot.ud-maint{background:var(--amber-light);border:1px solid #E8C878}
+  .unit-map-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:10px;color:var(--text3)}
+  .unit-map-legend span{display:flex;align-items:center;gap:4px}
+  .unit-map-legend .leg-dot{width:10px;height:10px;border-radius:2px;display:inline-block;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -678,7 +699,7 @@
         <div class="sub-tab" onclick="filterMoves('out',this)">Move Outs</div>
         <div class="sub-tab" onclick="filterMoves('today',this)">Today</div>
         <div class="sub-tab" onclick="filterMoves('postmovein',this)">Post Move-In</div>
-        <div class="sub-tab" onclick="filterMoves('needs-appt',this)">Needs Appt <span class="badge" id="badge-needs-appt" style="background:var(--amber)"></span></div>
+        <div class="sub-tab" onclick="filterMoves('needs-appt',this)">Needs Reservation <span class="badge" id="badge-needs-appt" style="background:var(--amber)"></span></div>
         <div class="sub-tab" onclick="filterMoves('archive',this)">Archive</div>
       </div>
       <div class="stat-grid" id="moves-stats"></div>
@@ -686,7 +707,7 @@
         <div class="card-hdr"><span class="card-title" id="moves-card-title">Scheduled Moves</span><span class="card-count" id="moves-count">0 entries</span>
           <div class="ml-auto flex gap-8" id="moves-admin-actions"><button class="btn btn-ghost btn-sm" id="btn-move-logged" onclick="toggleMoveLogged()" title="Show/hide logged by column">Logged By</button><button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button></div>
         </div>
-        <div class="tbl-wrap"><table><thead><tr id="moves-thead-row"><th class="th-sort" onclick="sortMoves('unit')">Unit</th><th class="th-sort" onclick="sortMoves('name')">Resident</th><th class="th-sort" onclick="sortMoves('date')">Lease Start</th><th class="th-sort" onclick="sortMoves('type')">Type</th><th class="th-sort" onclick="sortMoves('appt')">Appt</th><th>Total</th><th>Notes</th><th id="moves-th-logged" style="display:none">Logged By</th><th></th></tr></thead><tbody id="moves-tbody"></tbody></table></div>
+        <div class="tbl-wrap"><table><thead><tr id="moves-thead-row"><th class="th-sort" onclick="sortMoves('unit')">Unit</th><th class="th-sort" onclick="sortMoves('name')">Resident</th><th class="th-sort" onclick="sortMoves('date')">Lease Start</th><th class="th-sort" onclick="sortMoves('type')">Type</th><th class="th-sort" onclick="sortMoves('appt')">Reservation</th><th>Total</th><th>Notes</th><th id="moves-th-logged" style="display:none">Logged By</th><th></th></tr></thead><tbody id="moves-tbody"></tbody></table></div>
       </div>
       <div id="moves-cards"></div>
       <div class="card" id="tight-panel" style="display:none"><div class="card-hdr"><span class="card-title">Tight Turnovers</span></div><div class="card-body" id="tight-body"></div></div>
@@ -789,6 +810,7 @@
               <button class="btn btn-xs btn-secondary" id="ut-filter-bg" onclick="filterUnitRecords('blueground',this)">&#128309; BG</button>
               <button class="btn btn-xs btn-secondary" id="ut-filter-wifi" onclick="filterUnitRecords('wifi',this)">&#128246; WiFi Expiring</button>
               <button class="btn btn-xs btn-secondary" id="ut-filter-unassigned" onclick="filterUnitRecords('unassigned',this)">&#127968; Vacant</button>
+              <button class="btn btn-xs btn-secondary" id="ut-view-map" onclick="setUtView('map')" style="margin-left:4px">&#128205; Map</button>
             </div>
           </div>
         </div>
@@ -1169,8 +1191,8 @@
       <div class="fg" id="mv-lease-status-row" style="margin-top:8px;margin-bottom:0"><label>Lease Status</label><select id="mv-lease-status"><option value="">— Not set —</option><option value="pending_countersign">Pending Countersign</option><option value="fully_signed">Fully Signed</option><option value="cancelled">Cancelled</option></select></div>
     </div>
     <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px 13px;margin-bottom:12px">
-      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px" id="mv-label-appt-hdr">Move-In Appointment <span style="font-weight:400;color:var(--text3)">(confirm when booked)</span></div>
-      <div class="fr"><div class="fg" style="margin-bottom:0"><label>Appointment Date</label><input id="mv-appt-date" type="date" data-no-autofill></div><div class="fg" style="margin-bottom:0"><label>Start Time</label><select id="mv-appt-time"><option value="">— No appointment yet —</option></select></div></div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px" id="mv-label-appt-hdr">Move-In Reservation <span style="font-weight:400;color:var(--text3)">(confirm when booked)</span></div>
+      <div class="fr"><div class="fg" style="margin-bottom:0"><label>Reservation Date</label><div style="display:flex;align-items:center;gap:8px"><input id="mv-appt-date" type="date" data-no-autofill style="flex:1"><label style="display:flex;align-items:center;gap:5px;font-weight:400;font-size:12px;white-space:nowrap;margin:0;cursor:pointer;color:var(--text2)"><input type="checkbox" id="mv-appt-tbd" style="width:auto;accent-color:var(--accent)" onchange="mvApptTbdChange()"> TBD</label></div></div><div class="fg" style="margin-bottom:0"><label>Start Time</label><select id="mv-appt-time"><option value="">— No time yet —</option></select></div></div>
       <div style="margin-top:8px;font-size:11.5px;color:var(--text2)" id="mv-conflict-msg"></div>
     </div>
     <div class="fg"><label>Notes</label><textarea id="mv-notes" rows="3"></textarea></div>
@@ -2429,7 +2451,7 @@ function updateBadges() {
   var trN = (state.tours || []).filter(function (t) { return t.date === today(); }).length;
   var tdN = getCurrentTodos().filter(function (t) { return !t.done; }).length;
   var lN = (state.laf || []).filter(function (i) { return !i.claimedAt; }).length;
-  var naN = (state.moves || []).filter(function (m) { return !m.archivedAt && !m.apptDate && m.date >= today(); }).length;
+  var naN = (state.moves || []).filter(function (m) { return !m.archivedAt && !m.apptDate && !m.apptTbd && m.date >= today(); }).length;
   setBadge('badge-needs-appt', naN);
   var crN = (state.concierge || []).filter(function (c) { return c.status === 'open'; }).length;
   var secN = (state.security||[]).filter(function(s){ return s.date===today() || s.status==='monitoring'; }).length;
@@ -2452,7 +2474,7 @@ function renderDash() {
   var active = moves.filter(function (m) { return !m.archivedAt; });
   // Today = moves with appt today, OR lease start today with no appt yet
   var todayM = active.filter(function (m) { return m.apptDate === t || (!m.apptDate && m.date === t); });
-  var needsAppt = active.filter(function (m) { return m.type === 'in' && !m.apptDate && m.date >= t; });
+  var needsAppt = active.filter(function (m) { return m.type === 'in' && !m.apptDate && !m.apptTbd && m.date >= t; });
   var d7 = new Date(); d7.setDate(d7.getDate() + 7);
   var wEnd = d7.toISOString().split('T')[0];
   var weekM = active.filter(function (m) { return m.date >= t && m.date <= wEnd; });
@@ -2471,7 +2493,7 @@ function renderDash() {
   var hour = new Date().getHours();
   var greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   var greetName = currentUser ? currentUser.name.split(' ')[0] : 'Gabino';
-  var html = '<div style="margin-bottom:14px"><div style="font-size:18px;font-weight:600;letter-spacing:-.3px">' + greeting + ', ' + greetName + '.</div><div style="font-size:12px;color:var(--text3);margin-top:2px;font-family:var(--mono)">' + new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) + ' &nbsp;&middot;&nbsp; Front Desk</div></div>';
+  var html = '<div class="dash-greeting-wrap"><canvas id="dash-bg-canvas"></canvas><div class="dash-greeting-content"><div style="font-size:18px;font-weight:600;letter-spacing:-.3px">' + greeting + ', ' + greetName + '.</div><div style="font-size:12px;color:var(--text3);margin-top:2px;font-family:var(--mono)">' + new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) + ' &nbsp;&middot;&nbsp; Front Desk</div></div></div>';
   // Turnover ready count: move-outs with all tasks done
   var turnoverReady = active.filter(function (m) {
     if (m.type !== 'out') return false;
@@ -2495,13 +2517,30 @@ function renderDash() {
   var supLow = (state.supplies||[]).filter(function(s){ return s.lowAt!=null && s.qty<=s.lowAt; }).length;
   if (supLow > 0) html += '<div class="stat-card stat-clickable" onclick="navToSec(\'supplies\')" style="border-color:var(--amber)"><div class="stat-num" style="color:var(--amber)">' + supLow + '</div><div class="stat-lbl">Supplies Low</div></div>';
   html += '</div>';
+  // Building Map summary card
+  var unitRecs = state.unitRecords || [];
+  if (unitRecs.length > 0) {
+    var occupied = unitRecs.filter(function(r){ return r.leaseholder || r.blueground; }).length;
+    var vacant = unitRecs.filter(function(r){ return !r.leaseholder && !r.blueground; }).length;
+    var openMaintCount = {};
+    (state.maintenance||[]).filter(function(m){return m.status!=='resolved';}).forEach(function(m){openMaintCount[m.unit]=true;});
+    var maintUnits = Object.keys(openMaintCount).length;
+    html += '<div class="card" style="margin-bottom:14px"><div class="card-body" style="padding:10px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
+      + '<span style="font-size:13px;font-weight:600">&#128205; Building Map</span>'
+      + '<span style="font-size:12px;color:var(--text3)">' + unitRecs.length + ' units</span>'
+      + '<span style="display:flex;align-items:center;gap:4px;font-size:12px"><span class="leg-dot" style="background:var(--green-light);border:1px solid #C8E4B0;width:9px;height:9px;border-radius:2px;display:inline-block"></span>' + occupied + ' occupied</span>'
+      + '<span style="display:flex;align-items:center;gap:4px;font-size:12px"><span class="leg-dot" style="background:var(--red-light);border:1px solid #F0BFBF;width:9px;height:9px;border-radius:2px;display:inline-block"></span>' + vacant + ' vacant</span>'
+      + (maintUnits > 0 ? '<span style="display:flex;align-items:center;gap:4px;font-size:12px"><span class="leg-dot" style="background:var(--amber-light);border:1px solid #E8C878;width:9px;height:9px;border-radius:2px;display:inline-block"></span>' + maintUnits + ' open maintenance</span>' : '')
+      + '<button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openBuildingMap()">View Map &rarr;</button>'
+      + '</div></div>';
+  }
   if (tights.length) {
     html += '<div class="tight-alert"><div class="ta-title">Tight Turnovers - ' + tights.length + ' unit' + (tights.length > 1 ? 's' : '') + ' need attention</div>';
     tights.forEach(function (tt) { html += '<div class="tight-row">Unit ' + esc(tt.unit) + ': <strong>' + esc(tt.outRes) + '</strong> out ' + fmtShort(tt.outDate) + ' &rarr; <strong>' + esc(tt.inRes) + '</strong> in ' + fmtShort(tt.inDate) + ' <span class="pill pill-' + (tt.gap <= 2 ? 'high' : 'medium') + '">' + tt.gap + 'd gap</span></div>'; });
     html += '</div>';
   }
   if (needsAppt.length) {
-    html += '<div class="needs-appt-alert"><div class="na-title">&#128197; ' + needsAppt.length + ' Move-In' + (needsAppt.length > 1 ? 's' : '') + ' Need an Appointment</div>';
+    html += '<div class="needs-appt-alert"><div class="na-title">&#128197; ' + needsAppt.length + ' Move-In' + (needsAppt.length > 1 ? 's' : '') + ' Need a Reservation</div>';
     needsAppt.slice(0,4).forEach(function (m) { html += '<div class="tight-row"><strong>Unit ' + esc(m.unit) + '</strong> - ' + esc(m.resident) + ' - Lease starts ' + fmtShort(m.date) + ' <button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="openEditMove(\'' + m.id + '\')">Schedule</button></div>'; });
     html += '</div>';
   }
@@ -2574,6 +2613,63 @@ function renderDash() {
     html += '</div></div>';
   }
   g('dash-body').innerHTML = html;
+  initStatCardTilt();
+  initDashBgCanvas();
+}
+function initStatCardTilt() {
+  document.querySelectorAll('#dash-body .stat-card.stat-clickable').forEach(function(card) {
+    card.addEventListener('mousemove', function(e) {
+      var rect = card.getBoundingClientRect();
+      var cx = rect.width / 2, cy = rect.height / 2;
+      var rotY = ((e.clientX - rect.left - cx) / cx) * 7;
+      var rotX = -((e.clientY - rect.top - cy) / cy) * 4;
+      card.style.transition = 'box-shadow 80ms ease-out';
+      card.style.transform = 'perspective(500px) rotateX(' + rotX + 'deg) rotateY(' + rotY + 'deg) translateY(-2px)';
+      card.style.boxShadow = '0 8px 22px rgba(0,0,0,0.13)';
+    });
+    card.addEventListener('mouseleave', function() {
+      card.style.transition = 'transform 220ms ease-out, box-shadow 220ms ease-out';
+      card.style.transform = '';
+      card.style.boxShadow = '';
+    });
+  });
+}
+var _dashBgAnimId = null;
+function initDashBgCanvas() {
+  if (_dashBgAnimId) { cancelAnimationFrame(_dashBgAnimId); _dashBgAnimId = null; }
+  var canvas = document.getElementById('dash-bg-canvas');
+  if (!canvas) return;
+  var wrap = canvas.parentElement;
+  canvas.width = wrap.offsetWidth;
+  canvas.height = wrap.offsetHeight;
+  var ctx = canvas.getContext('2d');
+  var particles = [];
+  for (var i = 0; i < 22; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: 4 + Math.random() * 10,
+      vx: (Math.random() - 0.5) * 0.25,
+      vy: (Math.random() - 0.5) * 0.25,
+      a: 0.03 + Math.random() * 0.06
+    });
+  }
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(function(p) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(26,92,62,' + p.a + ')';
+      ctx.fill();
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < -p.r) p.x = canvas.width + p.r;
+      if (p.x > canvas.width + p.r) p.x = -p.r;
+      if (p.y < -p.r) p.y = canvas.height + p.r;
+      if (p.y > canvas.height + p.r) p.y = -p.r;
+    });
+    _dashBgAnimId = requestAnimationFrame(draw);
+  }
+  draw();
 }
 function dashSearch(q) {
   var res = g('dash-results');
@@ -2636,7 +2732,7 @@ function updateMoveModalLabels() {
   var lDate = g('mv-label-date'); if (lDate) lDate.textContent = isIn ? 'Lease Start Date' : 'Lease End Date';
   var lTotal = g('mv-label-total'); if (lTotal) lTotal.textContent = isIn ? 'Move-In Total ($)' : 'Notes / Charges ($)';
   var lAppt = g('mv-label-appt-hdr');
-  if (lAppt) lAppt.innerHTML = (isIn ? 'Move-In Appointment' : 'Move-Out Appointment') + ' <span style="font-weight:400;color:var(--text3)">(confirm when booked)</span>';
+  if (lAppt) lAppt.innerHTML = (isIn ? 'Move-In Reservation' : 'Move-Out Reservation') + ' <span style="font-weight:400;color:var(--text3)">(confirm when booked)</span>';
   var totalPh = g('mv-total'); if (totalPh) totalPh.placeholder = isIn ? 'e.g. 4500' : 'e.g. cleaning fee';
   var lsRow = g('mv-lease-status-row'); if (lsRow) lsRow.style.display = isIn ? '' : 'none';
 }
@@ -2724,6 +2820,9 @@ function openAddMove() {
   ['mv-unit', 'mv-resident', 'mv-total', 'mv-notes', 'mv-date', 'mv-appt-date'].forEach(function (id) { g(id).value = ''; });
   var tdCb = g('mv-date-tbd'); if (tdCb) tdCb.checked = false;
   var dfEl = g('mv-date'); if (dfEl) dfEl.disabled = false;
+  var atCb = g('mv-appt-tbd'); if (atCb) atCb.checked = false;
+  var afEl = g('mv-appt-date'); if (afEl) afEl.disabled = false;
+  var atEl = g('mv-appt-time'); if (atEl) atEl.disabled = false;
   g('mv-type').value = 'in';
   var lsSel = g('mv-lease-status'); if (lsSel) lsSel.value = '';
   updateMoveModalLabels();
@@ -2759,12 +2858,14 @@ function openEditMove(id) {
   g('mv-notes').value = m.notes || '';
   var lsSelE = g('mv-lease-status'); if (lsSelE) lsSelE.value = m.leaseStatus || '';
   buildTimeSlots();
-  g('mv-appt-date').value = m.apptDate || '';
-  g('mv-appt-time').value = m.apptTime || '';
+  var isApptTbd = !!m.apptTbd;
+  var atCbE = g('mv-appt-tbd'); if (atCbE) atCbE.checked = isApptTbd;
+  var afElE = g('mv-appt-date'); if (afElE) { afElE.value = isApptTbd ? '' : (m.apptDate || ''); afElE.disabled = isApptTbd; }
+  var atElE = g('mv-appt-time'); if (atElE) { atElE.value = isApptTbd ? '' : (m.apptTime || ''); atElE.disabled = isApptTbd; }
   var msgEl = g('mv-conflict-msg'); if (msgEl) msgEl.innerHTML = '';
   g('mv-appt-date').onchange = onApptChange;
   g('mv-appt-time').onchange = onApptChange;
-  if (m.apptDate && m.apptTime) onApptChange();
+  if (!isApptTbd && m.apptDate && m.apptTime) onApptChange();
   openModal('modal-move');
 }
 
@@ -2774,13 +2875,21 @@ function mvDateTbdChange() {
   df.disabled = cb.checked;
   if (cb.checked) df.value = '';
 }
+function mvApptTbdChange() {
+  var cb = g('mv-appt-tbd'), df = g('mv-appt-date'), ts = g('mv-appt-time');
+  if (!cb) return;
+  if (df) { df.disabled = cb.checked; if (cb.checked) df.value = ''; }
+  if (ts) { ts.disabled = cb.checked; if (cb.checked) ts.value = ''; }
+  var msgEl = g('mv-conflict-msg'); if (msgEl) msgEl.innerHTML = '';
+}
 function saveMove() {
   var unit = g('mv-unit').value.trim(), resident = g('mv-resident').value.trim();
   var isTbd = g('mv-date-tbd') && g('mv-date-tbd').checked;
   var date = isTbd ? 'TBD' : g('mv-date').value;
   if (!unit || !resident || (!date && !isTbd)) { toast('Fill in unit, resident & lease start date'); return; }
-  var apptDate = (g('mv-appt-date') && g('mv-appt-date').value) || '';
-  var apptTime = (g('mv-appt-time') && g('mv-appt-time').value) || '';
+  var apptTbd = !!(g('mv-appt-tbd') && g('mv-appt-tbd').checked);
+  var apptDate = apptTbd ? '' : ((g('mv-appt-date') && g('mv-appt-date').value) || '');
+  var apptTime = apptTbd ? '' : ((g('mv-appt-time') && g('mv-appt-time').value) || '');
   var total = g('mv-total').value.trim();
   var notes = g('mv-notes').value.trim();
   var moveType = g('mv-type').value;
@@ -2796,7 +2905,7 @@ function saveMove() {
     if (!m) return;
     var _mb = Object.assign({}, m);
     m.unit = unit; m.resident = resident; m.date = date; m.type = moveType;
-    m.total = total; m.notes = notes; m.apptDate = apptDate; m.apptTime = apptTime;
+    m.total = total; m.notes = notes; m.apptDate = apptDate; m.apptTime = apptTime; m.apptTbd = apptTbd;
     m.leaseStatus = (m.type === 'in' && g('mv-lease-status')) ? g('mv-lease-status').value : '';
     pushUndo({ sec: 'moves', type: 'EDIT', id: m.id, before: _mb, after: Object.assign({}, m), label: 'move edit — Unit ' + unit });
     editingMoveId = null;
@@ -2809,7 +2918,7 @@ function saveMove() {
   var customOut = state.customOutTasks || DEFAULT_OUT_TASKS;
   var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null, paymentTask: t.paymentTask || false }; });
   var leaseStatus = (moveType === 'in' && g('mv-lease-status')) ? g('mv-lease-status').value : '';
-  var m = { id: uid(), unit: unit, resident: resident, date: date, type: moveType, total: total, notes: notes, apptDate: apptDate, apptTime: apptTime, leaseStatus: leaseStatus, tasks: tasks, archivedAt: null, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : 'Front Desk' };
+  var m = { id: uid(), unit: unit, resident: resident, date: date, type: moveType, total: total, notes: notes, apptDate: apptDate, apptTime: apptTime, apptTbd: apptTbd, leaseStatus: leaseStatus, tasks: tasks, archivedAt: null, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : 'Front Desk' };
   if (!state.moves) state.moves = [];
   state.moves.push(m);
   if (moveType === 'in') {
@@ -3063,7 +3172,7 @@ function renderMoves() {
       return true;
     });
   }
-  else if (moveFilter === 'needs-appt') list = list.filter(function (m) { return !m.archivedAt && !m.apptDate && m.date >= t; });
+  else if (moveFilter === 'needs-appt') list = list.filter(function (m) { return !m.archivedAt && !m.apptDate && !m.apptTbd && m.date >= t; });
   else if (moveFilter === 'archive') list = list.filter(function (m) { return !!m.archivedAt; });
   else list = list.filter(function (m) { return !m.archivedAt; });
   var dir = moveSortDir === 'desc' ? -1 : 1;
@@ -3094,12 +3203,18 @@ function renderMoves() {
     var oneWeekOut = new Date(); oneWeekOut.setDate(oneWeekOut.getDate() + 7);
     var weekStr = oneWeekOut.toISOString().split('T')[0];
     var statWeek = allActive.filter(function(m) { return m.date >= t && m.date <= weekStr; });
-    var statNoAppt = allActive.filter(function(m) { return !m.apptDate && m.date >= t; });
-    var statPMI = allActive.filter(function(m) { return m.type === 'in' && (m.tasks||[]).some(function(tk){ return tk.cat === 'Post Move-In' && !tk.done; }); });
+    var statNoAppt = allActive.filter(function(m) { return !m.apptDate && !m.apptTbd && m.date >= t; });
+    var statPMI = allActive.filter(function(m) {
+      if (m.type !== 'in') return false;
+      var nonPost = (m.tasks||[]).filter(function(tk){ return tk.cat !== 'Post Move-In'; });
+      var allNonPostDone = nonPost.length === 0 || nonPost.every(function(tk){ return tk.done === true; });
+      var hasIncompletePost = (m.tasks||[]).some(function(tk){ return tk.cat === 'Post Move-In' && !tk.done; });
+      return allNonPostDone && hasIncompletePost;
+    });
     statEl.innerHTML =
       '<div class="stat-card stat-clickable' + (moveFilter==='today'?' accent':'') + '" onclick="setMoveFilter(\'today\')"><div class="stat-num">' + statToday.length + '</div><div class="stat-lbl">Today</div></div>' +
       '<div class="stat-card stat-clickable" onclick="setMoveFilter(\'all\')"><div class="stat-num">' + statWeek.length + '</div><div class="stat-lbl">Next 7 Days</div></div>' +
-      '<div class="stat-card stat-clickable' + (moveFilter==='needs-appt' ? ' accent' : statNoAppt.length > 0 ? ' red' : '') + '" onclick="setMoveFilter(\'needs-appt\')"><div class="stat-num">' + statNoAppt.length + '</div><div class="stat-lbl">No Appointment</div></div>' +
+      '<div class="stat-card stat-clickable' + (moveFilter==='needs-appt' ? ' accent' : statNoAppt.length > 0 ? ' red' : '') + '" onclick="setMoveFilter(\'needs-appt\')"><div class="stat-num">' + statNoAppt.length + '</div><div class="stat-lbl">No Reservation</div></div>' +
       '<div class="stat-card stat-clickable' + (statPMI.length > 0 ? ' accent' : '') + '" onclick="setMoveFilter(\'postmovein\')"><div class="stat-num">' + statPMI.length + '</div><div class="stat-lbl">Post Move-In</div></div>';
   }
   // Stamp sort indicators on column headers
@@ -3127,7 +3242,7 @@ function renderMoves() {
   if (cardTitle) {
     if (moveFilter === 'postmovein') cardTitle.textContent = 'Post Move-In Follow-Up';
     else if (moveFilter === 'turnover') cardTitle.textContent = 'Ready for Turnover';
-    else if (moveFilter === 'needs-appt') cardTitle.textContent = 'Move-Ins Needing Appointment';
+    else if (moveFilter === 'needs-appt') cardTitle.textContent = 'Move-Ins Needing Reservation';
     else cardTitle.textContent = 'Scheduled Moves';
   }
   // Post move-in info banner
@@ -3157,12 +3272,13 @@ function renderMoves() {
         var bc = pct < 30 ? 'var(--red)' : pct < 70 ? 'var(--amber)' : 'var(--green)';
         var isOpen = m.id === openMoveId;
         var isStaffUser = currentUser && currentUser.role === 'staff';
-        var archBtn = (!m.archivedAt && !isStaffUser) ? '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();archiveMove(\'' + m.id + '\')">Archive</button>' : '';
         var isToday = (m.apptDate === t || m.date === t);
         rows += '<tr class="move-row ' + (isOpen ? 'sel ' : '') + (m.archivedAt ? 'archive-row ' : '') + (isToday ? 'today-move ' : '') + '" data-id="' + m.id + '" onclick="toggleCL(\'' + m.id + '\')">';
         var apptBadge = '';
-        if (!m.apptDate) {
-          apptBadge = '<span class="appt-badge no-appt" onclick="event.stopPropagation();openEditMove(\'' + m.id + '\')" title="No appointment — click to schedule">No Appt</span>';
+        if (m.apptTbd) {
+          apptBadge = '<span class="appt-badge" style="background:var(--border2);color:var(--text3)">TBD</span>';
+        } else if (!m.apptDate) {
+          apptBadge = '<span class="appt-badge no-appt" onclick="event.stopPropagation();openEditMove(\'' + m.id + '\')" title="No reservation — click to schedule">No Reservation</span>';
         } else {
           var apptConflicts = checkApptConflict(m.apptDate, m.apptTime, m.id);
           if (apptConflicts) {
@@ -3181,6 +3297,11 @@ function renderMoves() {
           + (m.date === t && m.type === 'in' ? '<div class="text-xs" style="color:var(--accent)">Lease starts today</div>' : '') + '</td>';
         rows += '<td class="mono text-sm">' + fmtShort(m.date) + '</td>';
         var stage = getMoveStage(m);
+        var archBtn = (!m.archivedAt && !isStaffUser)
+          ? (stage === 'complete'
+            ? '<button class="btn btn-xs" style="background:var(--green);color:#fff;border:2px solid var(--green);font-weight:700" onclick="event.stopPropagation();archiveMove(\'' + m.id + '\')" title="All tasks complete — ready to archive">All Done &#10003;</button>'
+            : '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();archiveMove(\'' + m.id + '\')">Archive</button>')
+          : '';
         rows += '<td><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'Move In' : 'Move Out') + '</span><br><span class="stage-pill stage-' + stage + '">' + (STAGE_LABELS[stage] || stage) + '</span></td>';
         rows += '<td>' + apptBadge + '</td>';
         var payTask = (m.tasks||[]).find(function(tk){ return tk.paymentTask; });
@@ -3212,20 +3333,27 @@ function renderMoves() {
         var pct = tot ? Math.round(dn / tot * 100) : 0;
         var bc = pct < 30 ? 'var(--red)' : pct < 70 ? 'var(--amber)' : 'var(--green)';
         var isOpen = m.id === openMoveId;
-        var archBtn = (!m.archivedAt && !isStaffUser) ? '<button class="btn btn-secondary btn-xs" onclick="archiveMove(\'' + m.id + '\')">Archive</button>' : '';
+        var mcStage = getMoveStage(m);
+        var archBtn = (!m.archivedAt && !isStaffUser)
+          ? (mcStage === 'complete'
+            ? '<button class="btn btn-xs" style="background:var(--green);color:#fff;border:2px solid var(--green);font-weight:700" onclick="archiveMove(\'' + m.id + '\')" title="All tasks complete — ready to archive">All Done &#10003;</button>'
+            : '<button class="btn btn-secondary btn-xs" onclick="archiveMove(\'' + m.id + '\')">Archive</button>')
+          : '';
         html += '<div class="move-card ' + (isOpen ? 'expanded' : '') + '" id="mc-' + m.id + '">';
         html += '<div class="mc-hdr" onclick="toggleCL(\'' + m.id + '\')">';
         html += '<span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'IN' : 'OUT') + '</span>';
         var mcCoRes = (m.coResidents || []).map(function(c){ return esc(c.name); }).join(', ');
         html += '<div class="mc-meta"><div class="mc-name">' + esc(m.resident) + (mcCoRes ? ' <span style="font-weight:400;font-size:12px;color:var(--text3)">+ ' + mcCoRes + '</span>' : '') + '</div>' + (m.addedBy ? '<div class="text-xs text-3">by ' + esc(m.addedBy) + '</div>' : '');
         var mcApptLine = '';
-        if (!m.apptDate) {
-          mcApptLine = '<div class="appt-badge no-appt" style="margin-top:4px;display:inline-flex">No appointment yet</div>';
+        if (m.apptTbd) {
+          mcApptLine = '<div class="appt-badge" style="margin-top:4px;display:inline-flex;background:var(--border2);color:var(--text3)">TBD</div>';
+        } else if (!m.apptDate) {
+          mcApptLine = '<div class="appt-badge no-appt" style="margin-top:4px;display:inline-flex">No reservation yet</div>';
         } else {
           var mcConf = checkApptConflict(m.apptDate, m.apptTime, m.id);
           mcApptLine = mcConf
             ? '<div class="appt-badge conflict" style="margin-top:4px;display:inline-flex">&#9888; Elevator conflict</div>'
-            : '<div class="appt-badge has-appt" style="margin-top:4px;display:inline-flex">Appt: ' + fmtShort(m.apptDate) + (m.apptTime ? ' ' + fmtTime(m.apptTime) : '') + '</div>';
+            : '<div class="appt-badge has-appt" style="margin-top:4px;display:inline-flex">&#10003; ' + fmtShort(m.apptDate) + (m.apptTime ? ' ' + fmtTime(m.apptTime) : '') + '</div>';
         }
         html += '<div class="mc-sub">Unit ' + esc(m.unit) + ' - Lease: ' + fmtShort(m.date) + (m.date === t && m.type === 'in' ? ' (today)' : '') + '</div>';
         html += mcApptLine;
@@ -3440,46 +3568,43 @@ function archiveMove(id) {
   logActivity('moves', 'archive', 'Archived move — Unit ' + m.unit + ' (' + (m.type === 'in' ? 'Move In' : 'Move Out') + ') · ' + m.resident);
   scheduleSave(); renderMoves(); updateBadges(); renderDash(); toast('Archived');
   if (m.type === 'in') {
+    var _archMIn = m;
+    showConfirm(
+      'Update Unit Tracker?',
+      'Set <strong>' + esc(_archMIn.resident) + '</strong> as leaseholder for Unit <strong>' + esc(_archMIn.unit) + '</strong> in the Unit Tracker?',
+      'Update Unit Tracker', 'Not Now',
+      function() {
+        if (!state.unitRecords) state.unitRecords = [];
+        var existing = state.unitRecords.find(function(r){ return r.unit === _archMIn.unit; });
+        if (existing) {
+          existing.leaseholder = _archMIn.resident;
+          existing.notes = (existing.notes ? existing.notes + '\n' : '') + 'Move-in completed: ' + fmtShort(today());
+        } else {
+          state.unitRecords.push({ id: uid(), unit: _archMIn.unit, leaseholder: _archMIn.resident, roommates: '', unitKeysIssued: 0, mailboxKeysIssued: 0, unitKeysReplacement: 0, mailboxKeysReplacement: 0, transponder: false, xpressSticker: false, keyTag: false, blueground: false, wifiExpiry: '', notes: 'Move-in completed: ' + fmtShort(today()), createdAt: Date.now() });
+        }
+        scheduleSave(); renderResidents(); updateBadges(); toast('Unit ' + _archMIn.unit + ' updated in Unit Tracker');
+      }
+    );
   }
-  // ── Connection: Move-out archive → offer to archive Resident Profile → mark as Unassigned ──
   if (m.type === 'out') {
     var _archM = m;
-    var _doReturnVacant = function() {
-      showConfirm(
-        'Mark as Unassigned?',
-        'Clear the resident info for Unit <strong>' + esc(_archM.unit) + '</strong> in the Unit Tracker?',
-        'Mark Unassigned', 'Not Now',
-        function() {
-          if (!state.unitRecords) state.unitRecords = [];
-          var existing = state.unitRecords.find(function(r){ return r.unit === _archM.unit; });
-          if (existing) {
-            existing.leaseholder = '';
-            existing.roommates = '';
-            existing.notes = (existing.notes ? existing.notes + '\n' : '') + 'Cleared — move-out: ' + _archM.resident + ' (' + fmtShort(today()) + ')';
-          } else {
-            state.unitRecords.push({ id: uid(), unit: _archM.unit, leaseholder: '', roommates: '', unitKeysIssued: 0, mailboxKeysIssued: 0, unitKeysReplacement: 0, mailboxKeysReplacement: 0, transponder: false, xpressSticker: false, keyTag: false, blueground: false, wifiExpiry: '', notes: 'Pending Turn — move-out: ' + _archM.resident, createdAt: Date.now() });
-          }
-          scheduleSave(); renderResidents(); updateBadges(); toast('Unit ' + _archM.unit + ' marked as unassigned');
+    showConfirm(
+      'Mark as Unassigned?',
+      'Clear the resident info for Unit <strong>' + esc(_archM.unit) + '</strong> in the Unit Tracker?',
+      'Mark Unassigned', 'Not Now',
+      function() {
+        if (!state.unitRecords) state.unitRecords = [];
+        var existing = state.unitRecords.find(function(r){ return r.unit === _archM.unit; });
+        if (existing) {
+          existing.leaseholder = '';
+          existing.roommates = '';
+          existing.notes = (existing.notes ? existing.notes + '\n' : '') + 'Cleared — move-out: ' + _archM.resident + ' (' + fmtShort(today()) + ')';
+        } else {
+          state.unitRecords.push({ id: uid(), unit: _archM.unit, leaseholder: '', roommates: '', unitKeysIssued: 0, mailboxKeysIssued: 0, unitKeysReplacement: 0, mailboxKeysReplacement: 0, transponder: false, xpressSticker: false, keyTag: false, blueground: false, wifiExpiry: '', notes: 'Pending Turn — move-out: ' + _archM.resident, createdAt: Date.now() });
         }
-      );
-    };
-    if (profile) {
-      showConfirm(
-        'Archive Resident Profile?',
-        'Archive <strong>' + esc(profile.residentName) + '</strong> (Unit ' + esc(_archM.unit) + ')? Their info will be saved in history but removed from the active profiles list.',
-        'Archive Profile', 'Keep Active',
-        function() {
-          profile.archivedAt = Date.now();
-          profile.moveOutAt = Date.now();
-          scheduleSave();
-          toast('Profile archived for ' + profile.residentName);
-          _doReturnVacant();
-        },
-        function() { _doReturnVacant(); }
-      );
-    } else {
-      _doReturnVacant();
-    }
+        scheduleSave(); renderResidents(); updateBadges(); toast('Unit ' + _archM.unit + ' marked as unassigned');
+      }
+    );
   }
 }
 function deleteMove(id) {
@@ -5784,15 +5909,27 @@ function toggleLAFPassdown(id) { var item = (state.laf || []).find(function(x){ 
 function deleteLAF(id) { if (!confirm('Remove?')) return; var lx=(state.laf||[]).find(function(x){return x.id===id;}); if (lx) pushUndo({ sec: 'laf', type: 'DELETE', id: id, data: Object.assign({}, lx), label: 'delete L&F — ' + lx.desc }); logActivity('laf','delete','Removed L&F item'+(lx?' — '+lx.desc:'')); state.laf = (state.laf || []).filter(function (i) { return i.id !== id; }); scheduleSave(); renderLAF(); updateBadges(); toast('Removed'); }
 
 // ─── UNIT TRACKER ───
-var utFilter = 'all', utSearch = '', utFloor = 'all', editingUnitRecordId = null;
+var utFilter = 'all', utSearch = '', utFloor = 'all', utView = 'list', editingUnitRecordId = null;
+function setUtView(v) {
+  utView = v;
+  var mapBtn = g('ut-view-map');
+  if (mapBtn) { mapBtn.style.background = v==='map' ? 'var(--accent)' : ''; mapBtn.style.color = v==='map' ? '#fff' : ''; mapBtn.style.borderColor = v==='map' ? 'var(--accent)' : ''; }
+  renderResidents();
+}
+function openBuildingMap() {
+  var item = document.querySelector('.nav-item[data-sec="residents"]');
+  if (item) { nav(item); setTimeout(function(){ setUtView('map'); }, 80); }
+}
 // ===== [UNIT TRACKER] ========================================================
 function filterUnitRecords(f, btn) {
   utFilter = f;
+  utView = 'list';
   ['ut-filter-all','ut-filter-bg','ut-filter-wifi','ut-filter-unassigned'].forEach(function(id) {
     var b = g(id); if (!b) return;
     b.style.background = ''; b.style.color = ''; b.style.borderColor = '';
   });
   if (btn) { btn.style.background = 'var(--accent)'; btn.style.color = '#fff'; btn.style.borderColor = 'var(--accent)'; }
+  var mapBtn = g('ut-view-map'); if (mapBtn) { mapBtn.style.background = ''; mapBtn.style.color = ''; mapBtn.style.borderColor = ''; }
   renderResidents();
 }
 function searchUnitRecords(val) { utSearch = val.toLowerCase(); renderResidents(); }
@@ -6332,24 +6469,6 @@ function setSupplyQtyPrompt(id) {
   openQuickAdj(id, 0);  // open at current qty, let user +/- to desired value
 }
 
-function _setSupplyQtyLegacy(id) {
-  var s = (state.supplies || []).find(function(x){ return x.id === id; });
-  if (!s) return;
-  var val = prompt('Set quantity for ' + s.name + ':', s.qty || 0);
-  if (val === null) return;
-  var n = parseInt(val);
-  if (isNaN(n) || n < 0) { toast('Enter a valid number'); return; }
-  if (!s.log) s.log = [];
-  var by = currentUser ? currentUser.name : '';
-  var before = cloneData(s);
-  var prevQty = s.qty || 0;
-  s.qty = n;
-  s.updatedAt = Date.now(); s.updatedBy = by;
-  s.log.push({ ts: Date.now(), by: by, delta: n - prevQty, prevQty: prevQty, newQty: n, note: 'Set manually' });
-  pushUndo({ sec: 'supplies', type: 'EDIT', path: ['supplies'], id: s.id, before: before, after: cloneData(s), label: 'set supply qty — ' + s.name });
-  logActivity('supplies','edit','Set supply qty — '+s.name+' · '+prevQty+' → '+s.qty);
-  checkSupplyLowStockTodos(); scheduleSave(); renderSupplies(); updateBadges(); renderDash(); if(curSec==='todos') renderTodos();
-}
 
 function deleteSupply(id) {
   if (currentUser && currentUser.role !== 'admin') { toast('Admin access required'); return; }
@@ -6437,6 +6556,45 @@ function renderResidents() {
   var cnt = g('ut-count'); if (cnt) cnt.textContent = list.length + ' unit' + (list.length!==1?'s':'');
   var grid = g('ut-grid');
   if (!grid) return;
+
+  // Map view
+  if (utView === 'map') {
+    var openMaintUnitsMap = {};
+    (state.maintenance||[]).filter(function(m){return m.status!=='resolved';}).forEach(function(m){openMaintUnitsMap[m.unit]=true;});
+    var floorMap = {};
+    allRecs.forEach(function(r) {
+      var u = (r.unit||'').trim();
+      if (!u || !/^\d/.test(u)) return;
+      var floor;
+      if (u.length >= 4) { var twoD = parseInt(u.slice(0,2)); floor = (twoD >= 10 && twoD <= 27) ? u.slice(0,2) : u.slice(0,1); }
+      else { floor = u.slice(0,1); }
+      if (!floorMap[floor]) floorMap[floor] = [];
+      floorMap[floor].push(r);
+    });
+    var floors = Object.keys(floorMap).sort(function(a,b){return parseInt(b)-parseInt(a);});
+    var mhtml = '<div style="padding:4px 0">';
+    if (!floors.length) { mhtml += '<div class="text-3 text-sm">No units to display.</div>'; }
+    else {
+      mhtml += '<div class="unit-map-floors">';
+      floors.forEach(function(floor) {
+        var units = floorMap[floor].slice().sort(function(a,b){return parseInt(a.unit||0)-parseInt(b.unit||0);});
+        mhtml += '<div class="unit-map-floor"><div class="unit-map-lbl">F' + floor + '</div><div class="unit-map-cells">';
+        units.forEach(function(r) {
+          var hasMaint = !!openMaintUnitsMap[r.unit];
+          var cls = hasMaint ? 'ud-maint' : r.blueground ? 'ud-blueground' : (r.leaseholder ? 'ud-occupied' : 'ud-vacant');
+          var tipLine = 'Unit ' + r.unit + (r.leaseholder ? '<br>' + r.leaseholder : '<br>Vacant') + (hasMaint ? '<br>⚠ Open Maintenance' : '') + (r.blueground ? '<br>Blueground' : '');
+          mhtml += '<div class="unit-dot ' + cls + '" onclick="openEditUnitRecord(\'' + r.id + '\')"><span class="unit-tip">' + tipLine + '</span></div>';
+        });
+        mhtml += '</div></div>';
+      });
+      mhtml += '</div>';
+      mhtml += '<div class="unit-map-legend" style="margin-top:10px"><span><span class="leg-dot" style="background:var(--green-light);border:1px solid #C8E4B0"></span>Occupied</span><span><span class="leg-dot" style="background:var(--red-light);border:1px solid #F0BFBF"></span>Vacant</span><span><span class="leg-dot" style="background:#E8F0FF;border:1px solid #B8CCEE"></span>Blueground</span><span><span class="leg-dot" style="background:var(--amber-light);border:1px solid #E8C878"></span>Open Maintenance</span></div>';
+    }
+    mhtml += '</div>';
+    grid.innerHTML = mhtml;
+    return;
+  }
+
   if (!list.length) { grid.innerHTML = '<div class="text-3 text-sm">No units match your search.</div>'; return; }
 
   var showFloorHdrs = (utFloor === 'all' && !utSearch);
@@ -7374,173 +7532,6 @@ function generatePassdown() {
 
 function pdNote(key, def) { var v = pdNotes[key]; return (v !== undefined && v.trim() !== '') ? v : (def || ''); }
 function autoGeneratePassdown() { generatePassdown(); }
-function _legacyAutoGenerate() {
-  var t = today(), moves = state.moves || [];
-  var d2 = new Date(); d2.setDate(d2.getDate() + 1); var tmrw = d2.toISOString().split('T')[0];
-  var d7 = new Date(); d7.setDate(d7.getDate() + 7); var wEnd = d7.toISOString().split('T')[0];
-
-  // KEYS / ACCESS \u2014 one-time keys only (these are the ones that need follow-up)
-  var now = Date.now();
-  var oneTimeOut = (state.keys || []).filter(function (k) { return k.type === 'one-time' && k.status === 'issued'; });
-  var keysSection = '\n\uD83D\uDDDD One-Time Keys Out\n';
-  if (!oneTimeOut.length) {
-    keysSection += '- No one-time keys currently out.\n';
-  } else {
-    oneTimeOut.forEach(function (k) {
-      var overdueMs = k.issuedAt ? now - k.issuedAt : 0;
-      var isOverdue = overdueMs >= 2 * 3600000;
-      var overdueHrs = Math.floor(overdueMs / 3600000);
-      var overdueMin = Math.floor((overdueMs % 3600000) / 60000);
-      keysSection += '- Key #' + (k.fob || '?') + ' | Unit ' + k.unit + ' - Resident: *' + k.name + '*';
-      if (k.guest) keysSection += ' | Guest: ' + k.guest;
-      if (k.timeout) keysSection += ' | Out since: ' + fmtTime(k.timeout);
-      if (isOverdue) keysSection += ' \u26A0\uFE0F OVERDUE ' + overdueHrs + 'h ' + overdueMin + 'm';
-      if (k.notes) keysSection += '\n  Follow-up: ' + k.notes;
-      keysSection += '\n';
-    });
-  }
-
-  // MOVE-INS (next 7 days)
-  var upIn = moves.filter(function (m) { return m.type === 'in' && !m.archivedAt && m.date >= t && m.date <= wEnd; }).sort(function (a, b) { return a.date.localeCompare(b.date); });
-  var inSection = '\n\uD83D\uDCE6 Upcoming Move-Ins\n';
-  if (!upIn.length) inSection += '- No upcoming move-ins.\n';
-  else {
-    inSection += 'Total upcoming: ' + upIn.length + '\n';
-    upIn.forEach(function (m) {
-      var label = m.date === t ? 'TODAY' : m.date === tmrw ? 'Tomorrow' : fmtShort(m.date);
-      inSection += '- Unit ' + m.unit + ' - *' + m.resident + '* - Lease: ' + label;
-      if (m.apptDate) { inSection += ' - Appt: ' + (m.apptDate === t ? 'TODAY' : fmtShort(m.apptDate)); if (m.apptTime) inSection += ' ' + fmtTime(m.apptTime); }
-      else inSection += ' - Appt: TBD';
-      if (m.total) inSection += ' - Move-In Total: $' + m.total;
-      if (m.notes) inSection += ' - Note: ' + m.notes;
-      // Incomplete tasks summary
-      var pendingTasks = (m.tasks || []).filter(function (tk) { return !tk.done; });
-      if (pendingTasks.length) inSection += ' - ' + pendingTasks.length + ' task(s) pending';
-      inSection += '\n';
-    });
-  }
-
-  // MOVE-OUTS (next 7 days)
-  var upOut = moves.filter(function (m) { return m.type === 'out' && !m.archivedAt && m.date >= t && m.date <= wEnd; }).sort(function (a, b) { return a.date.localeCompare(b.date); });
-  var outSection = '\n\uD83D\uDE9A Upcoming Move-Outs\n';
-  if (!upOut.length) outSection += '- No upcoming move-outs.\n';
-  else upOut.forEach(function (m) {
-    var label = m.date === t ? 'TODAY' : m.date === tmrw ? 'Tomorrow' : fmtShort(m.date);
-    outSection += '- Unit ' + m.unit + ' - *' + m.resident + '* - Lease end: ' + label;
-    if (m.apptDate) { outSection += ' - Appt: ' + (m.apptDate === t ? 'TODAY' : fmtShort(m.apptDate)); if (m.apptTime) outSection += ' ' + fmtTime(m.apptTime); }
-    else outSection += ' - Appt: TBD';
-    if (m.notes) outSection += ' - Note: ' + m.notes;
-    outSection += '\n';
-  });
-
-  // MAINTENANCE (open + in-progress)
-  var openMt = (state.maintenance || []).filter(function (m) { return m.status !== 'resolved'; });
-  var mtSection = '\n\uD83D\uDD27 Maintenance\n';
-  if (!openMt.length) mtSection += '- No open maintenance items.\n';
-  else openMt.forEach(function (m) {
-    mtSection += '- Unit ' + m.unit + ' - *' + m.issue + '* [' + m.priority + ' / ' + m.status + ']';
-    if (m.desc) mtSection += ' - ' + m.desc;
-    if (m.reporter) mtSection += ' (reported by ' + m.reporter + ')';
-    mtSection += '\n';
-  });
-
-  // TOURS TODAY
-  var todayTours = (state.tours || []).filter(function (tr) { return tr.date === t; });
-  var tourSection = '';
-  if (todayTours.length) {
-    tourSection = '\n\uD83C\uDFE0 Tours Today\n';
-    todayTours.forEach(function (tr) {
-      tourSection += '- *' + tr.name + '* - ' + (tr.type === 'sgt' ? 'SGT' : 'Guided');
-      if (tr.unit) tourSection += ' - Unit(s): ' + tr.unit;
-      if (tr.time) tourSection += ' at ' + fmtTime(tr.time);
-      if (tr.notes) tourSection += ' - ' + tr.notes;
-      tourSection += '\n';
-    });
-  }
-
-  // AMENITY BOOKINGS TODAY
-  var todayAm = (state.amenities || []).filter(function (a) { return a.date === t; });
-  var amSection = '';
-  if (todayAm.length) {
-    amSection = '\n\uD83C\uDF89 Amenity Bookings Today\n';
-    todayAm.forEach(function (a) {
-      amSection += '- ' + a.space + ' - *' + a.resident + '* Unit ' + a.unit;
-      if (a.start) amSection += ' ' + a.start + (a.end ? '-' + a.end : '');
-      if (a.notes) amSection += ' - ' + a.notes;
-      amSection += '\n';
-    });
-  }
-
-  // LOST & FOUND (unclaimed)
-  var unclLAF = (state.laf || []).filter(function (i) { return !i.claimedAt; });
-  var lafSection = '';
-  if (unclLAF.length) {
-    lafSection = '\n\uD83D\uDD0D Lost & Found\n';
-    lafSection += 'Total unclaimed: ' + unclLAF.length + '\n';
-    unclLAF.slice(0, 5).forEach(function (i) {
-      lafSection += '- *' + i.desc + '*';
-      if (i.location) lafSection += ' - Found: ' + i.location;
-      lafSection += ' (' + fmtShort(i.date) + ')';
-      if (i.foundBy) lafSection += ' by ' + i.foundBy;
-      lafSection += '\n';
-    });
-    if (unclLAF.length > 5) lafSection += '- ...and ' + (unclLAF.length - 5) + ' more\n';
-  }
-
-  // FLAGGED WALKTHROUGH ISSUES
-  var activeFlags = (state.flags || []).filter(function (f) { return !f.resolved; });
-  var flagSection = '';
-  if (activeFlags.length) {
-    flagSection = '\n\uD83D\uDEA8 Flagged Issues\n';
-    activeFlags.forEach(function (f) {
-      flagSection += '- *' + f.location + '* [' + f.priority + '] - ' + f.desc + '\n';
-    });
-  }
-
-  // POST MOVE-IN follow-ups
-  var postMoveIns = moves.filter(function (m) {
-    return m.type === 'in' && !m.archivedAt && m.date <= t &&
-      (m.tasks || []).some(function (tk) { return tk.cat === 'Post Move-In' && !tk.done; });
-  });
-  var postSection = '';
-  if (postMoveIns.length) {
-    postSection = '\n\uD83D\uDCDE Post Move-In Follow-Ups\n';
-    postMoveIns.forEach(function (m) {
-      var pending = (m.tasks || []).filter(function (tk) { return tk.cat === 'Post Move-In' && !tk.done; });
-      postSection += '- Unit ' + m.unit + ' - *' + m.resident + '* (' + pending.length + ' tasks pending)\n';
-      pending.forEach(function (tk) { postSection += '   • ' + tk.text + '\n'; });
-    });
-  }
-
-  var notes = (g('pd-notes').value || '').trim();
-  var shift = g('pd-shift').value, date = g('pd-date').value || t;
-  var dateFmt = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-  var pd = '\uD83D\uDCCB Passdown - ' + dateFmt + '\n' + shift + '\n';
-  pd += keysSection + inSection + outSection + mtSection;
-  if (tourSection) pd += tourSection;
-  if (amSection) pd += amSection;
-  if (lafSection) pd += lafSection;
-  if (flagSection) pd += flagSection;
-  if (postSection) pd += postSection;
-  // CONCIERGE (open requests)
-  var openConcierge = (state.concierge || []).filter(function(c){ return c.status === 'open'; });
-  var conciergeSection = '';
-  if (openConcierge.length) {
-    conciergeSection = '\n\uD83C\uDFAD Concierge Requests\n';
-    openConcierge.forEach(function(c) {
-      conciergeSection += '- Unit ' + c.unit + ' - *' + c.resident + '* - ' + c.type;
-      if (c.notes) conciergeSection += ': ' + c.notes;
-      if (c.handledBy) conciergeSection += ' (handled by ' + c.handledBy + ')';
-      conciergeSection += '\n';
-    });
-  }
-  if (conciergeSection) pd += conciergeSection;
-  if (notes) pd += '\n\uD83D\uDCDD Shift Notes\n' + notes + '\n';
-  var sigName2 = currentUser ? currentUser.name : 'Gabino S.M.';
-  var sigRole2 = (currentUser && currentUser.role === 'admin') ? 'Front Desk Lead' : 'Front Desk';
-  pd += '\n-\n' + sigName2 + ' | ' + sigRole2 + ' | Chorus - SF';
-  g('pd-preview').value = pd;
-}
 function getPassdownSettings() {
   if (!state.passdownSettings) state.passdownSettings = {};
   if (state.passdownSettings.recipients == null) state.passdownSettings.recipients = 'chorus-all@alignrealestate.com';
