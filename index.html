@@ -1684,7 +1684,7 @@
 var SUPA_URL = 'https://adovwmwpvwomljggscge.supabase.co';
 var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkb3Z3bXdwdndvbWxqZ2dzY2dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNzkxNjcsImV4cCI6MjA5MDg1NTE2N30.dZgl3jEL1FbBSe_gM3LN9Tc3wGGmsf_Bq6YaKJf4dyk';
 var SUPA_SYNC_EMAIL = 'sync@chorusfd.internal';
-var SUPA_SYNC_PASS = 'Chorus!Sync#2026FD';
+var SUPA_SYNC_PASS = 'uM7Jaq1HolIGJaolh3YwRD45LRbpNJ2h';
 var LOCAL_KEY = 'chorus-fd-v3';
 var syncTO = null, isSyncing = false, lastSyncTs = null;
 var _supaSession = null;
@@ -2334,16 +2334,21 @@ function renderSection(sec) {
 function renderAll() { renderSection(curSec); updateBadges(); }
 
 // ─── TEST DATA ───
-function loadTestData() {
+async function loadTestData() {
+  if (!currentUser || currentUser.role !== 'admin') { toast('Admin access required'); return; }
   if (!confirm('This will add test entries to every section so you can try the passdown builder. Your existing data will stay — test items will be added alongside it. Continue?')) return;
   var t = today();
   var now = Date.now();
   var amBy = 'Alex R.', pmBy = 'Jamie L.', nocBy = 'Sam T.';
 
-  // ── Test staff account (PIN: 0000) ──────────────────────────────────────
+  // ── Test staff account (PIN: 0000, stored hashed) ───────────────────────
   if (!state.accounts) state.accounts = [];
   var hasTestAcct = state.accounts.some(function(a){ return a.name === 'Test Staff'; });
-  if (!hasTestAcct) state.accounts.push({ id: uid(), name: 'Test Staff', role: 'staff', pin: '0000', createdAt: now });
+  if (!hasTestAcct) {
+    var testId = uid();
+    var testPinHash = await hashPin('0000', testId);
+    state.accounts.push({ id: testId, name: 'Test Staff', role: 'staff', pin: testPinHash, createdAt: now });
+  }
 
   // ── MOVES ────────────────────────────────────────────────────────────────
   if (!state.moves) state.moves = [];
@@ -9769,7 +9774,7 @@ function updateSidebarForRole() {
   var uil = g('user-info-line'), uin = g('user-info-name');
   if (uil) uil.style.display = currentUser ? '' : 'none';
   if (uin && currentUser) uin.textContent = currentUser.name;
-  var footerBtns = ['footer-export','footer-import','footer-reset'];
+  var footerBtns = ['footer-export','footer-import','footer-reset','footer-testdata'];
   footerBtns.forEach(function(id) {
     var el = g(id); if (el) el.style.display = isStaff ? 'none' : '';
   });
@@ -9900,14 +9905,17 @@ function openAddAccount() {
   g('add-account-bdy').innerHTML = bdy;
   openModal('modal-add-account');
 }
-function saveNewAccount() {
+async function saveNewAccount() {
   var name = g('na-name').value.trim(), role = g('na-role').value;
   var pin = g('na-pin').value.trim(), pin2 = g('na-pin2').value.trim();
   if (!name) { toast('Enter a name'); return; }
   if (!pin || pin.length < 4) { toast('PIN must be at least 4 digits'); return; }
+  if (!/^\d+$/.test(pin)) { toast('PIN must be numbers only'); return; }
   if (pin !== pin2) { toast('PINs do not match'); return; }
   if (!state.accounts) state.accounts = [];
-  state.accounts.push({ id: uid(), name: name, role: role, pin: pin, createdAt: Date.now() });
+  var newId = uid();
+  var pinHash = await hashPin(pin, newId);
+  state.accounts.push({ id: newId, name: name, role: role, pin: pinHash, createdAt: Date.now() });
   if (!state.teamstaff) state.teamstaff = [];
   if (state.teamstaff.indexOf(name) === -1) state.teamstaff.push(name);
   scheduleSave(); closeModal('modal-add-account'); renderTeamAccounts(); renderTeamStaff(); toast('Account added');
