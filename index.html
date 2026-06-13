@@ -1686,7 +1686,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var SUPA_SYNC_EMAIL = 'sync@chorusfd.internal';
 var SUPA_SYNC_PASS = 'uM7Jaq1HolIGJaolh3YwRD45LRbpNJ2h';
 var LOCAL_KEY = 'chorus-fd-v3';
-var syncTO = null, isSyncing = false, lastSyncTs = null;
+var syncTO = null, isSyncing = false, lastSyncTs = null, localDirty = false;
 var _supaSession = null;
 
 async function supaSignIn() {
@@ -1920,11 +1920,11 @@ function loadLocal() {
     if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], supplies: [], activityLog: [], parking: [], security: [], templates: [] }, JSON.parse(raw));
   } catch (e) {}
 }
-function scheduleSave() { saveLocal(); clearTimeout(syncTO); syncTO = setTimeout(pushCloud, 800); }
+function scheduleSave() { localDirty = true; saveLocal(); clearTimeout(syncTO); syncTO = setTimeout(pushCloud, 800); }
 async function pushCloud() {
   if (isSyncing) return;
   isSyncing = true; setSyncStatus('syncing', 'Saving...');
-  try { await supaPush(state); lastSyncTs = Date.now(); setSyncStatus('synced', 'Saved'); setTimeout(function () { setSyncStatus('synced', 'Synced'); }, 1500); }
+  try { await supaPush(state); lastSyncTs = Date.now(); localDirty = false; setSyncStatus('synced', 'Saved'); setTimeout(function () { setSyncStatus('synced', 'Synced'); }, 1500); }
   catch (e) { setSyncStatus('error', 'Offline - local only'); }
   isSyncing = false;
 }
@@ -1939,17 +1939,41 @@ async function pullCloud() {
     setSyncStatus('synced', 'Synced');
   } catch (e) { loadLocal(); setSyncStatus('error', 'Offline - local data'); }
 }
+function showRefreshNotice() {
+  var n = g('refresh-notice');
+  if (!n) { n = document.createElement('div'); n.id = 'refresh-notice'; document.body.appendChild(n); }
+  n.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:99999;background:var(--surface);color:var(--text);border:1px solid var(--border);padding:12px 16px;border-radius:10px;box-shadow:var(--shadow-md,0 8px 28px rgba(0,0,0,.35));font-size:14px;display:flex;align-items:center;gap:14px;max-width:92vw';
+  n.innerHTML = '<span>&#x21bb; Refreshed &mdash; another device made changes.</span>'
+    + '<button onclick="restorePreSync()" style="background:var(--accent);color:#fff;border:none;padding:6px 13px;border-radius:6px;font-weight:600;cursor:pointer">Undo my changes back</button>'
+    + '<button onclick="(function(){var e=g(\'refresh-notice\');if(e)e.remove();})()" style="background:transparent;color:var(--text2);border:1px solid var(--border);padding:6px 11px;border-radius:6px;cursor:pointer">Dismiss</button>';
+  clearTimeout(window._refreshNoticeTO);
+  window._refreshNoticeTO = setTimeout(function () { var e = g('refresh-notice'); if (e) e.remove(); }, 15000);
+}
+function restorePreSync() {
+  try {
+    var raw = localStorage.getItem('chorus-presync-snapshot');
+    var snap = raw ? JSON.parse(raw) : null;
+    if (!snap || !snap.state) { toast('Nothing to restore'); return; }
+    state = snap.state; saveLocal();
+    var e = g('refresh-notice'); if (e) e.remove();
+    scheduleSave();
+    renderSection(curSec); updateBadges(); if (typeof renderDash === 'function') renderDash();
+    if (typeof logActivity === 'function') logActivity('settings', 'restore', 'Restored local version after a multi-device refresh');
+    toast('Restored your previous version');
+  } catch (err) { toast('Restore failed'); }
+}
 setInterval(async function () {
-  if (isSyncing) return;
+  if (isSyncing || localDirty) return;
   try {
     var row = await supaGet();
     if (row && row.updated_at) {
       var ts = new Date(row.updated_at).getTime();
       if (lastSyncTs && ts > lastSyncTs + 2000) {
+        try { localStorage.setItem('chorus-presync-snapshot', JSON.stringify({ ts: Date.now(), state: state })); } catch (e) {}
         state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], activityLog: [], parking: [], security: [], templates: [] }, row.data);
         saveLocal(); lastSyncTs = ts;
         renderSection(curSec); updateBadges();
-        setSyncStatus('synced', 'Updated'); setTimeout(function () { setSyncStatus('synced', 'Synced'); }, 2000);
+        showRefreshNotice();
       }
     }
   } catch (e) {}
