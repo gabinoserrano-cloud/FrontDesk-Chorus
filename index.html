@@ -1211,6 +1211,18 @@
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-import-letter')">Cancel</button><button class="btn btn-primary" onclick="parseLetterAndPrefill()">Parse &amp; Pre-fill</button></div>
 </div></div>
 
+<div class="modal-ov" id="modal-reconcile"><div class="modal" style="max-width:620px">
+  <div class="modal-hdr"><span class="modal-title">&#128269; Reconcile with Master List</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-reconcile')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <p style="font-size:12.5px;color:var(--text2);margin-bottom:8px;line-height:1.5">Copy your move-in <strong>Master List</strong> straight from Excel (or paste CSV) and drop it here. I'll match it against your dashboard move-ins by unit and flag anything <strong>missing</strong>, <strong>date-mismatched</strong>, or <strong>extra</strong>.</p>
+    <div class="fg"><textarea id="reconcile-paste" rows="6" placeholder="Paste your Master List rows here&hellip;  (Unit, Resident, Lease Start Date, &hellip;)" style="width:100%;font-size:12px;resize:vertical;font-family:var(--font-mono)"></textarea></div>
+    <button class="btn btn-secondary btn-sm" onclick="reconcileReadList()">Read List</button>
+    <div id="reconcile-map" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)"></div>
+    <div id="reconcile-results" style="display:none;margin-top:12px"></div>
+  </div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-reconcile')">Close</button></div>
+</div></div>
+
 <div class="modal-ov" id="modal-task"><div class="modal">
   <div class="modal-hdr"><span class="modal-title" id="modal-task-title">Add Task</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-task')">&#x2715;</button></div>
   <div class="modal-bdy">
@@ -2330,7 +2342,7 @@ function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov
 var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Unit Tracker', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', parking: 'Parking Credentials', security: 'Security Incidents', session: 'Login / Session' };
 var patrolFilter = 'amenity';
 var SEC_ACTIONS = {
-  moves: '<button class="btn btn-secondary btn-sm" onclick="openLetterImport()">&#128231; Import Letter</button> <button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
+  moves: '<button class="btn btn-secondary btn-sm" onclick="openLetterImport()">&#128231; Import Letter</button> <button class="btn btn-secondary btn-sm" onclick="openReconcile()">&#128269; Reconcile</button> <button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
   maintenance: '<button class="btn btn-primary btn-sm" onclick="openAddMaint()">+ Log Issue</button>',
   guests: '<button class="btn btn-primary btn-sm" onclick="openAddGuest()">+ Log Guest</button>',
   keys: '<button class="btn btn-primary btn-sm" onclick="openAddKey()">+ Log Key</button>',
@@ -3018,6 +3030,120 @@ function setMoveNameGuess(on) {
   var el = g('mv-resident'); var hint = g('mv-resident-hint');
   if (el) { el.style.background = on ? '#fff7ed' : ''; el.style.borderColor = on ? '#f59e0b' : ''; }
   if (hint) hint.style.display = on ? 'block' : 'none';
+}
+// ── Move-In Reconciliation: compare dashboard move-ins vs the leasing Master List (Phase 3) ──
+function openReconcile() {
+  var ta = g('reconcile-paste'); if (ta) ta.value = '';
+  ['reconcile-map', 'reconcile-results'].forEach(function (id) { var el = g(id); if (el) { el.innerHTML = ''; el.style.display = 'none'; } });
+  window._reconcileRows = null;
+  openModal('modal-reconcile');
+}
+function reconcileSplit(text) {
+  var lines = String(text || '').replace(/\r/g, '').split('\n').filter(function (l) { return l.trim() !== ''; });
+  if (!lines.length) return { rows: [], delim: '\t' };
+  var first = lines[0];
+  var delim = (first.split('\t').length >= first.split(',').length) ? '\t' : ',';
+  var rows = lines.map(function (l) { return l.split(delim).map(function (c) { return c.trim().replace(/^"|"$/g, ''); }); });
+  return { rows: rows, delim: delim };
+}
+function reconcileParseDate(s) {
+  s = String(s == null ? '' : s).trim(); if (!s) return '';
+  var m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m) return m[1] + '-' + String(+m[2]).padStart(2, '0') + '-' + String(+m[3]).padStart(2, '0');
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (m) { var y = +m[3]; if (y < 100) y += 2000; return y + '-' + String(+m[1]).padStart(2, '0') + '-' + String(+m[2]).padStart(2, '0'); }
+  if (/[A-Za-z]{3}.*\d{4}/.test(s)) { var d = new Date(s); if (!isNaN(d.getTime())) return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  return '';
+}
+function reconcileLooksLikeHeader(row) {
+  return row.every(function (c) { return !/^#?\d{1,4}[A-Za-z]?$/.test(c) && reconcileParseDate(c) === ''; });
+}
+function reconcileNormUnit(s) { return String(s == null ? '' : s).trim().replace(/^#/, '').toUpperCase(); }
+function reconcileScoreColumns(rows, hasHeader) {
+  var headers = hasHeader ? rows[0] : [];
+  var data = hasHeader ? rows.slice(1) : rows;
+  var nCols = rows[0].length;
+  var scores = { unit: [], name: [], date: [] };
+  for (var c = 0; c < nCols; c++) {
+    var hdr = (headers[c] || '').toLowerCase();
+    var vals = data.map(function (r) { return (r[c] || '').trim(); }).filter(Boolean);
+    var n = vals.length || 1;
+    scores.unit[c] = vals.filter(function (v) { return /^#?\d{1,4}[A-Za-z]?$/.test(v); }).length / n + (/unit|apt|suite|#|home/.test(hdr) ? 1 : 0);
+    scores.date[c] = vals.filter(function (v) { return reconcileParseDate(v) !== ''; }).length / n + (/date|lease|move|start/.test(hdr) ? 1 : 0);
+    scores.name[c] = vals.filter(function (v) { return /[A-Za-z]{2,}\s+[A-Za-z]/.test(v); }).length / n + (/name|resident|leaseholder|tenant/.test(hdr) ? 1 : 0);
+  }
+  var best = { unit: -1, name: -1, date: -1 };
+  ['unit', 'date', 'name'].forEach(function (role) {
+    var bi = -1, bs = 0.3;
+    for (var c = 0; c < nCols; c++) {
+      if (c === best.unit || c === best.date || c === best.name) continue;
+      if (scores[role][c] > bs) { bs = scores[role][c]; bi = c; }
+    }
+    best[role] = bi;
+  });
+  return best;
+}
+function reconcileReadList() {
+  var ta = g('reconcile-paste'); var text = ta ? ta.value : '';
+  var res = g('reconcile-results'); if (res) { res.innerHTML = ''; res.style.display = 'none'; }
+  var parsed = reconcileSplit(text);
+  if (!parsed.rows.length) { toast('Paste your Master List first'); return; }
+  var hasHeader = reconcileLooksLikeHeader(parsed.rows[0]);
+  var best = reconcileScoreColumns(parsed.rows, hasHeader);
+  window._reconcileRows = parsed.rows;
+  window._reconcileHasHeader = hasHeader;
+  var nCols = parsed.rows[0].length;
+  var headers = hasHeader ? parsed.rows[0] : parsed.rows[0].map(function (_, i) { return 'Column ' + (i + 1); });
+  function sel(role, chosen) {
+    var s = '<select id="rec-col-' + role + '" style="font-size:12px;padding:3px 6px"><option value="-1">— none —</option>';
+    for (var i = 0; i < nCols; i++) s += '<option value="' + i + '"' + (i === chosen ? ' selected' : '') + '>' + esc(headers[i] || ('Column ' + (i + 1))) + '</option>';
+    return s + '</select>';
+  }
+  var dataCount = parsed.rows.length - (hasHeader ? 1 : 0);
+  var html = '<div style="font-size:12.5px;color:var(--text2);margin-bottom:8px">Read <strong>' + dataCount + '</strong> row' + (dataCount === 1 ? '' : 's') + (hasHeader ? ' (first row looks like headers)' : '') + '. Confirm the columns:</div>';
+  html += '<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px;align-items:center">';
+  html += '<label style="font-size:12px;font-weight:600">Unit ' + sel('unit', best.unit) + '</label>';
+  html += '<label style="font-size:12px;font-weight:600">Name ' + sel('name', best.name) + '</label>';
+  html += '<label style="font-size:12px;font-weight:600">Lease date ' + sel('date', best.date) + '</label>';
+  html += '</div>';
+  html += '<button class="btn btn-primary btn-sm" onclick="reconcileCompare()">Compare to my move-ins</button>';
+  var mapEl = g('reconcile-map'); if (mapEl) { mapEl.innerHTML = html; mapEl.style.display = 'block'; }
+}
+function reconcileCompare() {
+  var rows = window._reconcileRows; if (!rows) { toast('Read the list first'); return; }
+  var hasHeader = window._reconcileHasHeader;
+  function colVal(id) { var el = g(id); return el ? parseInt(el.value, 10) : -1; }
+  var uc = colVal('rec-col-unit'), nc = colVal('rec-col-name'), dc = colVal('rec-col-date');
+  if (isNaN(uc) || uc < 0) { toast('Pick which column is the Unit #'); return; }
+  var data = hasHeader ? rows.slice(1) : rows;
+  var master = {}, masterCount = 0;
+  data.forEach(function (r) {
+    var u = reconcileNormUnit(r[uc]); if (!u) return;
+    if (!master[u]) masterCount++;
+    master[u] = { unit: String(r[uc]).trim().replace(/^#/, ''), name: (nc >= 0 && r[nc] ? String(r[nc]).trim() : ''), date: (dc >= 0 ? reconcileParseDate(r[dc]) : ''), rawDate: (dc >= 0 && r[dc] ? String(r[dc]).trim() : '') };
+  });
+  var moves = (state.moves || []).filter(function (m) { return !m.archivedAt && m.type === 'in'; });
+  var dashByUnit = {};
+  moves.forEach(function (m) { dashByUnit[reconcileNormUnit(m.unit)] = m; });
+  var missing = [], mismatch = [], notOnList = [], okCount = 0;
+  Object.keys(master).forEach(function (u) {
+    var ml = master[u], dm = dashByUnit[u];
+    if (!dm) { missing.push(ml); return; }
+    if (ml.date && dm.date && dm.date !== 'TBD' && ml.date !== dm.date) mismatch.push({ ml: ml, dm: dm }); else okCount++;
+  });
+  moves.forEach(function (m) { if (!master[reconcileNormUnit(m.unit)]) notOnList.push(m); });
+  var h = '<div style="font-size:12px;color:var(--text2);margin-bottom:10px"><strong>' + masterCount + '</strong> on the list · <strong>' + moves.length + '</strong> active move-ins · <span style="color:var(--green);font-weight:600">' + okCount + ' match</span></div>';
+  if (!missing.length && !mismatch.length && !notOnList.length) h += '<div style="padding:14px;background:var(--accent-light);border-radius:var(--radius);font-size:13px;color:var(--green);font-weight:600">&#9989; Everything lines up — no discrepancies.</div>';
+  function section(title, color, items, render) {
+    if (!items.length) return '';
+    var s = '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:' + color + ';margin-bottom:6px">' + title + ' (' + items.length + ')</div><div style="display:flex;flex-direction:column;gap:5px">';
+    items.forEach(function (it) { s += '<div style="font-size:12.5px;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px">' + render(it) + '</div>'; });
+    return s + '</div></div>';
+  }
+  h += section('&#128308; On the list, missing from dashboard', 'var(--red)', missing, function (ml) { return '<strong>Unit ' + esc(ml.unit) + '</strong>' + (ml.name ? ' — ' + esc(ml.name) : '') + (ml.rawDate ? ' <span style="color:var(--text3)">· ' + esc(ml.rawDate) + '</span>' : ''); });
+  h += section('&#128993; Lease-date mismatch', '#b45309', mismatch, function (mm) { return '<strong>Unit ' + esc(mm.dm.unit) + '</strong>' + (mm.dm.resident ? ' — ' + esc(mm.dm.resident) : '') + '<br><span style="color:var(--text3)">list says <strong>' + esc(mm.ml.date) + '</strong> · dashboard has <strong>' + esc(mm.dm.date) + '</strong></span>'; });
+  h += section('&#128309; In dashboard, not on the list', 'var(--accent)', notOnList, function (m) { return '<strong>Unit ' + esc(m.unit) + '</strong>' + (m.resident ? ' — ' + esc(m.resident) : '') + (m.date && m.date !== 'TBD' ? ' <span style="color:var(--text3)">· ' + esc(m.date) + '</span>' : ''); });
+  var res = g('reconcile-results'); if (res) { res.innerHTML = h; res.style.display = 'block'; }
 }
 function openAddMove() {
   editingMoveId = null;
