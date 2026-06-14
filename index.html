@@ -2025,10 +2025,18 @@ async function hashPin(pin, salt) {
   } catch(e) { return String(pin); }
 }
 function isPinHashed(pin) { return typeof pin === 'string' && pin.length === 64 && /^[0-9a-f]+$/.test(pin); }
+// Fixed per-field salts for the two singleton section PINs (no per-record id to salt with, unlike accounts).
+var TEAMPIN_SALT = 'chorus-teampin-v1';
+var PATROLPIN_SALT = 'chorus-patrolpin-v1';
+// Verify a typed section PIN against the stored value: hashed compare post-migration, plaintext fallback pre-migration.
+async function verifySectionPin(entered, stored, salt) {
+  if (!stored) return false;
+  if (isPinHashed(stored)) return (await hashPin(entered, salt)) === stored;
+  return String(entered) === String(stored);
+}
 async function migratePinsToHashed() {
-  var accounts = state.accounts || [];
-  if (!accounts.length) return;
   var changed = false;
+  var accounts = state.accounts || [];
   for (var i = 0; i < accounts.length; i++) {
     var a = accounts[i];
     if (a.pin && !isPinHashed(a.pin)) {
@@ -2036,7 +2044,19 @@ async function migratePinsToHashed() {
       changed = true;
     }
   }
+  // Section PINs (Team Tracker + Patrol QR): hash in place, same treatment as account PINs.
+  if (state.teampin && !isPinHashed(state.teampin)) { state.teampin = await hashPin(state.teampin, TEAMPIN_SALT); changed = true; }
+  if (state.patrolPin && !isPinHashed(state.patrolPin)) { state.patrolPin = await hashPin(state.patrolPin, PATROLPIN_SALT); changed = true; }
   if (changed) scheduleSave();
+}
+// One-time purge of dead residentProfiles: zero readers/writers (verified 2026-06-13; June audit confirms migration complete).
+// ~600 stale PII entries still ride in the synced payload; drop them once and push the cleaned state.
+function purgeDeadResidentProfiles() {
+  if (state.residentProfilesPurged) return;
+  var had = Array.isArray(state.residentProfiles) && state.residentProfiles.length > 0;
+  state.residentProfiles = [];
+  state.residentProfilesPurged = true;
+  if (had) scheduleSave();
 }
 function today() {
   var d = new Date();
@@ -5356,8 +5376,8 @@ function showScanOverlay(checkpointId) {
     });
     var pinInp = g('patrol-pin-inp');
     var pinBtn = g('patrol-pin-btn');
-    function tryPin() {
-      if (pinInp.value === pin) {
+    async function tryPin() {
+      if (await verifySectionPin(pinInp.value, pin, PATROLPIN_SALT)) {
         window._patrolPinVerified = true;
         showScanOverlay(checkpointId);
       } else {
@@ -5479,16 +5499,16 @@ function showScanPinPrompt(checkpointId, staffName, cpName) {
   var inp = g('scan-acct-pin');
   var btn = g('scan-acct-pin-btn');
   var backLnk = g('scan-back-lnk');
-  function tryAcctPin() {
+  async function tryAcctPin() {
     var entered = inp ? inp.value : '';
     if (acct) {
-      if (entered === acct.pin) { logScan(checkpointId, staffName, false); showScanSuccess(cpName); }
+      if ((await hashPin(entered, acct.id)) === acct.pin) { logScan(checkpointId, staffName, false); showScanSuccess(cpName); }
       else { toast('Incorrect PIN'); if (inp) { inp.value = ''; inp.focus(); } }
     } else {
       // No account found — require patrol PIN if set, else allow
       var pp = state.patrolPin || '';
       if (pp) {
-        if (entered === pp) { logScan(checkpointId, staffName, false); showScanSuccess(cpName); }
+        if (await verifySectionPin(entered, pp, PATROLPIN_SALT)) { logScan(checkpointId, staffName, false); showScanSuccess(cpName); }
         else { toast('Incorrect PIN'); if (inp) { inp.value = ''; inp.focus(); } }
       } else {
         logScan(checkpointId, staffName, false); showScanSuccess(cpName);
@@ -8653,12 +8673,12 @@ function renderTeam() {
       + '</div>'
       + '<div class="modal-ftr"><button class="btn btn-primary" id="team-setup-btn">Set PIN &amp; Unlock</button></div>'
       + '</div>';
-    g('team-setup-btn').addEventListener('click', function () {
+    g('team-setup-btn').addEventListener('click', async function () {
       var np = g('team-pin-new').value.trim();
       var cp = g('team-pin-confirm').value.trim();
       if (!np || np.length < 4) { toast('PIN must be at least 4 digits'); return; }
       if (np !== cp) { toast('PINs do not match'); return; }
-      state.teampin = np; teamUnlocked = true; scheduleSave(); renderTeam();
+      state.teampin = await hashPin(np, TEAMPIN_SALT); teamUnlocked = true; scheduleSave(); renderTeam();
     });
     return;
   }
@@ -8672,8 +8692,8 @@ function renderTeam() {
       + '<div class="modal-ftr"><button class="btn btn-primary" id="team-unlock-btn">Unlock</button></div>'
       + '</div>';
     var inp = g('team-pin-input');
-    g('team-unlock-btn').addEventListener('click', function () {
-      if (inp.value === state.teampin) { teamUnlocked = true; renderTeam(); }
+    g('team-unlock-btn').addEventListener('click', async function () {
+      if (await verifySectionPin(inp.value, state.teampin, TEAMPIN_SALT)) { teamUnlocked = true; renderTeam(); }
       else { toast('Incorrect PIN'); inp.value = ''; inp.focus(); }
     });
     inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') g('team-unlock-btn').click(); });
@@ -9085,25 +9105,25 @@ function renderPatrolPinSettings() {
       + ' <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="removePatrolPin()">Remove PIN</button>';
   }
 }
-function setPatrolPin() {
+async function setPatrolPin() {
   var np = (g('pp-new') ? g('pp-new').value.trim() : '');
   var cp = (g('pp-confirm') ? g('pp-confirm').value.trim() : '');
   if (!np || np.length < 4) { toast('PIN must be at least 4 digits'); return; }
   if (np !== cp) { toast('PINs do not match'); return; }
-  state.patrolPin = np; scheduleSave(); renderPatrolPinSettings(); toast('Patrol PIN set');
+  state.patrolPin = await hashPin(np, PATROLPIN_SALT); scheduleSave(); renderPatrolPinSettings(); toast('Patrol PIN set');
 }
-function changePatrolPin() {
+async function changePatrolPin() {
   var cur = (g('pp-cur') ? g('pp-cur').value : '');
   var np = (g('pp-new') ? g('pp-new').value.trim() : '');
   var cp = (g('pp-confirm') ? g('pp-confirm').value.trim() : '');
-  if (cur !== state.patrolPin) { toast('Current PIN is incorrect'); return; }
+  if (!(await verifySectionPin(cur, state.patrolPin, PATROLPIN_SALT))) { toast('Current PIN is incorrect'); return; }
   if (!np || np.length < 4) { toast('New PIN must be at least 4 digits'); return; }
   if (np !== cp) { toast('PINs do not match'); return; }
-  state.patrolPin = np; scheduleSave(); renderPatrolPinSettings(); toast('Patrol PIN updated');
+  state.patrolPin = await hashPin(np, PATROLPIN_SALT); scheduleSave(); renderPatrolPinSettings(); toast('Patrol PIN updated');
 }
-function removePatrolPin() {
+async function removePatrolPin() {
   var cur = (g('pp-cur') ? g('pp-cur').value : '');
-  if (cur !== state.patrolPin) { toast('Current PIN is incorrect'); return; }
+  if (!(await verifySectionPin(cur, state.patrolPin, PATROLPIN_SALT))) { toast('Current PIN is incorrect'); return; }
   if (!confirm('Remove patrol PIN? Anyone scanning a QR code will be able to log a scan.')) return;
   state.patrolPin = ''; scheduleSave(); renderPatrolPinSettings(); toast('Patrol PIN removed');
 }
@@ -9199,28 +9219,28 @@ function renderTeamPinSettings() {
       + ' <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="removeTeamPin()">Remove PIN</button>';
   }
 }
-function setTeamPin() {
+async function setTeamPin() {
   var np = (g('tp-new') ? g('tp-new').value.trim() : '');
   var cp = (g('tp-confirm') ? g('tp-confirm').value.trim() : '');
   if (!np || np.length < 4) { toast('PIN must be at least 4 digits'); return; }
   if (!/^\d+$/.test(np)) { toast('PIN must be numbers only'); return; }
   if (np !== cp) { toast('PINs do not match'); return; }
-  state.teampin = np; scheduleSave(); renderTeamPinSettings(); toast('Team Tracker PIN set');
+  state.teampin = await hashPin(np, TEAMPIN_SALT); scheduleSave(); renderTeamPinSettings(); toast('Team Tracker PIN set');
 }
-function changeTeamPin() {
+async function changeTeamPin() {
   var cur = (g('tp-current') ? g('tp-current').value : '');
   var np = (g('tp-new') ? g('tp-new').value.trim() : '');
   var cp = (g('tp-confirm') ? g('tp-confirm').value.trim() : '');
   if (!state.teampin) { toast('No PIN set — use Set Team PIN first'); return; }
-  if (cur !== state.teampin) { toast('Current PIN is incorrect'); return; }
+  if (!(await verifySectionPin(cur, state.teampin, TEAMPIN_SALT))) { toast('Current PIN is incorrect'); return; }
   if (!np || np.length < 4) { toast('New PIN must be at least 4 digits'); return; }
   if (!/^\d+$/.test(np)) { toast('PIN must be numbers only'); return; }
   if (np !== cp) { toast('New PINs do not match'); return; }
-  state.teampin = np; scheduleSave(); renderTeamPinSettings(); toast('Team Tracker PIN updated');
+  state.teampin = await hashPin(np, TEAMPIN_SALT); scheduleSave(); renderTeamPinSettings(); toast('Team Tracker PIN updated');
 }
-function removeTeamPin() {
+async function removeTeamPin() {
   var cur = (g('tp-current') ? g('tp-current').value : '');
-  if (cur !== state.teampin) { toast('Current PIN is incorrect'); return; }
+  if (!(await verifySectionPin(cur, state.teampin, TEAMPIN_SALT))) { toast('Current PIN is incorrect'); return; }
   if (!confirm('Remove Team Tracker PIN? Anyone will be able to log entries without a PIN.')) return;
   state.teampin = ''; scheduleSave(); renderTeamPinSettings(); toast('Team Tracker PIN removed');
 }
@@ -9996,6 +10016,7 @@ async function init() {
   try { var params = new URLSearchParams(window.location.search); pendingScanId = params.get('scan'); } catch(e) {}
   await pullCloud();
   await migratePinsToHashed();
+  purgeDeadResidentProfiles();
   migrateTaskUpdatesV2();
   migrateTaskUpdatesV3();
   seedDefaultTemplates();
