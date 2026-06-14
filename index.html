@@ -1185,7 +1185,7 @@
   <div class="modal-hdr"><span class="modal-title" id="move-modal-title">Add Move</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-move')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Unit #</label><input id="mv-unit" type="text" placeholder="e.g. 1204"></div><div class="fg"><label>Type</label><select id="mv-type" onchange="updateMoveModalLabels()"><option value="in">Move In</option><option value="out">Move Out</option></select></div></div>
-    <div class="fg"><label>Resident Name</label><input id="mv-resident" type="text"></div>
+    <div class="fg"><label>Resident Name</label><input id="mv-resident" type="text"><div id="mv-resident-hint" style="display:none;font-size:11.5px;color:#b45309;margin-top:5px;font-weight:600">&#9888; Guessed from the email &mdash; please confirm.</div></div>
     <div style="background:var(--accent-light);border-radius:var(--radius);padding:10px 13px;margin-bottom:12px">
       <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Lease</div>
       <div class="fr"><div class="fg" style="margin-bottom:0"><label id="mv-label-date">Lease Start Date</label><div style="display:flex;align-items:center;gap:8px"><input id="mv-date" type="date" data-no-autofill style="flex:1"><label style="display:flex;align-items:center;gap:5px;font-weight:400;font-size:12px;white-space:nowrap;margin:0;cursor:pointer;color:var(--text2)"><input type="checkbox" id="mv-date-tbd" style="width:auto;accent-color:var(--accent)" onchange="mvDateTbdChange()"> TBD</label></div></div><div class="fg" style="margin-bottom:0"><label id="mv-label-total">Move-In Total ($)</label><input id="mv-total" type="text" placeholder="e.g. 4500"></div></div>
@@ -1199,6 +1199,16 @@
     <div class="fg"><label>Notes</label><textarea id="mv-notes" rows="3"></textarea></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-ghost btn-sm" id="move-modal-delete-btn" style="color:var(--red);display:none" onclick="deleteMoveFromModal()">Delete</button><button class="btn btn-secondary" onclick="closeModal('modal-move')">Cancel</button><button class="btn btn-primary" id="move-modal-save-btn" onclick="saveMove()">Save Move</button></div>
+</div></div>
+
+<div class="modal-ov" id="modal-import-letter"><div class="modal" style="max-width:480px">
+  <div class="modal-hdr"><span class="modal-title">&#128231; Import from Welcome Letter</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-import-letter')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <p style="font-size:12.5px;color:var(--text2);margin-bottom:10px;line-height:1.55">Paste the leasing <strong>&ldquo;Welcome to Chorus&rdquo;</strong> email below. I'll pull out the <strong>unit</strong>, <strong>lease start date</strong>, and <strong>move-in total</strong> and start a new move-in for you to confirm. <span style="color:var(--text3)">Even just the subject line works. Include the resident's email and I'll guess the name too.</span></p>
+    <div class="fg"><textarea id="letter-paste" rows="9" placeholder="Paste the welcome letter here&hellip;" style="width:100%;font-size:13px;resize:vertical"></textarea></div>
+    <div id="letter-parse-msg" style="font-size:12px;color:var(--text3);min-height:16px"></div>
+  </div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-import-letter')">Cancel</button><button class="btn btn-primary" onclick="parseLetterAndPrefill()">Parse &amp; Pre-fill</button></div>
 </div></div>
 
 <div class="modal-ov" id="modal-task"><div class="modal">
@@ -2320,7 +2330,7 @@ function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov
 var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Unit Tracker', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', parking: 'Parking Credentials', security: 'Security Incidents', session: 'Login / Session' };
 var patrolFilter = 'amenity';
 var SEC_ACTIONS = {
-  moves: '<button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
+  moves: '<button class="btn btn-secondary btn-sm" onclick="openLetterImport()">&#128231; Import Letter</button> <button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
   maintenance: '<button class="btn btn-primary btn-sm" onclick="openAddMaint()">+ Log Issue</button>',
   guests: '<button class="btn btn-primary btn-sm" onclick="openAddGuest()">+ Log Guest</button>',
   keys: '<button class="btn btn-primary btn-sm" onclick="openAddKey()">+ Log Key</button>',
@@ -2890,6 +2900,125 @@ function fmtByTag(addedBy, createdAt) {
   return parts.length ? '<span class="by-tag">' + parts.join(' · ') + '</span>' : '';
 }
 
+// ── Email → Move-In: parse a "Welcome to Chorus" letter and pre-fill a move-in (Phase 3) ──
+function openLetterImport() {
+  var ta = g('letter-paste'); if (ta) ta.value = '';
+  var msg = g('letter-parse-msg'); if (msg) { msg.style.color = 'var(--text3)'; msg.textContent = ''; }
+  openModal('modal-import-letter');
+}
+function letterISODate(m, d, y) {
+  m = parseInt(m, 10); d = parseInt(d, 10); y = parseInt(y, 10);
+  if (y < 100) y += 2000;
+  if (!m || !d || !y || m > 12 || d > 31) return '';
+  return y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+}
+function guessNameFromEmail(email) {
+  var local = String(email).split('@')[0] || '';
+  local = local.replace(/\d+/g, ' ');
+  var parts = local.split(/[._\-+]+/).filter(Boolean);
+  if (!parts.length) return '';
+  return parts.map(function (p) { return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase(); }).join(' ').trim();
+}
+function parseWelcomeLetter(text) {
+  text = String(text || '');
+  var res = { unit: '', date: '', total: '', primaryName: '', coNames: [], emails: [] };
+  var mUnit = text.match(/Welcome to Chorus\s*#\s*(\d{1,5})/i) || text.match(/Unit\s+(\d{1,5})\b/i) || text.match(/#\s*(\d{2,5})\b/);
+  if (mUnit) res.unit = mUnit[1];
+  var mDate = text.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (mDate) {
+    res.date = letterISODate(mDate[1], mDate[2], mDate[3]);
+  } else {
+    var mPro = text.match(/Prorated rent\s*\(\s*(\d{1,2})\/(\d{1,2})/i);
+    if (mPro) res.date = letterISODate(mPro[1], mPro[2], new Date().getFullYear());
+  }
+  var mTot = text.match(/move-?in total[^$]*\$\s*([\d,]+(?:\.\d{1,2})?)/i);
+  if (mTot) res.total = mTot[1].replace(/,/g, '');
+  var allEmails = text.match(/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/g) || [];
+  var blocked = /alignrealestate\.com|rentchorus\.com|sentral\.com|epremium|paywithbilt|otisproperty/i;
+  var seen = {};
+  allEmails.forEach(function (e) {
+    var lc = e.toLowerCase();
+    if (blocked.test(lc) || seen[lc]) return;
+    seen[lc] = 1; res.emails.push(e);
+  });
+  var names = res.emails.map(guessNameFromEmail).filter(Boolean);
+  res.primaryName = names[0] || '';
+  res.coNames = names.slice(1);
+  return res;
+}
+function parseLetterAndPrefill() {
+  var ta = g('letter-paste'); var text = ta ? ta.value : '';
+  var msg = g('letter-parse-msg');
+  if (!text.trim()) { if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Paste the welcome letter first.'; } return; }
+  var p = parseWelcomeLetter(text);
+  if (!p.unit && !p.date && !p.total) {
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = "Couldn't find a unit, date, or total — is this a welcome letter?"; }
+    return;
+  }
+  var existing = (state.moves || []).filter(function (mv) { return !mv.archivedAt && mv.type === 'in' && String(mv.unit) === String(p.unit); });
+  closeModal('modal-import-letter');
+  if (existing.length) {
+    var ex = existing[0];
+    if (confirm('There\'s already a move-in for Unit ' + p.unit + ' (' + (ex.resident || 'no name') + ', lease start ' + (ex.date || '—') + ').\n\nOK = update that one with the letter.\nCancel = create a separate new move-in.')) {
+      updateMoveFromLetter(ex, p);
+      return;
+    }
+  }
+  prefillMoveFromLetter(p);
+}
+function prefillMoveFromLetter(p) {
+  openAddMove(); // resets + opens the move modal in add mode
+  if (g('mv-unit')) g('mv-unit').value = p.unit || '';
+  if (g('mv-date') && p.date) g('mv-date').value = p.date;
+  if (g('mv-total')) g('mv-total').value = p.total || '';
+  var noteBits = ['Imported from Welcome Letter'];
+  if (p.total) noteBits.push('Move-in total $' + p.total);
+  if (p.emails.length) noteBits.push('Resident email(s): ' + p.emails.join(', '));
+  if (g('mv-notes')) g('mv-notes').value = noteBits.join(' — ');
+  var nameEl = g('mv-resident');
+  if (nameEl) {
+    nameEl.value = p.primaryName || '';
+    setMoveNameGuess(true);
+    nameEl.oninput = function () { setMoveNameGuess(false); };
+  }
+  var extra = p.coNames.length ? ' Co-resident guess: ' + p.coNames.join(', ') + '.' : '';
+  toast('Imported Unit ' + (p.unit || '?') + (p.date ? ' — lease start ' + p.date : '') + '. Confirm the resident name.' + extra);
+}
+// Update an EXISTING move-in from the letter: fill blanks only, never overwrite what's typed, flag any disagreements.
+function updateMoveFromLetter(ex, p) {
+  openEditMove(ex.id); // loads the existing move into the modal in edit mode
+  var flags = [];
+  if (p.date) {
+    var curDate = g('mv-date') ? g('mv-date').value : '';
+    if (!curDate || ex.date === 'TBD') { if (g('mv-date')) g('mv-date').value = p.date; }
+    else if (curDate !== p.date) flags.push('⚠ Letter lease start ' + p.date + ' differs from this entry (' + curDate + ') — verify');
+  }
+  if (p.total) {
+    var curTotal = g('mv-total') ? g('mv-total').value.trim() : '';
+    if (!curTotal) { if (g('mv-total')) g('mv-total').value = p.total; }
+    else if (curTotal.replace(/[,$\s]/g, '') !== p.total) flags.push('⚠ Letter total $' + p.total + ' differs from this entry ($' + curTotal + ') — verify');
+  }
+  var nameEl = g('mv-resident');
+  if (nameEl && !nameEl.value.trim() && p.primaryName) {
+    nameEl.value = p.primaryName;
+    setMoveNameGuess(true);
+    nameEl.oninput = function () { setMoveNameGuess(false); };
+  }
+  if (g('mv-notes')) {
+    var add = ['Welcome letter imported ' + today()];
+    if (p.emails.length) add.push('Resident email(s): ' + p.emails.join(', '));
+    add = add.concat(flags);
+    var cur = g('mv-notes').value.trim();
+    g('mv-notes').value = cur ? (cur + '\n' + add.join('\n')) : add.join('\n');
+  }
+  toast('Updated Unit ' + p.unit + ' move-in from the letter' + (flags.length ? ' — flagged a difference,' : ' —') + ' review & save.');
+}
+function setMoveNameGuess(on) {
+  window._moveNameGuess = !!on;
+  var el = g('mv-resident'); var hint = g('mv-resident-hint');
+  if (el) { el.style.background = on ? '#fff7ed' : ''; el.style.borderColor = on ? '#f59e0b' : ''; }
+  if (hint) hint.style.display = on ? 'block' : 'none';
+}
 function openAddMove() {
   editingMoveId = null;
   g('move-modal-title').textContent = 'Add Move';
@@ -2910,6 +3039,7 @@ function openAddMove() {
   // Wire up conflict check on appt change
   g('mv-appt-date').onchange = onApptChange;
   g('mv-appt-time').onchange = onApptChange;
+  setMoveNameGuess(false);
   openModal('modal-move');
 }
 
@@ -2944,6 +3074,7 @@ function openEditMove(id) {
   g('mv-appt-date').onchange = onApptChange;
   g('mv-appt-time').onchange = onApptChange;
   if (!isApptTbd && m.apptDate && m.apptTime) onApptChange();
+  setMoveNameGuess(false);
   openModal('modal-move');
 }
 
@@ -2965,6 +3096,10 @@ function saveMove() {
   var isTbd = g('mv-date-tbd') && g('mv-date-tbd').checked;
   var date = isTbd ? 'TBD' : g('mv-date').value;
   if (!unit || !resident || (!date && !isTbd)) { toast('Fill in unit, resident & lease start date'); return; }
+  if (window._moveNameGuess) {
+    if (!confirm('The resident name "' + resident + '" was guessed from the email. Save it as-is?\n\n(Cancel to fix it first.)')) return;
+    setMoveNameGuess(false);
+  }
   var apptTbd = !!(g('mv-appt-tbd') && g('mv-appt-tbd').checked);
   var apptDate = apptTbd ? '' : ((g('mv-appt-date') && g('mv-appt-date').value) || '');
   var apptTime = apptTbd ? '' : ((g('mv-appt-time') && g('mv-appt-time').value) || '');
