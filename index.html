@@ -3640,7 +3640,7 @@ function renderMoves() {
           ? (stage === 'complete'
             ? '<button class="btn btn-xs" style="background:var(--green);color:#fff;border:2px solid var(--green);font-weight:700" onclick="event.stopPropagation();archiveMove(\'' + m.id + '\')" title="All tasks complete — ready to archive">All Done &#10003;</button>'
             : '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();archiveMove(\'' + m.id + '\')">Archive</button>')
-          : '';
+          : (m.archivedAt && !isStaffUser ? '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();unarchiveMove(\'' + m.id + '\')" title="Restore to active moves">Unarchive</button>' : '');
         rows += '<td><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'Move In' : 'Move Out') + '</span><br><span class="stage-pill stage-' + stage + '">' + (STAGE_LABELS[stage] || stage) + '</span></td>';
         rows += '<td>' + apptBadge + '</td>';
         var payTask = (m.tasks||[]).find(function(tk){ return tk.paymentTask; });
@@ -3951,6 +3951,14 @@ function archiveMove(id) {
       }
     );
   }
+}
+function unarchiveMove(id) {
+  var m = (state.moves || []).find(function (x) { return x.id === id; }); if (!m) return;
+  var _arch = m.archivedAt;
+  m.archivedAt = null;
+  pushUndo({ sec: 'moves', type: 'EDIT', id: m.id, before: { archivedAt: _arch }, after: { archivedAt: null }, label: 'unarchive move — Unit ' + m.unit });
+  logActivity('moves', 'edit', 'Unarchived move — Unit ' + m.unit + ' (' + (m.type === 'in' ? 'Move In' : 'Move Out') + ') · ' + m.resident);
+  scheduleSave(); renderMoves(); updateBadges(); renderDash(); toast('Restored to active moves');
 }
 function deleteMove(id) {
   if (!confirm('Delete this move?')) return;
