@@ -1180,6 +1180,7 @@
 </div>
 
 <!-- MODALS -->
+<datalist id="unit-options"></datalist>
 <div class="modal-ov" id="modal-move"><div class="modal">
   <div class="modal-hdr"><span class="modal-title" id="move-modal-title">Add Move</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-move')">&#x2715;</button></div>
   <div class="modal-bdy">
@@ -1772,7 +1773,7 @@ function applyIcons() {
   });
 }
 
-var state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [], templates: [], propertyConfig: {} };
+var state = emptyState();
 var teamUnlocked = false;
 
 var currentUser = null;
@@ -1917,7 +1918,7 @@ function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(stat
 function loadLocal() {
   try {
     var raw = localStorage.getItem(LOCAL_KEY);
-    if (raw) state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], supplies: [], activityLog: [], parking: [], security: [], templates: [] }, JSON.parse(raw));
+    if (raw) state = Object.assign(emptyState(), JSON.parse(raw));
   } catch (e) {}
 }
 function scheduleSave() { localDirty = true; saveLocal(); clearTimeout(syncTO); syncTO = setTimeout(pushCloud, 800); }
@@ -1933,7 +1934,7 @@ async function pullCloud() {
   try {
     var row = await supaGet();
     if (row && row.data && Object.keys(row.data).length > 0) {
-      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], activityLog: [], parking: [], security: [], templates: [] }, row.data);
+      state = Object.assign(emptyState(), row.data);
       saveLocal();
     } else { loadLocal(); await supaPush(state); }
     setSyncStatus('synced', 'Synced');
@@ -1970,7 +1971,7 @@ setInterval(async function () {
       var ts = new Date(row.updated_at).getTime();
       if (lastSyncTs && ts > lastSyncTs + 2000) {
         try { localStorage.setItem('chorus-presync-snapshot', JSON.stringify({ ts: Date.now(), state: state })); } catch (e) {}
-        state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], activityLog: [], parking: [], security: [], templates: [] }, row.data);
+        state = Object.assign(emptyState(), row.data);
         saveLocal(); lastSyncTs = ts;
         renderSection(curSec); updateBadges();
         showRefreshNotice();
@@ -1996,7 +1997,7 @@ function processImport() {
   reader.onload = function (e) {
     try {
       var imported = JSON.parse(e.target.result);
-      state = Object.assign({ moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, accounts: [], userTodos: {}, userPassdowns: {}, staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], activityLog: [] }, imported);
+      state = Object.assign(emptyState(), imported);
       state.accounts = preservedAccounts;
       scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported');
     }
@@ -2008,7 +2009,7 @@ function resetData() {
   if (!currentUser || currentUser.role !== 'admin') { toast('Admin access required'); return; }
   if (!confirm('Reset ALL data? Cannot be undone.')) return;
   var preservedAccounts = (state.accounts || []).slice();
-  state = { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [] };
+  state = emptyState();
   state.accounts = preservedAccounts;
   scheduleSave(); renderAll(); toast('Data reset');
 }
@@ -2065,6 +2066,9 @@ function today() {
   var dy = String(d.getDate()).padStart(2, '0');
   return yr + '-' + mo + '-' + dy;
 }
+// A move counts as "today" if its appointment is today, or — when it has no appointment — its scheduled date is today.
+// Single source of truth shared by the dashboard and the Moves tab so the two never disagree.
+function moveIsToday(m, t) { t = t || today(); return m.apptDate === t || (!m.apptDate && m.date === t); }
 function fmtShort(d) { if (!d) return '-'; if (d === 'TBD') return 'TBD'; return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
 function toast(msg) { var e = g('toast'); e.textContent = msg; e.classList.add('show'); setTimeout(function () { e.classList.remove('show'); }, 2500); }
 function g(id) { return document.getElementById(id); }
@@ -2073,7 +2077,7 @@ function cloneData(obj) {
   try { return JSON.parse(JSON.stringify(obj)); }
   catch (e) { return obj; }
 }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, userPassdowns: {}, parking: [], security: [], propertyConfig: {} }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [], templates: [], parking: [], security: [], propertyConfig: {} }; }
 
 // ─── UNDO / REDO ───
 var undoStack = [];
@@ -2477,8 +2481,33 @@ async function loadTestData() {
 
 // ─── MODAL ───
 // ===== [MODAL & BADGE UTILITIES] =============================================
+// ── Unit-number autocomplete (Phase 2) ──
+var UNIT_AUTOCOMPLETE_IDS = ['mv-unit', 'mt-unit', 'gs-unit', 'ky-unit', 'qk-unit', 'sec-unit', 'pk-unit', 'am-unit', 'cr-unit', 'laf-claim-unit'];
+var UNIT_RESIDENT_MAP = { 'mv-unit': 'mv-resident', 'gs-unit': 'gs-host', 'ky-unit': 'ky-name', 'qk-unit': 'qk-resident', 'pk-unit': 'pk-resident', 'am-unit': 'am-resident', 'cr-unit': 'cr-resident', 'pdi-unit': 'pdi-resident' };
+function refreshUnitDatalist() {
+  var dl = g('unit-options'); if (!dl) return;
+  var recs = (state.unitRecords || []).filter(function (u) { return u && u.unit; });
+  recs.sort(function (a, b) { return String(a.unit).localeCompare(String(b.unit), undefined, { numeric: true }); });
+  var html = '';
+  for (var i = 0; i < recs.length; i++) {
+    var lh = recs[i].leaseholder ? (' — ' + recs[i].leaseholder) : '';
+    html += '<option value="' + esc(String(recs[i].unit)) + '">' + esc(String(recs[i].unit) + lh) + '</option>';
+  }
+  dl.innerHTML = html;
+  UNIT_AUTOCOMPLETE_IDS.forEach(function (id) { var el = g(id); if (el && el.getAttribute('list') !== 'unit-options') el.setAttribute('list', 'unit-options'); });
+}
+// When a unit is chosen/typed, auto-fill the matching leaseholder into the paired resident field if it's still empty.
+document.addEventListener('change', function (e) {
+  var el = e.target; if (!el || !el.id) return;
+  var resId = UNIT_RESIDENT_MAP[el.id]; if (!resId) return;
+  var uval = (el.value || '').trim(); if (!uval) return;
+  var rec = (state.unitRecords || []).find(function (u) { return u && String(u.unit) === uval; });
+  if (!rec || !rec.leaseholder) return;
+  var resEl = g(resId); if (resEl && !resEl.value.trim()) resEl.value = rec.leaseholder;
+});
 function openModal(id) {
   g(id).classList.add('open');
+  refreshUnitDatalist();
   g(id).querySelectorAll('input[type=date]').forEach(function (f) { if (!f.value && !f.hasAttribute('data-no-autofill')) f.value = today(); });
 }
 function closeModal(id) {
@@ -2522,7 +2551,7 @@ function renderDash() {
   var t = today(), moves = state.moves || [];
   var active = moves.filter(function (m) { return !m.archivedAt; });
   // Today = moves with appt today, OR lease start today with no appt yet
-  var todayM = active.filter(function (m) { return m.apptDate === t || (!m.apptDate && m.date === t); });
+  var todayM = active.filter(function (m) { return moveIsToday(m, t); });
   var needsAppt = active.filter(function (m) { return m.type === 'in' && !m.apptDate && !m.apptTbd && m.date >= t; });
   var d7 = new Date(); d7.setDate(d7.getDate() + 7);
   var wEnd = d7.toISOString().split('T')[0];
@@ -3240,15 +3269,15 @@ function renderMoves() {
   });
   // Pin today's moves to the top in All view (default sort only)
   if (moveFilter === 'all' && moveSort === 'date') {
-    var todayFirst = list.filter(function(m) { return m.apptDate === t || m.date === t; });
-    var notToday = list.filter(function(m) { return m.apptDate !== t && m.date !== t; });
+    var todayFirst = list.filter(function(m) { return moveIsToday(m, t); });
+    var notToday = list.filter(function(m) { return !moveIsToday(m, t); });
     list = todayFirst.concat(notToday);
   }
   // Stat strip
   var statEl = g('moves-stats');
   if (statEl) {
     var allActive = (state.moves || []).filter(function(m) { return !m.archivedAt; });
-    var statToday = allActive.filter(function(m) { return m.date === t || m.apptDate === t; });
+    var statToday = allActive.filter(function(m) { return moveIsToday(m, t); });
     var oneWeekOut = new Date(); oneWeekOut.setDate(oneWeekOut.getDate() + 7);
     var weekStr = oneWeekOut.toISOString().split('T')[0];
     var statWeek = allActive.filter(function(m) { return m.date >= t && m.date <= weekStr; });
@@ -3321,7 +3350,7 @@ function renderMoves() {
         var bc = pct < 30 ? 'var(--red)' : pct < 70 ? 'var(--amber)' : 'var(--green)';
         var isOpen = m.id === openMoveId;
         var isStaffUser = currentUser && currentUser.role === 'staff';
-        var isToday = (m.apptDate === t || m.date === t);
+        var isToday = moveIsToday(m, t);
         rows += '<tr class="move-row ' + (isOpen ? 'sel ' : '') + (m.archivedAt ? 'archive-row ' : '') + (isToday ? 'today-move ' : '') + '" data-id="' + m.id + '" onclick="toggleCL(\'' + m.id + '\')">';
         var apptBadge = '';
         if (m.apptTbd) {
@@ -3477,18 +3506,24 @@ function toggleTask(moveId, taskId, checked) {
     var isMailKey = t.text === 'Prepare Unit Mail Key(s)';
     if (isResidentKey || isMailKey) {
       if (!state.keys) state.keys = [];
-      var keyNote = isMailKey ? 'Mail key — created from move-in checklist' : 'Created from move-in checklist';
-      var mainKeyEntry = { id: uid(), unit: m.unit, name: m.resident, type: 'resident', fob: '', status: 'issued', notes: keyNote, addedBy: currentUser ? currentUser.name : '', issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null };
-      state.keys.push(mainKeyEntry);
-      if (m.coResidents && m.coResidents.length) {
-        m.coResidents.forEach(function(cr) {
-          state.keys.push({ id: uid(), unit: m.unit, name: cr.name, type: 'resident', fob: '', status: 'issued', notes: keyNote + ' (co-resident)', addedBy: currentUser ? currentUser.name : '', issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null });
-        });
+      // Dedupe guard: if this checklist task already created key entries, don't create them again on re-check.
+      var alreadyMade = state.keys.some(function(k) { return k.srcMoveId === m.id && k.srcTaskText === t.text; });
+      if (alreadyMade) {
+        toast('Keys for this task are already in the Key Tracker');
+      } else {
+        var keyNote = isMailKey ? 'Mail key — created from move-in checklist' : 'Created from move-in checklist';
+        var mainKeyEntry = { id: uid(), unit: m.unit, name: m.resident, type: 'resident', fob: '', status: 'issued', notes: keyNote, addedBy: currentUser ? currentUser.name : '', srcMoveId: m.id, srcTaskText: t.text, issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null };
+        state.keys.push(mainKeyEntry);
+        if (m.coResidents && m.coResidents.length) {
+          m.coResidents.forEach(function(cr) {
+            state.keys.push({ id: uid(), unit: m.unit, name: cr.name, type: 'resident', fob: '', status: 'issued', notes: keyNote + ' (co-resident)', addedBy: currentUser ? currentUser.name : '', srcMoveId: m.id, srcTaskText: t.text, issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null });
+          });
+        }
+        var qtyNum = parseInt(t.qty) || (1 + (m.coResidents ? m.coResidents.length : 0));
+        applySupplyAdjustment('Key Cards – Blank Stock', -qtyNum, 'Keys prepared — Unit ' + m.unit + ' · ' + m.resident);
+        toast('Key entry created in Key Tracker — blank stock updated');
+        if (curSec === 'keys') renderKeys();
       }
-      var qtyNum = parseInt(t.qty) || (1 + (m.coResidents ? m.coResidents.length : 0));
-      applySupplyAdjustment('Key Cards – Blank Stock', checked ? -qtyNum : +qtyNum, 'Keys ' + (checked ? 'prepared' : 'reversed') + ' — Unit ' + m.unit + ' · ' + m.resident);
-      toast('Key entry created in Key Tracker — blank stock updated');
-      if (curSec === 'keys') renderKeys();
     }
   }
   // ── Connection 1: Move-out collect keys task → mark keys returned ──
@@ -3896,7 +3931,7 @@ function saveGuest() {
   var issueKey = g('guest-issue-key') && g('guest-issue-key').checked;
   if (issueKey) {
     if (!state.keys) state.keys = [];
-    var guestKeyEntry = { id: uid(), unit: unit, name: name, guest: g('gs-host').value.trim(), type: 'one-time', fob: '', status: 'issued', notes: 'Issued for guest visit — logged from Guest Log', addedBy: currentUser ? currentUser.name : '', issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null, expiry: null, timeout: '', company: '', workArea: '', vendorReturn: '', isReplacement: false, fee: 0, feeAddedToLedger: false, feeWaived: false, feeAddedAt: null, feeAddedBy: '', reachedOut: false, reachedOutAt: null };
+    var guestKeyEntry = { id: uid(), unit: unit, name: g('gs-host').value.trim(), guest: name, type: 'one-time', fob: '', status: 'issued', notes: 'Issued for guest visit — logged from Guest Log', addedBy: currentUser ? currentUser.name : '', issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null, expiry: null, timeout: '', company: '', workArea: '', vendorReturn: '', isReplacement: false, fee: 0, feeAddedToLedger: false, feeWaived: false, feeAddedAt: null, feeAddedBy: '', reachedOut: false, reachedOutAt: null };
     state.keys.push(guestKeyEntry);
     gst.linkedKeyId = guestKeyEntry.id;
     applySupplyAdjustment('Key Cards – Blank Stock', -1, 'Issued for guest — Unit ' + unit);
@@ -7314,7 +7349,7 @@ function openPdItem(secKey) {
     ov.className = 'modal-ov'; ov.id = 'modal-pd-item';
     ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title" id="pdi-modal-title">Add Item</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-pd-item\')">&#x2715;</button></div>'
       + '<div class="modal-bdy">'
-      + '<div class="fr" id="pdi-unit-row"><div class="fg"><label>Unit # <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input type="text" id="pdi-unit" placeholder="e.g. 619"></div><div class="fg"><label>Resident Name <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input type="text" id="pdi-resident"></div></div>'
+      + '<div class="fr" id="pdi-unit-row"><div class="fg"><label>Unit # <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input type="text" id="pdi-unit" list="unit-options" placeholder="e.g. 619"></div><div class="fg"><label>Resident Name <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input type="text" id="pdi-resident"></div></div>'
       + '<div class="fg"><label id="pdi-desc-label">Description</label><textarea id="pdi-desc" rows="2" placeholder="What happened / what is the situation?"></textarea></div>'
       + '<div class="fg" id="pdi-nextstep-row"><label>Update / Next Step</label><input type="text" id="pdi-nextstep" placeholder="What needs to happen next?"></div>'
       + '</div>'
@@ -10021,6 +10056,7 @@ async function init() {
   migrateTaskUpdatesV3();
   seedDefaultTemplates();
   seedUnitRecords();
+  refreshUnitDatalist();
   updatePropertyUI();
   lastSyncTs = Date.now();
   if (pendingScanId) {
