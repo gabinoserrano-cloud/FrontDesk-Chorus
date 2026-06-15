@@ -4300,7 +4300,7 @@ function renderKeysSection() {
 }
 
 // ─── CARD DRAWER ───────────────────────────────────────────────────────────────
-var CARD_DRAWER_COUNT = 30;
+var CARD_DRAWER_COUNT = 40;
 var _quickKeyCardNum = null;
 
 function renderCardDrawer() {
@@ -4456,7 +4456,7 @@ function saveKey() {
       }
     }
     pushUndo({ sec: 'keys', type: 'EDIT', id: k.id, before: _kb, after: Object.assign({}, k), label: 'key edit — Unit ' + unit });
-    editingKeyId=null; logActivity('keys', 'edit', 'Updated key — Unit ' + unit + ' · ' + name + ' (' + type + ')'); scheduleSave(); closeModal('modal-key'); renderKeys(); updateBadges(); renderDash(); toast('Key updated'); return;
+    editingKeyId=null; logActivity('keys', 'edit', 'Updated key — Unit ' + unit + ' · ' + name + ' (' + type + ')'); scheduleSave(); closeModal('modal-key'); renderCardDrawer(); renderKeys(); updateBadges(); renderDash(); toast('Key updated'); return;
   }
   var now = Date.now();
   var issuedAt = now;
@@ -4464,7 +4464,7 @@ function saveKey() {
   var isRepl = g('ky-replacement') ? g('ky-replacement').checked : false;
   var k = { id: uid(), unit: unit, name: name, guest: guest, issuedTo: issuedTo, timeout: timeout, type: type, fob: g('ky-fob').value.trim(), status: g('ky-status').value, expiry: g('ky-expiry').value || null, notes: g('ky-notes').value.trim(), issuedAt: issuedAt, returnedAt: null, addedBy: currentUser ? currentUser.name : '', createdAt: now, company: g('ky-company')?g('ky-company').value.trim():'', workArea: g('ky-workarea')?g('ky-workarea').value.trim():'', vendorReturn: g('ky-vendor-return')?g('ky-vendor-return').value:'', isReplacement: isRepl, fee: isRepl ? 100 : 0, feeAddedToLedger: false, feeWaived: false, feeAddedAt: null, feeAddedBy: '', contacts: [], reachedOut: false, reachedOutAt: null };
   if (!state.keys) state.keys = [];
-  state.keys.push(k); pushUndo({ sec: 'keys', type: 'ADD', id: k.id, data: Object.assign({}, k), label: 'add key — Unit ' + unit }); logActivity('keys', 'create', 'Logged key — Unit ' + unit + ' · ' + name + ' (' + type + (isRepl ? ' · replacement' : '') + ')'); scheduleSave(); closeModal('modal-key'); renderKeys(); updateBadges(); renderDash();
+  state.keys.push(k); pushUndo({ sec: 'keys', type: 'ADD', id: k.id, data: Object.assign({}, k), label: 'add key — Unit ' + unit }); logActivity('keys', 'create', 'Logged key — Unit ' + unit + ' · ' + name + ' (' + type + (isRepl ? ' · replacement' : '') + ')'); scheduleSave(); closeModal('modal-key'); renderCardDrawer(); renderKeys(); updateBadges(); renderDash();
   // Decrement blank key card stock when a physical key is issued
   if (k.status === 'issued' && k.type !== 'mobile') {
     applySupplyAdjustment('Key Cards – Blank Stock', -1, 'Issued — Unit ' + k.unit + ' · ' + k.name + (k.addedBy ? ' · ' + k.addedBy : ''));
@@ -7599,7 +7599,7 @@ function renderPdItemsHtml(secKey) {
     return '<div class="pd-item-card">'
       + (hdr ? '<div style="font-weight:600;margin-bottom:2px">' + hdr + '</div>' : '')
       + '<div>' + item.desc + '</div>'
-      + '<div style="color:var(--text3);margin-top:2px"><em>Update / Next Step:</em> ' + item.nextStep + '</div>'
+      + (item.nextStep ? '<div style="color:var(--text3);margin-top:2px"><em>Update / Next Step:</em> ' + item.nextStep + '</div>' : '')
       + '<button class="pd-item-del" onclick="removePdItem(\'' + secKey + '\',' + idx + ')">×</button>'
       + '</div>';
   }).join('');
