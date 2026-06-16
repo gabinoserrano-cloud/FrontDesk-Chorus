@@ -1,0 +1,25 @@
+name: Weekly Front Desk Report
+
+# Runs every Monday morning, plus a manual "Run workflow" button for testing.
+on:
+  schedule:
+    - cron: "0 15 * * 1"   # Mondays 15:00 UTC = 8:00am PDT / 7:00am PST
+  workflow_dispatch: {}
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build and email the weekly report
+        env:
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          GMAIL_USER: gabinoserrano21@gmail.com
+          REPORT_FROM: gabinoserrano21@gmail.com
+          REPORT_TO: gserrano@alignrealestate.com
+        run: python3 .github/scripts/weekly_report.py
