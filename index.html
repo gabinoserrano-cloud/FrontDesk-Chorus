@@ -847,6 +847,7 @@
                 <button class="btn btn-primary" onclick="checkPassdownReady()">Generate</button>
                 <button class="btn btn-secondary" onclick="savePassdown()">Save Draft</button>
                 <button class="btn btn-ghost" onclick="copyPassdown()">Copy</button>
+                <button class="btn btn-secondary" onclick="copyMarkSent()">&#10003; Copy &amp; mark sent</button>
                 <button class="btn btn-secondary" onclick="reviewBeforeSend()">&#9993; Review &amp; Send</button>
                 <button class="btn btn-ghost" style="margin-left:auto;color:var(--text3);font-size:12px" onclick="pdClearDraft()">Clear draft</button>
               </div>
@@ -7924,16 +7925,43 @@ function savePassdown() {
   savePassdownRecord('draft');
   toast('Draft saved');
 }
-function copyPassdown() {
-  var preview = g('pd-preview').value;
-  if (!preview || !preview.trim()) { toast('Generate passdown first'); return; }
+function pdCopyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
+  return new Promise(function (resolve, reject) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.top = '-1000px'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      ok ? resolve() : reject(new Error('copy failed'));
+    } catch (e) { reject(e); }
+  });
+}
+function pdGuardStaffFreeItems() {
   var isStaffUser = currentUser && currentUser.role === 'staff';
   if (isStaffUser) {
     var freeItems = (pdSections.shiftNotes || []).concat(pdSections.thisShift || []);
-    if (!freeItems.length) { toast('Add at least one shift note before copying — go back and fill in the Shift Notes section'); return; }
+    if (!freeItems.length) { toast('Add at least one shift note before copying — go back and fill in the Shift Notes section'); return false; }
   }
-  if (navigator.share) navigator.share({ text: preview }).catch(function () {});
-  else navigator.clipboard.writeText(preview).then(function () { toast('Copied'); }).catch(function () { toast('Copy failed'); });
+  return true;
+}
+function copyPassdown() {
+  var preview = g('pd-preview').value;
+  if (!preview || !preview.trim()) { toast('Generate passdown first'); return; }
+  if (!pdGuardStaffFreeItems()) return;
+  pdCopyToClipboard(preview).then(function () { toast('Copied'); }).catch(function () { toast('Copy failed'); });
+}
+function copyMarkSent() {
+  var preview = g('pd-preview').value;
+  if (!preview || !preview.trim()) { toast('Generate passdown first'); return; }
+  if (!pdGuardStaffFreeItems()) return;
+  var shift = g('pd-shift') ? g('pd-shift').value.toUpperCase() : 'AM';
+  pdCopyToClipboard(preview).then(function () {
+    logActivity('passdown', 'sent', 'Copied & marked ' + shift + ' passdown sent');
+    savePassdownRecord('sent');
+    toast('Copied — marked as sent');
+  }).catch(function () { toast('Copy failed — not marked sent'); });
 }
 function sendPassdownGmail() {
   var shiftEl = g('pd-shift'); var shift = shiftEl ? shiftEl.value.toUpperCase() : 'AM';
