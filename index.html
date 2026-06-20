@@ -833,13 +833,8 @@
               </div>
               <div id="pd-tips-wrap"></div>
               <div id="pd-shift-summary-block" style="margin-bottom:12px;padding:12px 14px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border)">
-                <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Shift Summary <span style="color:var(--red);font-weight:400;font-size:10px;text-transform:none;letter-spacing:0">Required before generating</span></div>
-                <div style="display:flex;gap:6px;margin-bottom:8px" id="pd-tone-btns">
-                  <button id="pd-tone-quiet" class="btn btn-secondary btn-sm" onclick="setPdTone('Quiet')" style="font-size:11px">🌙 Quiet</button>
-                  <button id="pd-tone-normal" class="btn btn-secondary btn-sm" onclick="setPdTone('Normal')" style="font-size:11px">☀️ Normal</button>
-                  <button id="pd-tone-busy" class="btn btn-secondary btn-sm" onclick="setPdTone('Busy')" style="font-size:11px">🔥 Busy</button>
-                </div>
-                <textarea id="pd-summary" rows="2" placeholder="One-line summary — e.g. Busy PM — HVAC escalated in 804, two move-ins completed, one resident complaint resolved." style="width:100%;font-size:12px;resize:none" oninput="pdSaveDraft()"></textarea>
+                <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Shift Summary</div>
+                <textarea id="pd-summary" rows="2" placeholder="One-line summary — e.g. Active PM — Unit 713 moved in, noise complaint in 935 still open, one key overdue." style="width:100%;font-size:12px;resize:none" oninput="pdSaveDraft()"></textarea>
               </div>
               <div id="pd-auto-blocks"></div>
               <div id="pd-free-sections"></div>
@@ -2100,7 +2095,33 @@ function cloneData(obj) {
   try { return JSON.parse(JSON.stringify(obj)); }
   catch (e) { return obj; }
 }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, userPassdowns: {}, supplies: [], activityLog: [], templates: [], parking: [], security: [], propertyConfig: {} }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], security: [], propertyConfig: {} }; }
+
+// ─── SHIFT LOG ───
+function getShiftLog() {
+  if (!currentUser) return [];
+  return ((state.shiftLog || {})[currentUser.id] || []);
+}
+function addShiftEntry(text) {
+  text = (text || '').trim();
+  if (!text || !currentUser) return;
+  if (!state.shiftLog) state.shiftLog = {};
+  if (!state.shiftLog[currentUser.id]) state.shiftLog[currentUser.id] = [];
+  state.shiftLog[currentUser.id].unshift({ text: text, ts: Date.now() });
+  scheduleSave();
+  renderDash();
+}
+function deleteShiftEntry(idx) {
+  if (!currentUser || !state.shiftLog || !state.shiftLog[currentUser.id]) return;
+  state.shiftLog[currentUser.id].splice(idx, 1);
+  scheduleSave();
+  renderDash();
+}
+function clearShiftLog() {
+  if (!currentUser || !state.shiftLog) return;
+  state.shiftLog[currentUser.id] = [];
+  scheduleSave();
+}
 
 // ─── UNDO / REDO ───
 var undoStack = [];
@@ -2713,7 +2734,28 @@ function renderDash() {
     });
     html += '</div></div>';
   }
+  // ── Shift Log scratchpad ──
+  var shiftEntries = getShiftLog();
+  html += '<div class="card" style="margin-top:14px"><div class="card-hdr"><span class="card-title">📋 This Shift</span><span class="card-count" style="color:var(--text3)">' + (shiftEntries.length ? shiftEntries.length + ' note' + (shiftEntries.length > 1 ? 's' : '') : 'quick log') + '</span></div><div class="card-body" style="padding:10px 14px">';
+  html += '<div style="display:flex;gap:6px;margin-bottom:10px"><input type="text" id="shift-log-input" placeholder="Log what happened — press Enter to add" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text1);font-family:inherit;outline:none" onkeydown="if(event.key===\'Enter\'){var v=this.value.trim();if(v){addShiftEntry(v);this.value=\'\';}event.preventDefault();}"><button class="btn btn-primary btn-sm" onclick="var el=g(\'shift-log-input\');var v=el.value.trim();if(v){addShiftEntry(v);el.value=\'\';}el.focus()">Add</button></div>';
+  if (!shiftEntries.length) {
+    html += '<div style="font-size:12px;color:var(--text3);padding:4px 0">Nothing logged yet. Jot things down as they happen — keys made, resident issues, incidents. These auto-fill into your passdown.</div>';
+  } else {
+    shiftEntries.forEach(function(e, i) {
+      var d = new Date(e.ts);
+      var timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      html += '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border2)">'
+        + '<span style="font-size:11px;color:var(--text3);font-family:var(--mono);flex-shrink:0;margin-top:2px;white-space:nowrap">' + timeStr + '</span>'
+        + '<span style="flex:1;font-size:13px;color:var(--text1);line-height:1.4">' + esc(e.text) + '</span>'
+        + '<button onclick="deleteShiftEntry(' + i + ')" style="flex-shrink:0;font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0 2px;line-height:1" title="Remove">✕</button>'
+        + '</div>';
+    });
+  }
+  html += '</div></div>';
+
   g('dash-body').innerHTML = html;
+  // focus shift log input if dashboard is visible
+  setTimeout(function(){ var el = g('shift-log-input'); if (el && curSec === 'dashboard') el.focus(); }, 80);
   initStatCardTilt();
   initDashBgCanvas();
 }
@@ -7034,18 +7076,6 @@ function pdInShift(timeStr, shift) {
   return mins >= 23*60+30 || mins < 7*60+30;                        // Overnight: 11:30pm–7:30am
 }
 
-var _pdTone = '';
-function setPdTone(tone) {
-  _pdTone = tone;
-  ['Quiet','Normal','Busy'].forEach(function(t) {
-    var btn = g('pd-tone-' + t.toLowerCase());
-    if (!btn) return;
-    if (t === tone) { btn.style.background = 'var(--accent)'; btn.style.color = '#fff'; btn.style.borderColor = 'var(--accent)'; }
-    else { btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = ''; }
-  });
-  pdSaveDraft();
-}
-function pdGetTone() { return _pdTone; }
 function pdGetSummary() { var el = g('pd-summary'); return el ? el.value.trim() : ''; }
 
 function pdDraftKey(k) { return k + '_' + (currentUser ? currentUser.id : 'guest'); }
@@ -7057,7 +7087,6 @@ function pdSaveDraft() {
     localStorage.setItem(pdDraftKey('pd_draft_notes'), JSON.stringify(pdNotes));
     var sh = g('pd-shift'); if (sh) localStorage.setItem(pdDraftKey('pd_draft_shift'), sh.value);
     var la = g('pd-lookahead'); if (la) localStorage.setItem(pdDraftKey('pd_draft_lookahead'), la.value);
-    localStorage.setItem(pdDraftKey('pd_draft_tone'), _pdTone);
     var sumEl = g('pd-summary'); if (sumEl) localStorage.setItem(pdDraftKey('pd_draft_summary'), sumEl.value);
   } catch(e) {}
 }
@@ -7068,7 +7097,6 @@ function pdLoadDraft() {
     var s = localStorage.getItem(pdDraftKey('pd_draft_sections')); if (s) { pdSections = JSON.parse(s); if (!pdSections.thisShift) pdSections.thisShift = []; if (!pdSections.policyReminders) pdSections.policyReminders = []; }
     var e = localStorage.getItem(pdDraftKey('pd_draft_excluded')); if (e) pdExcluded = JSON.parse(e);
     var n = localStorage.getItem(pdDraftKey('pd_draft_notes')); if (n) pdNotes = JSON.parse(n);
-    var tone = localStorage.getItem(pdDraftKey('pd_draft_tone')); if (tone) { _pdTone = tone; setTimeout(function(){ setPdTone(tone); }, 50); }
     var sum = localStorage.getItem(pdDraftKey('pd_draft_summary')); if (sum) { var sumEl = g('pd-summary'); if (sumEl) sumEl.value = sum; }
   } catch(e) {}
 }
@@ -7076,10 +7104,8 @@ function pdClearDraft() {
   pdSections = { keysAccess: [], residentMatters: [], thisShift: [], shiftNotes: [], policyReminders: [] };
   pdExcluded = {};
   pdNotes = {};
-  _pdTone = '';
-  ['Quiet','Normal','Busy'].forEach(function(t){ var btn=g('pd-tone-'+t.toLowerCase()); if(btn){btn.style.background='';btn.style.color='';btn.style.borderColor='';} });
   var sumEl = g('pd-summary'); if (sumEl) sumEl.value = '';
-  try { ['pd_draft_date','pd_draft_sections','pd_draft_excluded','pd_draft_notes','pd_draft_shift','pd_draft_lookahead','pd_draft_tone','pd_draft_summary'].forEach(function(k){ localStorage.removeItem(pdDraftKey(k)); }); } catch(e) {}
+  try { ['pd_draft_date','pd_draft_sections','pd_draft_excluded','pd_draft_notes','pd_draft_shift','pd_draft_lookahead','pd_draft_summary'].forEach(function(k){ localStorage.removeItem(pdDraftKey(k)); }); } catch(e) {}
   var pv = g('pd-preview'); if (pv) pv.value = '';
   renderPassdown();
   toast('Draft cleared');
@@ -7664,8 +7690,17 @@ function generatePassdown() {
   var greeting = shift === 'AM' ? 'Good morning' : shift === 'Overnight' ? 'Good evening' : 'Good afternoon';
   var out = 'Subject: ' + subject + '\n\n';
   out += greeting + ' team,\nHere is today\'s passdown with active items and updates from the Front Desk. Please review carefully and reach out if you have any questions.\n';
-  var tone = pdGetTone(); var summary = pdGetSummary();
-  if (tone || summary) { out += '\n— ' + [tone, summary].filter(Boolean).join(' — ') + '\n'; }
+  var summary = pdGetSummary();
+  if (summary) { out += '\n— ' + summary + '\n'; }
+  var shiftLogEntries = getShiftLog();
+  if (shiftLogEntries.length) {
+    out += '\n📋 Shift Notes\n';
+    shiftLogEntries.slice().reverse().forEach(function(e) {
+      var d = new Date(e.ts);
+      var timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      out += '• ' + timeStr + ' — ' + e.text + '\n';
+    });
+  }
 
   var now = Date.now();
   var tmrwG = (function(){ var d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
@@ -7960,6 +7995,8 @@ function copyMarkSent() {
   pdCopyToClipboard(preview).then(function () {
     logActivity('passdown', 'sent', 'Copied & marked ' + shift + ' passdown sent');
     savePassdownRecord('sent');
+    clearShiftLog();
+    renderDash();
     toast('Copied — marked as sent');
   }).catch(function () { toast('Copy failed — not marked sent'); });
 }
@@ -7969,6 +8006,7 @@ function sendPassdownGmail() {
   if (!preview || !preview.trim()) { toast('Generate the passdown first, then send'); return; }
   logActivity('passdown', 'sent', 'Sent ' + shift + ' passdown via Gmail');
   var sentRecord = savePassdownRecord('sent');
+  clearShiftLog(); renderDash();
   var d = new Date(); var dateStr = (d.getMonth()+1)+'.'+d.getDate()+'.'+d.getFullYear();
   var to = encodeURIComponent(getPassdownRecipientString());
   var subject = encodeURIComponent(dateStr + ' ' + shift + ' Front Desk Passdown');
@@ -7985,11 +8023,7 @@ function reviewBeforeSend() {
   var issues = [], passes = [];
   var vagueWords = ['monitor', 'tbd', 'n/a', 'na', 'handled', 'see above', 'nothing', 'none', 'ok', 'okay'];
 
-  // Check 1: shift tone set?
-  if (pdGetTone()) passes.push('Shift tone selected (' + pdGetTone() + ')');
-  else issues.push({ sev: 'warn', msg: 'No shift tone selected — incoming associate has no context for the shift' });
-
-  // Check 2: shift summary written?
+  // Check 1: shift summary written?
   if (pdGetSummary()) passes.push('Shift summary written');
   else issues.push({ sev: 'warn', msg: 'No shift summary — every passdown should open with one line describing the shift' });
 
@@ -8886,7 +8920,7 @@ var GUIDE_DATA = [
     html:'<h4>Welcome to the Front Desk Dashboard</h4><p>This is the Chorus SF Front Desk Hub — your central tool for managing everything that happens at the front desk during your shift. Whether it\'s your first day or you just need a quick refresher, this card covers the basics.</p><h4>What the Dashboard Does</h4><p>The dashboard keeps track of everything happening in the building in real time. Everything you log during your shift feeds directly into your end-of-shift passdown — so the more you log as you go, the less you have to write at the end.</p><h4>Sections at a Glance</h4><ul><li><strong>Dashboard</strong> — live overview of everything active in the building</li><li><strong>Calendar</strong> — all moves, bookings, and tours in one view</li><li><strong>Moves</strong> — move-in and move-out checklists and task tracking</li><li><strong>Key Tracker</strong> — keys issued, returned, and overdue</li><li><strong>Amenity Bookings</strong> — rooftop, party room, service elevator reservations</li><li><strong>Concierge Log</strong> — resident requests and follow-ups</li><li><strong>Incident Log</strong> — security and safety incidents</li><li><strong>Lost &amp; Found</strong> — items logged and claimed</li><li><strong>Resident Profiles</strong> — per-unit profiles and special instructions</li><li><strong>Passdown</strong> — build and send your end-of-shift passdown</li><li><strong>To-Do List</strong> — your personal task list, private to your account</li></ul><div class="guide-tip">💡 Every section feeds the Passdown builder. Log items as they happen and your passdown will mostly build itself by end of shift.</div><h4>Logging In</h4><ul><li>Click your name on the login screen and enter your 4-digit PIN</li><li>No account yet? Ask the Front Desk Lead to set one up before your shift begins</li><li>Forgot your PIN? The Lead can reset it in Settings → Team Accounts</li></ul><h4>Your Role</h4><ul><li><strong>Staff (Associate)</strong> — access to all day-to-day sections. Can check off move tasks but cannot add or edit move entries</li><li><strong>Admin / Lead</strong> — full access including Settings, Team Tracker, and staff visibility controls</li></ul><div class="guide-note">📌 All changes save automatically. No Save button needed for most actions.</div>' },
 
   { id:'g-passdown-how', icon:'📝', title:'How to Use the Passdown Builder', keywords:'passdown builder how to use step by step guide update next step shift summary generate send am pm overnight tone auto block log items',
-    html:'<h4>Overview</h4><p>The Passdown builder auto-fills from what you log during your shift. Your job is to review it, add context, and send it.</p><h4>Step 1 — Log items during your shift</h4><p>Use the right section as things happen — don\'t wait until the end:</p><ul><li>Keys issued → <strong>Key Tracker</strong></li><li>Resident requests → <strong>Concierge Log</strong></li><li>Incidents, noise complaints → <strong>Incident Log</strong></li><li>Amenity setup or follow-up → note in <strong>This Shift</strong> in the builder</li><li>Work order submitted or maintenance issue carrying to next shift → note in <strong>This Shift</strong> in the builder</li></ul><h4>Step 2 — Open the builder</h4><p>Click <strong>Passdown</strong> in the sidebar. Select your shift (AM / PM / Overnight) from the dropdown at the top.</p><h4>Step 3 — Set your shift tone and summary</h4><p>Click <strong>Quiet</strong>, <strong>Normal</strong>, or <strong>Busy</strong>. Then write 1–3 sentences in the Shift Summary field — what happened, who came in, anything the next shift should know the moment they start.</p><h4>Step 4 — Review the auto-blocks</h4><p>The builder pulls in live data automatically — moves, keys, amenities, concierge requests, incidents. For each item:</p><ul><li>Fill in the <strong>Update / Next Step</strong> field with what the incoming shift needs to know or do</li><li>Click <strong>–</strong> to exclude anything that was resolved during your shift</li></ul><div class="guide-note">📌 Incidents and Concierge Requests only appear in the passdown if you add an Update / Next Step note. Leave it blank to exclude them.</div><h4>Step 5 — Generate</h4><p>Click <strong>Generate</strong>. Read the full preview — check that unit numbers and names are correct, every open item has a clear Update / Next Step, and nothing resolved is still listed as active. Fix anything and generate again if needed.</p><h4>Step 6 — Send</h4><p>Click <strong>Review &amp; Send → Send via Gmail →</strong>. Gmail opens with the recipient, subject, and body pre-filled. Add your signature and send.</p><div class="guide-tip">💡 Use <strong>Save Draft</strong> at any point to save your progress. Your draft is tied to your account and stays until you send or clear it.</div><div class="guide-note" style="margin-top:8px;background:rgba(220,38,38,0.06);border-color:rgba(220,38,38,0.2)">⚠️ Your passdown must reflect your shift. Do not copy or reuse another associate\'s passdown. The dashboard logs all passdowns by author and date — if yours matches a previous shift\'s, it is visible to everyone.</div>' },
+    html:'<h4>Overview</h4><p>The Passdown builder auto-fills from what you log during your shift. Your job is to review it, add context, and send it.</p><h4>Step 1 — Log items during your shift</h4><p>Use the right section as things happen — don\'t wait until the end:</p><ul><li>Keys issued → <strong>Key Tracker</strong></li><li>Resident requests → <strong>Concierge Log</strong></li><li>Incidents, noise complaints → <strong>Incident Log</strong></li><li>Amenity setup or follow-up → note in <strong>This Shift</strong> in the builder</li><li>Work order submitted or maintenance issue carrying to next shift → note in <strong>This Shift</strong> in the builder</li></ul><h4>Step 2 — Open the builder</h4><p>Click <strong>Passdown</strong> in the sidebar. Select your shift (AM / PM / Overnight) from the dropdown at the top.</p><h4>Step 3 — Write your shift summary</h4><p>Write 1–3 sentences in the Shift Summary field — what happened, who came in, anything the next shift should know the moment they start.</p><h4>Step 4 — Review the auto-blocks</h4><p>The builder pulls in live data automatically — moves, keys, amenities, concierge requests, incidents. For each item:</p><ul><li>Fill in the <strong>Update / Next Step</strong> field with what the incoming shift needs to know or do</li><li>Click <strong>–</strong> to exclude anything that was resolved during your shift</li></ul><div class="guide-note">📌 Incidents and Concierge Requests only appear in the passdown if you add an Update / Next Step note. Leave it blank to exclude them.</div><h4>Step 5 — Generate</h4><p>Click <strong>Generate</strong>. Read the full preview — check that unit numbers and names are correct, every open item has a clear Update / Next Step, and nothing resolved is still listed as active. Fix anything and generate again if needed.</p><h4>Step 6 — Send</h4><p>Click <strong>Review &amp; Send → Send via Gmail →</strong>. Gmail opens with the recipient, subject, and body pre-filled. Add your signature and send.</p><div class="guide-tip">💡 Use <strong>Save Draft</strong> at any point to save your progress. Your draft is tied to your account and stays until you send or clear it.</div><div class="guide-note" style="margin-top:8px;background:rgba(220,38,38,0.06);border-color:rgba(220,38,38,0.2)">⚠️ Your passdown must reflect your shift. Do not copy or reuse another associate\'s passdown. The dashboard logs all passdowns by author and date — if yours matches a previous shift\'s, it is visible to everyone.</div>' },
 
   { id:'g-dashboard', icon:'📊', title:'Dashboard', keywords:'dashboard home overview stats badges search greeting quick counts active',
     html:'<h4>Overview Cards</h4><p>The dashboard shows live counts of active items across all sections: pending moves, open maintenance, guests checked in, keys out, upcoming amenity bookings, open L&amp;F items, upcoming tours, and open concierge requests. Click any card to jump to that section.</p><h4>Quick Search</h4><p>Type any unit number, resident name, or keyword in the search bar to instantly find matching entries across moves, maintenance, guests, keys, amenities, and more. Click any result to navigate directly to that section.</p><h4>Greeting</h4><p>The greeting uses your logged-in name and adjusts based on the time of day. The date and building name are displayed at the top of the sidebar.</p>' },
@@ -9971,8 +10005,6 @@ function resetPassdownState() {
   pdSections = { keysAccess: [], residentMatters: [], thisShift: [], shiftNotes: [], policyReminders: [] };
   pdExcluded = {};
   pdNotes = {};
-  _pdTone = '';
-  ['Quiet','Normal','Busy'].forEach(function(t){ var btn=g('pd-tone-'+t.toLowerCase()); if(btn){btn.style.background='';btn.style.color='';btn.style.borderColor='';} });
   var sumEl = g('pd-summary'); if (sumEl) sumEl.value = '';
   var pv = g('pd-preview'); if (pv) pv.value = '';
 }
@@ -10549,7 +10581,6 @@ function saveAmenityCloseout(id, note) {
 }
 
 function checkPassdownReady() {
-  if (!pdGetTone()) { toast('Pick a shift tone first — Quiet, Normal, or Busy'); var el = g('pd-shift-summary-block'); if(el){el.style.outline='2px solid var(--red)';setTimeout(function(){el.style.outline='';},2000);} return; }
   if (!pdGetSummary()) { toast('Add a one-line shift summary before generating'); var el2 = g('pd-summary'); if(el2){el2.focus();el2.style.borderColor='var(--red)';setTimeout(function(){el2.style.borderColor='';},2000);} return; }
   var isStaff = currentUser && currentUser.role === 'staff';
   if (isStaff && !(pdSections.shiftNotes && pdSections.shiftNotes.length)) {
