@@ -632,7 +632,7 @@
     <div class="nav-item" data-sec="moves" onclick="nav(this)"><span class="icon" data-icon="truck"></span><span class="nav-txt">Move Ins / Outs</span><span class="badge" id="badge-moves"></span></div>
     <div class="nav-item" data-sec="walkthrough" onclick="nav(this)"><span class="icon" data-icon="shield"></span><span class="nav-txt">Security Patrols</span></div>
     <div class="nav-item" data-sec="maintenance" onclick="nav(this)"><span class="icon" data-icon="wrench"></span><span class="nav-txt">Maintenance</span><span class="badge" id="badge-maint"></span></div>
-    <div class="nav-item" data-sec="security" onclick="nav(this)"><span class="icon" data-icon="alert-triangle"></span><span class="nav-txt">Incident Log</span><span class="badge" id="badge-security"></span></div>
+    <div class="nav-item" data-sec="logbook" onclick="nav(this)"><span class="icon" data-icon="book"></span><span class="nav-txt">Logbook</span><span class="badge" id="badge-logbook"></span></div>
     <div class="nav-item" data-sec="supplies" onclick="nav(this)"><span class="icon" data-icon="package"></span><span class="nav-txt">Supplies</span><span class="badge" id="badge-supplies"></span></div>
   </div>
   <div class="nav-group">
@@ -642,7 +642,6 @@
     <div class="nav-item" data-sec="amenities" onclick="nav(this)"><span class="icon" data-icon="star"></span><span class="nav-txt">Amenity Bookings</span><span class="badge" id="badge-amenities"></span></div>
     <div class="nav-item" data-sec="laf" onclick="nav(this)"><span class="icon" data-icon="search"></span><span class="nav-txt">Lost &amp; Found</span><span class="badge" id="badge-laf"></span></div>
     <div class="nav-item" data-sec="tours" onclick="nav(this)"><span class="icon" data-icon="mappin"></span><span class="nav-txt">Tour Log</span><span class="badge" id="badge-tours"></span></div>
-    <div class="nav-item" data-sec="concierge" onclick="nav(this)"><span class="icon" data-icon="bell"></span><span class="nav-txt">Concierge Log</span><span class="badge" id="badge-concierge"></span></div>
     <div class="nav-item" data-sec="residents" onclick="nav(this)"><span class="icon" data-icon="user"></span><span class="nav-txt">Unit Tracker</span></div>
     <div class="nav-item" data-sec="templates" onclick="nav(this)"><span class="icon" data-icon="message-square"></span><span class="nav-txt">Message Templates</span></div>
   </div>
@@ -782,16 +781,32 @@
       <div style="margin:8px 0"><input type="text" id="laf-search" placeholder="&#128269; Search items, location, found by…" oninput="searchLAF(this.value)" style="width:100%;max-width:320px;font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text)"></div>
       <div class="card"><div class="card-hdr"><span class="card-title">Lost &amp; Found Log</span><span class="card-count" id="laf-count">0 items</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddLAF()">+ Log Item</button></div><div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Location</th><th>Description</th><th>Condition</th><th>Found By</th><th>Status</th><th></th></tr></thead><tbody id="laf-tbody"></tbody></table></div></div>
     </div>
-    <div class="section" id="section-concierge">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterConcierge('all',this)">All</div><div class="sub-tab" onclick="filterConcierge('open',this)">Open</div><div class="sub-tab" onclick="filterConcierge('completed',this)">Completed</div></div>
-      <div class="stat-grid" id="concierge-stats"></div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Concierge Request Log</span><span class="card-count" id="concierge-count">0 requests</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddConcierge()">+ Log Request</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident</th><th>Request Type</th><th>Details</th><th>Next Action</th><th>Status</th><th>Handled By</th><th>Date</th><th></th></tr></thead><tbody id="concierge-tbody"></tbody></table></div></div>
+    <div class="section" id="section-logbook">
+      <div class="sub-tabs">
+        <div class="sub-tab active" onclick="filterLogbook('all',this)">All</div>
+        <div class="sub-tab" onclick="filterLogbook('open',this)">Open</div>
+        <div class="sub-tab" onclick="filterLogbook('in-progress',this)">In Progress</div>
+        <div class="sub-tab" onclick="filterLogbook('resolved',this)">Resolved</div>
+      </div>
+      <div class="stat-grid" id="logbook-stats"></div>
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">Logbook</span>
+          <span class="card-count" id="logbook-count">0 entries</span>
+          <button class="btn btn-primary btn-sm ml-auto" onclick="openAddLogbook()">+ Log Entry</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr><th>Date / Time</th><th>Type</th><th>Unit / Resident</th><th>Details</th><th>Next Action</th><th>Status</th><th>Handled By</th><th></th></tr>
+            </thead>
+            <tbody id="logbook-tbody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
-    <div class="section" id="section-security">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterSecurity('all',this)">All</div><div class="sub-tab" onclick="filterSecurity('today',this)">Today</div><div class="sub-tab" onclick="filterSecurity('monitoring',this)">Monitoring</div></div>
-      <div class="stat-grid" id="security-stats"></div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Incident Log</span><span class="card-count" id="security-count">0 incidents</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddSecurity()">+ Log Incident</button></div><div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Location</th><th>Handled By</th><th>Status</th><th>Notes</th><th></th></tr></thead><tbody id="security-tbody"></tbody></table></div></div>
-    </div>
+    <div class="section" id="section-concierge" style="display:none"></div>
+    <div class="section" id="section-security" style="display:none"></div>
     <div class="section" id="section-supplies">
       <div id="supplies-body"></div>
     </div>
@@ -1304,12 +1319,18 @@
   </div>
 </div></div>
 
-<div class="modal-ov" id="modal-security"><div class="modal" style="max-width:500px">
-  <div class="modal-hdr"><span class="modal-title" id="modal-security-title">Log Incident</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-security')">&#x2715;</button></div>
+<div class="modal-ov" id="modal-logbook"><div class="modal" style="max-width:500px">
+  <div class="modal-hdr"><span class="modal-title" id="modal-logbook-title">Log Entry</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-logbook')">&#x2715;</button></div>
   <div class="modal-bdy">
-    <div class="fr"><div class="fg"><label>Date</label><input id="sec-date" type="date"></div><div class="fg"><label>Time</label><input id="sec-time" type="time"></div></div>
-    <div class="fg"><label>Incident Type</label>
-      <select id="sec-type" onchange="secTypeChange()">
+    <div class="fr"><div class="fg"><label>Date</label><input id="lb-date" type="date"></div><div class="fg"><label>Time <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="lb-time" type="time"></div></div>
+    <div class="fg"><label>Type</label>
+      <select id="lb-type" onchange="lbTypeChange()">
+        <optgroup label="Resident Requests">
+          <option>Dry Cleaning</option>
+          <option>Package Hold</option>
+          <option>Parking Credentials</option>
+          <option>Resident Concern</option>
+        </optgroup>
         <optgroup label="Security">
           <option value="Unhoused individual — removed by staff">Unhoused — Removed by Staff</option>
           <option value="Unhoused individual — security called">Unhoused — Security Called</option>
@@ -1336,14 +1357,25 @@
         <option value="Other">Other</option>
       </select>
     </div>
-    <div id="sec-other-wrap" style="display:none"><div class="fg"><label>Describe Incident Type</label><input id="sec-other" type="text" placeholder="Describe the incident type"></div></div>
-    <div class="fr"><div class="fg"><label>Location</label><input id="sec-location" type="text" placeholder="e.g. Lobby, Garage, Rooftop"></div>
-    <div class="fg"><label>Handled By</label><select id="sec-handled"><option value="Team member">Team Member</option><option value="Team member + security">Team + Security</option><option value="Security called">Security Called</option><option value="SFPD called">SFPD Called</option><option value="Team member + SFPD">Team + SFPD</option></select></div></div>
-    <div class="fr"><div class="fg"><label>Unit # <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="sec-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Status</label><select id="sec-status"><option value="resolved">Resolved</option><option value="monitoring">Monitoring</option></select></div></div>
-    <div class="fg"><label>Notes</label><textarea id="sec-notes" rows="3" placeholder="Describe what happened and how it was handled..."></textarea></div>
+    <div id="lb-other-wrap" style="display:none"><div class="fg"><label>Describe type</label><input id="lb-other" type="text" placeholder="Describe the type"></div></div>
+    <div class="fr"><div class="fg"><label>Unit # <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="lb-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Resident <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="lb-resident" type="text"></div></div>
+    <div class="fg" id="lb-location-wrap"><label>Location <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="lb-location" type="text" placeholder="e.g. Lobby, Rooftop, Garage"></div>
+    <div class="fg"><label>Details / Notes</label><textarea id="lb-notes" rows="3" placeholder="Describe what happened or what was requested..."></textarea></div>
+    <div class="fg"><label>Next Action <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="lb-nextaction" type="text" placeholder="e.g. Follow up with resident by 3pm, awaiting Ian&#x27;s reply..."></div>
+    <div class="fr">
+      <div class="fg"><label>Status</label>
+        <select id="lb-status">
+          <option value="open" title="Just logged, no action taken yet">Open</option>
+          <option value="in-progress" title="Being handled; waiting on another party or follow-up pending">In Progress</option>
+          <option value="resolved" title="Fully closed; resident updated, no further action needed">Resolved</option>
+        </select>
+      </div>
+      <div class="fg"><label>Handled By</label><input id="lb-handled" type="text" placeholder="Staff name"></div>
+    </div>
   </div>
-  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-security')">Cancel</button><button class="btn btn-primary" id="modal-security-savebtn" onclick="saveSecurity()">Log Incident</button></div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-logbook')">Cancel</button><button class="btn btn-primary" id="modal-logbook-savebtn" onclick="saveLogbook()">Log Entry</button></div>
 </div></div>
+<div class="modal-ov" id="modal-security" style="display:none"></div>
 
 <div class="modal-ov" id="modal-parking"><div class="modal" style="max-width:520px">
   <div class="modal-hdr"><span class="modal-title" id="modal-parking-title">Add Parking Credential</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-parking')">&#x2715;</button></div>
@@ -1439,17 +1471,7 @@
 </div></div>
 
 
-<div class="modal-ov" id="modal-concierge"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="modal-concierge-title">Log Concierge Request</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-concierge')">&#x2715;</button></div>
-  <div class="modal-bdy">
-    <div class="fr"><div class="fg"><label>Unit #</label><input id="cr-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Resident Name</label><input id="cr-resident" type="text"></div></div>
-    <div class="fg"><label>Request Type</label><select id="cr-type"><option value="Dry Cleaning">Dry Cleaning</option><option value="Package Hold">Package Hold</option><option value="Parking Credentials">Parking Credentials</option><option value="Other">Other</option></select></div>
-    <div class="fg"><label>Details / Notes</label><textarea id="cr-notes" rows="3" placeholder="Describe the request..."></textarea></div>
-    <div class="fg"><label>➤ Next Action</label><input id="cr-nextaction" type="text" placeholder="e.g. Call parking vendor, follow up Fri, awaiting resident reply..."></div>
-    <div class="fr"><div class="fg"><label>Status</label><select id="cr-status"><option value="open">Open</option><option value="completed">Completed</option></select></div><div class="fg"><label>Handled By</label><input id="cr-handled" type="text" placeholder="Staff name"></div></div>
-  </div>
-  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-concierge')">Cancel</button><button class="btn btn-primary" id="modal-concierge-savebtn" onclick="saveConcierge()">Log Request</button></div>
-</div></div>
+<div class="modal-ov" id="modal-concierge" style="display:none"></div>
 
 
 
@@ -2095,7 +2117,7 @@ function cloneData(obj) {
   try { return JSON.parse(JSON.stringify(obj)); }
   catch (e) { return obj; }
 }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], security: [], propertyConfig: {} }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], security: [], logbook: [], propertyConfig: {} }; }
 
 // ─── SHIFT LOG ───
 function getShiftLog() {
@@ -2306,7 +2328,7 @@ function renderActivityLog() {
   (state.accounts || []).forEach(function(a) { userOpts += '<option value="' + a.id + '"' + (filterUser === a.id ? ' selected' : '') + '>' + a.name + '</option>'; });
 
   var secOpts = '<option value="">All Sections</option>';
-  var secs = ['moves','maintenance','guests','keys','amenities','tours','walkthrough','laf','passdown','concierge','residents','security','supplies','todos','units','parking','settings','activity','session'];
+  var secs = ['moves','maintenance','guests','keys','amenities','tours','walkthrough','laf','passdown','logbook','residents','supplies','todos','units','parking','settings','activity','session'];
   secs.forEach(function(s) { secOpts += '<option value="' + s + '"' + (filterSec === s ? ' selected' : '') + '>' + (SEC_TITLES[s] || s) + '</option>'; });
 
   var html = '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px">'
@@ -2361,7 +2383,7 @@ function openMobSidebar() { g('sidebar').classList.add('mob-open'); g('sb-ov').s
 function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov').style.display = 'none'; }
 
 // ─── NAV ───
-var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Unit Tracker', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', parking: 'Parking Credentials', security: 'Security Incidents', session: 'Login / Session' };
+var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Unit Tracker', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', parking: 'Parking Credentials', security: 'Security Incidents', session: 'Login / Session', logbook: 'Logbook' };
 var patrolFilter = 'amenity';
 var SEC_ACTIONS = {
   moves: '<button class="btn btn-secondary btn-sm" onclick="openLetterImport()">&#128231; Import Letter</button> <button class="btn btn-secondary btn-sm" onclick="openReconcile()">&#128269; Reconcile</button> <button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
@@ -2379,7 +2401,7 @@ var SEC_ACTIONS = {
   templates: '<button class="btn btn-primary btn-sm" onclick="openAddTemplate()">+ Add Template</button>'
 };
 var curSec = 'dashboard';
-var SEC_HELP = { passdown: 'g-passdown', concierge: 'g-concierge', moves: 'g-moves', keys: 'g-keys' };
+var SEC_HELP = { passdown: 'g-passdown', logbook: 'g-logbook', moves: 'g-moves', keys: 'g-keys' };
 var STAFF_NO_ADD = ['moves', 'templates'];
 function getSecActions(sec) {
   var isStaff = currentUser && currentUser.role === 'staff';
@@ -2420,7 +2442,7 @@ function mobNav(item) {
   curSec = sec; renderSection(sec);
 }
 function renderSection(sec) {
-  var map = { dashboard: renderDash, moves: renderMoves, maintenance: renderMaint, guests: renderGuests, keys: renderKeysSection, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, templates: renderTemplates, guide: renderGuide, security: renderSecurity, supplies: renderSupplies, activity: renderActivityLog, parking: renderParking };
+  var map = { dashboard: renderDash, moves: renderMoves, maintenance: renderMaint, guests: renderGuests, keys: renderKeysSection, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, templates: renderTemplates, guide: renderGuide, security: renderSecurity, supplies: renderSupplies, activity: renderActivityLog, parking: renderParking, logbook: renderLogbook };
   if (map[sec]) map[sec]();
 }
 function renderAll() { renderSection(curSec); updateBadges(); }
@@ -2483,12 +2505,13 @@ async function loadTestData() {
   // Checked in PM, still in
   state.guests.push({ id: uid(), name: 'Derek Moss', unit: '302', host: 'Armando Vega', type: 'Guest', status: 'in', notes: 'Dropped off a package for resident. Resident came down to escort.', addedBy: pmBy, createdAt: now - 3600000*2 });
 
-  // ── CONCIERGE ────────────────────────────────────────────────────────────
-  if (!state.concierge) state.concierge = [];
-  // AM request, still open
-  state.concierge.push({ id: uid(), unit: '302', resident: 'Armando Vega', type: 'Dry Cleaning Coordination', notes: 'Resident left 2 suits for pickup — needs to be retrieved from unit and given to courier at 4pm.', status: 'open', handledBy: 'Front Desk', addedBy: amBy, createdAt: now - 3600000*6 });
-  // PM request, in progress
-  state.concierge.push({ id: uid(), unit: '509', resident: 'Priya Nair', type: 'Package Holding', notes: 'Large delivery expected from Crate & Barrel. Resident asked to hold in storage and text when arrived.', status: 'open', handledBy: 'Front Desk', addedBy: pmBy, createdAt: now - 3600000*1 });
+  // ── LOGBOOK ──────────────────────────────────────────────────────────────
+  if (!state.logbook) state.logbook = [];
+  state.logbook.push({ id: uid(), category: 'request', type: 'Dry Cleaning', unit: '302', resident: 'Armando Vega', location: '', notes: 'Resident left 2 suits for pickup — needs to be retrieved from unit and given to courier at 4pm.', status: 'open', handledBy: 'Front Desk', addedBy: amBy, createdAt: now - 3600000*6, nextAction: 'Coordinate with courier — suits need to be at front desk by 3:30pm.', log: [] });
+  state.logbook.push({ id: uid(), category: 'request', type: 'Package Hold', unit: '509', resident: 'Priya Nair', location: '', notes: 'Large delivery expected from Crate & Barrel. Resident asked to hold in storage and text when arrived.', status: 'open', handledBy: 'Front Desk', addedBy: pmBy, createdAt: now - 3600000*1, nextAction: '', log: [] });
+  state.logbook.push({ id: uid(), category: 'security', type: 'Unhoused individual — removed by staff', unit: '', resident: '', location: 'Main lobby / front entrance', notes: 'Individual entered lobby and refused to leave. Spoke calmly — escorted to exit without incident. Did not return. No police contact needed.', status: 'resolved', handledBy: amBy, addedBy: amBy, createdAt: now - 3600000*9, nextAction: '', log: [] });
+  state.logbook.push({ id: uid(), category: 'medical', type: 'Medical emergency — first aid / staff handled', unit: '', resident: '', location: 'Gym — 2nd floor', notes: 'Resident reported dizziness after workout. Staff provided water and seated resident until recovered. Declined further assistance. Family notified by resident.', status: 'resolved', handledBy: amBy + ' + Building Staff', addedBy: amBy, createdAt: now - 3600000*6, nextAction: '', log: [] });
+  state.logbook.push({ id: uid(), category: 'security', type: 'Noise complaint escalation', unit: '804', resident: '', location: 'Unit 804', notes: 'Two neighbors called down about loud music. Staff knocked — resident complied. Second complaint 30 min later. Monitoring; will escalate to manager if another complaint received.', status: 'in-progress', handledBy: pmBy, addedBy: pmBy, createdAt: now - 3600000*1.5, nextAction: 'Continue monitoring — will escalate to Ian if third complaint received.', log: [] });
 
   // ── TOURS ────────────────────────────────────────────────────────────────
   if (!state.tours) state.tours = [];
@@ -2511,14 +2534,8 @@ async function loadTestData() {
   state.todos.push({ id: uid(), text: 'Follow up with Unit 402 re: HVAC tech appointment tomorrow', priority: 'medium', done: false, note: 'Resident: Maria Santos. Tech window 10am–12pm.', addedBy: pmBy, createdAt: now - 3600000*2 });
   state.todos.push({ id: uid(), text: 'Restock front desk key card supply — getting low', priority: 'low', done: false, note: 'Under 10 blank cards remaining', addedBy: nocBy, createdAt: now - 3600000*12 });
 
-  // ── INCIDENT LOG ─────────────────────────────────────────────────────────
+  // ── INCIDENT LOG (legacy — no new entries; demo data is in logbook) ──────
   if (!state.security) state.security = [];
-  // AM: unhoused, resolved
-  state.security.push({ id: uid(), date: t, time: '08:15', type: 'Unhoused — Removed by Staff', location: 'Main lobby / front entrance', handledBy: amBy, status: 'resolved', notes: 'Individual entered lobby and refused to leave. Spoke calmly — escorted to exit without incident. Did not return. No police contact needed.', addedBy: amBy, createdAt: now - 3600000*9 });
-  // AM: medical, resolved
-  state.security.push({ id: uid(), date: t, time: '11:20', type: 'Medical Emergency — First Aid / Staff', location: 'Gym — 2nd floor', handledBy: amBy + ' + Building Staff', status: 'resolved', notes: 'Resident reported dizziness after workout. Staff provided water and seated resident until recovered. Declined further assistance. Family notified by resident.', addedBy: amBy, createdAt: now - 3600000*6 });
-  // PM: noise complaint, monitoring — shows in badge + passdown
-  state.security.push({ id: uid(), date: t, time: '17:45', type: 'Noise Complaint Escalation', location: 'Unit 804', handledBy: pmBy, status: 'monitoring', notes: 'Two neighbors called down about loud music. Staff knocked — resident complied. Second complaint 30 min later. Monitoring; will escalate to manager if another complaint received.', addedBy: pmBy, createdAt: now - 3600000*1.5 });
 
   scheduleSave(); renderAll(); toast('Test data loaded — go try the passdown builder!');
 }
@@ -2556,7 +2573,7 @@ function openModal(id) {
 }
 function closeModal(id) {
   g(id).classList.remove('open');
-  if (curSec === 'passdown' && ['modal-maint','modal-concierge','modal-key','modal-amenity','modal-security'].indexOf(id) !== -1) {
+  if (curSec === 'passdown' && ['modal-maint','modal-logbook','modal-key','modal-amenity'].indexOf(id) !== -1) {
     setTimeout(function(){ renderPdAutoBlocks(currentUser && currentUser.role === 'admin'); }, 150);
   }
 }
@@ -2575,14 +2592,14 @@ function updateBadges() {
   var lN = (state.laf || []).filter(function (i) { return !i.claimedAt; }).length;
   var naN = (state.moves || []).filter(function (m) { return !m.archivedAt && !m.apptDate && !m.apptTbd && m.date >= today(); }).length;
   setBadge('badge-needs-appt', naN);
-  var crN = (state.concierge || []).filter(function (c) { return c.status === 'open'; }).length;
-  var secN = (state.security||[]).filter(function(s){ return s.date===today() || s.status==='monitoring'; }).length;
+  var lbAll = (state.logbook||[]).concat((state.concierge||[]).map(function(c){ return Object.assign({},c,{status:c.status==='completed'?'resolved':c.status}); })).concat((state.security||[]).map(function(s){ return Object.assign({},s,{status:s.status==='monitoring'?'in-progress':s.status}); }));
+  var lbN = lbAll.filter(function(e){ return e.status==='open'||e.status==='in-progress'; }).length;
   var supLow = (state.supplies || []).filter(function(s){ return s.lowAt != null && s.qty <= s.lowAt; }).length;
   var supOut = (state.supplies || []).filter(function(s){ return s.qty === 0; }).length;
   setBadge('badge-moves', mN); setBadge('badge-maint', mtN);
   setBadge('badge-guests', gN); setBadge('badge-keys', kN); setBadge('badge-amenities', aN);
   setBadge('badge-tours', trN); setBadge('badge-todos', tdN); setBadge('badge-laf', lN);
-  setBadge('badge-concierge', crN); setBadge('badge-security', secN); setBadge('badge-supplies', supLow);
+  setBadge('badge-logbook', lbN); setBadge('badge-supplies', supLow);
   var supBadge = g('badge-supplies'); if (supBadge) supBadge.classList.toggle('badge-red', supOut > 0);
   setMBadge('mb-moves', mN); setMBadge('mb-todos', tdN); setMBadge('mb-keys', kN);
 }
@@ -2602,6 +2619,8 @@ function renderDash() {
   var weekM = active.filter(function (m) { return m.date >= t && m.date <= wEnd; });
   var openMt = (state.maintenance || []).filter(function (m) { return m.status !== 'resolved'; });
   var openConcierge = (state.concierge || []).filter(function (c) { return c.status === 'open'; });
+  var lbAllDash = (state.logbook||[]).concat((state.concierge||[]).map(function(c){ return Object.assign({},c,{status:c.status==='completed'?'resolved':c.status}); })).concat((state.security||[]).map(function(s){ return Object.assign({},s,{status:s.status==='monitoring'?'in-progress':s.status}); }));
+  var openLogbook = lbAllDash.filter(function(e){ return e.status==='open'||e.status==='in-progress'; });
   var issuedK = (state.keys || []).filter(function (k) { return k.status === 'issued'; });
   var pendTd = getCurrentTodos().filter(function (t2) { return !t2.done; });
   var unclLAF = (state.laf || []).filter(function (i) { return !i.claimedAt; });
@@ -2625,7 +2644,7 @@ function renderDash() {
   html += '<div class="stat-grid">';
   html += '<div class="stat-card stat-clickable" onclick="navToMoves(\'today\')"><div class="stat-num">' + todayM.length + '</div><div class="stat-lbl">Moves Today</div></div>';
   html += '<div class="stat-card stat-clickable" onclick="navToMoves(\'all\')"><div class="stat-num">' + weekM.length + '</div><div class="stat-lbl">Next 7 Days</div></div>';
-  html += '<div class="stat-card stat-clickable ' + (openConcierge.length > 0 ? 'accent' : '') + '" onclick="navToSec(\'concierge\')"><div class="stat-num">' + openConcierge.length + '</div><div class="stat-lbl">Open Requests</div></div>';
+  html += '<div class="stat-card stat-clickable ' + (openLogbook.length > 0 ? 'accent' : '') + '" onclick="navToSec(\'logbook\')"><div class="stat-num">' + openLogbook.length + '</div><div class="stat-lbl">Open Logbook</div></div>';
   html += '<div class="stat-card stat-clickable ' + (openMt.length > 0 ? 'red' : '') + '" onclick="navToSec(\'maintenance\')"><div class="stat-num">' + openMt.length + '</div><div class="stat-lbl">Open Maintenance</div></div>';
   html += '<div class="stat-card stat-clickable ' + (issuedK.length > 0 ? 'accent' : '') + '" onclick="navToSec(\'keys\')"><div class="stat-num">' + issuedK.length + '</div><div class="stat-lbl">Keys Out</div></div>';
   html += '<div class="stat-card stat-clickable" onclick="navToSec(\'todos\')"><div class="stat-num">' + pendTd.length + '</div><div class="stat-lbl">Pending To-Dos</div></div>';
@@ -4148,6 +4167,249 @@ function escalateSecurityToMaint(id) {
   logActivity('security', 'edit', 'Escalated security incident to maintenance — ' + s.type + ' · ' + s.location);
   scheduleSave(); renderMaint(); renderSecurity(); updateBadges(); renderDash();
   toast('Maintenance issue created from security incident');
+}
+
+// ─── LOGBOOK ───
+var logbookFilter = 'all', editingLogbookId = null;
+
+function getCategoryFromType(type) {
+  var secTypes = ['Unhoused individual — removed by staff','Unhoused individual — security called','Unhoused individual — SFPD called','Unauthorized access','Disturbance / altercation','Suspicious activity','Noise complaint escalation','Trespassing'];
+  var propTypes = ['Missing package','Package theft suspected','Footage review requested','Property damage','Elevator issue'];
+  var medTypes = ['Medical emergency — 911 called','Medical emergency — first aid / staff handled','Slip / fall','Resident welfare check'];
+  if (type === 'Resident Concern') return 'concern';
+  if (secTypes.indexOf(type) !== -1) return 'security';
+  if (propTypes.indexOf(type) !== -1) return 'property';
+  if (medTypes.indexOf(type) !== -1) return 'medical';
+  if (type === 'Other') return 'other';
+  return 'request';
+}
+
+function lbTypeChange() { var v = g('lb-type') ? g('lb-type').value : ''; var w = g('lb-other-wrap'); if (w) w.style.display = v === 'Other' ? '' : 'none'; }
+
+function filterLogbook(f, item) {
+  logbookFilter = f;
+  document.querySelectorAll('#section-logbook .sub-tab').forEach(function(t){ t.classList.remove('active'); });
+  item.classList.add('active');
+  renderLogbook();
+}
+
+function openAddLogbook() {
+  editingLogbookId = null;
+  ['lb-unit','lb-resident','lb-location','lb-notes','lb-nextaction','lb-handled'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  var dateEl = g('lb-date'); if (dateEl) dateEl.value = today();
+  var now2 = new Date(); var timeEl = g('lb-time'); if (timeEl) timeEl.value = ('0'+now2.getHours()).slice(-2)+':'+('0'+now2.getMinutes()).slice(-2);
+  var typeEl = g('lb-type'); if (typeEl) typeEl.value = 'Dry Cleaning';
+  var statEl = g('lb-status'); if (statEl) statEl.value = 'open';
+  var hEl = g('lb-handled'); if (hEl && currentUser) hEl.value = currentUser.name;
+  lbTypeChange();
+  setModalMode('modal-logbook-title','modal-logbook-savebtn','Log Entry','Log Entry');
+  openModal('modal-logbook');
+}
+
+function openEditLogbook(id) {
+  var e = getAllLogbookEntries().find(function(x){ return x.id===id; }); if (!e) return;
+  // Only allow editing native logbook entries
+  var native = (state.logbook||[]).find(function(x){ return x.id===id; });
+  if (!native) { toast('Legacy entries cannot be edited here'); return; }
+  editingLogbookId = id;
+  var dateEl = g('lb-date'); if (dateEl) dateEl.value = e.createdAt ? new Date(e.createdAt).toISOString().split('T')[0] : today();
+  var timeEl = g('lb-time'); if (timeEl) timeEl.value = e.time || '';
+  var typeEl = g('lb-type'); if (typeEl) typeEl.value = e.type || 'Dry Cleaning';
+  var otherEl = g('lb-other'); if (otherEl) otherEl.value = '';
+  lbTypeChange();
+  var uEl = g('lb-unit'); if (uEl) uEl.value = e.unit || '';
+  var rEl = g('lb-resident'); if (rEl) rEl.value = e.resident || '';
+  var lEl = g('lb-location'); if (lEl) lEl.value = e.location || '';
+  var nEl = g('lb-notes'); if (nEl) nEl.value = e.notes || '';
+  var naEl = g('lb-nextaction'); if (naEl) naEl.value = e.nextAction || '';
+  var sEl = g('lb-status'); if (sEl) sEl.value = e.status || 'open';
+  var hEl = g('lb-handled'); if (hEl) hEl.value = e.handledBy || '';
+  setModalMode('modal-logbook-title','modal-logbook-savebtn','Edit Entry','Save Changes');
+  openModal('modal-logbook');
+}
+
+function saveLogbook() {
+  var typeEl = g('lb-type'); if (!typeEl) return;
+  var typeVal = typeEl.value;
+  var type = typeVal === 'Other' ? (g('lb-other') ? g('lb-other').value.trim() || 'Other' : 'Other') : typeVal;
+  if (!type) { toast('Select a type'); return; }
+  var now2 = Date.now();
+  var by = currentUser ? currentUser.name : '';
+  var unit = g('lb-unit') ? g('lb-unit').value.trim() : '';
+  var resident = g('lb-resident') ? g('lb-resident').value.trim() : '';
+  var location = g('lb-location') ? g('lb-location').value.trim() : '';
+  var notes = g('lb-notes') ? g('lb-notes').value.trim() : '';
+  var nextAction = g('lb-nextaction') ? g('lb-nextaction').value.trim() : '';
+  var status = g('lb-status') ? g('lb-status').value : 'open';
+  var handledBy = g('lb-handled') ? g('lb-handled').value.trim() : '';
+  var category = getCategoryFromType(type);
+  var dateVal = g('lb-date') ? g('lb-date').value : today();
+  var timeVal = g('lb-time') ? g('lb-time').value : '';
+  var createdAt = dateVal ? (new Date(dateVal + (timeVal ? 'T' + timeVal : 'T12:00')).getTime() || now2) : now2;
+  if (editingLogbookId) {
+    var entry = (state.logbook||[]).find(function(x){ return x.id===editingLogbookId; }); if (!entry) return;
+    var _before = Object.assign({}, entry);
+    entry.type = type; entry.category = category; entry.unit = unit; entry.resident = resident;
+    entry.location = location; entry.notes = notes; entry.nextAction = nextAction;
+    entry.status = status; entry.handledBy = handledBy; entry.time = timeVal;
+    pushUndo({ sec: 'logbook', type: 'EDIT', id: entry.id, before: _before, after: Object.assign({}, entry), label: 'logbook edit — ' + type });
+    logActivity('logbook', 'edit', 'Updated logbook entry — ' + type);
+    editingLogbookId = null; scheduleSave(); closeModal('modal-logbook'); renderLogbook(); updateBadges(); toast('Entry updated'); return;
+  }
+  var newEntry = { id: uid(), category: category, type: type, unit: unit, resident: resident, location: location, notes: notes, nextAction: nextAction, status: status, handledBy: handledBy, addedBy: by, createdAt: createdAt, time: timeVal, log: notes ? [{ ts: now2, by: by, note: notes }] : [] };
+  if (!state.logbook) state.logbook = [];
+  state.logbook.push(newEntry);
+  pushUndo({ sec: 'logbook', type: 'ADD', id: newEntry.id, data: Object.assign({}, newEntry), label: 'add logbook — ' + type });
+  logActivity('logbook', 'create', 'Logged entry — ' + type);
+  scheduleSave(); closeModal('modal-logbook'); renderLogbook(); updateBadges(); renderDash(); toast('Entry logged');
+}
+
+function updateLogbookStatus(id, val) {
+  var e = (state.logbook||[]).find(function(x){ return x.id===id; });
+  if (e) { var _b = { status: e.status }; e.status = val; logActivity('logbook','edit','Logbook status → '+val+' — '+e.type); pushUndo({ sec:'logbook', type:'EDIT', id:e.id, before:_b, after:{status:val}, label:'logbook status → '+val }); scheduleSave(); renderLogbook(); updateBadges(); renderDash(); }
+}
+
+function updateLogbookNextAction(id, val) {
+  var e = (state.logbook||[]).find(function(x){ return x.id===id; });
+  if (e) { e.nextAction = val.trim(); scheduleSave(); }
+}
+
+function deleteLogbook(id) {
+  if (!confirm('Delete this entry?')) return;
+  var ex = (state.logbook||[]).find(function(x){ return x.id===id; });
+  if (ex) pushUndo({ sec:'logbook', type:'DELETE', id:id, data:Object.assign({},ex), label:'delete logbook — '+ex.type });
+  logActivity('logbook','delete','Deleted logbook entry'+(ex?' — '+ex.type:''));
+  state.logbook = (state.logbook||[]).filter(function(x){ return x.id!==id; });
+  scheduleSave(); renderLogbook(); updateBadges(); renderDash(); toast('Deleted');
+}
+
+function addLogbookLog(id, note) {
+  note = (note||'').trim(); if (!note) { toast('Enter a note'); return; }
+  var e = (state.logbook||[]).find(function(x){ return x.id===id; });
+  if (!e) return;
+  if (!e.log) e.log = [];
+  e.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: note });
+  scheduleSave(); renderLogbook(); toast('Update logged');
+}
+
+function toggleLogbookLog(id) {
+  var row = g('logbook-log-' + id); if (!row) return;
+  row.style.display = row.style.display === 'none' ? '' : 'none';
+}
+
+function getAllLogbookEntries() {
+  var native = (state.logbook||[]);
+  var fromConcierge = (state.concierge||[]).map(function(c){ return Object.assign({}, c, { category: 'request', location: '', status: c.status==='completed'?'resolved':c.status, createdAt: c.createdAt||Date.now() }); });
+  var fromSecurity = (state.security||[]).map(function(s){ return Object.assign({}, s, { category: 'security', unit: s.unit||'', resident: '', createdAt: s.createdAt||Date.now(), status: s.status==='monitoring'?'in-progress':s.status }); });
+  return native.concat(fromConcierge).concat(fromSecurity);
+}
+
+function renderLogbook() {
+  var catColors = {
+    request:  { bg: 'rgba(59,130,246,0.1)',  color: '#1d4ed8' },
+    concern:  { bg: 'rgba(217,119,6,0.1)',   color: '#92400e' },
+    security: { bg: 'rgba(220,38,38,0.1)',   color: '#dc2626' },
+    property: { bg: 'rgba(139,92,246,0.1)',  color: '#6d28d9' },
+    medical:  { bg: 'rgba(239,68,68,0.12)',  color: '#be123c' },
+    other:    { bg: 'rgba(100,116,139,0.1)', color: '#475569' }
+  };
+  var all = getAllLogbookEntries();
+  all.sort(function(a,b){ return (b.createdAt||0) - (a.createdAt||0); });
+
+  var openN = all.filter(function(e){ return e.status==='open'; }).length;
+  var ipN   = all.filter(function(e){ return e.status==='in-progress'; }).length;
+  var resN  = all.filter(function(e){ return e.status==='resolved'; }).length;
+  var totalN = all.length;
+
+  var statsEl = g('logbook-stats');
+  if (statsEl) statsEl.innerHTML =
+    '<div class="stat-card '+(openN>0?'accent':'')+'"><div class="stat-num">'+openN+'</div><div class="stat-lbl">Open</div></div>' +
+    '<div class="stat-card '+(ipN>0?'amber':'')+'"><div class="stat-num">'+ipN+'</div><div class="stat-lbl">In Progress</div></div>' +
+    '<div class="stat-card green"><div class="stat-num">'+resN+'</div><div class="stat-lbl">Resolved</div></div>' +
+    '<div class="stat-card"><div class="stat-num">'+totalN+'</div><div class="stat-lbl">Total</div></div>';
+
+  var list = all.slice();
+  if (logbookFilter === 'open') list = list.filter(function(e){ return e.status==='open'; });
+  else if (logbookFilter === 'in-progress') list = list.filter(function(e){ return e.status==='in-progress'; });
+  else if (logbookFilter === 'resolved') list = list.filter(function(e){ return e.status==='resolved'; });
+
+  var cntEl = g('logbook-count'); if (cntEl) cntEl.textContent = list.length + ' entr' + (list.length===1?'y':'ies');
+  var tbody = g('logbook-tbody'); if (!tbody) return;
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="8" class="tbl-empty">No entries logged.</td></tr>'; return; }
+
+  var isNative = {};
+  (state.logbook||[]).forEach(function(x){ isNative[x.id] = true; });
+
+  var html = '';
+  list.forEach(function(e) {
+    var cat = e.category || 'request';
+    var cc = catColors[cat] || catColors.other;
+    var pill = '<span style="background:'+cc.bg+';color:'+cc.color+';font-size:10px;font-weight:600;border-radius:4px;padding:2px 7px;white-space:nowrap">'+esc(e.type)+'</span>';
+
+    var d = new Date(e.createdAt||Date.now());
+    var dateFmt = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    var timeFmt = e.time ? fmtTime(e.time) : d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    var dateCell = '<span class="mono" style="font-size:12px">'+dateFmt+'</span><div style="font-size:11px;color:var(--text3)">'+timeFmt+'</div>';
+
+    var who = '';
+    if (e.unit || e.resident) {
+      who = (e.unit ? '<span class="mono font-600">'+esc(e.unit)+'</span>' : '') + (e.resident ? (e.unit?' · ':'')+esc(e.resident) : '');
+    } else if (e.location) {
+      who = '<span style="color:var(--text3)">'+esc(e.location)+'</span>';
+    }
+
+    var byTag = fmtByTag(e.addedBy, e.createdAt);
+    var log = e.log || [];
+    var logCount = log.length;
+    var logBtnLabel = logCount > 1 ? '&#128221; '+logCount+' updates' : '&#128221; Log';
+
+    var statusSel = isNative[e.id]
+      ? '<select class="ie-sel" onchange="updateLogbookStatus(\''+e.id+'\',this.value)">'
+        + '<option value="open"'+(e.status==='open'?' selected':'')+' title="Just logged, no action taken yet">Open</option>'
+        + '<option value="in-progress"'+(e.status==='in-progress'?' selected':'')+' title="Being handled; waiting on another party or follow-up pending">In Progress</option>'
+        + '<option value="resolved"'+(e.status==='resolved'?' selected':'')+' title="Fully closed; resident updated, no further action needed">Resolved</option>'
+        + '</select>'
+      : '<span style="font-size:11px;color:var(--text3)">'+(e.status||'')+'</span>';
+
+    var naCell = isNative[e.id]
+      ? '<input type="text" value="'+(e.nextAction||'').replace(/"/g,'&quot;')+'" placeholder="Add next action…" style="width:100%;font-size:11.5px;border:none;border-bottom:1px dashed var(--border);background:transparent;padding:2px 0;color:'+(e.nextAction?'var(--text)':'var(--text3)')+';outline:none;font-family:inherit" onblur="updateLogbookNextAction(\''+e.id+'\',this.value)" onfocus="this.style.borderBottomColor=\'var(--accent)\'" onblur="updateLogbookNextAction(\''+e.id+'\',this.value);this.style.borderBottomColor=\'var(--border)\'">'
+      : (e.nextAction ? esc(e.nextAction) : '<span style="color:var(--text3)">—</span>');
+
+    var actBtns = isNative[e.id]
+      ? '<button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="toggleLogbookLog(\''+e.id+'\')" title="Activity log">'+logBtnLabel+'</button> '
+        + '<button class="btn btn-ghost btn-xs" onclick="openEditLogbook(\''+e.id+'\')" title="Edit">&#9998;</button>'
+        + '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteLogbook(\''+e.id+'\')">&#215;</button>'
+      : '<span style="font-size:10px;color:var(--text3);font-style:italic">legacy</span>';
+
+    html += '<tr>';
+    html += '<td>'+dateCell+byTag+'</td>';
+    html += '<td>'+pill+'</td>';
+    html += '<td style="font-size:12px">'+who+'</td>';
+    html += '<td style="max-width:160px;white-space:normal;font-size:12px;color:var(--text2)">'+(e.notes?esc(e.notes):'—')+'</td>';
+    html += '<td style="max-width:180px">'+naCell+'</td>';
+    html += '<td>'+statusSel+'</td>';
+    html += '<td class="text-xs text-2">'+(e.handledBy||'—')+'</td>';
+    html += '<td>'+actBtns+'</td>';
+    html += '</tr>';
+
+    // Activity log sub-row (native entries only)
+    if (isNative[e.id]) {
+      var logInputId = 'logbook-log-input-' + e.id;
+      var eid = e.id;
+      var entriesHtml = log.map(function(le, idx) {
+        var ld = new Date(le.ts); var lf = ld.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+ld.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+        return '<div class="act-log-entry" style="display:flex;align-items:flex-start;gap:4px"><div style="flex:1"><span class="act-log-meta">'+lf+(le.by?' · '+le.by:'')+'</span><span class="act-log-note"> '+le.note+'</span></div></div>';
+      }).join('');
+      html += '<tr class="act-log-row" id="logbook-log-'+eid+'" style="display:none">';
+      html += '<td colspan="8"><div class="act-log-inner">';
+      html += '<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Activity Log</div>';
+      html += entriesHtml || '<div style="color:var(--text3);font-size:12px;padding:4px 0">No updates yet.</div>';
+      html += '<div class="act-log-add"><input type="text" id="'+logInputId+'" placeholder="Log an update…" style="flex:1;font-size:12px" onkeydown="if(event.key===\'Enter\')addLogbookLog(\''+eid+'\',this.value)"><button class="btn btn-secondary btn-sm" onclick="addLogbookLog(\''+eid+'\',g(\''+logInputId+'\').value)">Log update</button></div>';
+      html += '</div></td></tr>';
+    }
+  });
+  tbody.innerHTML = html;
+  setBadge('badge-logbook', openN + ipN);
 }
 
 // ─── MAINTENANCE ───
@@ -7463,17 +7725,24 @@ function renderPdAutoBlocks(isLead) {
   });
   html += '</div>';
 
-  // Open concierge requests
-  var openC = (state.concierge||[]).filter(function(c){ return c.status==='open'; });
-  pdSections.push({ id: 'pd-blk-conc', icon: '🎭', label: 'Concierge', count: openC.length });
-  html += '<div class="pd-auto-block" id="pd-blk-conc"><div class="pd-auto-hdr">🎭 Open Concierge Requests</div>';
-  if (!openC.length) html += '<div style="color:var(--text3)">None open</div>';
-  else openC.forEach(function(c) {
-    var content = '<strong>Unit ' + esc(c.unit) + ' – ' + esc(c.resident) + '</strong>' + pdYouBadge(c) + ' / ' + esc(c.type) + (c.notes ? ': ' + esc(c.notes) : '');
-    var defNsCon = c.nextAction || 'Follow up and update status once resolved.';
-    var cKey = 'c_' + c.id;
-    if (c.nextAction && pdNotes[cKey] === undefined) pdNotes[cKey] = c.nextAction;
-    html += pdAutoRow(cKey, content, defNsCon, true);
+  // Build unified logbook list for passdown
+  var lbAll = (state.logbook||[])
+    .concat((state.concierge||[]).map(function(c){ return Object.assign({}, c, {category:'request', location:'', status:c.status==='completed'?'resolved':c.status, createdAt:c.createdAt||Date.now()}); }))
+    .concat((state.security||[]).map(function(s){ return Object.assign({}, s, {category:'security', unit:s.unit||'', resident:'', createdAt:s.createdAt||Date.now(), status:s.status==='monitoring'?'in-progress':s.status}); }));
+
+  // Open / in-progress entries for passdown
+  var openLb = lbAll.filter(function(e){ return e.status==='open' || e.status==='in-progress'; });
+  pdSections.push({ id: 'pd-blk-logbook', icon: '📓', label: 'Logbook', count: openLb.length });
+  html += '<div class="pd-auto-block" id="pd-blk-logbook"><div class="pd-auto-hdr">📓 Open Logbook Entries</div>';
+  if (!openLb.length) html += '<div style="color:var(--text3)">None open</div>';
+  else openLb.forEach(function(e) {
+    var who = e.resident ? 'Unit ' + esc(e.unit) + ' – ' + esc(e.resident) : (e.location || '');
+    var content = '<strong>' + esc(e.type) + '</strong>' + pdYouBadge(e) + (who ? ' — ' + who : '') + (e.notes ? ': ' + esc(e.notes) : '');
+    if (e.status==='in-progress') content += ' <span style="font-size:10px;background:rgba(217,119,6,0.12);color:#92400E;border-radius:3px;padding:1px 5px;font-weight:600">In Progress</span>';
+    var defNs = e.nextAction || 'Follow up and update status once resolved.';
+    var lbKey = 'lb_' + e.id;
+    if (e.nextAction && pdNotes[lbKey] === undefined) pdNotes[lbKey] = e.nextAction;
+    html += pdAutoRow(lbKey, content, defNs, true);
   });
   html += '</div>';
 
@@ -7528,25 +7797,6 @@ function renderPdAutoBlocks(isLead) {
   }
   html += '</div>';
 
-  // Security incidents (active monitoring + today's unresolved)
-  var secIncidents = (state.security||[]).filter(function(s){ return s.status==='monitoring' || (s.date===t && s.status!=='resolved'); });
-  if (secIncidents.length) {
-    pdSections.push({ id: 'pd-blk-sec', icon: '🛡', label: 'Incidents', count: secIncidents.length });
-    html += '<div class="pd-auto-block" id="pd-blk-sec" style="border-color:rgba(220,38,38,0.3)"><div class="pd-auto-hdr" style="color:#dc2626">🛡 Incidents</div>';
-    secIncidents.forEach(function(s) {
-      var content = '<strong>' + s.type + '</strong>' + pdYouBadge(s) + ' — ' + s.location;
-      if (s.time) content += ' at ' + fmtTime(s.time);
-      content += ' | Handled by: ' + s.handledBy;
-      if (s.status==='monitoring') content += ' <span style="font-size:10px;background:rgba(217,119,6,0.12);color:#92400E;border-radius:3px;padding:1px 5px;font-weight:600">Monitoring</span>';
-      if (s.notes) content += '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+s.notes+'</div>';
-      var defNs = s.status==='monitoring' ? 'Continue monitoring — update next shift on status.' : 'Incident resolved — no further action required unless situation changes.';
-      var secKey = 'sec_'+s.id;
-      // Pre-fill resolved incidents with the default so they don't show as required
-      if (s.status !== 'monitoring' && pdNotes[secKey] === undefined) pdNotes[secKey] = defNs;
-      html += pdAutoRow(secKey, content, defNs, !!carriedSet[secKey]);
-    });
-    html += '</div>';
-  }
 
   // Fees to ledger
   var pendingFees = (state.keys||[]).filter(function(k){
@@ -8917,10 +9167,10 @@ function openAddTourForDate(dateStr) { openAddTour(); if (dateStr) g('tr-date').
 // ─── GUIDE ───
 var GUIDE_DATA = [
   { id:'g-start', icon:'🏁', title:'Getting Started', keywords:'getting started new hire overview sections login pin role admin staff first time dashboard what is this welcome',
-    html:'<h4>Welcome to the Front Desk Dashboard</h4><p>This is the Chorus SF Front Desk Hub — your central tool for managing everything that happens at the front desk during your shift. Whether it\'s your first day or you just need a quick refresher, this card covers the basics.</p><h4>What the Dashboard Does</h4><p>The dashboard keeps track of everything happening in the building in real time. Everything you log during your shift feeds directly into your end-of-shift passdown — so the more you log as you go, the less you have to write at the end.</p><h4>Sections at a Glance</h4><ul><li><strong>Dashboard</strong> — live overview of everything active in the building</li><li><strong>Calendar</strong> — all moves, bookings, and tours in one view</li><li><strong>Moves</strong> — move-in and move-out checklists and task tracking</li><li><strong>Key Tracker</strong> — keys issued, returned, and overdue</li><li><strong>Amenity Bookings</strong> — rooftop, party room, service elevator reservations</li><li><strong>Concierge Log</strong> — resident requests and follow-ups</li><li><strong>Incident Log</strong> — security and safety incidents</li><li><strong>Lost &amp; Found</strong> — items logged and claimed</li><li><strong>Resident Profiles</strong> — per-unit profiles and special instructions</li><li><strong>Passdown</strong> — build and send your end-of-shift passdown</li><li><strong>To-Do List</strong> — your personal task list, private to your account</li></ul><div class="guide-tip">💡 Every section feeds the Passdown builder. Log items as they happen and your passdown will mostly build itself by end of shift.</div><h4>Logging In</h4><ul><li>Click your name on the login screen and enter your 4-digit PIN</li><li>No account yet? Ask the Front Desk Lead to set one up before your shift begins</li><li>Forgot your PIN? The Lead can reset it in Settings → Team Accounts</li></ul><h4>Your Role</h4><ul><li><strong>Staff (Associate)</strong> — access to all day-to-day sections. Can check off move tasks but cannot add or edit move entries</li><li><strong>Admin / Lead</strong> — full access including Settings, Team Tracker, and staff visibility controls</li></ul><div class="guide-note">📌 All changes save automatically. No Save button needed for most actions.</div>' },
+    html:'<h4>Welcome to the Front Desk Dashboard</h4><p>This is the Chorus SF Front Desk Hub — your central tool for managing everything that happens at the front desk during your shift. Whether it\'s your first day or you just need a quick refresher, this card covers the basics.</p><h4>What the Dashboard Does</h4><p>The dashboard keeps track of everything happening in the building in real time. Everything you log during your shift feeds directly into your end-of-shift passdown — so the more you log as you go, the less you have to write at the end.</p><h4>Sections at a Glance</h4><ul><li><strong>Dashboard</strong> — live overview of everything active in the building</li><li><strong>Calendar</strong> — all moves, bookings, and tours in one view</li><li><strong>Moves</strong> — move-in and move-out checklists and task tracking</li><li><strong>Key Tracker</strong> — keys issued, returned, and overdue</li><li><strong>Amenity Bookings</strong> — rooftop, party room, service elevator reservations</li><li><strong>Logbook</strong> — resident requests, concerns, and incidents in one place</li><li><strong>Lost &amp; Found</strong> — items logged and claimed</li><li><strong>Resident Profiles</strong> — per-unit profiles and special instructions</li><li><strong>Passdown</strong> — build and send your end-of-shift passdown</li><li><strong>To-Do List</strong> — your personal task list, private to your account</li></ul><div class="guide-tip">💡 Every section feeds the Passdown builder. Log items as they happen and your passdown will mostly build itself by end of shift.</div><h4>Logging In</h4><ul><li>Click your name on the login screen and enter your 4-digit PIN</li><li>No account yet? Ask the Front Desk Lead to set one up before your shift begins</li><li>Forgot your PIN? The Lead can reset it in Settings → Team Accounts</li></ul><h4>Your Role</h4><ul><li><strong>Staff (Associate)</strong> — access to all day-to-day sections. Can check off move tasks but cannot add or edit move entries</li><li><strong>Admin / Lead</strong> — full access including Settings, Team Tracker, and staff visibility controls</li></ul><div class="guide-note">📌 All changes save automatically. No Save button needed for most actions.</div>' },
 
   { id:'g-passdown-how', icon:'📝', title:'How to Use the Passdown Builder', keywords:'passdown builder how to use step by step guide update next step shift summary generate send am pm overnight tone auto block log items',
-    html:'<h4>Overview</h4><p>The Passdown builder auto-fills from what you log during your shift. Your job is to review it, add context, and send it.</p><h4>Step 1 — Log items during your shift</h4><p>Use the right section as things happen — don\'t wait until the end:</p><ul><li>Keys issued → <strong>Key Tracker</strong></li><li>Resident requests → <strong>Concierge Log</strong></li><li>Incidents, noise complaints → <strong>Incident Log</strong></li><li>Amenity setup or follow-up → note in <strong>This Shift</strong> in the builder</li><li>Work order submitted or maintenance issue carrying to next shift → note in <strong>This Shift</strong> in the builder</li></ul><h4>Step 2 — Open the builder</h4><p>Click <strong>Passdown</strong> in the sidebar. Select your shift (AM / PM / Overnight) from the dropdown at the top.</p><h4>Step 3 — Write your shift summary</h4><p>Write 1–3 sentences in the Shift Summary field — what happened, who came in, anything the next shift should know the moment they start.</p><h4>Step 4 — Review the auto-blocks</h4><p>The builder pulls in live data automatically — moves, keys, amenities, concierge requests, incidents. For each item:</p><ul><li>Fill in the <strong>Update / Next Step</strong> field with what the incoming shift needs to know or do</li><li>Click <strong>–</strong> to exclude anything that was resolved during your shift</li></ul><div class="guide-note">📌 Incidents and Concierge Requests only appear in the passdown if you add an Update / Next Step note. Leave it blank to exclude them.</div><h4>Step 5 — Generate</h4><p>Click <strong>Generate</strong>. Read the full preview — check that unit numbers and names are correct, every open item has a clear Update / Next Step, and nothing resolved is still listed as active. Fix anything and generate again if needed.</p><h4>Step 6 — Send</h4><p>Click <strong>Review &amp; Send → Send via Gmail →</strong>. Gmail opens with the recipient, subject, and body pre-filled. Add your signature and send.</p><div class="guide-tip">💡 Use <strong>Save Draft</strong> at any point to save your progress. Your draft is tied to your account and stays until you send or clear it.</div><div class="guide-note" style="margin-top:8px;background:rgba(220,38,38,0.06);border-color:rgba(220,38,38,0.2)">⚠️ Your passdown must reflect your shift. Do not copy or reuse another associate\'s passdown. The dashboard logs all passdowns by author and date — if yours matches a previous shift\'s, it is visible to everyone.</div>' },
+    html:'<h4>Overview</h4><p>The Passdown builder auto-fills from what you log during your shift. Your job is to review it, add context, and send it.</p><h4>Step 1 — Log items during your shift</h4><p>Use the right section as things happen — don\'t wait until the end:</p><ul><li>Keys issued → <strong>Key Tracker</strong></li><li>Anything logged at the desk → <strong>Logbook</strong></li><li>Amenity setup or follow-up → note in <strong>This Shift</strong> in the builder</li><li>Work order submitted or maintenance issue carrying to next shift → note in <strong>This Shift</strong> in the builder</li></ul><h4>Step 2 — Open the builder</h4><p>Click <strong>Passdown</strong> in the sidebar. Select your shift (AM / PM / Overnight) from the dropdown at the top.</p><h4>Step 3 — Write your shift summary</h4><p>Write 1–3 sentences in the Shift Summary field — what happened, who came in, anything the next shift should know the moment they start.</p><h4>Step 4 — Review the auto-blocks</h4><p>The builder pulls in live data automatically — moves, keys, amenities, concierge requests, incidents. For each item:</p><ul><li>Fill in the <strong>Update / Next Step</strong> field with what the incoming shift needs to know or do</li><li>Click <strong>–</strong> to exclude anything that was resolved during your shift</li></ul><div class="guide-note">📌 Incidents and Concierge Requests only appear in the passdown if you add an Update / Next Step note. Leave it blank to exclude them.</div><h4>Step 5 — Generate</h4><p>Click <strong>Generate</strong>. Read the full preview — check that unit numbers and names are correct, every open item has a clear Update / Next Step, and nothing resolved is still listed as active. Fix anything and generate again if needed.</p><h4>Step 6 — Send</h4><p>Click <strong>Review &amp; Send → Send via Gmail →</strong>. Gmail opens with the recipient, subject, and body pre-filled. Add your signature and send.</p><div class="guide-tip">💡 Use <strong>Save Draft</strong> at any point to save your progress. Your draft is tied to your account and stays until you send or clear it.</div><div class="guide-note" style="margin-top:8px;background:rgba(220,38,38,0.06);border-color:rgba(220,38,38,0.2)">⚠️ Your passdown must reflect your shift. Do not copy or reuse another associate\'s passdown. The dashboard logs all passdowns by author and date — if yours matches a previous shift\'s, it is visible to everyone.</div>' },
 
   { id:'g-dashboard', icon:'📊', title:'Dashboard', keywords:'dashboard home overview stats badges search greeting quick counts active',
     html:'<h4>Overview Cards</h4><p>The dashboard shows live counts of active items across all sections: pending moves, open maintenance, guests checked in, keys out, upcoming amenity bookings, open L&amp;F items, upcoming tours, and open concierge requests. Click any card to jump to that section.</p><h4>Quick Search</h4><p>Type any unit number, resident name, or keyword in the search bar to instantly find matching entries across moves, maintenance, guests, keys, amenities, and more. Click any result to navigate directly to that section.</p><h4>Greeting</h4><p>The greeting uses your logged-in name and adjusts based on the time of day. The date and building name are displayed at the top of the sidebar.</p>' },
@@ -8953,14 +9203,14 @@ var GUIDE_DATA = [
   { id:'g-tours', icon:'🏡', title:'Tour Log', keywords:'tour sgt self guided unit date time notes prospect name guided log',
     html:'<h4>Logging a Tour</h4><p>Click <strong>+ Log Tour</strong>. Enter the prospect\'s name, tour type (SGT — Self-Guided, or Guided), unit(s) shown, date, time, and notes.</p><h4>What Shows in the Log</h4><p>All tours sorted by date, most recent first. Today\'s tours appear on the Dashboard badge and in the legacy passdown generator.</p>' },
 
-  { id:'g-concierge', icon:'🎭', title:'Concierge Log', keywords:'concierge request resident unit type dry cleaning restaurant taxi package maintenance follow up status open completed handled by passdown',
-    html:'<h4>What It Tracks</h4><p>Resident requests that require front desk follow-up: restaurant reservations, dry cleaning, taxi/rideshare coordination, package holds, maintenance follow-ups, and other concierge items.</p><h4>Adding a Request</h4><p>Click <strong>+ Add Request</strong>. Fill in the unit, resident name, request type, notes, status, and who is handling it.</p><h4>Statuses</h4><ul><li><strong>Open</strong> — request is active and needs attention</li><li><strong>Completed</strong> — request has been fulfilled</li></ul><h4>Passdown Integration</h4><p>All open concierge requests automatically appear in the Daily Passdown auto-blocks so the incoming shift is always aware of pending items.</p>' },
+  { id:'g-logbook', icon:'📓', title:'Logbook', keywords:'logbook request resident concern security incident unit type dry cleaning package hold noise complaint unhoused medical emergency status open in-progress resolved handled by passdown activity log',
+    html:'<h4>What It Tracks</h4><p>Everything that happens at the front desk — resident requests, concerns, security incidents, property issues, and medical events — in one unified log.</p><h4>Adding an Entry</h4><p>Click <strong>+ Log Entry</strong>. Select the type from the grouped dropdown, fill in the unit/resident or location, add notes, next action, status, and who handled it.</p><h4>Type Groups</h4><ul><li><strong>Resident Requests</strong> — dry cleaning, package holds, parking, concerns</li><li><strong>Security</strong> — unhoused individuals, unauthorized access, disturbances, noise complaints</li><li><strong>Property</strong> — missing packages, damage, elevator issues, footage requests</li><li><strong>Medical</strong> — emergencies, first aid, welfare checks, slip/falls</li></ul><h4>Statuses</h4><ul><li><strong>Open</strong> — just logged, no action taken yet</li><li><strong>In Progress</strong> — being handled; waiting on another party or follow-up pending</li><li><strong>Resolved</strong> — fully closed; resident updated, no further action needed</li></ul><h4>Activity Log</h4><p>Each entry has an activity log for adding updates as a situation develops. Click the log button on any row to expand it and add notes.</p><h4>Passdown Integration</h4><p>All open and in-progress logbook entries automatically appear in the Daily Passdown auto-blocks so the incoming shift is always aware of pending items.</p>' },
 
   { id:'g-residents', icon:'👤', title:'Resident Profiles', keywords:'resident profile unit name preferred phone birthday anniversary instructions pte access package vip notes banner',
     html:'<h4>What It Stores</h4><p>Per-unit profiles with: resident name, preferred/nickname, phone number, birthday, lease anniversary, special instructions, PTE (Permission to Enter) status, and general notes.</p><h4>PTE Status</h4><ul><li><strong>Granted</strong> — resident has authorized entry for maintenance or staff</li><li><strong>Denied</strong> — resident does not authorize entry without prior notice</li><li><strong>Not Set</strong> — no preference on file yet</li></ul><h4>Package Team Banner</h4><p>A highlighted banner at the top of Resident Profiles surfaces any residents with special package delivery instructions — a quick reference for the package team without digging through individual profiles.</p><h4>Tabs</h4><p>Profiles are grouped by PTE status: All, PTE Granted, PTE Denied, Not Set. The count in each tab updates live.</p>' },
 
   { id:'g-passdown', icon:'📋', title:'Daily Passdown', keywords:'passdown shift generate preview save copy history build draft am pm overnight lead staff next step move key amenity concierge edit exclude override',
-    html:'<h4>Overview</h4><p>The Daily Passdown section lets you build, preview, and save shift handoff notes. The left column is the <strong>Build</strong> panel; the right column is <strong>Passdown History</strong>.</p><h4>Selecting a Shift</h4><p>Choose AM, PM, or Overnight from the Shift dropdown. This filters auto-populated items to only show entries relevant to that shift\'s time window.</p><h4>Auto-Populated Blocks</h4><p>These pull live data automatically — no manual entry needed:</p><ul><li>🗝 <strong>One-Time Keys Still Out</strong> — any keys currently in "issued" status</li><li>🗝 <strong>Outstanding Key Returns</strong> — move-outs whose lease has ended and key collection task is still unchecked</li><li>🚛 <strong>Move-Ins</strong> — today\'s move-ins for this shift (admins also see upcoming days)</li><li>📦 <strong>Move-Outs</strong> — today\'s move-outs for this shift (admins also see upcoming)</li><li>🎉 <strong>Amenity Bookings</strong> — today\'s bookings during the selected shift window</li><li>🎭 <strong>Open Concierge Requests</strong> — all open requests regardless of shift</li><li>📦 <strong>L&amp;F Follow Up</strong> — lost &amp; found items manually flagged for passdown</li><li>💳 <strong>Charges to Add to Ledger</strong> — replacement key cards ($100) and unreturned one-time keys ($25) with outstanding fees</li></ul><p>Completed moves (appointment passed + all main tasks done) show a green <strong>✓ Completed</strong> badge automatically.</p><h4>Editing Next Steps in the Draft</h4><p>Every auto-block item has an editable <strong>Next step…</strong> field below it. The field is pre-filled with a smart default. Click it and type to override — your custom text carries into the generated passdown when you click Generate. Leave it as-is to use the default.</p><h4>Excluding Items</h4><p>Click the <strong>–</strong> button on any item to exclude it from the passdown. The item grays out with a strikethrough. Click <strong>＋</strong> to re-include it. Exclusions persist while the draft is active.</p><h4>Look Ahead <span style="font-size:10px;font-weight:400;color:var(--text3)">(admin only)</span></h4><p>Set to "Today + Tomorrow" or "Today + 2 days" to pull upcoming moves and amenities into the passdown for advance notice.</p><h4>Free-Entry Sections</h4><p>These sections are for items you add manually:</p><ul><li><strong>Admin users:</strong> 🔑 Keys / Access, 🅿️ Parking, 👤 Resident Matters, 📢 Policy Reminders</li><li><strong>Staff users:</strong> 📝 Shift Notes</li></ul><p>Click <strong>+ Add Item</strong> in any section, fill in the form (unit, resident, description, next step), and save. Items appear as cards and can be removed with ×.</p><h4>Generating</h4><p>Click <strong>Generate</strong> to build the formatted passdown text in the Preview area. The preview is a fully editable textarea — type freely to add context, adjust wording, or remove anything before saving.</p><h4>Saving &amp; Sending</h4><ul><li><strong>Save Draft</strong> — saves the passdown to History as a draft, attributed to your account</li><li><strong>Review &amp; Send</strong> — runs quality checks, saves the passdown as sent, and opens Gmail with default recipients</li><li><strong>Copy</strong> — copies the text to your clipboard for pasting elsewhere</li><li><strong>Clear draft</strong> — resets all build blocks and clears the preview</li></ul><h4>Passdown History</h4><p>Passdowns appear on the right with Draft/Sent and read-count badges. Admins see all staff passdowns; staff see the last 48 hours. Each entry can be expanded, copied, edited (loads it back into the preview for revision), or deleted (author or admin only).</p><div class="guide-tip">💡 Clicking <strong>Passdown</strong> from the Move Ins / Outs section jumps here with today\'s moves already loaded.</div>' },
+    html:'<h4>Overview</h4><p>The Daily Passdown section lets you build, preview, and save shift handoff notes. The left column is the <strong>Build</strong> panel; the right column is <strong>Passdown History</strong>.</p><h4>Selecting a Shift</h4><p>Choose AM, PM, or Overnight from the Shift dropdown. This filters auto-populated items to only show entries relevant to that shift\'s time window.</p><h4>Auto-Populated Blocks</h4><p>These pull live data automatically — no manual entry needed:</p><ul><li>🗝 <strong>One-Time Keys Still Out</strong> — any keys currently in "issued" status</li><li>🗝 <strong>Outstanding Key Returns</strong> — move-outs whose lease has ended and key collection task is still unchecked</li><li>🚛 <strong>Move-Ins</strong> — today\'s move-ins for this shift (admins also see upcoming days)</li><li>📦 <strong>Move-Outs</strong> — today\'s move-outs for this shift (admins also see upcoming)</li><li>🎉 <strong>Amenity Bookings</strong> — today\'s bookings during the selected shift window</li><li>📓 <strong>Open Logbook Entries</strong> — all open and in-progress logbook entries regardless of shift</li><li>📦 <strong>L&amp;F Follow Up</strong> — lost &amp; found items manually flagged for passdown</li><li>💳 <strong>Charges to Add to Ledger</strong> — replacement key cards ($100) and unreturned one-time keys ($25) with outstanding fees</li></ul><p>Completed moves (appointment passed + all main tasks done) show a green <strong>✓ Completed</strong> badge automatically.</p><h4>Editing Next Steps in the Draft</h4><p>Every auto-block item has an editable <strong>Next step…</strong> field below it. The field is pre-filled with a smart default. Click it and type to override — your custom text carries into the generated passdown when you click Generate. Leave it as-is to use the default.</p><h4>Excluding Items</h4><p>Click the <strong>–</strong> button on any item to exclude it from the passdown. The item grays out with a strikethrough. Click <strong>＋</strong> to re-include it. Exclusions persist while the draft is active.</p><h4>Look Ahead <span style="font-size:10px;font-weight:400;color:var(--text3)">(admin only)</span></h4><p>Set to "Today + Tomorrow" or "Today + 2 days" to pull upcoming moves and amenities into the passdown for advance notice.</p><h4>Free-Entry Sections</h4><p>These sections are for items you add manually:</p><ul><li><strong>Admin users:</strong> 🔑 Keys / Access, 🅿️ Parking, 👤 Resident Matters, 📢 Policy Reminders</li><li><strong>Staff users:</strong> 📝 Shift Notes</li></ul><p>Click <strong>+ Add Item</strong> in any section, fill in the form (unit, resident, description, next step), and save. Items appear as cards and can be removed with ×.</p><h4>Generating</h4><p>Click <strong>Generate</strong> to build the formatted passdown text in the Preview area. The preview is a fully editable textarea — type freely to add context, adjust wording, or remove anything before saving.</p><h4>Saving &amp; Sending</h4><ul><li><strong>Save Draft</strong> — saves the passdown to History as a draft, attributed to your account</li><li><strong>Review &amp; Send</strong> — runs quality checks, saves the passdown as sent, and opens Gmail with default recipients</li><li><strong>Copy</strong> — copies the text to your clipboard for pasting elsewhere</li><li><strong>Clear draft</strong> — resets all build blocks and clears the preview</li></ul><h4>Passdown History</h4><p>Passdowns appear on the right with Draft/Sent and read-count badges. Admins see all staff passdowns; staff see the last 48 hours. Each entry can be expanded, copied, edited (loads it back into the preview for revision), or deleted (author or admin only).</p><div class="guide-tip">💡 Clicking <strong>Passdown</strong> from the Move Ins / Outs section jumps here with today\'s moves already loaded.</div>' },
 
   { id:'g-todos', icon:'✅', title:'To-Do List', keywords:'todo to do task personal list pending done completed admin view all team switch user',
     html:'<h4>Personal To-Dos</h4><p>Each logged-in user has their own private to-do list. Other staff cannot see your items — only admins can view all lists.</p><h4>Adding an Item</h4><p>Click <strong>+ Add To-Do</strong>, type the task, and save. The badge on the nav item shows your pending count.</p><h4>Completing Items</h4><p>Check the checkbox next to any item to mark it done. Click <strong>Clear Completed</strong> to remove all done items at once.</p><h4>Admin: View All <span style="font-size:10px;font-weight:400;color:var(--text3)">(admin only)</span></h4><p>A user-switcher dropdown appears at the top of the To-Do List for admins. Switch to any team member to view (but not edit) their list — useful for shift coverage and handoffs.</p>' },
@@ -8976,8 +9226,6 @@ var GUIDE_DATA = [
   { id:'g-supplies', icon:'📦', title:'Supplies & Inventory', keywords:'supplies inventory stock quantity low reorder threshold admin edit item add remove badge red amber',
     html:'<h4>What It Tracks</h4><p>Office and building supplies with live stock levels. Each item has a name, current quantity, and an optional reorder threshold. When stock drops to or below the threshold, an amber badge appears on the nav item. If any item reaches zero, the badge turns red.</p><h4>Adding / Editing Items</h4><p>Admin only. Click <strong>+ Add Item</strong> to create a new supply entry. Click the pencil icon to edit an item\'s name, quantity, or threshold.</p><h4>Adjusting Quantities</h4><ul><li><strong>+ / –</strong> buttons — increment or decrement by 1</li><li><strong>Set Qty</strong> — enter an exact number</li></ul><p>Staff can view stock levels and low-stock alerts but cannot edit quantities or add/remove items.</p><h4>Reorder Todos</h4><p>When stock drops below the reorder threshold, a to-do is automatically created for all admin accounts: <em>"Reorder [item] — X remaining (reorder at Y)."</em> The todo auto-completes when stock is replenished above the threshold.</p><div class="guide-note">📌 Quantity changes from other sections (key issuance, parking credentials, etc.) apply automatically regardless of role.</div>' },
 
-  { id:'g-security', icon:'🚨', title:'Incident Log', keywords:'incident security log type unhoused medical emergency disturbance trespassing handled status monitoring resolved unit location notes escalate maintenance',
-    html:'<h4>What It Tracks</h4><p>Building security and medical incidents — unauthorized access, disturbances, medical emergencies, slip/falls, welfare checks, and more. Each entry captures the date, time, incident type, location, unit (optional), who handled it, status, and notes.</p><h4>Logging an Incident</h4><p>Click <strong>+ Log Incident</strong>. Select the incident type from the grouped dropdown (Security or Medical), fill in the location, unit number if applicable, who handled it, and status.</p><h4>Statuses</h4><ul><li><strong>Resolved</strong> — incident is closed</li><li><strong>Monitoring</strong> — ongoing situation that needs watch</li></ul><h4>Escalating to Maintenance</h4><p>Any incident can be escalated to a maintenance work order using the amber <strong>→ Maint</strong> button. This pre-fills a new maintenance entry with the incident details. Once escalated, the button is replaced with a gray "Escalated" label.</p><h4>Nav Badge</h4><p>Shows the count of today\'s incidents plus any currently in "Monitoring" status.</p>' },
 
   { id:'g-import', icon:'⬆', title:'Import Center', keywords:'import screenshot claude ai json data moves maintenance calendar eliseai excel reset data',
     admin:true,
@@ -9241,14 +9489,13 @@ var TOGGLEABLE_SECTIONS = [
   { id: 'moves', label: 'Move Ins / Outs' },
   { id: 'walkthrough', label: 'Security Patrols' },
   { id: 'maintenance', label: 'Maintenance' },
-  { id: 'security', label: 'Incident Log' },
+  { id: 'logbook', label: 'Logbook' },
   { id: 'supplies', label: 'Supplies & Inventory' },
   { id: 'guests', label: 'Guests & Visitors' },
   { id: 'keys', label: 'Key Tracker' },
   { id: 'amenities', label: 'Amenity Bookings' },
   { id: 'laf', label: 'Lost & Found' },
   { id: 'tours', label: 'Tour Log' },
-  { id: 'concierge', label: 'Concierge Log' },
   { id: 'residents', label: 'Resident Profiles' },
   { id: 'templates', label: 'Message Templates' },
   { id: 'passdown', label: 'Daily Passdown' },
