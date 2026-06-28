@@ -788,6 +788,14 @@
         <div class="sub-tab" onclick="filterLogbook('in-progress',this)">In Progress</div>
         <div class="sub-tab" onclick="filterLogbook('resolved',this)">Resolved</div>
       </div>
+      <div class="sub-tabs" id="logbook-cat-tabs" style="margin-top:4px">
+        <div class="sub-tab active" onclick="filterLogbookCat('all',this)">All Types</div>
+        <div class="sub-tab" onclick="filterLogbookCat('concern',this)">Resident Concerns</div>
+        <div class="sub-tab" onclick="filterLogbookCat('security',this)">Security</div>
+        <div class="sub-tab" onclick="filterLogbookCat('medical',this)">Medical</div>
+        <div class="sub-tab" onclick="filterLogbookCat('property',this)">Property</div>
+        <div class="sub-tab" onclick="filterLogbookCat('request',this)">Requests</div>
+      </div>
       <div class="stat-grid" id="logbook-stats"></div>
       <div class="card">
         <div class="card-hdr">
@@ -1329,7 +1337,13 @@
           <option>Dry Cleaning</option>
           <option>Package Hold</option>
           <option>Parking Credentials</option>
-          <option>Resident Concern</option>
+        </optgroup>
+        <optgroup label="Resident Concerns">
+          <option value="Maintenance — Unit">Maintenance — Unit</option>
+          <option value="Maintenance — Common Area">Maintenance — Common Area</option>
+          <option value="Leasing">Leasing</option>
+          <option value="Package">Package</option>
+          <option value="Management">Management</option>
         </optgroup>
         <optgroup label="Security">
           <option value="Unhoused individual — removed by staff">Unhoused — Removed by Staff</option>
@@ -1358,6 +1372,10 @@
       </select>
     </div>
     <div id="lb-other-wrap" style="display:none"><div class="fg"><label>Describe type</label><input id="lb-other" type="text" placeholder="Describe the type"></div></div>
+    <div id="lb-followup-hint" style="display:none;margin-bottom:8px"><div style="font-size:11px;color:#92400e;background:rgba(217,119,6,0.1);border-radius:4px;padding:6px 10px">24-hour follow-up standard applies — set a next action and update the resident by the same time tomorrow.</div></div>
+    <div id="lb-manager-wrap" style="display:none;margin-bottom:8px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500"><input type="checkbox" id="lb-manager-notified" style="width:auto;accent-color:var(--accent)"> Manager notified via Teams</label></div>
+    <div id="lb-footage-wrap" style="display:none;margin-bottom:8px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500"><input type="checkbox" id="lb-footage-preserved" style="width:auto;accent-color:var(--accent)"> Footage preserved (Magic Monitor)</label></div>
+    <div id="lb-ir-wrap" style="display:none;margin-bottom:8px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500"><input type="checkbox" id="lb-incident-report" style="width:auto;accent-color:var(--accent)"> Incident Report filed</label></div>
     <div class="fr"><div class="fg"><label>Unit # <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="lb-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Resident <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="lb-resident" type="text"></div></div>
     <div class="fg" id="lb-location-wrap"><label>Location <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="lb-location" type="text" placeholder="e.g. Lobby, Rooftop, Garage"></div>
     <div class="fg"><label>Details / Notes</label><textarea id="lb-notes" rows="3" placeholder="Describe what happened or what was requested..."></textarea></div>
@@ -4170,13 +4188,21 @@ function escalateSecurityToMaint(id) {
 }
 
 // ─── LOGBOOK ───
-var logbookFilter = 'all', editingLogbookId = null;
+var logbookFilter = 'all', logbookCatFilter = 'all', editingLogbookId = null;
+
+function filterLogbookCat(f, item) {
+  logbookCatFilter = f;
+  document.querySelectorAll('#logbook-cat-tabs .sub-tab').forEach(function(t){ t.classList.remove('active'); });
+  item.classList.add('active');
+  renderLogbook();
+}
 
 function getCategoryFromType(type) {
   var secTypes = ['Unhoused individual — removed by staff','Unhoused individual — security called','Unhoused individual — SFPD called','Unauthorized access','Disturbance / altercation','Suspicious activity','Noise complaint escalation','Trespassing'];
   var propTypes = ['Missing package','Package theft suspected','Footage review requested','Property damage','Elevator issue'];
   var medTypes = ['Medical emergency — 911 called','Medical emergency — first aid / staff handled','Slip / fall','Resident welfare check'];
-  if (type === 'Resident Concern') return 'concern';
+  var concernTypes = ['Maintenance — Unit','Maintenance — Common Area','Leasing','Package','Management'];
+  if (type === 'Resident Concern' || concernTypes.indexOf(type) !== -1) return 'concern';
   if (secTypes.indexOf(type) !== -1) return 'security';
   if (propTypes.indexOf(type) !== -1) return 'property';
   if (medTypes.indexOf(type) !== -1) return 'medical';
@@ -4184,7 +4210,21 @@ function getCategoryFromType(type) {
   return 'request';
 }
 
-function lbTypeChange() { var v = g('lb-type') ? g('lb-type').value : ''; var w = g('lb-other-wrap'); if (w) w.style.display = v === 'Other' ? '' : 'none'; }
+function lbTypeChange() {
+  var v = g('lb-type') ? g('lb-type').value : '';
+  var w = g('lb-other-wrap'); if (w) w.style.display = v === 'Other' ? '' : 'none';
+  var secTypes = ['Unhoused individual — removed by staff','Unhoused individual — security called','Unhoused individual — SFPD called','Unauthorized access','Disturbance / altercation','Suspicious activity','Noise complaint escalation','Trespassing'];
+  var medTypes = ['Medical emergency — 911 called','Medical emergency — first aid / staff handled','Slip / fall','Resident welfare check'];
+  var seriousPropTypes = ['Property damage','Package theft suspected','Elevator issue'];
+  var footageTypes = secTypes.concat(['Medical emergency — 911 called','Slip / fall','Footage review requested','Property damage','Package theft suspected']);
+  var irTypes = ['Medical emergency — 911 called','Slip / fall','Unhoused individual — SFPD called','Unauthorized access','Disturbance / altercation','Trespassing','Package theft suspected'];
+  var managerTypes = secTypes.concat(medTypes).concat(seriousPropTypes).concat(['Management']);
+  var concernTypes = ['Maintenance — Unit','Maintenance — Common Area','Leasing','Package','Management'];
+  var mgrWrap = g('lb-manager-wrap'); if (mgrWrap) mgrWrap.style.display = managerTypes.indexOf(v) !== -1 ? '' : 'none';
+  var ftgWrap = g('lb-footage-wrap'); if (ftgWrap) ftgWrap.style.display = footageTypes.indexOf(v) !== -1 ? '' : 'none';
+  var irWrap = g('lb-ir-wrap'); if (irWrap) irWrap.style.display = irTypes.indexOf(v) !== -1 ? '' : 'none';
+  var fuHint = g('lb-followup-hint'); if (fuHint) fuHint.style.display = concernTypes.indexOf(v) !== -1 ? '' : 'none';
+}
 
 function filterLogbook(f, item) {
   logbookFilter = f;
@@ -4201,6 +4241,7 @@ function openAddLogbook() {
   var typeEl = g('lb-type'); if (typeEl) typeEl.value = 'Dry Cleaning';
   var statEl = g('lb-status'); if (statEl) statEl.value = 'open';
   var hEl = g('lb-handled'); if (hEl && currentUser) hEl.value = currentUser.name;
+  ['lb-manager-notified','lb-footage-preserved','lb-incident-report'].forEach(function(id){ var el=g(id); if(el) el.checked=false; });
   lbTypeChange();
   setModalMode('modal-logbook-title','modal-logbook-savebtn','Log Entry','Log Entry');
   openModal('modal-logbook');
@@ -4216,6 +4257,9 @@ function openEditLogbook(id) {
   var timeEl = g('lb-time'); if (timeEl) timeEl.value = e.time || '';
   var typeEl = g('lb-type'); if (typeEl) typeEl.value = e.type || 'Dry Cleaning';
   var otherEl = g('lb-other'); if (otherEl) otherEl.value = '';
+  var mnEl = g('lb-manager-notified'); if (mnEl) mnEl.checked = !!e.managerNotified;
+  var fpEl = g('lb-footage-preserved'); if (fpEl) fpEl.checked = !!e.footagePreserved;
+  var irEl = g('lb-incident-report'); if (irEl) irEl.checked = !!e.incidentReport;
   lbTypeChange();
   var uEl = g('lb-unit'); if (uEl) uEl.value = e.unit || '';
   var rEl = g('lb-resident'); if (rEl) rEl.value = e.resident || '';
@@ -4246,17 +4290,21 @@ function saveLogbook() {
   var dateVal = g('lb-date') ? g('lb-date').value : today();
   var timeVal = g('lb-time') ? g('lb-time').value : '';
   var createdAt = dateVal ? (new Date(dateVal + (timeVal ? 'T' + timeVal : 'T12:00')).getTime() || now2) : now2;
+  var managerNotified = g('lb-manager-notified') ? g('lb-manager-notified').checked : false;
+  var footagePreserved = g('lb-footage-preserved') ? g('lb-footage-preserved').checked : false;
+  var incidentReport = g('lb-incident-report') ? g('lb-incident-report').checked : false;
   if (editingLogbookId) {
     var entry = (state.logbook||[]).find(function(x){ return x.id===editingLogbookId; }); if (!entry) return;
     var _before = Object.assign({}, entry);
     entry.type = type; entry.category = category; entry.unit = unit; entry.resident = resident;
     entry.location = location; entry.notes = notes; entry.nextAction = nextAction;
     entry.status = status; entry.handledBy = handledBy; entry.time = timeVal;
+    entry.managerNotified = managerNotified; entry.footagePreserved = footagePreserved; entry.incidentReport = incidentReport;
     pushUndo({ sec: 'logbook', type: 'EDIT', id: entry.id, before: _before, after: Object.assign({}, entry), label: 'logbook edit — ' + type });
     logActivity('logbook', 'edit', 'Updated logbook entry — ' + type);
     editingLogbookId = null; scheduleSave(); closeModal('modal-logbook'); renderLogbook(); updateBadges(); toast('Entry updated'); return;
   }
-  var newEntry = { id: uid(), category: category, type: type, unit: unit, resident: resident, location: location, notes: notes, nextAction: nextAction, status: status, handledBy: handledBy, addedBy: by, createdAt: createdAt, time: timeVal, log: notes ? [{ ts: now2, by: by, note: notes }] : [] };
+  var newEntry = { id: uid(), category: category, type: type, unit: unit, resident: resident, location: location, notes: notes, nextAction: nextAction, status: status, handledBy: handledBy, addedBy: by, createdAt: createdAt, time: timeVal, managerNotified: managerNotified, footagePreserved: footagePreserved, incidentReport: incidentReport, log: notes ? [{ ts: now2, by: by, note: notes }] : [] };
   if (!state.logbook) state.logbook = [];
   state.logbook.push(newEntry);
   pushUndo({ sec: 'logbook', type: 'ADD', id: newEntry.id, data: Object.assign({}, newEntry), label: 'add logbook — ' + type });
@@ -4332,6 +4380,7 @@ function renderLogbook() {
   if (logbookFilter === 'open') list = list.filter(function(e){ return e.status==='open'; });
   else if (logbookFilter === 'in-progress') list = list.filter(function(e){ return e.status==='in-progress'; });
   else if (logbookFilter === 'resolved') list = list.filter(function(e){ return e.status==='resolved'; });
+  if (logbookCatFilter !== 'all') list = list.filter(function(e){ return (e.category||'request') === logbookCatFilter; });
 
   var cntEl = g('logbook-count'); if (cntEl) cntEl.textContent = list.length + ' entr' + (list.length===1?'y':'ies');
   var tbody = g('logbook-tbody'); if (!tbody) return;
@@ -4345,6 +4394,23 @@ function renderLogbook() {
     var cat = e.category || 'request';
     var cc = catColors[cat] || catColors.other;
     var pill = '<span style="background:'+cc.bg+';color:'+cc.color+';font-size:10px;font-weight:600;border-radius:4px;padding:2px 7px;white-space:nowrap">'+esc(e.type)+'</span>';
+    // 24-hour follow-up indicator for concern entries
+    var fuHtml = '';
+    if (cat === 'concern' && e.status !== 'resolved') {
+      var nowMs = Date.now(); var dueMs = (e.createdAt||0) + 86400000;
+      if (nowMs > dueMs) {
+        fuHtml = '<div style="color:#dc2626;font-size:10px;font-weight:600;margin-top:3px">⚠ Follow-up overdue</div>';
+      } else {
+        var dueD = new Date(dueMs);
+        fuHtml = '<div style="color:#92400e;font-size:10px;margin-top:3px">Follow-up due '+dueD.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+dueD.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})+'</div>';
+      }
+    }
+    // Flag badges
+    var flagHtml = '';
+    if (e.managerNotified) flagHtml += '<span style="font-size:9px;font-weight:600;background:rgba(34,197,94,0.12);color:#15803d;border-radius:3px;padding:1px 5px;margin-right:3px">✓ Mgr</span>';
+    if (e.footagePreserved) flagHtml += '<span style="font-size:9px;font-weight:600;background:rgba(99,102,241,0.12);color:#4338ca;border-radius:3px;padding:1px 5px;margin-right:3px">📷 Footage</span>';
+    if (e.incidentReport) flagHtml += '<span style="font-size:9px;font-weight:600;background:rgba(239,68,68,0.1);color:#b91c1c;border-radius:3px;padding:1px 5px">📋 IR</span>';
+    var flagRow = flagHtml ? '<div style="margin-top:4px">'+flagHtml+'</div>' : '';
 
     var d = new Date(e.createdAt||Date.now());
     var dateFmt = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
@@ -4383,7 +4449,7 @@ function renderLogbook() {
 
     html += '<tr>';
     html += '<td>'+dateCell+byTag+'</td>';
-    html += '<td>'+pill+'</td>';
+    html += '<td>'+pill+fuHtml+flagRow+'</td>';
     html += '<td style="font-size:12px">'+who+'</td>';
     html += '<td style="max-width:160px;white-space:normal;font-size:12px;color:var(--text2)">'+(e.notes?esc(e.notes):'—')+'</td>';
     html += '<td style="max-width:180px">'+naCell+'</td>';
