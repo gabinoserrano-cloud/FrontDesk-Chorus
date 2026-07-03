@@ -706,7 +706,7 @@
         <div class="card-hdr"><span class="card-title" id="moves-card-title">Scheduled Moves</span><span class="card-count" id="moves-count">0 entries</span>
           <div class="ml-auto flex gap-8" id="moves-admin-actions"><button class="btn btn-ghost btn-sm" id="btn-move-logged" onclick="toggleMoveLogged()" title="Show/hide logged by column">Logged By</button><button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button></div>
         </div>
-        <div class="tbl-wrap"><table><thead><tr id="moves-thead-row"><th class="th-sort" onclick="sortMoves('unit')">Unit</th><th class="th-sort" onclick="sortMoves('name')">Resident</th><th class="th-sort" onclick="sortMoves('date')">Lease Start</th><th class="th-sort" onclick="sortMoves('type')">Type</th><th class="th-sort" onclick="sortMoves('appt')">Reservation</th><th>Total</th><th>Notes</th><th id="moves-th-logged" style="display:none">Logged By</th><th></th></tr></thead><tbody id="moves-tbody"></tbody></table></div>
+        <div class="tbl-wrap"><table><thead><tr id="moves-thead-row"><th class="th-sort" onclick="sortMoves('unit')">Unit</th><th class="th-sort" onclick="sortMoves('name')">Resident</th><th class="th-sort" onclick="sortMoves('date')">Lease Date</th><th class="th-sort" onclick="sortMoves('type')">Type</th><th class="th-sort" onclick="sortMoves('appt')">Reservation</th><th>Total</th><th>Notes</th><th id="moves-th-logged" style="display:none">Logged By</th><th></th></tr></thead><tbody id="moves-tbody"></tbody></table></div>
       </div>
       <div id="moves-cards"></div>
       <div class="card" id="tight-panel" style="display:none"><div class="card-hdr"><span class="card-title">Tight Turnovers</span></div><div class="card-body" id="tight-body"></div></div>
@@ -3650,7 +3650,9 @@ function renderMoves() {
       }
     });
     // Re-render text content with indicator
-    var colLabels = ['Unit','Resident','Lease Start','Type','Appt'];
+    var dateColLbl = (moveFilter === 'out' || moveFilter === 'turnover') ? 'Lease End'
+      : (moveFilter === 'in' || moveFilter === 'postmovein') ? 'Lease Start' : 'Lease Date';
+    var colLabels = ['Unit','Resident',dateColLbl,'Type','Appt'];
     theadRow.querySelectorAll('th.th-sort').forEach(function(th, i) {
       var col = ['unit','name','date','type','appt'][i];
       th.textContent = colLabels[i] + (col === moveSort ? (moveSortDir === 'asc' ? ' ▲' : ' ▼') : '');
