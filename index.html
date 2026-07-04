@@ -582,6 +582,26 @@
   .stage-notice_given{background:var(--border2);color:var(--text3)}
   .stage-wrap_up{background:var(--amber-light);color:var(--amber)}
   body.dark-mode .stage-confirmed{background:rgba(74,111,165,0.18);color:#7BA7D4}
+  /* ─── Moves pipeline board ─── */
+  .mv-board-lane{margin-bottom:20px}
+  .mv-board-lane-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text2);margin:2px 2px 8px}
+  .mv-board-cols{display:grid;gap:8px}
+  .mv-board-col{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:8px;min-height:70px}
+  .mv-board-col-hdr{display:flex;justify-content:space-between;gap:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding:2px 4px 8px}
+  .mv-bcard{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:8px;cursor:pointer;box-shadow:var(--shadow)}
+  .mv-bcard:hover{border-color:var(--accent)}
+  .mv-bcard:last-child{margin-bottom:0}
+  .mv-bcard.stuck{border:1.5px solid var(--red)}
+  .mv-bcard-top{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+  .mv-bcard-unit{font-size:14.5px;font-weight:700;font-family:var(--font-mono)}
+  .mv-bcard-chip{font-size:10px;padding:1px 7px;border-radius:9px;white-space:nowrap;font-weight:600;flex-shrink:0}
+  .mv-bcard-res{font-size:12px;color:var(--text2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mv-bcard-block{font-size:11px;color:var(--text3);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mv-bcard-block.red{color:var(--red);font-weight:600}
+  .mv-bcard-prog{height:3px;background:var(--border2);border-radius:2px;margin-top:6px;overflow:hidden}
+  .mv-bcard-prog>div{height:3px}
+  .mv-bcard-cnt{font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--font-mono)}
+  @media(max-width:650px){.mv-board-cols{display:flex;overflow-x:auto;padding-bottom:4px}.mv-board-col{flex:0 0 172px}}
   /* Payment task inline fields */
   .pay-task-row{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
   .pay-type-sel{font-size:11px;padding:2px 5px;border:1px solid var(--border2);border-radius:4px;background:var(--surface);color:var(--text);flex-shrink:0}
@@ -700,8 +720,11 @@
         <div class="sub-tab" onclick="filterMoves('postmovein',this)">Post Move-In</div>
         <div class="sub-tab" onclick="filterMoves('needs-appt',this)">Needs Reservation <span class="badge" id="badge-needs-appt" style="background:var(--amber)"></span></div>
         <div class="sub-tab" onclick="filterMoves('archive',this)">Archive</div>
+        <div class="sub-tab mv-vt" id="mv-vt-table" style="margin-left:auto" title="Table view" onclick="setMovesView('table')">&#9776; Table</div>
+        <div class="sub-tab mv-vt" id="mv-vt-board" title="Pipeline board — where every move is in the process" onclick="setMovesView('board')">&#9638; Board</div>
       </div>
       <div class="stat-grid" id="moves-stats"></div>
+      <div id="moves-board" style="display:none"></div>
       <div class="card moves-tbl-wrap">
         <div class="card-hdr"><span class="card-title" id="moves-card-title">Scheduled Moves</span><span class="card-count" id="moves-count">0 entries</span>
           <div class="ml-auto flex gap-8" id="moves-admin-actions"><button class="btn btn-ghost btn-sm" id="btn-move-logged" onclick="toggleMoveLogged()" title="Show/hide logged by column">Logged By</button><button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button></div>
@@ -1220,6 +1243,11 @@
   <div class="modal-ftr"><button class="btn btn-ghost btn-sm" id="move-modal-delete-btn" style="color:var(--red);display:none" onclick="deleteMoveFromModal()">Delete</button><button class="btn btn-secondary" onclick="closeModal('modal-move')">Cancel</button><button class="btn btn-primary" id="move-modal-save-btn" onclick="saveMove()">Save Move</button></div>
 </div></div>
 
+<div class="modal-ov" id="modal-board-cl"><div class="modal" style="max-width:780px">
+  <div class="modal-hdr"><span class="modal-title" id="board-cl-title">Move Checklist</span><button class="modal-close" aria-label="Close" onclick="closeBoardCL()">&#x2715;</button></div>
+  <div class="cl-inner" id="board-cl-body" style="max-height:72vh;overflow-y:auto"></div>
+</div></div>
+
 <div class="modal-ov" id="modal-import-letter"><div class="modal" style="max-width:480px">
   <div class="modal-hdr"><span class="modal-title">&#128231; Import from Welcome Letter</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-import-letter')">&#x2715;</button></div>
   <div class="modal-bdy">
@@ -1330,6 +1358,7 @@
 <div class="modal-ov" id="modal-logbook"><div class="modal" style="max-width:500px">
   <div class="modal-hdr"><span class="modal-title" id="modal-logbook-title">Log Entry</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-logbook')">&#x2715;</button></div>
   <div class="modal-bdy">
+    <div style="font-size:11.5px;color:var(--text3);margin-bottom:10px">Logging a <strong>found item</strong>? Use <a onclick="closeModal('modal-logbook');openAddLAF()" style="cursor:pointer;text-decoration:underline">Lost &amp; Found</a> instead.</div>
     <div class="fr"><div class="fg"><label>Date</label><input id="lb-date" type="date"></div><div class="fg"><label>Time <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="lb-time" type="time"></div></div>
     <div class="fg"><label>Type</label>
       <select id="lb-type" onchange="lbTypeChange()">
@@ -2653,6 +2682,11 @@ function renderDash() {
   var greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   var greetName = currentUser ? currentUser.name.split(' ')[0] : 'Gabino';
   var html = '<div class="dash-greeting-wrap"><canvas id="dash-bg-canvas"></canvas><div class="dash-greeting-content"><div style="font-size:18px;font-weight:600;letter-spacing:-.3px">' + greeting + ', ' + greetName + '.</div><div style="font-size:12px;color:var(--text3);margin-top:2px;font-family:var(--mono)">' + new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) + ' &nbsp;&middot;&nbsp; Front Desk</div></div></div>';
+  html += '<div class="flex gap-8" style="margin:0 0 14px;flex-wrap:wrap;align-items:center">'
+    + '<button class="btn btn-primary" onclick="openAddLogbook()" title="Visitor issues, resident concerns, incidents, notes — everything you log feeds your passdown">&#128211; Log it</button>'
+    + '<button class="btn btn-secondary" onclick="openAddLAF()">Found item</button>'
+    + '<span style="font-size:11.5px;color:var(--text3)">Anything that happens at the desk goes here — it feeds your passdown automatically.</span>'
+    + '</div>';
   // Turnover ready count: move-outs with all tasks done
   var turnoverReady = active.filter(function (m) {
     if (m.type !== 'out') return false;
@@ -2902,6 +2936,153 @@ function getMoveStage(m) {
     return 'notice_given';
   }
 }
+// ─── Moves pipeline board: phases derived from checklist tasks (no data migration) ───
+var movesView = 'table';
+try { movesView = localStorage.getItem('chorus-moves-view') || 'table'; } catch (e) {}
+function setMovesView(v) {
+  movesView = v;
+  try { localStorage.setItem('chorus-moves-view', v); } catch (e) {}
+  renderMoves();
+}
+var MOVE_PHASES = {
+  in: [
+    { key: 'setup',  label: 'Lease & Setup' },
+    { key: 'keys',   label: 'Keys & Prep' },
+    { key: 'movein', label: 'Move-In' },
+    { key: 'post',   label: 'Post Move-In' },
+    { key: 'done',   label: 'Done' }
+  ],
+  out: [
+    { key: 'notice',  label: 'Notice & Scheduling' },
+    { key: 'moveout', label: 'Move-Out Day' },
+    { key: 'wrapup',  label: 'Wrap-Up' },
+    { key: 'done',    label: 'Done' }
+  ]
+};
+// Which phase one task belongs to. Text rules first (most specific), then category, then the middle phase.
+function taskPhase(t, type) {
+  var txt = (t.text || '').toLowerCase();
+  var cat = t.cat || '';
+  if (type !== 'out') {
+    if (cat === 'Post Move-In') return 'post';
+    if (/welcome (letter|call)|riseio profile|invite link|pre.?move|eliseai|wifi activation|confirm move.?in date|reserve service elevator/.test(txt)) return 'setup';
+    if (cat === 'Pre Move-In') return 'setup';
+    if (/prepare .*key|parking credential|transponder|key tag|xpress/.test(txt)) return 'keys';
+    if (cat === 'Keys & Access' || cat === 'Parking') return 'keys';
+    return 'movein';
+  }
+  if (/inspection.*(schedul|message)|scheduling message|confirm inspection|time slot|reserve service elevator|confirm move.?out (date|time)/.test(txt)) return 'notice';
+  if (/delete .*(riseio|lenel|tez|wifi|profile|account)|deactivat|inform manager|notify leasing|unit status|unit cleaned/.test(txt)) return 'wrapup';
+  return 'moveout';
+}
+// A move sits in the earliest phase that still has an unchecked task.
+function getMovePhase(m) {
+  var phases = MOVE_PHASES[m.type === 'out' ? 'out' : 'in'];
+  var tasks = m.tasks || [];
+  if (!tasks.length) return phases[0].key;
+  for (var i = 0; i < phases.length - 1; i++) {
+    var k = phases[i].key;
+    var open = tasks.some(function (t) { return !t.done && taskPhase(t, m.type) === k; });
+    if (open) return k;
+  }
+  return 'done';
+}
+function movePhaseBlocker(m) {
+  var ph = getMovePhase(m);
+  if (ph === 'done') return null;
+  return (m.tasks || []).find(function (t) { return !t.done && taskPhase(t, m.type) === ph; }) || null;
+}
+// Red flag: lease start passed but keys not ready (in) / lease end passed but keys not collected (out)
+function moveIsStuck(m, t) {
+  if (!m.date || m.archivedAt || m.date >= t) return false;
+  var ph = getMovePhase(m);
+  if (m.type === 'in') return ph === 'setup' || ph === 'keys';
+  return ph === 'notice' || ph === 'moveout';
+}
+var boardCLId = null;
+function openBoardCL(id) {
+  var m = (state.moves || []).find(function (x) { return x.id === id; }); if (!m) return;
+  boardCLId = id;
+  var ttl = g('board-cl-title'); if (ttl) ttl.textContent = (m.type === 'in' ? 'Move-In' : 'Move-Out') + ' — Unit ' + m.unit;
+  var body = g('board-cl-body'); if (body) body.innerHTML = buildCL(m, 'board');
+  openModal('modal-board-cl');
+}
+function closeBoardCL() { boardCLId = null; closeModal('modal-board-cl'); }
+function boardTaskRefresh(moveId) {
+  var bMod = g('modal-board-cl');
+  if (bMod && bMod.classList.contains('open') && boardCLId === moveId) {
+    var m = (state.moves || []).find(function (x) { return x.id === moveId; });
+    var bb = g('board-cl-body');
+    if (bb) {
+      if (!m || m.archivedAt) closeBoardCL();
+      else { var st = bb.scrollTop; bb.innerHTML = buildCL(m, 'board'); bb.scrollTop = st; }
+    }
+  }
+  if (movesView === 'board' && curSec === 'moves') renderMovesBoard();
+}
+function renderMovesBoard() {
+  var el = g('moves-board'); if (!el) return;
+  var t = today();
+  var isStaffUser = currentUser && currentUser.role === 'staff';
+  var active = (state.moves || []).filter(function (m) { return !m.archivedAt; });
+  if (!active.length) { el.innerHTML = '<div class="text-3 text-sm" style="text-align:center;padding:24px">No active moves.</div>'; return; }
+  var html = '';
+  [['in', 'Move-Ins', '&#128666;'], ['out', 'Move-Outs', '&#128230;']].forEach(function (lane) {
+    var type = lane[0];
+    var list = active.filter(function (m) { return m.type === type; });
+    var phases = MOVE_PHASES[type];
+    html += '<div class="mv-board-lane"><div class="mv-board-lane-title">' + lane[2] + ' ' + lane[1] + ' <span style="color:var(--text3);font-weight:500">&middot; ' + list.length + '</span></div>';
+    html += '<div class="mv-board-cols" style="grid-template-columns:repeat(' + phases.length + ',minmax(0,1fr))">';
+    phases.forEach(function (ph) {
+      var col = list.filter(function (m) { return getMovePhase(m) === ph.key; });
+      col.sort(function (a, b) { return (a.date || '9999').localeCompare(b.date || '9999'); });
+      html += '<div class="mv-board-col"><div class="mv-board-col-hdr"><span>' + ph.label + '</span><span>' + (col.length || '') + '</span></div>';
+      col.forEach(function (m) { html += buildBoardCard(m, t, isStaffUser); });
+      html += '</div>';
+    });
+    html += '</div></div>';
+  });
+  el.innerHTML = html;
+}
+function buildBoardCard(m, t, isStaffUser) {
+  var tasks = m.tasks || [];
+  var dn = tasks.filter(function (x) { return x.done; }).length, tot = tasks.length;
+  var pct = tot ? Math.round(dn / tot * 100) : 0;
+  var bc = pct < 30 ? 'var(--red)' : pct < 70 ? 'var(--amber)' : 'var(--green)';
+  var ph = getMovePhase(m);
+  var stuck = moveIsStuck(m, t);
+  var chip;
+  if (!m.date) chip = '<span class="mv-bcard-chip" style="background:var(--surface2);color:var(--text3)">date TBD</span>';
+  else {
+    var days = Math.round((new Date(m.date + 'T12:00:00') - new Date(t + 'T12:00:00')) / 86400000);
+    var word = m.type === 'in' ? 'lease start' : 'lease end';
+    var ctxt = days === 0 ? (word + ' today') : days > 0 ? (word + ' in ' + days + 'd') : (word + ' ' + (-days) + 'd ago');
+    if (stuck) chip = '<span class="mv-bcard-chip" style="background:var(--red-light);color:var(--red)">' + ctxt + '</span>';
+    else if (days === 0) chip = '<span class="mv-bcard-chip" style="background:var(--accent-light);color:var(--accent)">' + ctxt + '</span>';
+    else chip = '<span class="mv-bcard-chip" style="background:var(--surface2);color:var(--text3)">' + ctxt + '</span>';
+  }
+  var resv = '';
+  if (m.apptTbd) resv = '<div class="mv-bcard-block">Reservation: TBD</div>';
+  else if (m.apptDate) resv = '<div class="mv-bcard-block" style="color:var(--green)">&#10003; Resv ' + fmtShort(m.apptDate) + (m.apptTime ? ' ' + fmtTime(m.apptTime) : '') + '</div>';
+  else if (m.date && m.date >= t) resv = '<div class="mv-bcard-block" style="color:var(--amber)">No reservation yet</div>';
+  var blockLine = '';
+  if (ph === 'done') {
+    blockLine = '<div class="mv-bcard-block" style="color:var(--green);font-weight:600">&#10003; All tasks done' + (!isStaffUser ? ' &middot; <a onclick="event.stopPropagation();archiveMove(\'' + m.id + '\')" style="text-decoration:underline;cursor:pointer">archive</a>' : '') + '</div>';
+  } else {
+    var blocker = movePhaseBlocker(m);
+    if (blocker) blockLine = '<div class="mv-bcard-block' + (stuck ? ' red' : '') + '" title="Next task: ' + esc(blocker.text || '').replace(/"/g, '&quot;') + '">' + (stuck ? '&#9888; ' : '&#8987; ') + esc(blocker.text || '') + '</div>';
+    else if (!tot) blockLine = '<div class="mv-bcard-block">No tasks yet</div>';
+  }
+  var coN = (m.coResidents || []).length;
+  return '<div class="mv-bcard' + (stuck ? ' stuck' : '') + '" onclick="openBoardCL(\'' + m.id + '\')">'
+    + '<div class="mv-bcard-top"><span class="mv-bcard-unit">' + esc(m.unit) + '</span>' + chip + '</div>'
+    + '<div class="mv-bcard-res">' + esc(m.resident || '') + (coN ? ' +' + coN : '') + '</div>'
+    + resv + blockLine
+    + '<div class="mv-bcard-prog"><div style="width:' + pct + '%;background:' + (stuck ? 'var(--red)' : bc) + '"></div></div>'
+    + '<div class="mv-bcard-cnt">' + dn + '/' + tot + '</div>'
+    + '</div>';
+}
+
 function sortMoves(col) { if (moveSort === col) { moveSortDir = moveSortDir === 'asc' ? 'desc' : 'asc'; } else { moveSort = col; moveSortDir = 'asc'; } renderMoves(); }
 var editingMoveId = null;
 
@@ -3366,6 +3547,7 @@ function saveMove() {
 }
 function filterMoves(f, item) { moveFilter = f; document.querySelectorAll('#moves-tabs .sub-tab').forEach(function (t) { t.classList.remove('active'); }); if (item) item.classList.add('active'); renderMoves(); }
 function setMoveFilter(f) {
+  if (movesView === 'board') { movesView = 'table'; try { localStorage.setItem('chorus-moves-view', 'table'); } catch (e) {} }
   moveFilter = f;
   document.querySelectorAll('#moves-tabs .sub-tab').forEach(function(t) {
     t.classList.remove('active');
@@ -3537,6 +3719,7 @@ function updateTaskField(moveId, taskId, field, value) {
   var total = (m.tasks || []).length;
   if (ci) ci.textContent = done + '/' + total + ' tasks';
   if (mci) mci.textContent = done + '/' + total + ' tasks';
+  if (field === 'cat' && movesView === 'board' && curSec === 'moves') renderMovesBoard();
 }
 
 function toggleTaskNote(taskId) {
@@ -3555,6 +3738,19 @@ function renderMoves() {
   var isStaffUser = currentUser && currentUser.role === 'staff';
   var maa = g('moves-admin-actions');
   if (maa) maa.style.display = (currentUser && currentUser.role === 'staff') ? 'none' : '';
+  // Board ⇄ table view switching
+  var isBoardView = movesView === 'board';
+  var vtT = g('mv-vt-table'), vtB = g('mv-vt-board');
+  if (vtT) vtT.classList.toggle('active', !isBoardView);
+  if (vtB) vtB.classList.toggle('active', isBoardView);
+  document.querySelectorAll('#moves-tabs .sub-tab').forEach(function (tab) { if (!tab.classList.contains('mv-vt')) tab.style.display = isBoardView ? 'none' : ''; });
+  var boardWrap = g('moves-board');
+  var tblCard = document.querySelector('#section-moves .card.moves-tbl-wrap');
+  var mobCards = g('moves-cards');
+  if (tblCard) tblCard.style.display = isBoardView ? 'none' : '';
+  if (mobCards) mobCards.style.display = isBoardView ? 'none' : '';
+  if (boardWrap) boardWrap.style.display = isBoardView ? '' : 'none';
+  if (isBoardView) renderMovesBoard();
   var list = (state.moves || []).slice();
   if (moveFilter === 'in') list = list.filter(function (m) {
     if (m.type !== 'in' || m.archivedAt) return false;
@@ -3788,6 +3984,15 @@ function renderMoves() {
       cardsEl.innerHTML = html;
     }
   }
+  // Keep the board checklist modal in sync when moves re-render underneath it
+  if (boardCLId) {
+    var bMod = g('modal-board-cl');
+    if (bMod && bMod.classList.contains('open')) {
+      var bm = (state.moves || []).find(function (x) { return x.id === boardCLId; });
+      if (!bm || bm.archivedAt) closeBoardCL();
+      else { var bb = g('board-cl-body'); if (bb) bb.innerHTML = buildCL(bm, 'board'); }
+    } else boardCLId = null;
+  }
   renderTightTurnovers();
 }
 function toggleCL(id) {
@@ -3912,6 +4117,7 @@ function toggleTask(moveId, taskId, checked) {
   scheduleSave();
   var ci = document.querySelector('#cl-' + moveId + ' .cl-inner'); if (ci) ci.innerHTML = buildCL(m, moveFilter);
   var mci = document.querySelector('#mc-' + moveId + ' .mc-cl'); if (mci) mci.innerHTML = buildCL(m, moveFilter);
+  boardTaskRefresh(moveId);
   updateBadges(); renderDash();
 }
 function deleteTask(moveId, taskId) {
@@ -3924,6 +4130,7 @@ function deleteTask(moveId, taskId) {
   scheduleSave();
   var ci = document.querySelector('#cl-' + moveId + ' .cl-inner'); if (ci) ci.innerHTML = buildCL(m, moveFilter);
   var mci = document.querySelector('#mc-' + moveId + ' .mc-cl'); if (mci) mci.innerHTML = buildCL(m, moveFilter);
+  boardTaskRefresh(moveId);
   updateBadges(); renderDash();
 }
 var addTaskMoveId = null;
@@ -3975,6 +4182,7 @@ function addCoResident(moveId, name) {
   scheduleSave();
   var ci = document.querySelector('#cl-' + moveId + ' .cl-inner'); if (ci) ci.innerHTML = buildCL(m, moveFilter);
   var mci = document.querySelector('#mc-' + moveId + ' .mc-cl'); if (mci) mci.innerHTML = buildCL(m, moveFilter);
+  boardTaskRefresh(moveId);
 }
 function removeCoResident(moveId, coId) {
   var m = (state.moves || []).find(function(x){ return x.id === moveId; }); if (!m) return;
@@ -3986,6 +4194,7 @@ function removeCoResident(moveId, coId) {
   scheduleSave();
   var ci = document.querySelector('#cl-' + moveId + ' .cl-inner'); if (ci) ci.innerHTML = buildCL(m, moveFilter);
   var mci = document.querySelector('#mc-' + moveId + ' .mc-cl'); if (mci) mci.innerHTML = buildCL(m, moveFilter);
+  boardTaskRefresh(moveId);
 }
 function archiveMove(id) {
   var m = (state.moves || []).find(function (x) { return x.id === id; }); if (!m) return;
@@ -9235,7 +9444,7 @@ function openAddTourForDate(dateStr) { openAddTour(); if (dateStr) g('tr-date').
 // ─── GUIDE ───
 var GUIDE_DATA = [
   { id:'g-start', icon:'🏁', title:'Getting Started', keywords:'getting started new hire overview sections login pin role admin staff first time dashboard what is this welcome',
-    html:'<h4>Welcome to the Front Desk Dashboard</h4><p>This is the Chorus SF Front Desk Hub — your central tool for managing everything that happens at the front desk during your shift. Whether it\'s your first day or you just need a quick refresher, this card covers the basics.</p><h4>What the Dashboard Does</h4><p>The dashboard keeps track of everything happening in the building in real time. Everything you log during your shift feeds directly into your end-of-shift passdown — so the more you log as you go, the less you have to write at the end.</p><h4>Sections at a Glance</h4><ul><li><strong>Dashboard</strong> — live overview of everything active in the building</li><li><strong>Calendar</strong> — all moves, bookings, and tours in one view</li><li><strong>Moves</strong> — move-in and move-out checklists and task tracking</li><li><strong>Key Tracker</strong> — keys issued, returned, and overdue</li><li><strong>Amenity Bookings</strong> — rooftop, party room, service elevator reservations</li><li><strong>Logbook</strong> — resident requests, concerns, and incidents in one place</li><li><strong>Lost &amp; Found</strong> — items logged and claimed</li><li><strong>Resident Profiles</strong> — per-unit profiles and special instructions</li><li><strong>Passdown</strong> — build and send your end-of-shift passdown</li><li><strong>To-Do List</strong> — your personal task list, private to your account</li></ul><div class="guide-tip">💡 Every section feeds the Passdown builder. Log items as they happen and your passdown will mostly build itself by end of shift.</div><h4>Logging In</h4><ul><li>Click your name on the login screen and enter your 4-digit PIN</li><li>No account yet? Ask the Front Desk Lead to set one up before your shift begins</li><li>Forgot your PIN? The Lead can reset it in Settings → Team Accounts</li></ul><h4>Your Role</h4><ul><li><strong>Staff (Associate)</strong> — access to all day-to-day sections. Can check off move tasks but cannot add or edit move entries</li><li><strong>Admin / Lead</strong> — full access including Settings, Team Tracker, and staff visibility controls</li></ul><div class="guide-note">📌 All changes save automatically. No Save button needed for most actions.</div>' },
+    html:'<h4>Welcome to the Front Desk Dashboard</h4><p>This is the Chorus SF Front Desk Hub — your central tool for managing everything that happens at the front desk during your shift. Whether it\'s your first day or you just need a quick refresher, this card covers the basics.</p><h4>What the Dashboard Does</h4><p>The dashboard keeps track of everything happening in the building in real time. Everything you log during your shift feeds directly into your end-of-shift passdown — so the more you log as you go, the less you have to write at the end.</p><h4>Sections at a Glance</h4><ul><li><strong>Dashboard</strong> — live overview of everything active in the building</li><li><strong>Calendar</strong> — all moves, bookings, and tours in one view</li><li><strong>Moves</strong> — move-in and move-out checklists and task tracking</li><li><strong>Key Tracker</strong> — keys issued, returned, and overdue</li><li><strong>Amenity Bookings</strong> — rooftop, party room, service elevator reservations</li><li><strong>Logbook</strong> — resident requests, concerns, and incidents in one place</li><li><strong>Lost &amp; Found</strong> — items logged and claimed</li><li><strong>Unit Tracker</strong> — per-unit keys, parking credentials, and WiFi info</li><li><strong>Passdown</strong> — build and send your end-of-shift passdown</li><li><strong>To-Do List</strong> — your personal task list, private to your account</li></ul><div class="guide-tip">💡 Every section feeds the Passdown builder. Log items as they happen and your passdown will mostly build itself by end of shift.</div><h4>Logging In</h4><ul><li>Click your name on the login screen and enter your 4-digit PIN</li><li>No account yet? Ask the Front Desk Lead to set one up before your shift begins</li><li>Forgot your PIN? The Lead can reset it in Settings → Team Accounts</li></ul><h4>Your Role</h4><ul><li><strong>Staff (Associate)</strong> — access to all day-to-day sections. Can check off move tasks but cannot add or edit move entries</li><li><strong>Admin / Lead</strong> — full access including Settings, Team Tracker, and staff visibility controls</li></ul><div class="guide-note">📌 All changes save automatically. No Save button needed for most actions.</div>' },
 
   { id:'g-passdown-how', icon:'📝', title:'How to Use the Passdown Builder', keywords:'passdown builder how to use step by step guide update next step shift summary generate send am pm overnight tone auto block log items',
     html:'<h4>Overview</h4><p>The Passdown builder auto-fills from what you log during your shift. Your job is to review it, add context, and send it.</p><h4>Step 1 — Log items during your shift</h4><p>Use the right section as things happen — don\'t wait until the end:</p><ul><li>Keys issued → <strong>Key Tracker</strong></li><li>Anything logged at the desk → <strong>Logbook</strong></li><li>Amenity setup or follow-up → note in <strong>This Shift</strong> in the builder</li><li>Work order submitted or maintenance issue carrying to next shift → note in <strong>This Shift</strong> in the builder</li></ul><h4>Step 2 — Open the builder</h4><p>Click <strong>Passdown</strong> in the sidebar. Select your shift (AM / PM / Overnight) from the dropdown at the top.</p><h4>Step 3 — Write your shift summary</h4><p>Write 1–3 sentences in the Shift Summary field — what happened, who came in, anything the next shift should know the moment they start.</p><h4>Step 4 — Review the auto-blocks</h4><p>The builder pulls in live data automatically — moves, keys, amenities, concierge requests, incidents. For each item:</p><ul><li>Fill in the <strong>Update / Next Step</strong> field with what the incoming shift needs to know or do</li><li>Click <strong>–</strong> to exclude anything that was resolved during your shift</li></ul><div class="guide-note">📌 Incidents and Concierge Requests only appear in the passdown if you add an Update / Next Step note. Leave it blank to exclude them.</div><h4>Step 5 — Generate</h4><p>Click <strong>Generate</strong>. Read the full preview — check that unit numbers and names are correct, every open item has a clear Update / Next Step, and nothing resolved is still listed as active. Fix anything and generate again if needed.</p><h4>Step 6 — Send</h4><p>Click <strong>Review &amp; Send → Send via Gmail →</strong>. Gmail opens with the recipient, subject, and body pre-filled. Add your signature and send.</p><div class="guide-tip">💡 Use <strong>Save Draft</strong> at any point to save your progress. Your draft is tied to your account and stays until you send or clear it.</div><div class="guide-note" style="margin-top:8px;background:rgba(220,38,38,0.06);border-color:rgba(220,38,38,0.2)">⚠️ Your passdown must reflect your shift. Do not copy or reuse another associate\'s passdown. The dashboard logs all passdowns by author and date — if yours matches a previous shift\'s, it is visible to everyone.</div>' },
@@ -9564,7 +9773,7 @@ var TOGGLEABLE_SECTIONS = [
   { id: 'amenities', label: 'Amenity Bookings' },
   { id: 'laf', label: 'Lost & Found' },
   { id: 'tours', label: 'Tour Log' },
-  { id: 'residents', label: 'Resident Profiles' },
+  { id: 'residents', label: 'Unit Tracker' },
   { id: 'templates', label: 'Message Templates' },
   { id: 'passdown', label: 'Daily Passdown' },
   { id: 'todos', label: 'To-Do List' },
