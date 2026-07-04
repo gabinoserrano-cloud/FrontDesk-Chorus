@@ -583,8 +583,6 @@
   .stage-wrap_up{background:var(--amber-light);color:var(--amber)}
   body.dark-mode .stage-confirmed{background:rgba(74,111,165,0.18);color:#7BA7D4}
   /* ─── Moves pipeline board ─── */
-  .mv-board-lane{margin-bottom:20px}
-  .mv-board-lane-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text2);margin:2px 2px 8px}
   .mv-board-cols{display:grid;gap:8px}
   .mv-board-col{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:8px;min-height:70px}
   .mv-board-col-hdr{display:flex;justify-content:space-between;gap:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding:2px 4px 8px}
@@ -713,6 +711,8 @@
     </div>
     <div class="section" id="section-moves">
       <div class="sub-tabs" id="moves-tabs">
+        <div class="sub-tab mv-lane" id="mv-lane-in" style="display:none" onclick="setBoardLane('in')">&#128666; Move Ins</div>
+        <div class="sub-tab mv-lane" id="mv-lane-out" style="display:none" onclick="setBoardLane('out')">&#128230; Move Outs</div>
         <div class="sub-tab active" onclick="filterMoves('all',this)">All</div>
         <div class="sub-tab" onclick="filterMoves('in',this)">Move Ins</div>
         <div class="sub-tab" onclick="filterMoves('out',this)">Move Outs</div>
@@ -2944,6 +2944,13 @@ function setMovesView(v) {
   try { localStorage.setItem('chorus-moves-view', v); } catch (e) {}
   renderMoves();
 }
+var boardLane = 'in';
+try { boardLane = localStorage.getItem('chorus-moves-lane') || 'in'; } catch (e) {}
+function setBoardLane(v) {
+  boardLane = v;
+  try { localStorage.setItem('chorus-moves-lane', v); } catch (e) {}
+  renderMoves();
+}
 var MOVE_PHASES = {
   in: [
     { key: 'setup',  label: 'Lease & Setup' },
@@ -3025,23 +3032,32 @@ function renderMovesBoard() {
   var t = today();
   var isStaffUser = currentUser && currentUser.role === 'staff';
   var active = (state.moves || []).filter(function (m) { return !m.archivedAt; });
-  if (!active.length) { el.innerHTML = '<div class="text-3 text-sm" style="text-align:center;padding:24px">No active moves.</div>'; return; }
-  var html = '';
-  [['in', 'Move-Ins', '&#128666;'], ['out', 'Move-Outs', '&#128230;']].forEach(function (lane) {
-    var type = lane[0];
-    var list = active.filter(function (m) { return m.type === type; });
-    var phases = MOVE_PHASES[type];
-    html += '<div class="mv-board-lane"><div class="mv-board-lane-title">' + lane[2] + ' ' + lane[1] + ' <span style="color:var(--text3);font-weight:500">&middot; ' + list.length + '</span></div>';
-    html += '<div class="mv-board-cols" style="grid-template-columns:repeat(' + phases.length + ',minmax(0,1fr))">';
-    phases.forEach(function (ph) {
-      var col = list.filter(function (m) { return getMovePhase(m) === ph.key; });
-      col.sort(function (a, b) { return (a.date || '9999').localeCompare(b.date || '9999'); });
-      html += '<div class="mv-board-col"><div class="mv-board-col-hdr"><span>' + ph.label + '</span><span>' + (col.length || '') + '</span></div>';
-      col.forEach(function (m) { html += buildBoardCard(m, t, isStaffUser); });
-      html += '</div>';
-    });
-    html += '</div></div>';
+  var ins = active.filter(function (m) { return m.type === 'in'; });
+  var outs = active.filter(function (m) { return m.type === 'out'; });
+  var stuckIn = ins.filter(function (m) { return moveIsStuck(m, t); }).length;
+  var stuckOut = outs.filter(function (m) { return moveIsStuck(m, t); }).length;
+  var tabIn = g('mv-lane-in'), tabOut = g('mv-lane-out');
+  if (tabIn) {
+    tabIn.innerHTML = '&#128666; Move Ins &middot; ' + ins.length + (stuckIn ? ' <span style="color:var(--red);font-weight:700">&#9888;' + stuckIn + '</span>' : '');
+    tabIn.classList.toggle('active', boardLane !== 'out');
+  }
+  if (tabOut) {
+    tabOut.innerHTML = '&#128230; Move Outs &middot; ' + outs.length + (stuckOut ? ' <span style="color:var(--red);font-weight:700">&#9888;' + stuckOut + '</span>' : '');
+    tabOut.classList.toggle('active', boardLane === 'out');
+  }
+  var type = boardLane === 'out' ? 'out' : 'in';
+  var list = type === 'out' ? outs : ins;
+  if (!list.length) { el.innerHTML = '<div class="text-3 text-sm" style="text-align:center;padding:24px">No active move-' + (type === 'out' ? 'outs' : 'ins') + '.</div>'; return; }
+  var phases = MOVE_PHASES[type];
+  var html = '<div class="mv-board-cols" style="grid-template-columns:repeat(' + phases.length + ',minmax(0,1fr))">';
+  phases.forEach(function (ph) {
+    var col = list.filter(function (m) { return getMovePhase(m) === ph.key; });
+    col.sort(function (a, b) { return (a.date || '9999').localeCompare(b.date || '9999'); });
+    html += '<div class="mv-board-col"><div class="mv-board-col-hdr"><span>' + ph.label + '</span><span>' + (col.length || '') + '</span></div>';
+    col.forEach(function (m) { html += buildBoardCard(m, t, isStaffUser); });
+    html += '</div>';
   });
+  html += '</div>';
   el.innerHTML = html;
 }
 function buildBoardCard(m, t, isStaffUser) {
@@ -3743,7 +3759,11 @@ function renderMoves() {
   var vtT = g('mv-vt-table'), vtB = g('mv-vt-board');
   if (vtT) vtT.classList.toggle('active', !isBoardView);
   if (vtB) vtB.classList.toggle('active', isBoardView);
-  document.querySelectorAll('#moves-tabs .sub-tab').forEach(function (tab) { if (!tab.classList.contains('mv-vt')) tab.style.display = isBoardView ? 'none' : ''; });
+  document.querySelectorAll('#moves-tabs .sub-tab').forEach(function (tab) {
+    if (tab.classList.contains('mv-vt')) return;
+    if (tab.classList.contains('mv-lane')) { tab.style.display = isBoardView ? '' : 'none'; return; }
+    tab.style.display = isBoardView ? 'none' : '';
+  });
   var boardWrap = g('moves-board');
   var tblCard = document.querySelector('#section-moves .card.moves-tbl-wrap');
   var mobCards = g('moves-cards');
