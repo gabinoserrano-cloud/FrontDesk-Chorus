@@ -713,6 +713,8 @@
       <div class="sub-tabs" id="moves-tabs">
         <div class="sub-tab mv-lane" id="mv-lane-in" style="display:none" onclick="setBoardLane('in')">&#128666; Move Ins</div>
         <div class="sub-tab mv-lane" id="mv-lane-out" style="display:none" onclick="setBoardLane('out')">&#128230; Move Outs</div>
+        <div class="sub-tab mv-bf" id="mv-bf-today" style="display:none" onclick="setBoardFilter('today')">Today</div>
+        <div class="sub-tab mv-bf" id="mv-bf-noresv" style="display:none" onclick="setBoardFilter('noresv')">No Reservation</div>
         <div class="sub-tab active" onclick="filterMoves('all',this)">All</div>
         <div class="sub-tab" onclick="filterMoves('in',this)">Move Ins</div>
         <div class="sub-tab" onclick="filterMoves('out',this)">Move Outs</div>
@@ -1127,7 +1129,7 @@
             <div class="card-hdr"><span class="card-title">Default Move-Out Tasks</span><span class="card-count" id="out-tasks-count"></span><button class="btn btn-ghost btn-sm ml-auto" style="font-size:11px;color:var(--text3)" onclick="resetTasksToDefaults('out')" title="Restore built-in default task list">↺ Reset to defaults</button></div>
             <div class="card-body" style="padding:8px 0" id="settings-out-tasks"></div>
             <div style="padding:10px 14px;border-top:1px solid var(--border2)">
-              <div class="flex gap-8"><input type="text" id="new-out-task" placeholder="New move-out task..." style="flex:1"><select id="new-out-cat" style="width:130px"><option>Move Out</option><option>Keys &amp; Access</option><option>Parking</option><option>Elevator</option><option>General</option></select><button class="btn btn-primary btn-sm" onclick="addDefaultTask('out')">Add</button></div>
+              <div class="flex gap-8"><input type="text" id="new-out-task" placeholder="New move-out task..." style="flex:1"><select id="new-out-cat" style="width:130px"><option>Pre Move-Out</option><option>Move Out</option><option>Keys &amp; Access</option><option>Parking</option><option>Elevator</option><option>Wrap-Up</option><option>General</option></select><button class="btn btn-primary btn-sm" onclick="addDefaultTask('out')">Add</button></div>
             </div>
           </div>
         </div>
@@ -1917,7 +1919,7 @@ var DEFAULT_IN_TASKS = [
   { text: 'Parking: Key tag issued', cat: 'Parking', hint: 'Key tag #: ___' },
   { text: 'Parking: Xpress sticker issued', cat: 'Parking', hint: 'Xpress sticker #: ___' },
   // Move-In Day
-  { text: 'Confirm move-in date and time window', cat: 'Move In' },
+  { text: 'Confirm move-in date and time window', cat: 'Pre Move-In' },
   { text: 'Reserve service elevator', cat: 'Elevator' },
   { text: 'Confirm Move-In Total collected', cat: 'Move In', paymentTask: true },
   { text: 'Unit walkthrough completed', cat: 'Move In' },
@@ -1933,8 +1935,8 @@ var DEFAULT_IN_TASKS = [
   { text: 'Check in on any outstanding issues from move day', cat: 'Post Move-In' }
 ];
 var DEFAULT_OUT_TASKS = [
-  { text: 'Send Inspection & Move-Out Scheduling Message', cat: 'Move Out' },
-  { text: 'Confirm move-out date and time window', cat: 'Move Out' },
+  { text: 'Send Inspection & Move-Out Scheduling Message', cat: 'Pre Move-Out' },
+  { text: 'Confirm move-out date and time window', cat: 'Pre Move-Out' },
   { text: 'Reserve service elevator', cat: 'Elevator' },
   { text: 'Unit inspection completed and documented', cat: 'Move Out' },
   { text: 'Any damage noted and photographed', cat: 'Move Out' },
@@ -1943,14 +1945,14 @@ var DEFAULT_OUT_TASKS = [
   { text: 'Parking: Transponder returned', cat: 'Parking', hint: 'If not returned or returned damaged, note here (e.g. adhered to windshield / cracked)' },
   { text: 'Parking: Key tag returned', cat: 'Parking' },
   { text: 'Parking: Xpress sticker returned', cat: 'Parking' },
-  { text: 'Mobile key deactivated (Lenel)', cat: 'Keys & Access' },
+  { text: 'Mobile key deactivated (Lenel)', cat: 'Wrap-Up' },
   { text: 'Parking spot vacated', cat: 'Move Out' },
   { text: 'Mail forwarding reminder given', cat: 'Move Out' },
   { text: 'Security deposit process explained', cat: 'Move Out' },
   { text: 'Elevator pads removed after move', cat: 'Elevator' },
-  { text: 'Unit cleaned and ready for next resident', cat: 'Move Out' },
-  { text: 'Unit status updated to Vacant', cat: 'Move Out' },
-  { text: 'Notify leasing of completed move-out', cat: 'Move Out' }
+  { text: 'Unit cleaned and ready for next resident', cat: 'Wrap-Up' },
+  { text: 'Unit status updated to Vacant', cat: 'Wrap-Up' },
+  { text: 'Notify leasing of completed move-out', cat: 'Wrap-Up' }
 ];
 var DEFAULT_AMENITY_SPACES = [
   'Belvedere Room (28th fl)',
@@ -2951,6 +2953,11 @@ function setBoardLane(v) {
   try { localStorage.setItem('chorus-moves-lane', v); } catch (e) {}
   renderMoves();
 }
+var boardFilter = 'all';
+function setBoardFilter(f) {
+  boardFilter = boardFilter === f ? 'all' : f;
+  renderMoves();
+}
 var MOVE_PHASES = {
   in: [
     { key: 'setup',  label: 'Lease & Setup' },
@@ -2966,21 +2973,57 @@ var MOVE_PHASES = {
     { key: 'done',    label: 'Done' }
   ]
 };
-// Which phase one task belongs to. Text rules first (most specific), then category, then the middle phase.
-function taskPhase(t, type) {
+// The category tag IS the phase. Text rules only rescue tasks whose tag doesn't name a phase (legacy/imported data).
+var CAT_PHASE_IN = { 'Pre Move-In': 'setup', 'Keys & Access': 'keys', 'Parking': 'keys', 'Move In': 'movein', 'Post Move-In': 'post' };
+var CAT_PHASE_OUT = { 'Pre Move-Out': 'notice', 'Move Out': 'moveout', 'Keys & Access': 'moveout', 'Parking': 'moveout', 'Wrap-Up': 'wrapup' };
+function taskPhaseText(t, type) {
   var txt = (t.text || '').toLowerCase();
-  var cat = t.cat || '';
   if (type !== 'out') {
-    if (cat === 'Post Move-In') return 'post';
     if (/welcome (letter|call)|riseio profile|invite link|pre.?move|eliseai|wifi activation|confirm move.?in date|reserve service elevator/.test(txt)) return 'setup';
-    if (cat === 'Pre Move-In') return 'setup';
     if (/prepare .*key|parking credential|transponder|key tag|xpress/.test(txt)) return 'keys';
-    if (cat === 'Keys & Access' || cat === 'Parking') return 'keys';
-    return 'movein';
+    return null;
   }
   if (/inspection.*(schedul|message)|scheduling message|confirm inspection|time slot|reserve service elevator|confirm move.?out (date|time)/.test(txt)) return 'notice';
   if (/delete .*(riseio|lenel|tez|wifi|profile|account)|deactivat|inform manager|notify leasing|unit status|unit cleaned/.test(txt)) return 'wrapup';
-  return 'moveout';
+  return null;
+}
+function taskPhase(t, type) {
+  var cat = t.cat || '';
+  if (type !== 'out') return CAT_PHASE_IN[cat] || taskPhaseText(t, 'in') || 'movein';
+  return CAT_PHASE_OUT[cat] || taskPhaseText(t, 'out') || 'moveout';
+}
+function moveCatOptions(type) {
+  return type === 'out'
+    ? ['Pre Move-Out', 'Move Out', 'Keys & Access', 'Parking', 'Elevator', 'Wrap-Up', 'General']
+    : ['Pre Move-In', 'Move In', 'Keys & Access', 'Parking', 'Elevator', 'Post Move-In', 'General'];
+}
+// One-time cleanup: re-tag tasks so the tag matches the phase the task already displays in.
+// Only touches ambiguous 'Move In'/'Move Out' tags; Keys & Access, Parking, and Post Move-In are
+// left untouched (passdown key checks, parking header, and the Post Move-In tab key off them).
+function migrateMovePhaseCats() {
+  if (state.movePhaseCatsV1) return;
+  var n = 0;
+  function fix(list, type) {
+    (list || []).forEach(function (t) {
+      if (!t) return;
+      var tp = taskPhaseText(t, type);
+      if (!tp) return;
+      var cat = t.cat || '';
+      if (type === 'in' && cat === 'Move In') {
+        if (tp === 'setup') { t.cat = 'Pre Move-In'; n++; }
+        else if (tp === 'keys') { t.cat = 'Keys & Access'; n++; }
+      } else if (type === 'out' && cat === 'Move Out') {
+        if (tp === 'notice') { t.cat = 'Pre Move-Out'; n++; }
+        else if (tp === 'wrapup') { t.cat = 'Wrap-Up'; n++; }
+      }
+    });
+  }
+  fix(state.customInTasks, 'in');
+  fix(state.customOutTasks, 'out');
+  (state.moves || []).forEach(function (m) { fix(m.tasks, m.type === 'out' ? 'out' : 'in'); });
+  (state.archivedMoves || []).forEach(function (m) { fix(m.tasks, m.type === 'out' ? 'out' : 'in'); });
+  state.movePhaseCatsV1 = true;
+  scheduleSave();
 }
 // A move sits in the earliest phase that still has an unchecked task.
 function getMovePhase(m) {
@@ -3045,9 +3088,14 @@ function renderMovesBoard() {
     tabOut.innerHTML = '&#128230; Move Outs &middot; ' + outs.length + (stuckOut ? ' <span style="color:var(--red);font-weight:700">&#9888;' + stuckOut + '</span>' : '');
     tabOut.classList.toggle('active', boardLane === 'out');
   }
+  var bfToday = g('mv-bf-today'), bfNoresv = g('mv-bf-noresv');
+  if (bfToday) bfToday.classList.toggle('active', boardFilter === 'today');
+  if (bfNoresv) bfNoresv.classList.toggle('active', boardFilter === 'noresv');
   var type = boardLane === 'out' ? 'out' : 'in';
   var list = type === 'out' ? outs : ins;
-  if (!list.length) { el.innerHTML = '<div class="text-3 text-sm" style="text-align:center;padding:24px">No active move-' + (type === 'out' ? 'outs' : 'ins') + '.</div>'; return; }
+  if (boardFilter === 'today') list = list.filter(function (m) { return moveIsToday(m, t); });
+  else if (boardFilter === 'noresv') list = list.filter(function (m) { return !m.apptDate && !m.apptTbd && m.date >= t; });
+  if (!list.length) { el.innerHTML = '<div class="text-3 text-sm" style="text-align:center;padding:24px">No ' + (boardFilter !== 'all' ? 'matching ' : 'active ') + 'move-' + (type === 'out' ? 'outs' : 'ins') + '.</div>'; return; }
   var phases = MOVE_PHASES[type];
   var html = '<div class="mv-board-cols" style="grid-template-columns:repeat(' + phases.length + ',minmax(0,1fr))">';
   phases.forEach(function (ph) {
@@ -3696,7 +3744,9 @@ function buildCL(m, filterCat) {
     html += '<div id="task-extra-' + t.id + '" style="display:none;padding:0 4px 4px 28px" onclick="event.stopPropagation()">';
     html += '<input type="date" class="cl-due-input" value="' + (t.dueDate || '') + '" title="Due date" onchange="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'dueDate\',this.value)" onclick="event.stopPropagation()">';
     html += '<select class="cl-cat-input" onchange="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'cat\',this.value)" onclick="event.stopPropagation()">';
-    ['Pre Move-In','Move In','Move Out','Keys & Access','Parking','Elevator','Post Move-In','General'].forEach(function(cat) {
+    var clCats = moveCatOptions(m.type);
+    if (t.cat && clCats.indexOf(t.cat) === -1) clCats = clCats.concat([t.cat]);
+    clCats.forEach(function(cat) {
       html += '<option value="' + cat + '" ' + (t.cat === cat ? 'selected' : '') + '>' + cat + '</option>';
     });
     html += '</select>';
@@ -3761,7 +3811,7 @@ function renderMoves() {
   if (vtB) vtB.classList.toggle('active', isBoardView);
   document.querySelectorAll('#moves-tabs .sub-tab').forEach(function (tab) {
     if (tab.classList.contains('mv-vt')) return;
-    if (tab.classList.contains('mv-lane')) { tab.style.display = isBoardView ? '' : 'none'; return; }
+    if (tab.classList.contains('mv-lane') || tab.classList.contains('mv-bf')) { tab.style.display = isBoardView ? '' : 'none'; return; }
     tab.style.display = isBoardView ? 'none' : '';
   });
   var boardWrap = g('moves-board');
@@ -4158,6 +4208,8 @@ function openAddTask(moveId) {
   addTaskMoveId = moveId || openMoveId; if (!addTaskMoveId) { toast('Select a move first'); return; }
   var m = (state.moves || []).find(function (x) { return x.id === addTaskMoveId; });
   var title = g('modal-task-title'); if (title && m) title.textContent = 'Add Task - ' + m.resident + ' Unit ' + m.unit;
+  var catSel = g('task-cat');
+  if (catSel && m) catSel.innerHTML = moveCatOptions(m.type).map(function (c) { return '<option>' + c + '</option>'; }).join('');
   openModal('modal-task');
 }
 function saveTask() {
@@ -10242,7 +10294,9 @@ function renderTaskList(type) {
     var dnBtn = '<button class="stask-arrow" onclick="moveTask(\'' + type + '\',' + i + ',1)" title="Move down">&#9660;</button>';
     var rmBtn = '<button style="color:var(--red);flex-shrink:0;background:none;border:none;cursor:pointer;font-size:16px;padding:4px 8px;line-height:1;border-radius:4px" onclick="removeDefaultTask(\'' + type + '\',' + i + ')">&#x2715;</button>';
     var catOpts = '';
-    ['Pre Move-In', 'Move In', 'Move Out', 'Keys & Access', 'Parking', 'Elevator', 'Post Move-In', 'General'].forEach(function (cat) {
+    var stCats = moveCatOptions(type);
+    if (t.cat && stCats.indexOf(t.cat) === -1) stCats = stCats.concat([t.cat]);
+    stCats.forEach(function (cat) {
       catOpts += '<option value="' + cat + '" ' + (t.cat === cat ? 'selected' : '') + '>' + cat + '</option>';
     });
     var catSel = '<select class="stask-cat ie-sel" onchange="updateDefaultTask(\'' + type + '\',' + i + ',\'cat\',this.value)">' + catOpts + '</select>';
@@ -10927,6 +10981,7 @@ async function init() {
   purgeDeadResidentProfiles();
   migrateTaskUpdatesV2();
   migrateTaskUpdatesV3();
+  migrateMovePhaseCats();
   seedDefaultTemplates();
   seedUnitRecords();
   refreshUnitDatalist();
