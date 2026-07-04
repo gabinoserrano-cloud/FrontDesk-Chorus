@@ -600,6 +600,18 @@
   .mv-bcard-prog>div{height:3px}
   .mv-bcard-cnt{font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--font-mono)}
   @media(max-width:650px){.mv-board-cols{display:flex;overflow-x:auto;padding-bottom:4px}.mv-board-col{flex:0 0 172px}}
+  /* ─── Settings ─── */
+  #section-settings{max-width:840px}
+  .set-pane{display:none}
+  .set-pane.active{display:block}
+  .set-ico{width:26px;height:26px;border-radius:7px;background:var(--accent-light);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:2px}
+  .set-desc{font-size:12.5px;color:var(--text2);margin:0 0 12px;line-height:1.55}
+  .set-lbl{font-size:13px;font-weight:600}
+  .set-hint{font-size:11.5px;color:var(--text3);margin-top:2px;line-height:1.45}
+  .set-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--border2)}
+  .set-row>div:first-child{min-width:0}
+  .set-group-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:10px 2px 8px}
+  @media(max-width:650px){.set-row{flex-direction:column;align-items:flex-start;gap:8px}}
   /* Payment task inline fields */
   .pay-task-row{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
   .pay-type-sel{font-size:11px;padding:2px 5px;border:1px solid var(--border2);border-radius:4px;background:var(--surface);color:var(--text);flex-shrink:0}
@@ -981,192 +993,176 @@
     <div class="section" id="section-team"><div id="team-body"></div></div>
     <div class="section" id="section-activity"><div id="activity-body"></div></div>
     <div class="section" id="section-settings">
+      <div class="sub-tabs" id="settings-tabs">
+        <div class="sub-tab active" id="settab-general" onclick="setSettingsTab('general',this)">General</div>
+        <div class="sub-tab set-admin" id="settab-team" onclick="setSettingsTab('team',this)">Team &amp; Access</div>
+        <div class="sub-tab set-admin" id="settab-moves" onclick="setSettingsTab('moves',this)">Moves</div>
+        <div class="sub-tab set-admin" id="settab-passdown" onclick="setSettingsTab('passdown',this)">Passdown</div>
+        <div class="sub-tab set-admin" id="settab-property" onclick="setSettingsTab('property',this)">Property</div>
+      </div>
 
-      <!-- ── Appearance (all users) ── -->
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:4px 2px 8px">Appearance</div>
-
-      <!-- ── Your Account (staff only) ── -->
-      <div id="settings-your-account-card" class="card mb-12" style="display:none">
-        <div class="card-hdr"><span class="card-title">🔑 Your Account</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Update your PIN. You'll need to enter your current PIN to confirm the change.</p>
-          <button class="btn btn-secondary btn-sm" onclick="openChangePinModal()">Change My PIN</button>
+      <!-- ── General (all users) ── -->
+      <div class="set-pane active" id="setpane-general">
+        <div id="settings-your-account-card" class="card mb-12" style="display:none">
+          <div class="card-hdr"><span class="set-ico" data-icon="key"></span><span class="card-title">Your Account</span></div>
+          <div class="card-body">
+            <p class="set-desc">Update your PIN. You'll need to enter your current PIN to confirm the change.</p>
+            <button class="btn btn-secondary btn-sm" onclick="openChangePinModal()">Change My PIN</button>
+          </div>
+        </div>
+        <div class="card mb-12">
+          <div class="card-hdr"><span class="set-ico" data-icon="sliders"></span><span class="card-title">Display</span></div>
+          <div class="card-body">
+            <div class="set-row">
+              <div><div class="set-lbl">Theme</div><div class="set-hint">Applies to this device only.</div></div>
+              <div style="display:flex;gap:6px"><button id="theme-btn-light" class="btn btn-secondary btn-sm" onclick="setTheme('light')">Light</button><button id="theme-btn-dark" class="btn btn-secondary btn-sm" onclick="setTheme('dark')">Dark</button></div>
+            </div>
+            <div class="set-row" style="border-bottom:none">
+              <div><div class="set-lbl">Font Size</div><div class="set-hint">Overall text size across the dashboard.</div></div>
+              <div style="display:flex;gap:6px"><button id="font-btn-sm" class="btn btn-secondary btn-sm" onclick="setFontSize('sm')">Small</button><button id="font-btn-md" class="btn btn-secondary btn-sm" onclick="setFontSize('md')">Medium</button><button id="font-btn-lg" class="btn btn-secondary btn-sm" onclick="setFontSize('lg')">Large</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="card mb-12" id="about-card">
+          <div id="about-card-inner"></div>
         </div>
       </div>
 
-      <!-- ── Display (all users) ── -->
-      <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">🎨 Display</span></div>
-        <div class="card-body">
-          <div style="margin-bottom:16px">
-            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">Theme</div>
-            <div style="display:flex;gap:8px">
-              <button id="theme-btn-light" class="btn btn-secondary btn-sm" onclick="setTheme('light')" style="flex:1">☀️ Light</button>
-              <button id="theme-btn-dark" class="btn btn-secondary btn-sm" onclick="setTheme('dark')" style="flex:1">🌙 Dark</button>
+      <!-- ── Team & Access (admin) ── -->
+      <div class="set-pane" id="setpane-team">
+        <div id="settings-accounts-card" style="display:none" class="card mb-12">
+          <div class="card-hdr"><span class="set-ico" data-icon="users"></span><span class="card-title">Team Accounts</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddAccount()">+ Add Member</button></div>
+          <div id="settings-accounts" style="padding:0"></div>
+        </div>
+        <div class="card mb-12">
+          <div class="card-hdr"><span class="set-ico" data-icon="logout"></span><span class="card-title">Session Timeout</span></div>
+          <div class="card-body">
+            <div class="set-row" style="border-bottom:none;padding-top:0">
+              <div><div class="set-lbl">Auto log out when idle</div><div class="set-hint">Keeps the dashboard secure on shared devices. Saves automatically.</div></div>
+              <select id="session-timeout-sel" style="width:150px" onchange="saveSessionTimeout()">
+                <option value="0">Never</option>
+                <option value="5">5 minutes</option>
+                <option value="10">10 minutes</option>
+                <option value="15">15 minutes</option>
+                <option value="30">30 minutes</option>
+                <option value="60">1 hour</option>
+                <option value="120">2 hours</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="card mb-12">
+          <div class="card-hdr"><span class="set-ico" data-icon="user"></span><span class="card-title">Visible Sections &mdash; Your View</span></div>
+          <div class="card-body">
+            <p class="set-desc">Choose which sections appear in your sidebar. Hidden sections keep their data &mdash; uncheck to bring them back.</p>
+            <div id="settings-nav-visibility" style="display:grid;grid-template-columns:1fr 1fr;gap:2px 18px"></div>
+          </div>
+        </div>
+        <div class="card mb-12" id="settings-staff-visibility-card">
+          <div class="card-hdr"><span class="set-ico" data-icon="checklist"></span><span class="card-title">Visible Sections &mdash; Staff</span></div>
+          <div class="card-body">
+            <p class="set-desc">Control which sections staff accounts can see when they log in. Team, Import, and Settings are always hidden from staff.</p>
+            <div id="settings-staff-nav-visibility" style="display:grid;grid-template-columns:1fr 1fr;gap:2px 18px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Moves (admin) ── -->
+      <div class="set-pane" id="setpane-moves">
+        <p class="set-desc">These checklists pre-fill every new move. The category tag decides which phase column a task belongs to on the pipeline board. Changes apply to moves created after the change.</p>
+        <div class="two-col">
+          <div>
+            <div class="card mb-12">
+              <div class="card-hdr"><span class="set-ico" data-icon="truck"></span><span class="card-title">Default Move-In Tasks</span><span class="card-count" id="in-tasks-count"></span><button class="btn btn-ghost btn-sm ml-auto" style="font-size:11px;color:var(--text3)" onclick="resetTasksToDefaults('in')" title="Restore built-in default task list">&#8635; Reset to defaults</button></div>
+              <div class="card-body" style="padding:8px 0" id="settings-in-tasks"></div>
+              <div style="padding:10px 14px;border-top:1px solid var(--border2)">
+                <div class="flex gap-8"><input type="text" id="new-in-task" placeholder="New move-in task..." style="flex:1"><select id="new-in-cat" style="width:130px"><option>Pre Move-In</option><option>Move In</option><option>Keys &amp; Access</option><option>Parking</option><option>Elevator</option><option>Post Move-In</option><option>General</option></select><button class="btn btn-primary btn-sm" onclick="addDefaultTask('in')">Add</button></div>
+              </div>
             </div>
           </div>
           <div>
-            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">Font Size</div>
-            <div style="display:flex;gap:8px">
-              <button id="font-btn-sm" class="btn btn-secondary btn-sm" onclick="setFontSize('sm')" style="flex:1;font-size:11px">Small</button>
-              <button id="font-btn-md" class="btn btn-secondary btn-sm" onclick="setFontSize('md')" style="flex:1;font-size:13px">Medium</button>
-              <button id="font-btn-lg" class="btn btn-secondary btn-sm" onclick="setFontSize('lg')" style="flex:1;font-size:15px">Large</button>
+            <div class="card mb-12">
+              <div class="card-hdr"><span class="set-ico" data-icon="package"></span><span class="card-title">Default Move-Out Tasks</span><span class="card-count" id="out-tasks-count"></span><button class="btn btn-ghost btn-sm ml-auto" style="font-size:11px;color:var(--text3)" onclick="resetTasksToDefaults('out')" title="Restore built-in default task list">&#8635; Reset to defaults</button></div>
+              <div class="card-body" style="padding:8px 0" id="settings-out-tasks"></div>
+              <div style="padding:10px 14px;border-top:1px solid var(--border2)">
+                <div class="flex gap-8"><input type="text" id="new-out-task" placeholder="New move-out task..." style="flex:1"><select id="new-out-cat" style="width:130px"><option>Pre Move-Out</option><option>Move Out</option><option>Keys &amp; Access</option><option>Parking</option><option>Elevator</option><option>Wrap-Up</option><option>General</option></select><button class="btn btn-primary btn-sm" onclick="addDefaultTask('out')">Add</button></div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ── Accounts & Access (admin only) ── -->
-      <div id="settings-admin-only" style="display:none">
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:4px 2px 8px">Accounts &amp; Access</div>
-      <div id="settings-accounts-card" style="display:none" class="card mb-12">
-        <div class="card-hdr"><span class="card-title">&#128100; Team Accounts</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddAccount()">+ Add Member</button></div>
-        <div id="settings-accounts" style="padding:0"></div>
-      </div>
-
-      <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">&#9201; Session Timeout</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Automatically log out after this much time with no activity. Helps keep the dashboard secure on shared devices.</p>
-          <div class="flex gap-8 items-center">
-            <select id="session-timeout-sel" style="width:160px">
-              <option value="0">Never</option>
-              <option value="5">5 minutes</option>
-              <option value="10">10 minutes</option>
-              <option value="15">15 minutes</option>
-              <option value="30">30 minutes</option>
-              <option value="60">1 hour</option>
-              <option value="120">2 hours</option>
-            </select>
-            <button id="btn-save-session-timeout" class="btn btn-primary btn-sm" onclick="saveSessionTimeout()">Save</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">&#9993; Passdown Delivery</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Default recipients used when opening Gmail from Review &amp; Send. Separate multiple emails with commas.</p>
-          <div class="fg">
-            <label>Default To Recipients</label>
-            <input type="text" id="passdown-recips" placeholder="chorus-all@alignrealestate.com">
-          </div>
-          <button id="btn-save-pd-delivery" class="btn btn-primary btn-sm" onclick="savePassdownDeliverySettings()">Save</button>
-        </div>
-      </div>
-
-      <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">&#128218; Passdown Tips</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Shows the quick-start guide the next time you open the Passdown section.</p>
-          <button class="btn btn-secondary btn-sm" onclick="resetPdTips()">&#8635; Show passdown tips again</button>
-        </div>
-      </div>
-
-      <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">&#128065; Visible Sections (Your View)</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Choose which sections appear in your sidebar. Sections you hide still keep their data — just uncheck to bring them back.</p>
-          <div id="settings-nav-visibility" style="display:grid;grid-template-columns:1fr 1fr;gap:2px"></div>
-        </div>
-      </div>
-      <div class="card mb-12" id="settings-staff-visibility-card">
-        <div class="card-hdr"><span class="card-title">&#128101; Team (Staff) Visible Sections</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Control which sections your staff team members can see when they log in. Team, Import, and Settings are always hidden from staff.</p>
-          <div id="settings-staff-nav-visibility" style="display:grid;grid-template-columns:1fr 1fr;gap:2px"></div>
-        </div>
-      </div>
-
-      <!-- ── Team Tracker ── -->
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:12px 2px 8px;border-top:1px solid var(--border2);margin-top:4px">Team Tracker</div>
-      <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">&#128100; Staff List</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddStaff()">+ Add Staff</button></div>
-        <div class="card-body" style="padding:8px 0" id="settings-team-staff"></div>
-      </div>
-      <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">&#128274; Team Tracker PIN</span></div>
-        <div class="card-body">
-          <div id="team-pin-settings-body"></div>
-        </div>
-      </div>
-
-      <!-- ── Security Patrols ── -->
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:12px 2px 8px;border-top:1px solid var(--border2);margin-top:4px">Security Patrols</div>
-      <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">&#128737; Patrol Alert Threshold</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Show a dashboard alert when a checkpoint hasn't been scanned within this many hours.</p>
-          <div class="flex gap-8 items-center">
-            <input type="number" id="patrol-alert-hours" min="1" max="72" style="width:80px" placeholder="4">
-            <span style="font-size:13px;color:var(--text2)">hours</span>
-            <button id="btn-save-patrol-hours" class="btn btn-primary btn-sm" onclick="savePatrolAlertHours()">Save</button>
-          </div>
-        </div>
-      </div>
-      <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">&#128737; QR Checkpoint PIN</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Staff must enter this PIN before a QR checkpoint scan is logged. Keep it separate from the Team Tracker PIN.</p>
-          <div id="patrol-pin-settings-body"></div>
-        </div>
-      </div>
-
-      <!-- ── Moves ── -->
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:12px 2px 8px;border-top:1px solid var(--border2);margin-top:4px">Moves</div>
-      <div class="two-col">
-        <div>
-          <div class="card mb-12">
-            <div class="card-hdr"><span class="card-title">Default Move-In Tasks</span><span class="card-count" id="in-tasks-count"></span><button class="btn btn-ghost btn-sm ml-auto" style="font-size:11px;color:var(--text3)" onclick="resetTasksToDefaults('in')" title="Restore built-in default task list">↺ Reset to defaults</button></div>
-            <div class="card-body" style="padding:8px 0" id="settings-in-tasks"></div>
-            <div style="padding:10px 14px;border-top:1px solid var(--border2)">
-              <div class="flex gap-8"><input type="text" id="new-in-task" placeholder="New move-in task..." style="flex:1"><select id="new-in-cat" style="width:130px"><option>Pre Move-In</option><option>Move In</option><option>Keys &amp; Access</option><option>Parking</option><option>Elevator</option><option>Post Move-In</option><option>General</option></select><button class="btn btn-primary btn-sm" onclick="addDefaultTask('in')">Add</button></div>
+      <!-- ── Passdown (admin) ── -->
+      <div class="set-pane" id="setpane-passdown">
+        <div class="card mb-12">
+          <div class="card-hdr"><span class="set-ico" data-icon="message-square"></span><span class="card-title">Passdown Delivery</span></div>
+          <div class="card-body">
+            <p class="set-desc">Default recipients used when opening Gmail from Review &amp; Send. Separate multiple emails with commas. Saves automatically.</p>
+            <div class="fg" style="margin-bottom:0">
+              <label>Default To Recipients</label>
+              <input type="text" id="passdown-recips" placeholder="chorus-all@alignrealestate.com" onchange="savePassdownDeliverySettings()">
             </div>
           </div>
         </div>
-        <div>
-          <div class="card mb-12">
-            <div class="card-hdr"><span class="card-title">Default Move-Out Tasks</span><span class="card-count" id="out-tasks-count"></span><button class="btn btn-ghost btn-sm ml-auto" style="font-size:11px;color:var(--text3)" onclick="resetTasksToDefaults('out')" title="Restore built-in default task list">↺ Reset to defaults</button></div>
-            <div class="card-body" style="padding:8px 0" id="settings-out-tasks"></div>
-            <div style="padding:10px 14px;border-top:1px solid var(--border2)">
-              <div class="flex gap-8"><input type="text" id="new-out-task" placeholder="New move-out task..." style="flex:1"><select id="new-out-cat" style="width:130px"><option>Pre Move-Out</option><option>Move Out</option><option>Keys &amp; Access</option><option>Parking</option><option>Elevator</option><option>Wrap-Up</option><option>General</option></select><button class="btn btn-primary btn-sm" onclick="addDefaultTask('out')">Add</button></div>
+        <div class="card mb-12">
+          <div class="card-hdr"><span class="set-ico" data-icon="book"></span><span class="card-title">Passdown Tips</span></div>
+          <div class="card-body">
+            <p class="set-desc">Shows the quick-start guide the next time you open the Passdown section.</p>
+            <button class="btn btn-secondary btn-sm" onclick="resetPdTips()">&#8635; Show passdown tips again</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Property (admin) ── -->
+      <div class="set-pane" id="setpane-property">
+        <div class="card mb-12">
+          <div class="card-hdr"><span class="set-ico" data-icon="star"></span><span class="card-title">Amenity Spaces</span><button class="btn btn-ghost btn-sm ml-auto" style="font-size:11px;color:var(--text3)" onclick="resetAmenitySpaces()" title="Restore built-in space list">&#8635; Reset to defaults</button></div>
+          <div id="settings-amenity-spaces" style="padding:0"></div>
+          <div style="padding:10px 14px;border-top:1px solid var(--border2)">
+            <div class="flex gap-8"><input type="text" id="new-amenity-space" placeholder="New space name..." style="flex:1" onkeydown="if(event.key==='Enter')addAmenitySpace()"><button class="btn btn-primary btn-sm" onclick="addAmenitySpace()">Add</button></div>
+          </div>
+        </div>
+        <div class="card mb-12">
+          <div class="card-hdr"><span class="set-ico" data-icon="package"></span><span class="card-title">Lost &amp; Found &mdash; Disposal Reminder</span></div>
+          <div class="card-body">
+            <div class="set-row" style="border-bottom:none;padding-top:0">
+              <div><div class="set-lbl">Flag unclaimed items after</div><div class="set-hint">Items past the threshold show an amber warning in the L&amp;F log. Saves automatically.</div></div>
+              <div class="flex gap-8 items-center"><input type="number" id="laf-expiry-days" min="1" max="365" style="width:76px" placeholder="30" onchange="saveLAFSettings()"><span class="set-hint">days</span></div>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- ── Property ── -->
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:12px 2px 8px;border-top:1px solid var(--border2);margin-top:4px">Property</div>
-      <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">Walkthrough Floors &amp; Areas</span>
-          <button class="btn btn-primary btn-sm ml-auto" onclick="openAddWTFloor()">+ Add Floor</button>
+        <div class="card mb-12">
+          <div class="card-hdr"><span class="set-ico" data-icon="mappin"></span><span class="card-title">Walkthrough Floors &amp; Areas</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddWTFloor()">+ Add Floor</button></div>
+          <div id="settings-wt-floors" style="padding:0"></div>
         </div>
-        <div id="settings-wt-floors" style="padding:0"></div>
-      </div>
-      <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">Amenity Spaces</span><button class="btn btn-ghost btn-sm ml-auto" style="font-size:11px;color:var(--text3)" onclick="resetAmenitySpaces()" title="Restore built-in space list">↺ Reset to defaults</button></div>
-        <div id="settings-amenity-spaces" style="padding:0"></div>
-        <div style="padding:10px 14px;border-top:1px solid var(--border2)">
-          <div class="flex gap-8"><input type="text" id="new-amenity-space" placeholder="New space name..." style="flex:1" onkeydown="if(event.key==='Enter')addAmenitySpace()"><button class="btn btn-primary btn-sm" onclick="addAmenitySpace()">Add</button></div>
-        </div>
-      </div>
-      <div class="card mb-12">
-        <div class="card-hdr"><span class="card-title">&#128230; Lost &amp; Found — Disposal Reminder</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Flag unclaimed items as pending disposal after this many days. Items past the threshold show an amber warning in the L&amp;F log.</p>
-          <div class="flex gap-8 items-center">
-            <input type="number" id="laf-expiry-days" min="1" max="365" style="width:80px" placeholder="30">
-            <span style="font-size:13px;color:var(--text2)">days</span>
-            <button id="btn-save-laf" class="btn btn-primary btn-sm" onclick="saveLAFSettings()">Save</button>
+        <div class="set-group-lbl">Security Patrols</div>
+        <div class="card mb-12">
+          <div class="card-hdr"><span class="set-ico" data-icon="shield"></span><span class="card-title">Patrol Alert Threshold</span></div>
+          <div class="card-body">
+            <div class="set-row" style="border-bottom:none;padding-top:0">
+              <div><div class="set-lbl">Alert when no scan within</div><div class="set-hint">Shows a dashboard alert when a checkpoint hasn't been scanned in time. Saves automatically.</div></div>
+              <div class="flex gap-8 items-center"><input type="number" id="patrol-alert-hours" min="1" max="72" style="width:76px" placeholder="4" onchange="savePatrolAlertHours()"><span class="set-hint">hours</span></div>
+            </div>
           </div>
         </div>
-      </div>
-
-      </div><!-- /settings-admin-only -->
-
-      <!-- ── About ── -->
-      <div class="card mt-12" id="about-card">
-        <div id="about-card-inner"></div>
+        <div class="card mb-12">
+          <div class="card-hdr"><span class="set-ico" data-icon="shield"></span><span class="card-title">QR Checkpoint PIN</span></div>
+          <div class="card-body">
+            <p class="set-desc">Staff must enter this PIN before a QR checkpoint scan is logged. Keep it separate from the Team Tracker PIN.</p>
+            <div id="patrol-pin-settings-body"></div>
+          </div>
+        </div>
+        <div class="set-group-lbl">Team Tracker</div>
+        <div class="card mb-12">
+          <div class="card-hdr"><span class="set-ico" data-icon="users"></span><span class="card-title">Staff List</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddStaff()">+ Add Staff</button></div>
+          <div class="card-body" style="padding:8px 0" id="settings-team-staff"></div>
+        </div>
+        <div class="card mb-12">
+          <div class="card-hdr"><span class="set-ico" data-icon="key"></span><span class="card-title">Team Tracker PIN</span></div>
+          <div class="card-body">
+            <div id="team-pin-settings-body"></div>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -1889,20 +1885,13 @@ function startSessionTimer() {
 function stopSessionTimer() {
   if (_sessionTimer) { clearInterval(_sessionTimer); _sessionTimer = null; }
 }
-function flashSavedBtn(btnId) {
-  var btn = g(btnId); if (!btn) return;
-  var orig = btn.textContent;
-  btn.textContent = '✓ Saved';
-  btn.disabled = true;
-  setTimeout(function(){ btn.textContent = orig; btn.disabled = false; }, 2000);
-}
 function saveSessionTimeout() {
   var sel = g('session-timeout-sel');
   var val = sel ? parseInt(sel.value) : 30;
   state.sessionTimeoutMins = isNaN(val) ? 30 : val;
   scheduleSave();
   if (currentUser) startSessionTimer();
-  flashSavedBtn('btn-save-session-timeout');
+  toast('Saved');
 }
 
 var DEFAULT_IN_TASKS = [
@@ -9984,6 +9973,14 @@ function savePropertyConfig() {
 }
 
 // ===== [SETTINGS] ============================================================
+var settingsTab = 'general';
+function setSettingsTab(t, el) {
+  settingsTab = t;
+  document.querySelectorAll('#settings-tabs .sub-tab').forEach(function (x) { x.classList.remove('active'); });
+  var tb = el || g('settab-' + t); if (tb) tb.classList.add('active');
+  document.querySelectorAll('#section-settings .set-pane').forEach(function (p) { p.classList.remove('active'); });
+  var pane = g('setpane-' + t); if (pane) pane.classList.add('active');
+}
 function renderSettings() {
   var isAdmin = !currentUser || currentUser.role === 'admin';
   var isStaff = currentUser && currentUser.role === 'staff';
@@ -9991,8 +9988,9 @@ function renderSettings() {
   if (acctCard) acctCard.style.display = isAdmin ? '' : 'none';
   var staffVisCard = g('settings-staff-visibility-card');
   if (staffVisCard) staffVisCard.style.display = isAdmin ? '' : 'none';
-  var adminOnly = g('settings-admin-only');
-  if (adminOnly) adminOnly.style.display = isAdmin ? '' : 'none';
+  var tabsBar = g('settings-tabs');
+  if (tabsBar) tabsBar.style.display = isAdmin ? '' : 'none';
+  if (!isAdmin && settingsTab !== 'general') setSettingsTab('general');
   var yourAcctCard = g('settings-your-account-card');
   if (yourAcctCard) yourAcctCard.style.display = isStaff ? '' : 'none';
   renderAboutCard();
@@ -10031,7 +10029,7 @@ function savePassdownDeliverySettings() {
   }
   getPassdownSettings().recipients = raw;
   scheduleSave();
-  flashSavedBtn('btn-save-pd-delivery');
+  toast('Saved');
 }
 function dismissPdTips() {
   var uid_ = currentUser ? currentUser.id : 'anon';
@@ -10097,7 +10095,7 @@ function saveLAFSettings() {
   if (!val || val < 1) { toast('Enter a valid number of days'); return; }
   if (!state.lafSettings) state.lafSettings = {};
   state.lafSettings.expiryDays = val;
-  scheduleSave(); renderLAF(); flashSavedBtn('btn-save-laf');
+  scheduleSave(); renderLAF(); toast('Saved');
 }
 
 function savePatrolAlertHours() {
@@ -10106,7 +10104,7 @@ function savePatrolAlertHours() {
   if (!val || val < 1) { toast('Enter a valid number of hours'); return; }
   if (!state.patrolSettings) state.patrolSettings = {};
   state.patrolSettings.alertHours = val;
-  scheduleSave(); renderDash(); flashSavedBtn('btn-save-patrol-hours');
+  scheduleSave(); renderDash(); toast('Saved');
 }
 
 function renderTeamStaff() {
