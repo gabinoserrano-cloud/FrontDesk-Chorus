@@ -5896,6 +5896,50 @@ function seedTransponders() {
   state.transponderSeedV1 = true;
   scheduleSave();
 }
+// V2 (7/5/2026 NFC batch audit): the March bundle maps to NFC ranges 100337xxx + 100340xxx.
+// 22 registrations in those ranges were never documented — added here pending Gabino's confirmation.
+// Also backfills NFC numbers onto the V1 entries (matched via TEZ by unit).
+function seedTranspondersV2() {
+  if (state.transponderSeedV2) return;
+  var d = tpData();
+  var by = 'NFC Audit Jul 2026', now = Date.now();
+  var nfcByUnit = { '1501':'100337035', '501':'100337005', '2009':'100337036', '408':'100312652', '410':'100340298', '820':'100337088', '613':'100337037', '2606':'100337045', '314':'100337079', '1105':'100337091', '646':'100337098', '444':'100337078', '731':'100337007', '631':'100337030', '1403':'100337086', '239':'100337024', '623':'100337071', '813':'100337073', '626':'100337014', '926':'100337049', '1803':'100337070', '2204':'100337029', '826':'100337089', '331':'100337006', '737':'100337066' };
+  d.log.forEach(function(e) {
+    if (e.addedBy === 'Reconciliation Jul 2026' && !e.nfc && nfcByUnit[e.unit]) e.nfc = nfcByUnit[e.unit];
+  });
+  var have = {};
+  d.log.forEach(function(e) { if (e.nfc) have[e.nfc] = true; });
+  function mk(date, approx, category, unit, recipient, vehicle, plate, nfc, notes) {
+    return { id: uid(), date: date, approx: approx, category: category, unit: unit, recipient: recipient, qty: 1, vehicle: vehicle, plate: plate, nfc: nfc, status: 'issued', returnedAt: null, notes: 'NFC audit 7/5/26 — pending confirmation. ' + notes, addedBy: by, createdAt: now };
+  }
+  var found = [
+    mk('2026-03-06', true, 'Resident', '2402', 'Nicole McGinley', 'Range Rover White', '7RFN616', '100340202', 'Lease start 3/6/26 (missing from reconciliation move-in list); issue date assumed at lease start.'),
+    mk('2026-03-21', true, 'Resident', '345', 'Richard Wei', 'Polestar Silver', '9FZV353', '100340203', 'Lease start 3/21/26 (missing from reconciliation move-in list); issue date assumed at lease start.'),
+    mk('2026-04-07', true, 'Resident', '237', 'Kailey Minks', 'Audi Black', 'FDCQ15', '100337062', 'Lease start 4/7/26 (missing from reconciliation move-in list); issue date assumed at lease start.'),
+    mk('2026-04-17', true, 'Resident', '1907', 'Serdal Aytan', 'Mercedes-Benz', '9KUL452', '100337010', 'Lease start 4/17/26 (missing from reconciliation move-in list); issue date assumed at lease start.'),
+    mk('2026-04-20', true, 'Resident', '645', 'Kamran Shayan', 'Kia Gray', '9YEZ163', '100337013', 'Lease start 4/20/26 (missing from reconciliation move-in list); issue date assumed at lease start.'),
+    mk('2026-04-22', true, 'Resident', '808', 'Valentin Garkov', 'Tesla Gray', 'KPN2419', '100337034', 'Lease start 4/22/26 (missing from reconciliation move-in list); issue date assumed at lease start.'),
+    mk('', false, 'Resident', '513', 'Brian Ruhle', 'BMW Gray', 'DR11U41', '100337012', 'Transferred from 2306; at 513 since 11/13/25. Set issued after March — exact date unknown.'),
+    mk('', false, 'Resident', '610', 'Jaclyn Parag', 'Audi Black', '9KMU762', '100337015', 'No move-in record found — issue date unknown.'),
+    mk('', false, 'Resident', '644', 'Fritz Gerald Ze', 'Porsche Gray', 'Q22W24', '100337033', 'No move-in record found — issue date unknown.'),
+    mk('', false, 'Resident', '1708', 'Denil Collins', 'Tesla Silver', '9RPX524', '100337043', 'Moved in 1/21/26; set issued after March — exact date unknown.'),
+    mk('', false, 'Resident', '240', 'Beinan Zhou', 'Tesla Gray', '9DYF215', '100337046', 'No move-in record found — issue date unknown.'),
+    mk('', false, 'Resident', '935', 'Blueground (corporate)', 'Mazda Black', '9GTA260', '100337059', 'Blueground corporate unit (their move-in dates not in master list) — issue date unknown.'),
+    mk('', false, 'Resident', '237', 'McKenna Sweeney', 'Honda Black', '8SIY226', '100337064', 'SECOND set for unit 237 (Kailey Minks has the other) — issue date unknown.'),
+    mk('', false, 'Resident', '1903', 'Tammy Capistrant', 'Tesla', '7WEZ307', '100337075', 'CHECK: TEZ shows her with Ankush Jain 1803 plate 7WEZ307 — possible data error or duplicate registration.'),
+    mk('', false, 'Adjustment / Other', '', 'Shaan Varia — 1125 Stevens St', 'Tesla Gray', 'TBD', '100337087', 'CHECK: registered to an off-site address, not a Chorus unit.'),
+    mk('', false, 'Resident', '1908', 'Mark Setlock', 'Lexus White', '9JXT044', '100337092', 'No move-in record found — issue date unknown.'),
+    mk('', false, 'Resident', '320', 'Hannah Fields', 'Toyota', '9VHF704', '100340200', 'Moved in 2/7/26; set issued after March — exact date unknown.'),
+    mk('', false, 'Resident', '745', 'Alec Chang', 'Tesla Blue', '85RH935', '100340204', 'No move-in record found — issue date unknown.'),
+    mk('', false, 'Adjustment / Other', '709', 'Carlos Camacho', 'VW Silver', '6KPF299', '100340295', 'CHECK: Align staff name, registered under unit 709 (lease 2/3/26).'),
+    mk('', false, 'Resident', '926', 'Daniel Corey', 'Honda Black', '9TJW143', '100340296', 'SECOND set for unit 926 — Nickel Group corporate unit (Misael Estrada has the other).'),
+    mk('', false, 'Motorcycle', '2109', 'Ben McClusky', 'Motorcycle', '23N0589', '100340297', 'CHECK: may be the SAME transponder as the documented March 2109 motorcycle (Heiki) — if so, delete one of the two.'),
+    mk('', false, 'Resident', '2206', 'Julia Yao', 'Tesla', 'EM65T52', '100340299', 'Moved in 9/30/25; set issued after March — exact date unknown.')
+  ];
+  found.forEach(function(e) { if (!have[e.nfc]) d.log.push(e); });
+  state.transponderSeedV2 = true;
+  scheduleSave();
+}
 function renderParking() {
   var list = (state.parking||[]).slice();
   var cnt=g('parking-count'); if(cnt) cnt.textContent=list.length+' credentials';
@@ -11412,6 +11456,7 @@ async function init() {
   seedDefaultTemplates();
   seedUnitRecords();
   seedTransponders();
+  seedTranspondersV2();
   wireTransponderInputs();
   refreshUnitDatalist();
   updatePropertyUI();
