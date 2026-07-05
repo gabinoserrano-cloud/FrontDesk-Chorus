@@ -774,7 +774,7 @@
       <div class="card"><div class="card-hdr"><span class="card-title">Guest &amp; Visitor Log</span><span class="card-count" id="guests-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddGuest()">+ Log Guest</button></div><div class="tbl-wrap"><table><thead><tr><th>Guest</th><th>Unit</th><th>Host</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody id="guests-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-keys">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterKeys('drawer',this)">🗝 Card Drawer</div><div class="sub-tab" onclick="filterKeys('issued',this)">Currently Out</div><div class="sub-tab" onclick="filterKeys('fobs',this)">Resident Fobs</div><div class="sub-tab" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('parking',this)">🚗 Parking</div><div class="sub-tab" onclick="filterKeys('transponders',this)">📡 Transponders</div></div>
+      <div class="sub-tabs"><div class="sub-tab active" onclick="filterKeys('drawer',this)">🗝 Card Drawer</div><div class="sub-tab" onclick="filterKeys('issued',this)">Currently Out</div><div class="sub-tab" onclick="filterKeys('fobs',this)">Resident Fobs</div><div class="sub-tab" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('parking',this)">🚗 Parking</div><div class="sub-tab" onclick="filterKeys('transponders',this)">📡 Credentials</div></div>
       <div class="key-stat-row" id="keys-stats" style="display:none"></div>
       <div id="keys-sort-bar" style="display:none;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
         <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-right:2px">Sort:</span>
@@ -796,18 +796,19 @@
         <div class="card"><div class="card-hdr"><span class="card-title">Parking Credentials</span><span class="card-count" id="parking-count">0 credentials</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddParking()">+ Add Credential</button></div>
         <div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident</th><th>Transponder</th><th>Key Tag</th><th>Xpress Sticker</th><th>Monthly Fee</th><th>Status</th><th>Notice Date</th><th></th></tr></thead><tbody id="parking-tbody"></tbody></table></div></div>
       </div>
-      <!-- Transponder inventory view -->
+      <!-- Parking credential set inventory view -->
       <div id="transponder-view" style="display:none">
         <div id="tp-banner"></div>
-        <div class="stat-grid" id="tp-stats"></div>
-        <div class="card"><div class="card-hdr"><span class="card-title">Transponder Log</span><span class="card-count" id="tp-count">0 entries</span><button class="btn btn-secondary btn-sm ml-auto" onclick="openTpReconcile()">&#128290; Reconcile Count</button><button class="btn btn-primary btn-sm" style="margin-left:6px" onclick="openAddTransponder()">+ Log Transponder</button></div>
+        <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">Stock by Component</span><span class="card-count" id="tp-received"></span><button class="btn btn-ghost btn-sm ml-auto" onclick="openTpStart()" title="Edit starting inventory and received date">&#9998; Baselines</button></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Component</th><th>Starting</th><th>Given Out</th><th>Damaged</th><th>Returned</th><th>In Stock (calc)</th><th>Last Count</th><th>Unaccounted</th></tr></thead><tbody id="tp-comp-tbody"></tbody></table></div></div>
+        <div class="card"><div class="card-hdr"><span class="card-title">Credential Log</span><span class="card-count" id="tp-count">0 entries</span><button class="btn btn-secondary btn-sm ml-auto" onclick="openTpReconcile()">&#128290; Reconcile Count</button><button class="btn btn-primary btn-sm" style="margin-left:6px" onclick="openAddTransponder()">+ Log Credentials</button></div>
         <div style="display:flex;gap:8px;align-items:center;padding:10px 14px 4px;flex-wrap:wrap">
           <input type="text" id="tp-search" placeholder="Search unit, name, vehicle, NFC #&hellip;" style="flex:1;min-width:180px;font-size:12px;padding:6px 8px">
           <select id="tp-filter-cat" style="font-size:12px;padding:6px 8px"><option value="">All categories</option><option>Resident</option><option>Valet</option><option>Recology</option><option>Maintenance</option><option>Motorcycle</option><option>CBSF</option><option>Malfunction Replacement</option><option>Adjustment / Other</option></select>
         </div>
-        <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Unit / Recipient</th><th>Category</th><th>Qty</th><th>Vehicle</th><th>NFC #</th><th>Status</th><th></th></tr></thead><tbody id="tp-tbody"></tbody></table></div></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Unit / Recipient</th><th>Category</th><th title="T = transponder, K = key tag, X = Xpress sticker">Contents</th><th>Vehicle</th><th>NFC #</th><th>Status</th><th></th></tr></thead><tbody id="tp-tbody"></tbody></table></div></div>
         <div class="card" id="tp-history-card" style="margin-top:12px;display:none"><div class="card-hdr"><span class="card-title">Physical Count History</span><span class="card-count" id="tp-history-count"></span></div>
-        <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Physical Count</th><th>Calculated</th><th>Difference</th><th>Logged By</th></tr></thead><tbody id="tp-history-tbody"></tbody></table></div></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Transponders</th><th>Key Tags</th><th>Xpress Stickers</th><th>Logged By</th></tr></thead><tbody id="tp-history-tbody"></tbody></table></div></div>
       </div>
     </div>
     <div class="section" id="section-amenities">
@@ -1479,7 +1480,11 @@
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Date</label><input id="tp-date" type="date"></div><div class="fg"><label>Category</label><select id="tp-category"><option>Resident</option><option>Valet</option><option>Recology</option><option>Maintenance</option><option>Motorcycle</option><option>CBSF</option><option>Malfunction Replacement</option><option>Adjustment / Other</option></select></div></div>
     <div class="fr"><div class="fg"><label>Unit # <span style="font-weight:400;color:var(--text3)">(if resident)</span></label><input id="tp-unit" type="text" list="unit-options"></div><div class="fg"><label>Recipient Name</label><input id="tp-recipient" type="text" placeholder="Resident, team, or entity"></div></div>
-    <div class="fr"><div class="fg"><label>Quantity</label><input id="tp-qty" type="number" min="1" value="1"></div><div class="fg"><label>Status</label><select id="tp-status"><option value="issued">Issued</option><option value="returned">Returned</option><option value="replaced">Replaced (swapped out)</option></select></div></div>
+    <div class="fr"><div class="fg"><label>Sets</label><input id="tp-qty" type="number" min="0" value="1"></div><div class="fg"><label>Status</label><select id="tp-status"><option value="issued">Issued</option><option value="returned">Returned</option><option value="replaced">Replaced (swapped out)</option><option value="damaged">Damaged / Retired</option></select></div></div>
+    <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Set Contents <span style="font-weight:400;text-transform:none;letter-spacing:0">(auto-fills from Sets &mdash; adjust for partial swaps)</span></div>
+      <div class="fr"><div class="fg"><label>Transponders</label><input id="tp-q-trans" type="number" min="0" value="1"></div><div class="fg"><label>Key Tags</label><input id="tp-q-tags" type="number" min="0" value="1"></div><div class="fg"><label>Xpress Stickers</label><input id="tp-q-stick" type="number" min="0" value="1"></div></div>
+    </div>
     <div class="fr"><div class="fg"><label>Vehicle <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="tp-vehicle" type="text" placeholder="e.g. Tesla Model Y White"></div><div class="fg"><label>License Plate <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="tp-plate" type="text"></div></div>
     <div class="fg"><label>NFC / Credential ID <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="tp-nfc" type="text" placeholder="e.g. 2146"></div>
     <div class="fg"><label>Notes</label><textarea id="tp-notes" rows="2" placeholder="Source, context, special instructions&hellip;"></textarea></div>
@@ -1490,7 +1495,8 @@
 <div class="modal-ov" id="modal-tp-reconcile"><div class="modal" style="max-width:440px">
   <div class="modal-hdr"><span class="modal-title">Reconcile Physical Count</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-tp-reconcile')">&#x2715;</button></div>
   <div class="modal-bdy">
-    <div class="fg"><label>Physical transponders counted in stock</label><input id="tpr-count" type="number" min="0" placeholder="e.g. 30"></div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Count what&rsquo;s physically in the drawer. Leave a field blank to skip that component this time.</div>
+    <div class="fr"><div class="fg"><label>Transponders</label><input id="tpr-count" type="number" min="0" placeholder="e.g. 30"></div><div class="fg"><label>Key Tags</label><input id="tpr-tags" type="number" min="0" placeholder="&mdash;"></div><div class="fg"><label>Xpress Stickers</label><input id="tpr-stick" type="number" min="0" placeholder="&mdash;"></div></div>
     <div id="tpr-result" style="font-size:13px;line-height:1.6;border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;background:var(--bg)"></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-tp-reconcile')">Cancel</button><button class="btn btn-primary" onclick="saveTpCount()">Save Count</button></div>
@@ -1499,8 +1505,9 @@
 <div class="modal-ov" id="modal-tp-start"><div class="modal" style="max-width:400px">
   <div class="modal-hdr"><span class="modal-title">Starting Inventory</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-tp-start')">&#x2715;</button></div>
   <div class="modal-bdy">
-    <div class="fg"><label>Total transponders ordered / starting stock</label><input id="tps-count" type="number" min="0"></div>
-    <div style="font-size:12px;color:var(--text3);line-height:1.5">The running balance is calculated from this number (e.g. 100 ordered in March 2026). Only change it when a new batch is ordered or the baseline is corrected.</div>
+    <div class="fr"><div class="fg"><label>Transponders</label><input id="tps-count" type="number" min="0"></div><div class="fg"><label>Key Tags</label><input id="tps-tags" type="number" min="0"></div><div class="fg"><label>Xpress Stickers</label><input id="tps-stick" type="number" min="0"></div></div>
+    <div class="fg"><label>Bundle received <span style="font-weight:400;color:var(--text3)">(from vendor receipt)</span></label><input id="tps-received" type="date" data-no-autofill></div>
+    <div style="font-size:12px;color:var(--text3);line-height:1.5">The running balances are calculated from these numbers. Only change them when a new batch is ordered or the baseline is corrected.</div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-tp-start')">Cancel</button><button class="btn btn-primary" onclick="saveTpStart()">Save</button></div>
 </div></div>
@@ -5579,13 +5586,57 @@ function tpData() {
   if (!Array.isArray(state.transponders.log)) state.transponders.log = [];
   if (!Array.isArray(state.transponders.counts)) state.transponders.counts = [];
   if (typeof state.transponders.startingInventory !== 'number') state.transponders.startingInventory = 100;
+  if (typeof state.transponders.startingKeyTags !== 'number') state.transponders.startingKeyTags = 200;
+  if (typeof state.transponders.startingStickers !== 'number') state.transponders.startingStickers = 200;
+  if (!state.transponders.receivedDate) state.transponders.receivedDate = '2026-02-16';
   return state.transponders;
 }
-function tpQty(e) { var q = parseInt(e.qty, 10); return isNaN(q) || q < 1 ? 1 : q; }
-function tpActiveOut() { return tpData().log.filter(function(e){ return e.status !== 'returned'; }).reduce(function(s, e){ return s + tpQty(e); }, 0); }
-function tpReturnedQty() { return tpData().log.filter(function(e){ return e.status === 'returned'; }).reduce(function(s, e){ return s + tpQty(e); }, 0); }
-function tpCalcRemaining() { return tpData().startingInventory - tpActiveOut(); }
+function tpNum(v, dflt) { var n = parseInt(v, 10); return isNaN(n) || n < 0 ? dflt : n; }
+function tpQty(e) { return tpNum(e.qty, 1); }
+function tpTags(e) { return tpNum(e.qtyTags, tpQty(e)); }
+function tpStick(e) { return tpNum(e.qtyStickers, tpQty(e)); }
+var TP_COMPS = [
+  { id: 'trans', label: 'Transponders', startKey: 'startingInventory', qty: tpQty },
+  { id: 'tags', label: 'Key Tags', startKey: 'startingKeyTags', qty: tpTags },
+  { id: 'stick', label: 'Xpress Stickers', startKey: 'startingStickers', qty: tpStick }
+];
+function tpSum(comp, statuses) {
+  return tpData().log.reduce(function(s, e) { return statuses.indexOf(e.status) !== -1 ? s + comp.qty(e) : s; }, 0);
+}
+function tpCompOut(comp) { return tpSum(comp, ['issued', 'replaced']); }
+function tpCompDamaged(comp) { return tpSum(comp, ['damaged']); }
+function tpCompReturned(comp) { return tpSum(comp, ['returned']); }
+function tpCompRemaining(comp) { return tpData()[comp.startKey] - tpCompOut(comp) - tpCompDamaged(comp); }
+function tpActiveOut() { return tpCompOut(TP_COMPS[0]) + tpCompDamaged(TP_COMPS[0]); }
+function tpReturnedQty() { return tpCompReturned(TP_COMPS[0]); }
+function tpCalcRemaining() { return tpCompRemaining(TP_COMPS[0]); }
 function tpLastCount() { var c = tpData().counts; return c.length ? c[c.length - 1] : null; }
+function tpLastCompCount(comp) {
+  var c = tpData().counts;
+  for (var i = c.length - 1; i >= 0; i--) {
+    if (comp.id === 'trans' && c[i].count != null) return { count: c[i].count, date: c[i].date };
+    if (comp.id === 'tags' && c[i].tags) return { count: c[i].tags.count, date: c[i].date };
+    if (comp.id === 'stick' && c[i].stickers) return { count: c[i].stickers.count, date: c[i].date };
+  }
+  return null;
+}
+// "1T · 1K · 1X" short form for tables; "full set" / "1 transponder + 1 sticker" long form for prose
+function tpSetLabel(e, longForm) {
+  var t = tpQty(e), k = tpTags(e), x = tpStick(e);
+  if (longForm) {
+    if (t === k && k === x && t > 0) return t === 1 ? 'full set' : t + ' full sets';
+    var parts = [];
+    if (t) parts.push(t + ' transponder' + (t !== 1 ? 's' : ''));
+    if (k) parts.push(k + ' key tag' + (k !== 1 ? 's' : ''));
+    if (x) parts.push(x + ' Xpress sticker' + (x !== 1 ? 's' : ''));
+    return parts.length ? parts.join(' + ') : 'empty entry';
+  }
+  var sp = [];
+  if (t) sp.push(t + 'T');
+  if (k) sp.push(k + 'K');
+  if (x) sp.push(x + 'X');
+  return sp.length ? sp.join(' · ') : '—';
+}
 function tpWho(e) {
   var who = [];
   if (e.unit) who.push('Unit ' + e.unit);
@@ -5629,31 +5680,51 @@ function tpEventsForDate(t) {
 }
 function renderTransponders() {
   var d = tpData();
-  var start = d.startingInventory, out = tpActiveOut(), ret = tpReturnedQty(), calc = tpCalcRemaining();
-  var lc = tpLastCount();
-  var diff = lc ? lc.count - calc : null;
-  // Discrepancy banner
+  // Discrepancy banner — checks every component that has a physical count on file
   var banner = g('tp-banner');
+  var mismatched = [], counted = 0;
+  TP_COMPS.forEach(function(c) {
+    var lcc = tpLastCompCount(c);
+    if (!lcc) return;
+    counted++;
+    var cdiff = lcc.count - tpCompRemaining(c);
+    if (cdiff !== 0) mismatched.push({ comp: c, lc: lcc, diff: cdiff });
+  });
   if (banner) {
-    if (lc && diff !== 0) {
-      var word = diff < 0 ? 'unaccounted for — physical count is lower than the calculated balance. Log missing issuances or run a new count.' : 'more in stock than calculated — check for returns or issuances logged incorrectly.';
-      banner.innerHTML = '<div style="background:rgba(192,53,53,0.08);border:1px solid rgba(192,53,53,0.3);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--red);font-weight:600">⚠ ' + Math.abs(diff) + ' transponder' + (Math.abs(diff) !== 1 ? 's' : '') + ' ' + word + ' <span style="font-weight:400">(Physical: ' + lc.count + ' on ' + fmtShort(lc.date) + ' · Calculated: ' + calc + ')</span></div>';
-    } else if (lc) {
-      banner.innerHTML = '<div style="background:var(--green-light);border:1px solid rgba(26,102,64,0.25);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--green);font-weight:600">✓ Physical count matches the calculated balance (' + calc + ' in stock) — last verified ' + fmtShort(lc.date) + '.</div>';
+    if (mismatched.length) {
+      var parts = mismatched.map(function(m) {
+        return '<strong>' + m.comp.label + ':</strong> ' + Math.abs(m.diff) + ' ' + (m.diff < 0 ? 'unaccounted' : 'over') + ' <span style="font-weight:400">(counted ' + m.lc.count + ' on ' + fmtShort(m.lc.date) + ' · calculated ' + tpCompRemaining(m.comp) + ')</span>';
+      });
+      banner.innerHTML = '<div style="background:rgba(192,53,53,0.08);border:1px solid rgba(192,53,53,0.3);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--red);font-weight:600">⚠ ' + parts.join(' &nbsp;·&nbsp; ') + '</div>';
+    } else if (counted) {
+      banner.innerHTML = '<div style="background:var(--green-light);border:1px solid rgba(26,102,64,0.25);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--green);font-weight:600">✓ All counted components match the calculated balance.</div>';
     } else {
       banner.innerHTML = '';
     }
   }
-  // Stat cards
-  var statEl = g('tp-stats');
-  if (statEl) {
-    statEl.innerHTML =
-      '<div class="stat-card" onclick="openTpStart()" style="cursor:pointer" title="Click to edit starting inventory"><div class="stat-num">' + start + '</div><div class="stat-lbl">Starting Stock ✎</div></div>'
-      + '<div class="stat-card"><div class="stat-num">' + out + '</div><div class="stat-lbl">Given Out (Active)</div></div>'
-      + '<div class="stat-card"><div class="stat-num">' + ret + '</div><div class="stat-lbl">Returned</div></div>'
-      + '<div class="stat-card"><div class="stat-num">' + calc + '</div><div class="stat-lbl">Calculated In Stock</div></div>'
-      + '<div class="stat-card"><div class="stat-num">' + (lc ? lc.count : '—') + '</div><div class="stat-lbl">Physical Count' + (lc ? ' · ' + fmtShort(lc.date) : '') + '</div></div>'
-      + '<div class="stat-card' + (lc ? (diff !== 0 ? ' red' : ' green') : '') + '"><div class="stat-num">' + (lc ? (diff === 0 ? '✓' : Math.abs(diff)) : '—') + '</div><div class="stat-lbl">' + (lc && diff !== 0 ? 'Unaccounted' : 'Reconciled') + '</div></div>';
+  // Component stock table
+  var recEl = g('tp-received');
+  if (recEl) recEl.textContent = d.receivedDate ? 'Bundle received ' + fmtShort(d.receivedDate) + ', ' + String(d.receivedDate).split('-')[0] : '';
+  var compBody = g('tp-comp-tbody');
+  if (compBody) {
+    var ch = '';
+    TP_COMPS.forEach(function(c) {
+      var lcc = tpLastCompCount(c);
+      var rem = tpCompRemaining(c);
+      var cdiff = lcc ? lcc.count - rem : null;
+      var diffCell = !lcc ? '<span style="color:var(--text3);font-size:11px">no count yet</span>'
+        : cdiff === 0 ? '<span style="color:var(--green);font-weight:700">✓ reconciled</span>'
+        : '<span style="color:var(--red);font-weight:700">' + Math.abs(cdiff) + (cdiff < 0 ? ' missing' : ' over') + '</span>';
+      ch += '<tr><td class="font-600">' + c.label + '</td>'
+        + '<td class="mono">' + d[c.startKey] + '</td>'
+        + '<td class="mono">' + tpCompOut(c) + '</td>'
+        + '<td class="mono">' + (tpCompDamaged(c) || '<span style="color:var(--text3)">—</span>') + '</td>'
+        + '<td class="mono">' + (tpCompReturned(c) || '<span style="color:var(--text3)">—</span>') + '</td>'
+        + '<td class="mono font-600">' + rem + '</td>'
+        + '<td class="mono">' + (lcc ? lcc.count + ' <span style="color:var(--text3);font-size:10px">(' + fmtShort(lcc.date) + ')</span>' : '<span style="color:var(--text3)">—</span>') + '</td>'
+        + '<td>' + diffCell + '</td></tr>';
+    });
+    compBody.innerHTML = ch;
   }
   // Log table
   var q = (g('tp-search') && g('tp-search').value || '').trim().toLowerCase();
@@ -5677,18 +5748,19 @@ function renderTransponders() {
         var rowStyle = isReturned ? ' style="opacity:0.55"' : '';
         var statusBadge = e.status === 'issued' ? '<span style="background:rgba(26,92,62,0.10);color:var(--accent);font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px">Issued</span>'
           : e.status === 'replaced' ? '<span style="background:rgba(217,119,6,0.12);color:var(--amber);font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px">Replaced</span>'
+          : e.status === 'damaged' ? '<span style="background:rgba(192,53,53,0.10);color:var(--red);font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px">Damaged</span>'
           : '<span style="background:rgba(107,114,128,0.1);color:var(--text3);font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px">Returned</span>';
         var who = (e.unit ? '<span class="mono font-600">' + esc(e.unit) + '</span>' + (e.recipient ? ' · ' : '') : '') + esc(e.recipient || '');
         html += '<tr' + rowStyle + '>';
         html += '<td class="text-sm" style="white-space:nowrap">' + tpFmtDate(e) + '</td>';
         html += '<td>' + (who || '<span style="color:var(--text3)">—</span>') + fmtByTag(e.addedBy, e.createdAt) + (e.notes ? '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + esc(e.notes) + '</div>' : '') + '</td>';
         html += '<td>' + tpCatBadge(e.category) + '</td>';
-        html += '<td class="mono">' + tpQty(e) + '</td>';
+        html += '<td class="mono text-sm" style="white-space:nowrap" title="' + esc(tpSetLabel(e, true)) + '">' + tpSetLabel(e) + '</td>';
         html += '<td class="text-sm">' + (e.vehicle ? esc(e.vehicle) : '<span style="color:var(--text3)">—</span>') + (e.plate ? '<div style="font-size:11px;color:var(--text3)">' + esc(e.plate) + '</div>' : '') + '</td>';
         html += '<td class="mono text-sm">' + (e.nfc ? esc(e.nfc) : '<span style="color:var(--text3)">—</span>') + '</td>';
         html += '<td>' + statusBadge + '</td>';
         html += '<td><div class="flex gap-4">';
-        if (!isReturned) html += '<button class="btn btn-ghost btn-xs" style="color:var(--green)" onclick="returnTransponder(\'' + e.id + '\')" title="Mark returned to stock">↩ Return</button>';
+        if (e.status === 'issued' || e.status === 'replaced') html += '<button class="btn btn-ghost btn-xs" style="color:var(--green)" onclick="returnTransponder(\'' + e.id + '\')" title="Mark returned to stock">↩ Return</button>';
         if (e.unit) html += '<button class="btn btn-ghost btn-xs" onclick="openUnitView(\'' + esc(e.unit) + '\')" title="Unit overview" style="color:var(--accent)">&#128100;</button>';
         html += '<button class="btn btn-ghost btn-xs" onclick="openEditTransponder(\'' + e.id + '\')" title="Edit">&#9998;</button>';
         html += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteTransponder(\'' + e.id + '\')">&#x2715;</button>';
@@ -5703,21 +5775,28 @@ function renderTransponders() {
   if (histCnt) histCnt.textContent = d.counts.length + (d.counts.length === 1 ? ' count' : ' counts');
   if (histBody && d.counts.length) {
     var hHtml = '';
+    // Each cell: "counted / calculated-at-the-time (diff)" — blank when that component wasn't counted
+    function tpHistCell(v) {
+      if (!v || v.count == null) return '<td class="text-sm" style="color:var(--text3)">—</td>';
+      var dTxt = v.diff === 0 ? '<span style="color:var(--green);font-weight:600">✓</span>'
+        : '<span style="color:var(--red);font-weight:600">' + (v.diff > 0 ? '+' : '') + v.diff + '</span>';
+      return '<td class="mono text-sm">' + v.count + ' / ' + v.expected + ' ' + dTxt + '</td>';
+    }
     d.counts.slice().reverse().forEach(function(c) {
-      var dTxt = c.diff === 0 ? '<span style="color:var(--green);font-weight:600">✓ Match</span>'
-        : '<span style="color:var(--red);font-weight:600">' + (c.diff > 0 ? '+' : '') + c.diff + '</span>';
-      hHtml += '<tr><td class="text-sm">' + fmtShort(c.date) + '</td><td class="mono">' + c.count + '</td><td class="mono">' + c.expected + '</td><td>' + dTxt + '</td><td class="text-sm text-3">' + esc(c.by || '—') + '</td></tr>';
+      var transVal = c.count != null ? { count: c.count, expected: c.expected, diff: c.diff } : null;
+      hHtml += '<tr><td class="text-sm">' + fmtShort(c.date) + '</td>' + tpHistCell(transVal) + tpHistCell(c.tags) + tpHistCell(c.stickers) + '<td class="text-sm text-3">' + esc(c.by || '—') + '</td></tr>';
     });
     histBody.innerHTML = hHtml;
   }
 }
 function openAddTransponder() {
   editingTransponderId = null;
-  setModalMode('modal-transponder-title', 'modal-transponder-savebtn', 'Log Transponder', 'Save');
+  setModalMode('modal-transponder-title', 'modal-transponder-savebtn', 'Log Credentials', 'Save');
   ['tp-unit', 'tp-recipient', 'tp-vehicle', 'tp-plate', 'tp-nfc', 'tp-notes'].forEach(function(id) { var el = g(id); if (el) el.value = ''; });
   g('tp-date').value = today();
   g('tp-category').value = 'Resident';
   g('tp-qty').value = '1';
+  g('tp-q-trans').value = '1'; g('tp-q-tags').value = '1'; g('tp-q-stick').value = '1';
   g('tp-status').value = 'issued';
   openModal('modal-transponder');
   setTimeout(function() { var u = g('tp-unit'); if (u) u.focus(); }, 130);
@@ -5725,12 +5804,15 @@ function openAddTransponder() {
 function openEditTransponder(id) {
   var e = tpData().log.find(function(x){ return x.id === id; }); if (!e) return;
   editingTransponderId = id;
-  setModalMode('modal-transponder-title', 'modal-transponder-savebtn', 'Edit Transponder Entry', 'Save Changes');
+  setModalMode('modal-transponder-title', 'modal-transponder-savebtn', 'Edit Credential Entry', 'Save Changes');
   g('tp-date').value = e.date || '';
   g('tp-category').value = e.category || 'Resident';
   g('tp-unit').value = e.unit || '';
   g('tp-recipient').value = e.recipient || '';
-  g('tp-qty').value = String(tpQty(e));
+  g('tp-qty').value = String(Math.max(tpQty(e), tpTags(e), tpStick(e)));
+  g('tp-q-trans').value = String(tpQty(e));
+  g('tp-q-tags').value = String(tpTags(e));
+  g('tp-q-stick').value = String(tpStick(e));
   g('tp-status').value = e.status || 'issued';
   g('tp-vehicle').value = e.vehicle || '';
   g('tp-plate').value = e.plate || '';
@@ -5741,13 +5823,13 @@ function openEditTransponder(id) {
 function saveTransponder() {
   var unit = g('tp-unit').value.trim(), recipient = g('tp-recipient').value.trim();
   if (!unit && !recipient) { toast('Enter a unit or recipient name'); g('tp-unit').focus(); return; }
-  var qty = parseInt(g('tp-qty').value, 10);
-  if (isNaN(qty) || qty < 1) { toast('Quantity must be at least 1'); g('tp-qty').focus(); return; }
+  var qT = tpNum(g('tp-q-trans').value, 0), qK = tpNum(g('tp-q-tags').value, 0), qX = tpNum(g('tp-q-stick').value, 0);
+  if (qT + qK + qX < 1) { toast('Set contents can’t all be zero'); g('tp-q-trans').focus(); return; }
   var status = g('tp-status').value;
   var data = {
     date: g('tp-date').value || today(),
     category: g('tp-category').value || 'Resident',
-    unit: unit, recipient: recipient, qty: qty, status: status,
+    unit: unit, recipient: recipient, qty: qT, qtyTags: qK, qtyStickers: qX, status: status,
     vehicle: g('tp-vehicle').value.trim(), plate: g('tp-plate').value.trim(),
     nfc: g('tp-nfc').value.trim(), notes: g('tp-notes').value.trim()
   };
@@ -5759,21 +5841,21 @@ function saveTransponder() {
     if (data.status !== 'returned') data.returnedAt = null;
     data.approx = !!e.approx && data.date === e.date; // approx survives edits unless the date itself was corrected
     Object.assign(e, data); editingTransponderId = null;
-    pushUndo({ sec: 'transponders', type: 'EDIT', path: ['transponders', 'log'], id: e.id, before: _tb, after: cloneData(e), label: 'transponder edit — ' + tpWho(e) });
-    logActivity('transponders', 'edit', 'Updated transponder entry — ' + tpWho(e), 'Category: ' + e.category + ' · Qty: ' + tpQty(e) + ' · Status: ' + e.status);
+    pushUndo({ sec: 'transponders', type: 'EDIT', path: ['transponders', 'log'], id: e.id, before: _tb, after: cloneData(e), label: 'credential edit — ' + tpWho(e) });
+    logActivity('transponders', 'edit', 'Updated credential entry — ' + tpWho(e), 'Category: ' + e.category + ' · ' + tpSetLabel(e, true) + ' · Status: ' + e.status);
     scheduleSave(); closeModal('modal-transponder'); renderTransponders(); toast('Updated');
   } else {
     var newE = Object.assign({ id: uid(), approx: false, returnedAt: status === 'returned' ? Date.now() : null, addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() }, data);
     d.log.push(newE);
-    pushUndo({ sec: 'transponders', type: 'ADD', path: ['transponders', 'log'], id: newE.id, data: newE, label: 'log transponder — ' + tpWho(newE) });
-    logActivity('transponders', 'create', 'Transponder ' + (status === 'issued' ? 'issued' : status) + ' — ' + tpWho(newE), 'Category: ' + newE.category + ' · Qty: ' + qty + (newE.nfc ? ' · NFC #' + newE.nfc : '') + ' · In stock (calc): ' + tpCalcRemaining());
-    scheduleSave(); closeModal('modal-transponder'); renderTransponders(); toast('Transponder logged — stock updated');
+    pushUndo({ sec: 'transponders', type: 'ADD', path: ['transponders', 'log'], id: newE.id, data: newE, label: 'log credentials — ' + tpWho(newE) });
+    logActivity('transponders', 'create', 'Credentials ' + (status === 'issued' ? 'issued' : status) + ' — ' + tpWho(newE), 'Category: ' + newE.category + ' · ' + tpSetLabel(newE, true) + (newE.nfc ? ' · NFC #' + newE.nfc : '') + ' · Transponders in stock (calc): ' + tpCalcRemaining());
+    scheduleSave(); closeModal('modal-transponder'); renderTransponders(); toast('Credentials logged — stock updated');
   }
 }
 function returnTransponder(id) {
   var e = tpData().log.find(function(x){ return x.id === id; }); if (!e) return;
   var q = tpQty(e);
-  if (!confirm('Mark ' + (q > 1 ? q + ' transponders' : 'transponder') + ' returned' + (e.unit ? ' for Unit ' + e.unit : (e.recipient ? ' from ' + e.recipient : '')) + '? This adds ' + q + ' back to stock.')) return;
+  if (!confirm('Mark ' + tpSetLabel(e, true) + ' returned' + (e.unit ? ' for Unit ' + e.unit : (e.recipient ? ' from ' + e.recipient : '')) + '? This adds the contents back to stock.')) return;
   var _b = { status: e.status, returnedAt: e.returnedAt };
   e.status = 'returned'; e.returnedAt = Date.now();
   pushUndo({ sec: 'transponders', type: 'EDIT', path: ['transponders', 'log'], id: e.id, before: _b, after: { status: 'returned', returnedAt: e.returnedAt }, label: 'transponder returned — ' + tpWho(e) });
@@ -5789,51 +5871,67 @@ function deleteTransponder(id) {
   scheduleSave(); renderTransponders(); toast('Removed');
 }
 function openTpReconcile() {
-  var el = g('tpr-count'); if (el) el.value = '';
+  ['tpr-count', 'tpr-tags', 'tpr-stick'].forEach(function(id) { var el = g(id); if (el) el.value = ''; });
   tpReconcileUpdate();
   openModal('modal-tp-reconcile');
   setTimeout(function() { var f = g('tpr-count'); if (f) f.focus(); }, 130);
 }
+var TP_RECONCILE_IDS = { trans: 'tpr-count', tags: 'tpr-tags', stick: 'tpr-stick' };
 function tpReconcileUpdate() {
-  var el = g('tpr-count'), res = g('tpr-result'); if (!res) return;
-  var calc = tpCalcRemaining();
-  var html = 'Calculated in stock: <strong>' + calc + '</strong> <span style="color:var(--text3)">(' + tpData().startingInventory + ' starting − ' + tpActiveOut() + ' out)</span>';
-  var v = el && el.value !== '' ? parseInt(el.value, 10) : NaN;
-  if (!isNaN(v)) {
-    var diff = v - calc;
-    if (diff === 0) html += '<div style="color:var(--green);font-weight:700;margin-top:6px">✓ Matches — fully reconciled.</div>';
-    else if (diff < 0) html += '<div style="color:var(--red);font-weight:700;margin-top:6px">⚠ ' + Math.abs(diff) + ' unaccounted for (physical is lower than calculated).</div>';
-    else html += '<div style="color:var(--amber);font-weight:700;margin-top:6px">⚠ ' + diff + ' more than calculated (check for unlogged returns).</div>';
-  }
+  var res = g('tpr-result'); if (!res) return;
+  var html = '';
+  TP_COMPS.forEach(function(c) {
+    var rem = tpCompRemaining(c);
+    var el = g(TP_RECONCILE_IDS[c.id]);
+    var line = '<strong>' + c.label + ':</strong> ' + rem + ' calculated';
+    var v = el && el.value !== '' ? parseInt(el.value, 10) : NaN;
+    if (!isNaN(v)) {
+      var diff = v - rem;
+      if (diff === 0) line += ' — <span style="color:var(--green);font-weight:700">✓ match</span>';
+      else if (diff < 0) line += ' — <span style="color:var(--red);font-weight:700">⚠ ' + Math.abs(diff) + ' unaccounted</span>';
+      else line += ' — <span style="color:var(--amber);font-weight:700">⚠ ' + diff + ' over (check unlogged returns)</span>';
+    }
+    html += '<div>' + line + '</div>';
+  });
   res.innerHTML = html;
 }
 function saveTpCount() {
-  var el = g('tpr-count');
-  var v = el && el.value !== '' ? parseInt(el.value, 10) : NaN;
-  if (isNaN(v) || v < 0) { toast('Enter the physical count'); if (el) el.focus(); return; }
   var d = tpData();
-  var calc = tpCalcRemaining();
-  var rec = { id: uid(), date: today(), count: v, expected: calc, diff: v - calc, by: currentUser ? currentUser.name : '', ts: Date.now() };
+  var vT = g('tpr-count') && g('tpr-count').value !== '' ? parseInt(g('tpr-count').value, 10) : NaN;
+  var vK = g('tpr-tags') && g('tpr-tags').value !== '' ? parseInt(g('tpr-tags').value, 10) : NaN;
+  var vX = g('tpr-stick') && g('tpr-stick').value !== '' ? parseInt(g('tpr-stick').value, 10) : NaN;
+  if (isNaN(vT) && isNaN(vK) && isNaN(vX)) { toast('Enter at least one count'); var f = g('tpr-count'); if (f) f.focus(); return; }
+  var rec = { id: uid(), date: today(), by: currentUser ? currentUser.name : '', ts: Date.now() };
+  var msgs = [], allOk = true;
+  if (!isNaN(vT)) { var eT = tpCompRemaining(TP_COMPS[0]); rec.count = vT; rec.expected = eT; rec.diff = vT - eT; msgs.push('Transponders ' + vT + ' (calc ' + eT + ')'); if (rec.diff !== 0) allOk = false; }
+  if (!isNaN(vK)) { var eK = tpCompRemaining(TP_COMPS[1]); rec.tags = { count: vK, expected: eK, diff: vK - eK }; msgs.push('Key tags ' + vK + ' (calc ' + eK + ')'); if (rec.tags.diff !== 0) allOk = false; }
+  if (!isNaN(vX)) { var eX = tpCompRemaining(TP_COMPS[2]); rec.stickers = { count: vX, expected: eX, diff: vX - eX }; msgs.push('Stickers ' + vX + ' (calc ' + eX + ')'); if (rec.stickers.diff !== 0) allOk = false; }
   var _before = cloneData(d.counts);
   d.counts.push(rec);
-  pushSetUndo('transponders', ['transponders', 'counts'], _before, cloneData(d.counts), 'transponder count — ' + v);
-  logActivity('transponders', rec.diff === 0 ? 'complete' : 'edit', 'Physical transponder count logged — ' + v + ' in stock', 'Calculated: ' + calc + (rec.diff === 0 ? ' · Reconciled ✓' : ' · Difference: ' + (rec.diff > 0 ? '+' : '') + rec.diff));
+  pushSetUndo('transponders', ['transponders', 'counts'], _before, cloneData(d.counts), 'credential count');
+  logActivity('transponders', allOk ? 'complete' : 'edit', 'Physical credential count logged — ' + msgs.join(' · '));
   scheduleSave(); closeModal('modal-tp-reconcile'); renderTransponders();
-  toast(rec.diff === 0 ? 'Count saved — fully reconciled ✓' : 'Count saved — discrepancy flagged');
+  toast(allOk ? 'Count saved — reconciled ✓' : 'Count saved — discrepancy flagged');
 }
 function openTpStart() {
-  var el = g('tps-count'); if (el) el.value = String(tpData().startingInventory);
+  var d = tpData();
+  g('tps-count').value = String(d.startingInventory);
+  g('tps-tags').value = String(d.startingKeyTags);
+  g('tps-stick').value = String(d.startingStickers);
+  g('tps-received').value = d.receivedDate || '';
   openModal('modal-tp-start');
 }
 function saveTpStart() {
-  var v = parseInt(g('tps-count').value, 10);
-  if (isNaN(v) || v < 0) { toast('Enter a valid number'); return; }
   var d = tpData();
-  var beforeV = d.startingInventory;
-  if (v !== beforeV) {
-    d.startingInventory = v;
-    pushSetUndo('transponders', ['transponders', 'startingInventory'], beforeV, v, 'transponder starting stock → ' + v);
-    logActivity('transponders', 'edit', 'Transponder starting inventory changed — ' + beforeV + ' → ' + v);
+  var vT = parseInt(g('tps-count').value, 10), vK = parseInt(g('tps-tags').value, 10), vX = parseInt(g('tps-stick').value, 10);
+  if (isNaN(vT) || vT < 0 || isNaN(vK) || vK < 0 || isNaN(vX) || vX < 0) { toast('Enter valid numbers'); return; }
+  var rec = g('tps-received').value || d.receivedDate;
+  var changed = vT !== d.startingInventory || vK !== d.startingKeyTags || vX !== d.startingStickers || rec !== d.receivedDate;
+  if (changed) {
+    var _before = cloneData(d); // full snapshot — partial objects on this path would clobber the log on undo
+    d.startingInventory = vT; d.startingKeyTags = vK; d.startingStickers = vX; d.receivedDate = rec;
+    pushSetUndo('transponders', ['transponders'], _before, cloneData(d), 'credential baselines');
+    logActivity('transponders', 'edit', 'Credential starting inventory updated — Transponders: ' + vT + ' · Key tags: ' + vK + ' · Stickers: ' + vX);
     scheduleSave();
   }
   closeModal('modal-tp-start'); renderTransponders();
@@ -5841,7 +5939,12 @@ function saveTpStart() {
 function wireTransponderInputs() {
   var s = g('tp-search'); if (s) s.addEventListener('input', function() { renderTransponders(); });
   var c = g('tp-filter-cat'); if (c) c.addEventListener('change', function() { renderTransponders(); });
-  var r = g('tpr-count'); if (r) r.addEventListener('input', tpReconcileUpdate);
+  ['tpr-count', 'tpr-tags', 'tpr-stick'].forEach(function(id) { var el = g(id); if (el) el.addEventListener('input', tpReconcileUpdate); });
+  var q = g('tp-qty');
+  if (q) q.addEventListener('input', function() {
+    var v = parseInt(q.value, 10); if (isNaN(v) || v < 0) return;
+    ['tp-q-trans', 'tp-q-tags', 'tp-q-stick'].forEach(function(id) { var el = g(id); if (el) el.value = String(v); });
+  });
 }
 // One-time seed from the July 2026 manual reconciliation (Gmail + TEZ + Master List cross-reference).
 // 41 documented allocations + the 7/2 physical count of 30 (vs 59 calculated = 29 unaccounted).
@@ -5938,6 +6041,24 @@ function seedTranspondersV2() {
   ];
   found.forEach(function(e) { if (!have[e.nfc]) d.log.push(e); });
   state.transponderSeedV2 = true;
+  scheduleSave();
+}
+// V3 (set tracking): each entry now records key tags + Xpress stickers alongside transponders.
+// Historical entries default to full sets; known partial swaps corrected (619 transponder-only,
+// 1706 sticker-only, Ruzana/CBSF transponder-only — her TEZ sticker is still the old one).
+function migrateTransponderSetsV3() {
+  if (state.transponderSetsV3) return;
+  var d = tpData();
+  d.log.forEach(function(e) {
+    if (e.qtyTags !== undefined && e.qtyStickers !== undefined) return;
+    var q = tpNum(e.qty, 1);
+    var isSeed = e.addedBy === 'Reconciliation Jul 2026';
+    if (isSeed && e.unit === '619' && e.category === 'Malfunction Replacement') { e.qtyTags = 0; e.qtyStickers = 0; }
+    else if (isSeed && e.unit === '1706' && e.category === 'Malfunction Replacement') { e.qty = 0; e.qtyTags = 0; e.qtyStickers = 1; }
+    else if (isSeed && e.category === 'CBSF') { e.qtyTags = 0; e.qtyStickers = 0; }
+    else { e.qtyTags = q; e.qtyStickers = q; }
+  });
+  state.transponderSetsV3 = true;
   scheduleSave();
 }
 function renderParking() {
@@ -8553,18 +8674,26 @@ function renderPdAutoBlocks(isLead) {
   // Transponder activity this shift (issued / returned today) — auto-included so handoffs never live only in email
   var tpEv = tpEventsForDate(t);
   if (tpEv.total) {
-    pdSections.push({ id: 'pd-blk-tp', icon: '📡', label: 'Transponders', count: tpEv.total });
-    html += '<div class="pd-auto-block" id="pd-blk-tp"><div class="pd-auto-hdr">📡 Transponders (' + tpEv.total + ')</div>';
+    pdSections.push({ id: 'pd-blk-tp', icon: '📡', label: 'Credentials', count: tpEv.total });
+    html += '<div class="pd-auto-block" id="pd-blk-tp"><div class="pd-auto-hdr">📡 Parking Credentials (' + tpEv.total + ')</div>';
     var tpContent = '';
     tpEv.issued.forEach(function(e) {
-      tpContent += '<div>➤ ' + (e.status === 'replaced' ? 'Replaced' : 'Issued') + ': <strong>' + esc(tpWho(e)) + '</strong> · ' + esc(e.category || '') + (tpQty(e) > 1 ? ' ×' + tpQty(e) : '') + (e.nfc ? ' · NFC #' + esc(e.nfc) : '') + '</div>';
+      var tpVerb = e.status === 'replaced' ? 'Replaced' : e.status === 'damaged' ? 'Marked damaged' : 'Issued';
+      tpContent += '<div>➤ ' + tpVerb + ': <strong>' + esc(tpWho(e)) + '</strong> · ' + esc(e.category || '') + ' · ' + esc(tpSetLabel(e, true)) + (e.nfc ? ' · NFC #' + esc(e.nfc) : '') + '</div>';
     });
     tpEv.returned.forEach(function(e) {
-      tpContent += '<div>↩ Returned: <strong>' + esc(tpWho(e)) + '</strong>' + (tpQty(e) > 1 ? ' ×' + tpQty(e) : '') + '</div>';
+      tpContent += '<div>↩ Returned: <strong>' + esc(tpWho(e)) + '</strong> · ' + esc(tpSetLabel(e, true)) + '</div>';
     });
-    var tpLc = tpLastCount(), tpCalc = tpCalcRemaining();
-    tpContent += '<div style="margin-top:4px;font-size:12px;color:var(--text2)">In stock (calculated): ' + tpCalc + (tpLc && (tpLc.count - tpCalc) !== 0 ? ' · <span style="color:var(--red);font-weight:600">⚠ ' + Math.abs(tpLc.count - tpCalc) + ' unaccounted (last count ' + tpLc.count + ')</span>' : '') + '</div>';
-    var tpDefNs = 'Transponder log updated — verify stock count matches at end of shift.';
+    var tpStockBits = TP_COMPS.map(function(c) { return tpCompRemaining(c) + ' ' + c.label.toLowerCase(); }).join(' · ');
+    var tpWarnBits = [];
+    TP_COMPS.forEach(function(c) {
+      var tpLcc = tpLastCompCount(c);
+      if (!tpLcc) return;
+      var tpDf = tpLcc.count - tpCompRemaining(c);
+      if (tpDf !== 0) tpWarnBits.push(Math.abs(tpDf) + ' ' + c.label.toLowerCase() + (tpDf < 0 ? ' unaccounted' : ' over'));
+    });
+    tpContent += '<div style="margin-top:4px;font-size:12px;color:var(--text2)">In stock (calculated): ' + tpStockBits + (tpWarnBits.length ? ' · <span style="color:var(--red);font-weight:600">⚠ ' + tpWarnBits.join(', ') + '</span>' : '') + '</div>';
+    var tpDefNs = 'Credential log updated — verify stock counts match at end of shift.';
     if (pdNotes['tp_summary'] === undefined) pdNotes['tp_summary'] = tpDefNs;
     html += pdAutoRow('tp_summary', tpContent, tpDefNs, false);
     html += '</div>';
@@ -8877,16 +9006,24 @@ function generatePassdown() {
   // Transponder activity today (skip if excluded or no note)
   var tpEvGen = tpEventsForDate(t);
   if (tpEvGen.total && !pdExcluded['tp_summary'] && pdHasNote('tp_summary')) {
-    out += '\n📡 Transponders\n';
+    out += '\n📡 Parking Credentials\n';
     tpEvGen.issued.forEach(function(e) {
-      out += (e.status === 'replaced' ? 'Replaced' : 'Issued') + ': ' + tpWho(e) + ' · ' + (e.category || '') + (tpQty(e) > 1 ? ' ×' + tpQty(e) : '') + (e.nfc ? ' · NFC #' + e.nfc : '') + (e.vehicle ? ' · ' + e.vehicle : '') + '\n';
+      var tpVerbG = e.status === 'replaced' ? 'Replaced' : e.status === 'damaged' ? 'Marked damaged' : 'Issued';
+      out += tpVerbG + ': ' + tpWho(e) + ' · ' + (e.category || '') + ' · ' + tpSetLabel(e, true) + (e.nfc ? ' · NFC #' + e.nfc : '') + (e.vehicle ? ' · ' + e.vehicle : '') + '\n';
     });
     tpEvGen.returned.forEach(function(e) {
-      out += 'Returned: ' + tpWho(e) + (tpQty(e) > 1 ? ' ×' + tpQty(e) : '') + '\n';
+      out += 'Returned: ' + tpWho(e) + ' · ' + tpSetLabel(e, true) + '\n';
     });
-    var tpCalcGen = tpCalcRemaining(), tpLcGen = tpLastCount();
-    out += 'In stock (calculated): ' + tpCalcGen + (tpLcGen && (tpLcGen.count - tpCalcGen) !== 0 ? ' — ⚠ ' + Math.abs(tpLcGen.count - tpCalcGen) + ' unaccounted vs last physical count (' + tpLcGen.count + ')' : '') + '\n';
-    out += 'Next Step: ' + pdNote('tp_summary', 'Transponder log updated — verify stock count matches at end of shift.') + '\n';
+    var tpStockGen = TP_COMPS.map(function(c) { return tpCompRemaining(c) + ' ' + c.label.toLowerCase(); }).join(' · ');
+    var tpWarnGen = [];
+    TP_COMPS.forEach(function(c) {
+      var tpLcG = tpLastCompCount(c);
+      if (!tpLcG) return;
+      var tpDfG = tpLcG.count - tpCompRemaining(c);
+      if (tpDfG !== 0) tpWarnGen.push(Math.abs(tpDfG) + ' ' + c.label.toLowerCase() + (tpDfG < 0 ? ' unaccounted' : ' over'));
+    });
+    out += 'In stock (calculated): ' + tpStockGen + (tpWarnGen.length ? ' — ⚠ ' + tpWarnGen.join(', ') + ' vs last physical count' : '') + '\n';
+    out += 'Next Step: ' + pdNote('tp_summary', 'Credential log updated — verify stock counts match at end of shift.') + '\n';
   }
 
   // Open / in-progress maintenance (skip excluded)
@@ -11457,6 +11594,7 @@ async function init() {
   seedUnitRecords();
   seedTransponders();
   seedTranspondersV2();
+  migrateTransponderSetsV3();
   wireTransponderInputs();
   refreshUnitDatalist();
   updatePropertyUI();
