@@ -346,7 +346,7 @@
   .unit-det{font-size:11px;color:var(--text3);background:var(--bg);border-radius:4px;padding:2px 6px}
   .pte-badge{font-size:11px;font-weight:600;border-radius:4px;padding:2px 7px;display:inline-block}
   .pte-granted{background:var(--green-light);color:var(--green)}
-  .pte-denied{background:#fee2e2;color:#dc2626}
+  .pte-denied{background:var(--red-light);color:var(--red)}
   .pte-not-set{background:var(--bg);color:var(--text3)}
 
   /* TWO COL */
@@ -531,6 +531,20 @@
   /* Stat card tints */
   .stat-card.green{background:#E2EFE8;border-color:#A8D4B8}
   .stat-card.red{background:#FAEBEB;border-color:#F0BFBF}
+  /* ─── Dark mode fixes: light tints that were hardcoded ─── */
+  body.dark-mode .tight-alert,body.dark-mode .needs-appt-alert{background:var(--amber-light);border-color:rgba(181,112,32,0.45)}
+  body.dark-mode .stat-card.green{background:var(--green-light);border-color:rgba(26,102,64,0.55)}
+  body.dark-mode .stat-card.red{background:var(--red-light);border-color:rgba(192,53,53,0.55)}
+  body.dark-mode .cal-chip-amenity{background:var(--amber-light);color:#E0A55E}
+  body.dark-mode .pill-reservation{background:rgba(78,138,112,0.25);color:#8FC7AC}
+  body.dark-mode .pte-granted{background:rgba(62,107,31,0.3);color:#A5CE7F}
+  body.dark-mode .pte-denied{background:rgba(139,34,34,0.3);color:#E89A9A}
+  body.dark-mode .guide-tip{color:#9CC5B3}
+  body.dark-mode .cal-week-tbl td.today-col{background:rgba(55,138,221,0.10)}
+  body.dark-mode .pd-preview{background:var(--surface2);border-color:var(--border)}
+  body.dark-mode .cal-month-day.today .cal-chip-out{background:rgba(192,53,53,0.3);color:#F09595}
+  body.dark-mode .conflict-warn{border-color:rgba(192,53,53,0.5)}
+  body.dark-mode .cal-month-day.today{background:rgba(55,138,221,0.10)}
   /* LOGIN OVERLAY — deep navy */
   #login-overlay{background:#080F18}
   .login-box{background:#0D1B2A;border:0.5px solid rgba(255,255,255,0.12);box-shadow:0 24px 64px rgba(0,0,0,0.60)}
@@ -562,7 +576,7 @@
   .cal-month-day.today{border-color:rgba(78,138,112,0.4)!important;background:rgba(78,138,112,0.04)!important}
   .cal-month-day.today .cal-day-num{background:#4E8A70;color:#fff!important;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;margin-bottom:3px}
   .cal-month-day.today .cal-chip-in{background:#bbf7d0;color:#14532d;font-weight:600}
-  .cal-month-day.today .cal-chip-out{background:#fecaca;color:#991b1b;font-weight:600}
+  .cal-month-day.today .cal-chip-out{background:#fecaca;color:var(--red);font-weight:600}
   .cal-month-grid{gap:4px}
   .cal-week-tbl th.today-hdr{background:rgba(78,138,112,0.18)!important;color:#2A6050!important;font-weight:700}
   .cal-week-tbl td.today-col{background:rgba(78,138,112,0.07)!important}
@@ -751,7 +765,7 @@
     <div class="section" id="section-maintenance">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterMaint('all',this)">All</div><div class="sub-tab" onclick="filterMaint('open',this)">Open</div><div class="sub-tab" onclick="filterMaint('in-progress',this)">In Progress</div><div class="sub-tab" onclick="filterMaint('resolved',this)">Resolved</div></div>
       <div class="stat-grid" id="maint-stats"></div>
-      <div style="font-size:12px;background:rgba(217,119,6,0.08);color:#92400E;border:1px solid rgba(217,119,6,0.2);border-radius:6px;padding:8px 12px;margin-bottom:10px">⚠ If a work order has already been submitted, do not add it to the passdown — the maintenance team is notified automatically.</div>
+      <div style="font-size:12px;background:rgba(217,119,6,0.08);color:var(--amber);border:1px solid rgba(217,119,6,0.2);border-radius:6px;padding:8px 12px;margin-bottom:10px">⚠ If a work order has already been submitted, do not add it to the passdown — the maintenance team is notified automatically.</div>
       <div class="card"><div class="card-hdr"><span class="card-title">Maintenance Log</span><span class="card-count" id="maint-count">0 issues</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddMaint()">+ Log Issue</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Issue</th><th>Priority</th><th>Status</th><th>Reported</th><th></th></tr></thead><tbody id="maint-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-guests">
@@ -856,7 +870,7 @@
       <div id="supplies-body"></div>
     </div>
     <div class="section" id="section-residents">
-      <div id="ut-wifi-banner" style="display:none;margin-bottom:10px;padding:10px 14px;background:#fef9c3;border:1px solid #fcd34d;border-radius:var(--radius);font-size:13px;color:#854d0e"></div>
+      <div id="ut-wifi-banner" style="display:none;margin-bottom:10px;padding:10px 14px;background:var(--amber-light);border:1px solid rgba(201,164,94,0.5);border-radius:var(--radius);font-size:13px;color:var(--amber)"></div>
       <div class="stat-grid" id="ut-stats"></div>
       <div class="card">
         <div class="card-hdr" style="flex-wrap:wrap;gap:6px">
@@ -2731,12 +2745,12 @@ function renderDash() {
   var wifiDue = getWifiRenewals();
   if (wifiDue.length) {
     var wt2 = today();
-    html += '<div style="background:#fffbeb;border:1px solid rgba(201,164,94,0.45);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px">';
-    html += '<div style="font-size:12px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">&#128246; WiFi Renewals — ' + wifiDue.length + ' resident' + (wifiDue.length > 1 ? 's' : '') + ' need' + (wifiDue.length === 1 ? 's' : '') + ' activation</div>';
+    html += '<div style="background:var(--amber-light);border:1px solid rgba(201,164,94,0.45);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px">';
+    html += '<div style="font-size:12px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">&#128246; WiFi Renewals — ' + wifiDue.length + ' resident' + (wifiDue.length > 1 ? 's' : '') + ' need' + (wifiDue.length === 1 ? 's' : '') + ' activation</div>';
     wifiDue.forEach(function(r) {
       var expired = r.wifiExpiry < wt2;
       var daysLeft = Math.floor((new Date(r.wifiExpiry+'T00:00:00') - new Date(wt2+'T00:00:00')) / 86400000);
-      var label = expired ? '<span style="color:var(--red);font-weight:600">EXPIRED ' + fmtShort(r.wifiExpiry) + '</span>' : '<span style="color:#92400E">Expires ' + fmtShort(r.wifiExpiry) + (daysLeft === 0 ? ' (today)' : ' (' + daysLeft + 'd)') + '</span>';
+      var label = expired ? '<span style="color:var(--red);font-weight:600">EXPIRED ' + fmtShort(r.wifiExpiry) + '</span>' : '<span style="color:var(--amber)">Expires ' + fmtShort(r.wifiExpiry) + (daysLeft === 0 ? ' (today)' : ' (' + daysLeft + 'd)') + '</span>';
       html += '<div class="tight-row"><strong>Unit ' + esc(r.unit) + '</strong> — ' + esc(r.leaseholder||r.residentName||'') + ' &nbsp;' + label + '<button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="navToSec(\'residents\');setTimeout(function(){openEditUnitRecord(\'' + r.id + '\')},150)">Renew</button></div>';
     });
     html += '</div>';
@@ -3744,13 +3758,13 @@ function buildCL(m, filterCat) {
   if (allDone) {
     var incompletePost = (m.tasks || []).some(function (tk) { return tk.cat === 'Post Move-In' && !tk.done; });
     if (filterCat === 'in' && incompletePost) {
-      html += '<div style="margin-top:10px;padding:10px 12px;background:var(--accent-light);border-radius:var(--radius);border:1px solid #BCD4ED;display:flex;align-items:center;gap:10px" onclick="event.stopPropagation()">'
+      html += '<div style="margin-top:10px;padding:10px 12px;background:var(--accent-light);border-radius:var(--radius);border:1px solid rgba(74,111,165,0.45);display:flex;align-items:center;gap:10px" onclick="event.stopPropagation()">'
         + '<span style="font-size:15px">&#10003;</span>'
         + '<span style="color:var(--accent);font-weight:600;font-size:13px">Main tasks done!</span>'
         + '<span style="color:var(--text2);font-size:12px;flex:1">Switch to the <strong>Post Move-In</strong> tab to continue.</span>'
         + '</div>';
     } else {
-      html += '<div style="margin-top:10px;padding:10px 12px;background:var(--green-light);border-radius:var(--radius);border:1px solid #A8D48A;display:flex;align-items:center;gap:10px" onclick="event.stopPropagation()">'
+      html += '<div style="margin-top:10px;padding:10px 12px;background:var(--green-light);border-radius:var(--radius);border:1px solid rgba(26,102,64,0.45);display:flex;align-items:center;gap:10px" onclick="event.stopPropagation()">'
         + '<span style="font-size:15px">&#10003;</span>'
         + '<span style="color:var(--green);font-weight:600;font-size:13px">All tasks done!</span>'
         + '<button class="btn btn-sm" style="background:var(--green);color:#fff;border:none;margin-left:auto;flex-shrink:0" onclick="event.stopPropagation();archiveMove(\'' + m.id + '\')">Archive this move</button>'
@@ -3927,7 +3941,7 @@ function renderMoves() {
     if (!pmiInfo) {
       var banner = document.createElement('div');
       banner.id = 'pmi-info-banner';
-      banner.style.cssText = 'background:var(--purple-light);border:1px solid #C8C0F0;border-radius:var(--radius);padding:10px 14px;margin-bottom:10px;font-size:12.5px;color:var(--purple)';
+      banner.style.cssText = 'background:var(--purple-light);border:1px solid rgba(96,68,178,0.4);border-radius:var(--radius);padding:10px 14px;margin-bottom:10px;font-size:12.5px;color:var(--purple)';
       banner.innerHTML = '<strong>Post Move-In tasks</strong> are tagged with the "Post Move-In" category. Only residents already moved in (lease start in past) with incomplete post move-in tasks appear here. Tag tasks as "Post Move-In" in Settings or the checklist.';
       var movesSection = g('section-moves');
       if (movesSection) movesSection.insertBefore(banner, movesSection.querySelector('.card.moves-tbl-wrap') || movesSection.querySelector('.card'));
@@ -4403,7 +4417,7 @@ function renderConcierge() {
     html += '<tr>';
     html += '<td class="mono font-600">' + esc(c.unit) + '</td>';
     var cRec = (state.unitRecords||[]).find(function(r){ return r.unit===c.unit; });
-    var cPte = cRec && cRec.pte==='granted' ? ' <span style="font-size:9px;background:#dcfce7;color:#166534;border-radius:3px;padding:1px 5px;font-weight:600;vertical-align:middle">PTE ✓</span>' : cRec && cRec.pte==='denied' ? ' <span style="font-size:9px;background:#fde8e8;color:var(--red);border-radius:3px;padding:1px 5px;font-weight:600;vertical-align:middle">NO PTE</span>' : '';
+    var cPte = cRec && cRec.pte==='granted' ? ' <span style="font-size:9px;background:#dcfce7;color:#166534;border-radius:3px;padding:1px 5px;font-weight:600;vertical-align:middle">PTE ✓</span>' : cRec && cRec.pte==='denied' ? ' <span style="font-size:9px;background:var(--red-light);color:var(--red);border-radius:3px;padding:1px 5px;font-weight:600;vertical-align:middle">NO PTE</span>' : '';
     html += '<td>' + esc(c.resident) + cPte + byTag + '</td>';
     html += '<td><span class="pill" style="background:var(--accent-light);color:var(--accent);font-size:10px">' + esc(c.type) + '</span></td>';
     html += '<td style="max-width:160px;white-space:normal;font-size:12px;color:var(--text2)">' + (c.notes ? esc(c.notes) : '—') + '</td>';
@@ -4671,7 +4685,7 @@ function renderLogbook() {
     if (cat === 'concern' && e.status !== 'resolved') {
       var nowMs = Date.now(); var dueMs = (e.createdAt||0) + 86400000;
       if (nowMs > dueMs) {
-        fuHtml = '<div style="color:#dc2626;font-size:10px;font-weight:600;margin-top:3px">⚠ Follow-up overdue</div>';
+        fuHtml = '<div style="color:var(--red);font-size:10px;font-weight:600;margin-top:3px">⚠ Follow-up overdue</div>';
       } else {
         var dueD = new Date(dueMs);
         fuHtml = '<div style="color:#92400e;font-size:10px;margin-top:3px">Follow-up due '+dueD.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+dueD.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})+'</div>';
@@ -5163,11 +5177,11 @@ function renderKeys() {
         var staleCount2 = isStale2 ? countStaleShifts(k) : 0;
         var contacts2 = k.contacts || (k.reachedOut ? [{ts: k.reachedOutAt || k.issuedAt || now, by: 'Previous'}] : []);
         var contactCount2 = contacts2.length;
-        var overdueTag2 = isOverdue2 ? '<span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + overdueHrs2 + 'h ' + overdueMin2 + 'm OUT</span>' : '';
+        var overdueTag2 = isOverdue2 ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + overdueHrs2 + 'h ' + overdueMin2 + 'm OUT</span>' : '';
         var staleTag2 = isStale2 ? '<span class="stale-badge">&#9888; Stale &mdash; ' + staleCount2 + ' shift' + (staleCount2 !== 1 ? 's' : '') + '</span>' : '';
         var feeBadge2 = '';
         if (k.isReplacement && k.fee && !k.feeAddedToLedger && !k.feeWaived) {
-          feeBadge2 = '<div style="margin-top:6px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:#92400E;font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">&#128179; $100 &mdash; Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px" onclick="markFeeToLedger(\'' + k.id + '\')">&#10003; Added</button><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px;color:var(--text3)" onclick="waiveKeyFee(\'' + k.id + '\')">Waive</button></div>';
+          feeBadge2 = '<div style="margin-top:6px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:var(--amber);font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">&#128179; $100 &mdash; Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px" onclick="markFeeToLedger(\'' + k.id + '\')">&#10003; Added</button><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px;color:var(--text3)" onclick="waiveKeyFee(\'' + k.id + '\')">Waive</button></div>';
         } else if (k.isReplacement && k.feeAddedToLedger) {
           feeBadge2 = '<div style="margin-top:3px"><span style="font-size:10px;color:var(--green);font-weight:600">&#10003; $100 added to ledger</span></div>';
         } else if (k.isReplacement && k.feeWaived) {
@@ -5175,7 +5189,7 @@ function renderKeys() {
         }
         var oneTimeFee2 = '';
         if (isOverdue2 && !k.feeAddedToLedger && !k.feeWaived && contactCount2 >= 3) {
-          oneTimeFee2 = '<div style="margin-top:6px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:#92400E;font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">&#128179; $25 &mdash; Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px" onclick="markFeeToLedger(\'' + k.id + '\')">&#10003; Added</button><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px;color:var(--text3)" onclick="waiveKeyFee(\'' + k.id + '\')">Waive</button></div>';
+          oneTimeFee2 = '<div style="margin-top:6px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:var(--amber);font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">&#128179; $25 &mdash; Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px" onclick="markFeeToLedger(\'' + k.id + '\')">&#10003; Added</button><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px;color:var(--text3)" onclick="waiveKeyFee(\'' + k.id + '\')">Waive</button></div>';
         } else if (k.feeAddedToLedger) {
           oneTimeFee2 = '<div style="margin-top:3px"><span style="font-size:10px;color:var(--green);font-weight:600">&#10003; $25 added to ledger</span></div>';
         }
@@ -5278,9 +5292,9 @@ function renderKeys() {
     var contacts = k.contacts || (k.reachedOut ? [{ts: k.reachedOutAt || k.issuedAt || Date.now(), by: 'Previous'}] : []);
     var contactCount = contacts.length;
     var rowClass = (isStale ? ' key-stale-row' : '') + (isOverdue ? ' key-overdue-row' : '');
-    var rowBg = isOverdue ? 'background:#fef2f2' : '';
+    var rowBg = isOverdue ? 'background:var(--red-light)' : '';
     var rowStyle = rowBg ? ' style="' + rowBg + '"' : '';
-    var overdueTag = isOverdue ? '<span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + overdueHrs + 'h ' + overdueMin + 'm OUT</span>' : '';
+    var overdueTag = isOverdue ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + overdueHrs + 'h ' + overdueMin + 'm OUT</span>' : '';
     var staleTag = isStale ? '<span class="stale-badge">&#9888; Stale &mdash; ' + staleCount + ' shift' + (staleCount !== 1 ? 's' : '') + '</span>' : '';
     var isVendor = k.type === 'vendor';
     var vendorLine = isVendor && k.company ? '<div style="font-size:11px;color:var(--text3)">' + k.company + (k.workArea ? ' · ' + k.workArea : '') + '</div>' : '';
@@ -5296,7 +5310,7 @@ function renderKeys() {
     // Fee badges
     var feeBadge = '';
     if (k.isReplacement && k.fee && !k.feeAddedToLedger && !k.feeWaived) {
-      feeBadge = '<div style="margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:#92400E;font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">💳 $100 — Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px" onclick="event.stopPropagation();markFeeToLedger(\'' + k.id + '\')">✓ Added</button><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px;color:var(--text3)" onclick="event.stopPropagation();waiveKeyFee(\'' + k.id + '\')">Waive</button></div>';
+      feeBadge = '<div style="margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:var(--amber);font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">💳 $100 — Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px" onclick="event.stopPropagation();markFeeToLedger(\'' + k.id + '\')">✓ Added</button><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px;color:var(--text3)" onclick="event.stopPropagation();waiveKeyFee(\'' + k.id + '\')">Waive</button></div>';
     } else if (k.isReplacement && k.fee && k.feeAddedToLedger) {
       feeBadge = '<div style="margin-top:3px"><span style="font-size:10px;color:var(--green);font-weight:600">✓ $100 added to ledger' + (k.feeAddedAt ? ' · ' + new Date(k.feeAddedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '') + '</span></div>';
     } else if (k.isReplacement && k.fee && k.feeWaived) {
@@ -5306,7 +5320,7 @@ function renderKeys() {
     var oneTimeFee = '';
     if (isOneTime && isIssued && isOverdue && !k.feeAddedToLedger && !k.feeWaived) {
       if (contactCount >= 3) {
-        oneTimeFee = '<div style="margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:#92400E;font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">💳 $25 — Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px" onclick="event.stopPropagation();markFeeToLedger(\'' + k.id + '\')">✓ Added</button><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px;color:var(--text3)" onclick="event.stopPropagation();waiveKeyFee(\'' + k.id + '\')">Waive</button></div>';
+        oneTimeFee = '<div style="margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:var(--amber);font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">💳 $25 — Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px" onclick="event.stopPropagation();markFeeToLedger(\'' + k.id + '\')">✓ Added</button><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px;color:var(--text3)" onclick="event.stopPropagation();waiveKeyFee(\'' + k.id + '\')">Waive</button></div>';
       }
     } else if (isOneTime && k.feeAddedToLedger) {
       oneTimeFee = '<div style="margin-top:3px"><span style="font-size:10px;color:var(--green);font-weight:600">✓ $25 added to ledger</span></div>';
@@ -5314,9 +5328,9 @@ function renderKeys() {
     var isVendorIssued = isVendor && isIssued;
     var vendorOverdueMs = isVendorIssued && k.issuedAt ? now - k.issuedAt : 0;
     var vendorOverdue = vendorOverdueMs >= 8*3600000; // 8h for vendor
-    var vendorOverdueTag = vendorOverdue ? '<span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;border-radius:4px;padding:1px 5px;margin-left:4px">⚠ ' + Math.floor(vendorOverdueMs/3600000) + 'h OUT</span>' : '';
+    var vendorOverdueTag = vendorOverdue ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 5px;margin-left:4px">⚠ ' + Math.floor(vendorOverdueMs/3600000) + 'h OUT</span>' : '';
     var timeOutCell = (isOneTime && k.timeout) ? '<span class="mono text-xs">' + fmtTime(k.timeout) + '</span>' : (isOneTime && k.issuedAt ? '<span class="mono text-xs text-3">' + new Date(k.issuedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + '</span>' : (isVendor && k.vendorReturn ? '<span class="mono text-xs">Back by ' + fmtTime(k.vendorReturn) + '</span>' : '<span class="text-xs text-3">-</span>'));
-    html += '<tr class="' + rowClass + '"' + (isVendorIssued ? ' style="background:#F0F8FF"' : rowStyle ? rowStyle : '') + '>';
+    html += '<tr class="' + rowClass + '"' + (isVendorIssued ? ' style="background:rgba(55,138,221,0.10)"' : rowStyle ? rowStyle : '') + '>';
     html += '<td class="mono font-600">' + k.unit + '</td>';
     html += '<td>' + nameCell + feeBadge + oneTimeFee + '</td>';
     html += '<td class="text-sm">' + k.type + overdueTag + staleTag + vendorOverdueTag + '</td>';
@@ -5514,7 +5528,7 @@ function renderParking() {
     var isReturned = p.status==='returned';
     var rowOpacity = isReturned ? 'opacity:0.55;' : '';
     var statusBadge = p.status==='active' ? '<span style="background:rgba(78,138,112,0.12);color:var(--accent);font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px;border:1px solid rgba(78,138,112,0.2)">Active</span>'
-      : p.status==='notice-given' ? '<span style="background:rgba(217,119,6,0.12);color:#92400E;font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px;border:1px solid rgba(217,119,6,0.25)">⚠ Notice Given</span>'
+      : p.status==='notice-given' ? '<span style="background:rgba(217,119,6,0.12);color:var(--amber);font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px;border:1px solid rgba(217,119,6,0.25)">⚠ Notice Given</span>'
       : '<span style="background:rgba(107,114,128,0.1);color:var(--text3);font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px">Returned</span>';
     function credCell(c) {
       if (!c||!c.issued) return '<span style="color:var(--text3);font-size:11px">—</span>';
@@ -5613,7 +5627,7 @@ function renderSecurity() {
   list.forEach(function(s) {
     var isToday=s.date===t;
     var statusBadge=s.status==='monitoring'
-      ?'<span style="background:rgba(217,119,6,0.12);color:#92400E;font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px;border:1px solid rgba(217,119,6,0.25)">⚠ Monitoring</span>'
+      ?'<span style="background:rgba(217,119,6,0.12);color:var(--amber);font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px;border:1px solid rgba(217,119,6,0.25)">⚠ Monitoring</span>'
       :'<span style="background:rgba(34,197,94,0.1);color:#16a34a;font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px">✓ Resolved</span>';
     var byTag=fmtByTag(s.addedBy,s.createdAt);
     var rowBg=isToday?'background:var(--accent-light)':'';
@@ -5734,7 +5748,7 @@ function renderAmenities() {
   list.forEach(function (a) {
     var pendingCloseout = isCloseoutPending(a);
     var isClosed = !!a.closeoutNote;
-    var rowBg = pendingCloseout ? 'background:#FFFBF0' : (a.date === t ? 'background:var(--accent-light)' : '');
+    var rowBg = pendingCloseout ? 'background:var(--amber-light)' : (a.date === t ? 'background:var(--accent-light)' : '');
     var rowStyle = rowBg ? ' style="' + rowBg + '"' : '';
     var time = a.start ? (a.start + (a.end ? ' - ' + a.end : '')) : '-';
     var amBy = fmtByTag(a.addedBy, a.createdAt);
@@ -8038,7 +8052,7 @@ function renderPdAutoBlocks(isLead) {
       outstandingKeyMoves.forEach(function(m) {
         var koKey = 'keys_out_' + m.id;
         var content = '<strong>Unit ' + m.unit + ' – ' + m.resident + '</strong>'
-          + ' <span style="font-size:10px;background:rgba(217,119,6,0.12);color:#92400E;border:1px solid rgba(217,119,6,0.3);border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:600">⚠ Keys not collected</span>'
+          + ' <span style="font-size:10px;background:rgba(217,119,6,0.12);color:var(--amber);border:1px solid rgba(217,119,6,0.3);border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:600">⚠ Keys not collected</span>'
           + ' | Lease ended: ' + dayLblAuto(m.date)
           + (m.apptDate ? ' | Move appt: ' + dayLblAuto(m.apptDate) : '');
         html += pdAutoRow(koKey, content, 'Keys not yet collected — follow up with resident to confirm return.', !!carriedSet[koKey]);
@@ -8076,7 +8090,7 @@ function renderPdAutoBlocks(isLead) {
   else openLb.forEach(function(e) {
     var who = e.resident ? 'Unit ' + esc(e.unit) + ' – ' + esc(e.resident) : (e.location || '');
     var content = '<strong>' + esc(e.type) + '</strong>' + pdYouBadge(e) + (who ? ' — ' + who : '') + (e.notes ? ': ' + esc(e.notes) : '');
-    if (e.status==='in-progress') content += ' <span style="font-size:10px;background:rgba(217,119,6,0.12);color:#92400E;border-radius:3px;padding:1px 5px;font-weight:600">In Progress</span>';
+    if (e.status==='in-progress') content += ' <span style="font-size:10px;background:rgba(217,119,6,0.12);color:var(--amber);border-radius:3px;padding:1px 5px;font-weight:600">In Progress</span>';
     var defNs = e.nextAction || 'Follow up and update status once resolved.';
     var lbKey = 'lb_' + e.id;
     if (e.nextAction && pdNotes[lbKey] === undefined) pdNotes[lbKey] = e.nextAction;
@@ -8147,7 +8161,7 @@ function renderPdAutoBlocks(isLead) {
   });
   if (pendingFees.length) {
     pdSections.push({ id: 'pd-blk-fees', icon: '💳', label: 'Charges', count: pendingFees.length });
-    html += '<div class="pd-auto-block" id="pd-blk-fees" style="border-color:rgba(217,119,6,0.35)"><div class="pd-auto-hdr" style="color:#92400E">💳 Charges to Add to Ledger</div>';
+    html += '<div class="pd-auto-block" id="pd-blk-fees" style="border-color:rgba(217,119,6,0.35)"><div class="pd-auto-hdr" style="color:var(--amber)">💳 Charges to Add to Ledger</div>';
     pendingFees.forEach(function(k) {
       var content, defNs;
       if (k.isReplacement) {
