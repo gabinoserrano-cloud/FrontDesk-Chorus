@@ -1506,7 +1506,7 @@
   <div class="modal-hdr"><span class="modal-title">Starting Inventory</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-tp-start')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Transponders</label><input id="tps-count" type="number" min="0"></div><div class="fg"><label>Key Tags</label><input id="tps-tags" type="number" min="0"></div><div class="fg"><label>Xpress Stickers</label><input id="tps-stick" type="number" min="0"></div></div>
-    <div class="fg"><label>Bundle received <span style="font-weight:400;color:var(--text3)">(from vendor receipt)</span></label><input id="tps-received" type="date" data-no-autofill></div>
+    <div class="fr"><div class="fg"><label>Tags &amp; stickers received <span style="font-weight:400;color:var(--text3)">(vendor receipt)</span></label><input id="tps-received" type="date" data-no-autofill></div><div class="fg"><label>Transponders received <span style="font-weight:400;color:var(--text3)">(separate delivery, if known)</span></label><input id="tps-trans-received" type="date" data-no-autofill></div></div>
     <div style="font-size:12px;color:var(--text3);line-height:1.5">The running balances are calculated from these numbers. Only change them when a new batch is ordered or the baseline is corrected.</div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-tp-start')">Cancel</button><button class="btn btn-primary" onclick="saveTpStart()">Save</button></div>
@@ -5704,7 +5704,12 @@ function renderTransponders() {
   }
   // Component stock table
   var recEl = g('tp-received');
-  if (recEl) recEl.textContent = d.receivedDate ? 'Bundle received ' + fmtShort(d.receivedDate) + ', ' + String(d.receivedDate).split('-')[0] : '';
+  if (recEl) {
+    var recBits = [];
+    if (d.transReceivedDate) recBits.push('Transponders received ' + fmtShort(d.transReceivedDate) + ', ' + String(d.transReceivedDate).split('-')[0]);
+    if (d.receivedDate) recBits.push('Tags & stickers received ' + fmtShort(d.receivedDate) + ', ' + String(d.receivedDate).split('-')[0] + (d.transReceivedDate ? '' : ' (transponders shipped separately)'));
+    recEl.textContent = recBits.join(' · ');
+  }
   var compBody = g('tp-comp-tbody');
   if (compBody) {
     var ch = '';
@@ -5919,6 +5924,7 @@ function openTpStart() {
   g('tps-tags').value = String(d.startingKeyTags);
   g('tps-stick').value = String(d.startingStickers);
   g('tps-received').value = d.receivedDate || '';
+  g('tps-trans-received').value = d.transReceivedDate || '';
   openModal('modal-tp-start');
 }
 function saveTpStart() {
@@ -5926,10 +5932,11 @@ function saveTpStart() {
   var vT = parseInt(g('tps-count').value, 10), vK = parseInt(g('tps-tags').value, 10), vX = parseInt(g('tps-stick').value, 10);
   if (isNaN(vT) || vT < 0 || isNaN(vK) || vK < 0 || isNaN(vX) || vX < 0) { toast('Enter valid numbers'); return; }
   var rec = g('tps-received').value || d.receivedDate;
-  var changed = vT !== d.startingInventory || vK !== d.startingKeyTags || vX !== d.startingStickers || rec !== d.receivedDate;
+  var recT = g('tps-trans-received').value || '';
+  var changed = vT !== d.startingInventory || vK !== d.startingKeyTags || vX !== d.startingStickers || rec !== d.receivedDate || recT !== (d.transReceivedDate || '');
   if (changed) {
     var _before = cloneData(d); // full snapshot — partial objects on this path would clobber the log on undo
-    d.startingInventory = vT; d.startingKeyTags = vK; d.startingStickers = vX; d.receivedDate = rec;
+    d.startingInventory = vT; d.startingKeyTags = vK; d.startingStickers = vX; d.receivedDate = rec; d.transReceivedDate = recT;
     pushSetUndo('transponders', ['transponders'], _before, cloneData(d), 'credential baselines');
     logActivity('transponders', 'edit', 'Credential starting inventory updated — Transponders: ' + vT + ' · Key tags: ' + vK + ' · Stickers: ' + vX);
     scheduleSave();
@@ -6059,6 +6066,17 @@ function migrateTransponderSetsV3() {
     else { e.qtyTags = q; e.qtyStickers = q; }
   });
   state.transponderSetsV3 = true;
+  scheduleSave();
+}
+// V4: per Gabino — valet / Recology / maintenance allocations were TRANSPONDERS ONLY (no tags/stickers).
+function migrateTransponderSetsV4() {
+  if (state.transponderSetsV4) return;
+  var d = tpData();
+  d.log.forEach(function(e) {
+    if (e.addedBy !== 'Reconciliation Jul 2026') return;
+    if (e.category === 'Valet' || e.category === 'Recology' || e.category === 'Maintenance') { e.qtyTags = 0; e.qtyStickers = 0; }
+  });
+  state.transponderSetsV4 = true;
   scheduleSave();
 }
 function renderParking() {
@@ -11595,6 +11613,7 @@ async function init() {
   seedTransponders();
   seedTranspondersV2();
   migrateTransponderSetsV3();
+  migrateTransponderSetsV4();
   wireTransponderInputs();
   refreshUnitDatalist();
   updatePropertyUI();
