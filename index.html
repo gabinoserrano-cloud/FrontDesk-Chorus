@@ -5950,7 +5950,21 @@ function wireTransponderInputs() {
   var q = g('tp-qty');
   if (q) q.addEventListener('input', function() {
     var v = parseInt(q.value, 10); if (isNaN(v) || v < 0) return;
-    ['tp-q-trans', 'tp-q-tags', 'tp-q-stick'].forEach(function(id) { var el = g(id); if (el) el.value = String(v); });
+    var mr = g('tp-category') && g('tp-category').value === 'Malfunction Replacement';
+    var tEl = g('tp-q-trans'), kEl = g('tp-q-tags'), xEl = g('tp-q-stick');
+    if (tEl) tEl.value = String(v);
+    if (kEl) kEl.value = mr ? '0' : String(v);
+    if (xEl) xEl.value = mr ? '0' : String(v);
+  });
+  // Replacements are usually transponder-only (tags/stickers rarely swapped) — default contents accordingly on new entries
+  var cat = g('tp-category');
+  if (cat) cat.addEventListener('change', function() {
+    if (editingTransponderId) return; // don't clobber contents while editing an existing entry
+    var v = tpNum(g('tp-qty').value, 1);
+    var mr = cat.value === 'Malfunction Replacement';
+    g('tp-q-trans').value = String(v);
+    g('tp-q-tags').value = mr ? '0' : String(v);
+    g('tp-q-stick').value = mr ? '0' : String(v);
   });
 }
 // One-time seed from the July 2026 manual reconciliation (Gmail + TEZ + Master List cross-reference).
