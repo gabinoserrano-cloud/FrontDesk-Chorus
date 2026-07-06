@@ -5989,18 +5989,20 @@ function wireTransponderInputs() {
   var q = g('tp-qty');
   if (q) q.addEventListener('input', function() {
     var v = parseInt(q.value, 10); if (isNaN(v) || v < 0) return;
-    var mr = g('tp-category') && g('tp-category').value === 'Malfunction Replacement';
+    var catVal = g('tp-category') && g('tp-category').value;
+    var mr = catVal === 'Malfunction Replacement' || catVal === 'Motorcycle';
     var tEl = g('tp-q-trans'), kEl = g('tp-q-tags'), xEl = g('tp-q-stick');
     if (tEl) tEl.value = String(v);
     if (kEl) kEl.value = mr ? '0' : String(v);
     if (xEl) xEl.value = mr ? '0' : String(v);
   });
-  // Replacements are usually transponder-only (tags/stickers rarely swapped) — default contents accordingly on new entries
+  // Replacements are usually transponder-only (tags/stickers rarely swapped), and motorcycles never
+  // get a key tag or Xpress sticker (those are for car/valet identification) — default accordingly
   var cat = g('tp-category');
   if (cat) cat.addEventListener('change', function() {
     if (editingTransponderId) return; // don't clobber contents while editing an existing entry
     var v = tpNum(g('tp-qty').value, 1);
-    var mr = cat.value === 'Malfunction Replacement';
+    var mr = cat.value === 'Malfunction Replacement' || cat.value === 'Motorcycle';
     g('tp-q-trans').value = String(v);
     g('tp-q-tags').value = mr ? '0' : String(v);
     g('tp-q-stick').value = mr ? '0' : String(v);
@@ -6160,6 +6162,41 @@ function backfillParkingCredentialLinks() {
   scheduleSave();
   if (linked || created) logActivity('transponders', 'edit', 'Parking ↔ Credentials backfill — ' + linked + ' linked to existing entries, ' + created + ' new entries created from Parking records with no match');
 }
+// One-time corrections to the March-bundle documented list, found while reviewing with Gabino (7/6/2026):
+// 1. Unit 2109 was double-counted — "Heiki" (V1, no NFC, informal passdown mention) and "Ben McClusky"
+//    (V2, NFC 100340297, TEZ-confirmed) are the same motorcycle credential. Keeps McClusky (better sourced),
+//    removes Heiki, and — per Gabino's rule that motorcycles only ever receive the garage transponder —
+//    zeroes out the key tag/Xpress sticker that the V3 migration had defaulted to a full set.
+// 2. Unit 1803 (Ankush Jain) had zero independent confirmation. The only "evidence" was United's 6/3/2026
+//    email that plate 7WEZ307 belongs to "unit 1803" — but that plate is Tammy Capistrant's, and her own
+//    emails show she was previously at a DIFFERENT property's "100 Van Ness #1803" before moving to this
+//    building's Unit 1903 on 6/1/2026. United's "1803" reference was to her old building, not this one.
+// 3. NFC 100337087 (Shaan Varia, registered to "1125 Stevens St") — Gabino does not recognize this as a
+//    resident; removed from the documented count pending any future explanation.
+function applyTransponderCorrectionsV1() {
+  if (state.transponderCorrectionsV1) return;
+  var d = tpData();
+  var heiki = d.log.find(function(e){ return e.unit === '2109' && e.category === 'Motorcycle' && e.addedBy === 'Reconciliation Jul 2026'; });
+  var mcclusky = d.log.find(function(e){ return e.unit === '2109' && e.category === 'Motorcycle' && e.addedBy === 'NFC Audit Jul 2026'; });
+  if (heiki && mcclusky) {
+    d.log = d.log.filter(function(e){ return e.id !== heiki.id; });
+    mcclusky.qtyTags = 0; mcclusky.qtyStickers = 0;
+    mcclusky.notes = 'Merged with the previously-documented "Heiki" motorcycle entry (same unit, same credential) — confirmed by Gabino there is only one motorcycle at this unit. Motorcycle: transponder only, per Gabino.';
+    logActivity('transponders', 'delete', 'Removed duplicate transponder entry — Unit 2109 motorcycle ("Heiki")', 'Confirmed same credential as the McClusky entry; merged into one, corrected to transponder-only.');
+  }
+  var ankush = d.log.find(function(e){ return e.unit === '1803' && /Ankush/i.test(e.recipient); });
+  if (ankush) {
+    d.log = d.log.filter(function(e){ return e.id !== ankush.id; });
+    logActivity('transponders', 'delete', 'Removed unsupported transponder entry — Unit 1803 (Ankush Jain)', 'No independent confirmation found; the only reference (plate 7WEZ307) belongs to Tammy Capistrant, previously at a different property’s "unit 1803" before moving to this building’s Unit 1903.');
+  }
+  var shaan = d.log.find(function(e){ return e.nfc === '100337087'; });
+  if (shaan) {
+    d.log = d.log.filter(function(e){ return e.id !== shaan.id; });
+    logActivity('transponders', 'delete', 'Removed unsupported transponder entry — "Shaan Varia" (1125 Stevens St)', 'Not recognized as a resident of this building; not a real Chorus unit.');
+  }
+  state.transponderCorrectionsV1 = true;
+  scheduleSave();
+}
 // One-time import: current TEZ registrants on pre-March (old) NFC ranges — added to the Parking
 // registry as historical/legacy credentials. Deliberately does NOT call syncParkingToCredentials():
 // the Credentials stock ledger (100/200/200 starting counts) is scoped to the March 2026 bundle only;
@@ -6192,7 +6229,6 @@ function seedPreexistingParkingFromTEZ() {
     mk('1506', 'Amin. Hadi Mirz', '100222429', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
     mk('526', 'Amirali Sharifz', '100312641', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
     mk('217', 'Andres Florido', '100259692', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
-    mk('1903', 'Andrew Glaser', '100312668', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
     mk('2208', 'Angela Cao', '100294042', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
     mk('2208', 'Angela Cao', '100312624', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
     mk('339', 'Anne Drummond', '100312676', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
@@ -11860,6 +11896,7 @@ async function init() {
   seedTranspondersV2();
   migrateTransponderSetsV3();
   migrateTransponderSetsV4();
+  applyTransponderCorrectionsV1();
   backfillParkingCredentialLinks();
   seedPreexistingParkingFromTEZ();
   wireTransponderInputs();
