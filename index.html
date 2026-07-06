@@ -4222,9 +4222,12 @@ function toggleTask(moveId, taskId, checked) {
       if (activePark) {
         var _apb = cloneData(activePark);
         activePark.status = 'returned'; activePark.returnedAt = Date.now();
-        pushUndo({ sec: 'parking', type: 'EDIT', id: activePark.id, before: _apb, after: cloneData(activePark), label: 'parking returned — Unit ' + m.unit });
-        logActivity('parking', 'complete', 'Parking credentials returned — Unit ' + m.unit + ' · ' + activePark.resident + ' (move-out checklist)');
-        scheduleSave(); renderParking();
+        var tpMoCmd = syncParkingToCredentials(activePark);
+        var moCmds = [{ sec: 'parking', type: 'EDIT', id: activePark.id, before: _apb, after: cloneData(activePark), label: 'parking returned — Unit ' + m.unit }];
+        if (tpMoCmd) moCmds.push(tpMoCmd);
+        pushBatchUndo('parking', 'parking returned — Unit ' + m.unit, moCmds);
+        logActivity('parking', 'complete', 'Parking credentials returned — Unit ' + m.unit + ' · ' + activePark.resident + ' (move-out checklist)' + (tpMoCmd ? ' · Credentials stock updated' : ''));
+        scheduleSave(); renderParking(); renderTransponders();
         toast('Parking credentials for Unit ' + m.unit + ' marked returned');
       }
     }
@@ -5539,16 +5542,22 @@ function saveParking() {
     var p=(state.parking||[]).find(function(x){return x.id===editingParkingId;}); if(!p) return;
     var _pb = cloneData(p);
     Object.assign(p, data); editingParkingId=null;
-    pushUndo({ sec: 'parking', type: 'EDIT', id: p.id, before: _pb, after: cloneData(p), label: 'parking edit — Unit ' + unit });
+    var tpEditCmd = syncParkingToCredentials(p);
+    var editCmds = [{ sec: 'parking', type: 'EDIT', id: p.id, before: _pb, after: cloneData(p), label: 'parking edit — Unit ' + unit }];
+    if (tpEditCmd) editCmds.push(tpEditCmd);
+    pushBatchUndo('parking', 'parking edit — Unit ' + unit, editCmds);
     logActivity('parking', 'edit', 'Updated parking credential — Unit ' + unit + ' · ' + resident);
-    scheduleSave(); closeModal('modal-parking'); renderParking(); toast('Updated');
+    scheduleSave(); closeModal('modal-parking'); renderParking(); renderTransponders(); toast('Updated');
   } else {
     if (!state.parking) state.parking=[];
-    var newP = Object.assign({ id:uid(), status:'active', cancelNoticeDate:null, returnedAt:null, addedBy:currentUser?currentUser.name:'', createdAt:Date.now() }, data);
+    var newP = Object.assign({ id:uid(), status:'active', cancelNoticeDate:null, returnedAt:null, addedBy:currentUser?currentUser.name:'', createdAt:Date.now(), tpLogId:null }, data);
     state.parking.push(newP);
-    pushUndo({ sec: 'parking', type: 'ADD', id: newP.id, data: newP, label: 'add parking — Unit ' + unit });
+    var tpAddCmd = syncParkingToCredentials(newP);
+    var addCmds = [{ sec: 'parking', type: 'ADD', id: newP.id, data: newP, label: 'add parking — Unit ' + unit }];
+    if (tpAddCmd) addCmds.push(tpAddCmd);
+    pushBatchUndo('parking', 'add parking — Unit ' + unit, addCmds);
     logActivity('parking', 'create', 'Added parking credential — Unit ' + unit + ' · ' + resident, (data.transponder&&data.transponder.issued?'Transponder ✓ ':'')+( data.keyTag&&data.keyTag.issued?'Key Tag ✓ ':'')+( data.valetSticker&&data.valetSticker.issued?'Xpress Sticker ✓':''));
-    scheduleSave(); closeModal('modal-parking'); renderParking(); toast('Parking credential added');
+    scheduleSave(); closeModal('modal-parking'); renderParking(); renderTransponders(); toast('Parking credential added');
   }
 }
 function giveParkingNotice(id) {
@@ -5565,15 +5574,45 @@ function markParkingReturned(id) {
   if (!confirm('Mark all parking credentials returned for Unit ' + p.unit + '?')) return;
   var _prb = cloneData(p);
   p.status='returned'; p.returnedAt=Date.now();
-  pushUndo({ sec: 'parking', type: 'EDIT', id: p.id, before: _prb, after: cloneData(p), label: 'parking returned — Unit ' + p.unit });
-  logActivity('parking', 'complete', 'Parking credentials returned — Unit ' + p.unit + ' · ' + p.resident);
-  scheduleSave(); renderParking(); toast('Marked as returned');
+  var tpRetCmd = syncParkingToCredentials(p);
+  var retCmds = [{ sec: 'parking', type: 'EDIT', id: p.id, before: _prb, after: cloneData(p), label: 'parking returned — Unit ' + p.unit }];
+  if (tpRetCmd) retCmds.push(tpRetCmd);
+  pushBatchUndo('parking', 'parking returned — Unit ' + p.unit, retCmds);
+  logActivity('parking', 'complete', 'Parking credentials returned — Unit ' + p.unit + ' · ' + p.resident + (tpRetCmd ? ' · Credentials stock updated' : ''));
+  scheduleSave(); renderParking(); renderTransponders(); toast('Marked as returned');
 }
 function deleteParking(id) {
-  if(!confirm('Remove?')) return;
   var px=(state.parking||[]).find(function(x){return x.id===id;});
+  var delHint = px && px.tpLogId ? ' The linked Credentials log entry stays as history — remove it separately in Credentials if this was a data-entry mistake.' : '';
+  if(!confirm('Remove this Parking record?' + delHint)) return;
   if (px) { pushUndo({ sec: 'parking', type: 'DELETE', id: id, data: px, label: 'delete parking — Unit ' + px.unit }); logActivity('parking','delete','Removed parking credential — Unit '+px.unit+' · '+px.resident); }
   state.parking=(state.parking||[]).filter(function(x){return x.id!==id;}); scheduleSave(); renderParking(); toast('Removed');
+}
+// ── Bridge: keeps one Credentials log entry in sync with a Parking row's checked components.
+// One Parking row <-> at most one Credentials entry. Never deletes/overwrites a linked entry's
+// history on its own — only updates contents/status to match the Parking row's current state,
+// or creates a new entry (linking it) the first time something is checked with no link yet.
+function syncParkingToCredentials(p) {
+  var qty = p.transponder && p.transponder.issued ? 1 : 0;
+  var qtyTags = p.keyTag && p.keyTag.issued ? 1 : 0;
+  var qtyStickers = p.valetSticker && p.valetSticker.issued ? 1 : 0;
+  if (!qty && !qtyTags && !qtyStickers) return null;
+  var d = tpData();
+  var wantStatus = p.status === 'returned' ? 'returned' : 'issued';
+  var linked = p.tpLogId ? d.log.find(function(x){ return x.id === p.tpLogId; }) : null;
+  if (linked) {
+    var _tb = cloneData(linked);
+    linked.unit = p.unit; linked.recipient = p.resident;
+    if (p.transponder && p.transponder.num) linked.nfc = p.transponder.num;
+    linked.qty = qty; linked.qtyTags = qtyTags; linked.qtyStickers = qtyStickers;
+    linked.status = wantStatus;
+    linked.returnedAt = wantStatus === 'returned' ? (linked.returnedAt || Date.now()) : null;
+    return { sec: 'transponders', path: ['transponders', 'log'], type: 'EDIT', id: linked.id, before: _tb, after: cloneData(linked), label: 'parking sync — Unit ' + p.unit };
+  }
+  var newE = { id: uid(), date: p.startDate || today(), approx: false, category: 'Resident', unit: p.unit, recipient: p.resident, qty: qty, qtyTags: qtyTags, qtyStickers: qtyStickers, vehicle: '', plate: '', nfc: (p.transponder && p.transponder.num) || '', status: wantStatus, returnedAt: wantStatus === 'returned' ? Date.now() : null, notes: 'Synced from Parking tab', addedBy: p.addedBy || (currentUser ? currentUser.name : ''), createdAt: Date.now() };
+  d.log.push(newE);
+  p.tpLogId = newE.id;
+  return { sec: 'transponders', path: ['transponders', 'log'], type: 'ADD', id: newE.id, data: cloneData(newE), label: 'parking sync — Unit ' + p.unit };
 }
 
 // ─── TRANSPONDER INVENTORY TRACKER ───
@@ -6092,6 +6131,34 @@ function migrateTransponderSetsV4() {
   });
   state.transponderSetsV4 = true;
   scheduleSave();
+}
+// One-time backfill: links existing Parking rows to existing Credentials entries by unit,
+// so the two stop being independent sources of truth. Link-only where a match exists — never
+// overwrites a matched entry's contents. Only creates a new (flagged) entry when a Parking row
+// has something checked and genuinely has no match, so this never double-counts what's already logged.
+function backfillParkingCredentialLinks() {
+  if (state.parkingCredentialLinkV1) return;
+  var d = tpData();
+  var linkedIds = {};
+  (state.parking || []).forEach(function(p) { if (p.tpLogId) linkedIds[p.tpLogId] = true; });
+  var linked = 0, created = 0;
+  (state.parking || []).forEach(function(p) {
+    if (p.tpLogId) return;
+    var anyIssued = (p.transponder && p.transponder.issued) || (p.keyTag && p.keyTag.issued) || (p.valetSticker && p.valetSticker.issued);
+    if (!anyIssued) return;
+    var match = p.unit ? d.log.find(function(e) { return e.unit === p.unit && e.category === 'Resident' && !linkedIds[e.id]; }) : null;
+    if (match) {
+      p.tpLogId = match.id;
+      linkedIds[match.id] = true;
+      linked++;
+    } else {
+      syncParkingToCredentials(p);
+      created++;
+    }
+  });
+  state.parkingCredentialLinkV1 = true;
+  scheduleSave();
+  if (linked || created) logActivity('transponders', 'edit', 'Parking ↔ Credentials backfill — ' + linked + ' linked to existing entries, ' + created + ' new entries created from Parking records with no match');
 }
 function renderParking() {
   var list = (state.parking||[]).slice();
@@ -11624,6 +11691,7 @@ async function init() {
   seedTranspondersV2();
   migrateTransponderSetsV3();
   migrateTransponderSetsV4();
+  backfillParkingCredentialLinks();
   wireTransponderInputs();
   refreshUnitDatalist();
   updatePropertyUI();
