@@ -6160,6 +6160,174 @@ function backfillParkingCredentialLinks() {
   scheduleSave();
   if (linked || created) logActivity('transponders', 'edit', 'Parking ↔ Credentials backfill — ' + linked + ' linked to existing entries, ' + created + ' new entries created from Parking records with no match');
 }
+// One-time import: current TEZ registrants on pre-March (old) NFC ranges — added to the Parking
+// registry as historical/legacy credentials. Deliberately does NOT call syncParkingToCredentials():
+// the Credentials stock ledger (100/200/200 starting counts) is scoped to the March 2026 bundle only;
+// mixing in this unrelated, older population would corrupt that math. Per Gabino: assume a full set
+// (transponder + key tag + Xpress sticker) for every resident except motorcycles, which only ever
+// receive the garage transponder (the other two are for car/valet identification).
+// Excludes: CBSF registrants (not a resident unit) and non-unit placeholders (0000/NR/CH/blank) —
+// held out for individual review rather than guessed at. Also excludes Unit 408 (Jarred Michalski),
+// whose NFC number here is identical to his already-documented March-bundle entry.
+function seedPreexistingParkingFromTEZ() {
+  if (state.preexistingParkingSeedV1) return;
+  if (!state.parking) state.parking = [];
+  var existingByUnit = {};
+  state.parking.forEach(function(p) { if (p.unit) existingByUnit[p.unit] = true; });
+  function mk(unit, name, nfc, isMoto, notes) {
+    return { id: uid(), unit: unit, resident: name, monthlyFee: '', startDate: '', notes: notes,
+      transponder: { issued: true, num: nfc }, keyTag: { issued: !isMoto, num: '' }, valetSticker: { issued: !isMoto, num: '' },
+      status: 'active', cancelNoticeDate: null, returnedAt: null, tpLogId: null, preexisting: true,
+      addedBy: 'TEZ Import Jul 2026', createdAt: Date.now() };
+  }
+  var rows = [
+    mk('945', 'Aaraadhya Narra', '100294092', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('415', 'Adam Ali', '100312642', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('715', 'Ahmad Reshad Ha', '100312616', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('943', 'Aidan Kinsella', '100294010', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1209', 'Aidin Samieivafa', '100312677', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('527', 'Ali Kazmi', '100312695', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('414', 'Ameen Patel', '100294024', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('914', 'Amelia Roland', '100294064', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1506', 'Amin. Hadi Mirz', '100222429', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('526', 'Amirali Sharifz', '100312641', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('217', 'Andres Florido', '100259692', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1903', 'Andrew Glaser', '100312668', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2208', 'Angela Cao', '100294042', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2208', 'Angela Cao', '100312624', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('339', 'Anne Drummond', '100312676', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2508', 'Anton Lin', '100312660', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('908', 'Arian Assry-Tab', '100259647', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('837', 'Armaan Goklani', '100312673', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('728', 'Arsen Moldakimo', '100294002', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1708', 'Ashay Manocha', '100312657', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('612', 'Ashley Liquori', '100259653', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2003', 'Avinash Ganesh', '100294097', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2007', 'Ben Erichson', '100312665', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2108', 'Benjamin Shive', '100282190', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('828', 'Brandon Feig', '100294076', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1402', 'Brandon Waterma', '100312635', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('0442', 'Brett Rasmussen', '100312602', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('0442', 'Brett Rasmussen', '100312603', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1203', 'Cheikh Njie', '100312605', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2203', 'Christopher Bro', '100165903', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('845', 'Clint Miller', '100294054', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2002', 'Daniel Selsam', '100294004', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2008A', 'Daniel Zaferato', '100282167', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2302', 'Danielle Pierga', '100294027', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2209', 'Darrel Slack', '100222452', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('809', 'David Beltran', '100294001', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1802', 'David Haxton', '100282124', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('927', 'Derek Li', '100312650', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('222', 'Devin Balsimo', '100312615', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2607', 'Devon Palmer', '100259668', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('937', 'Elizabeth O\'Nei', '100294085', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1204', 'Emma Holsdrof', '100294073', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2303', 'Eric Perez', '100312697', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('703', 'Eric Wallace', '100294058', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1801', 'Erik Gallegos', '100282143', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('403', 'Fabian Molina', '100312698', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2703', 'Fathi Said', '100312661', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2703', 'Fathi Said', '100259611', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2405', 'Ferdinand Seely', '100294026', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2707', 'Flor Ronsmans De Vry', '100312683', true, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger. Motorcycle — transponder only.'),
+    mk('1703A', 'Forrest Baringe', '100259670', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('622', 'Franck Ndame', '100312671', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1502', 'Franck Yelles', '100294017', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('743', 'Gabriel Jaramil', '100259659', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2507', 'Galen Kimball', '100312607', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('507', 'Geonhee Lee', '100312627', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('733', 'Gilbert Martinez', '100312659', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('619', 'Hassan Maan', '100312675', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1611', 'Hoi Leung', '100312692', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('409', 'Hong Wang', '100259697', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('317', 'Huan Mwana', '100282163', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1102', 'Ian Edgecombe', '100312639', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('515', 'Ishan Kapoor', '100312678', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1102', 'Issac Ramirez', '100312625', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('503', 'Jacqueline Stri', '100222438', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('546', 'Jarad Vasquez', '100294087', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('635', 'Jaskaran Lalli', '100312623', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('742', 'Jason - Lee Tho', '100282170', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('340', 'Jean Philippe', '100312681', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('346', 'Jeihun Mamedov', '100312630', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('707', 'Joel McNamara', '100282184', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('315', 'Julian Garcia', '100294018', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1408', 'Juraj Kabzan', '100294046', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1109', 'Katelyn Re Re', '100282154', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2403', 'Katrika Morris', '100222494', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1711', 'Kevin Han', '100294007', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2602', 'Kieran Fox', '100165916', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1906', 'Kristofer Crock', '100294045', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('901', 'Kunal Doshi', '100294079', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2705', 'Laura Pineda', '100312632', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2705', 'Laura Pineda', '100312629', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2705', 'Laura Pineda', '100312636', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('705', 'Lindsey Brogdo', '100282135', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2301', 'Lucas Williams', '100259646', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1508', 'Mark Vella', '100222485', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2307', 'Mary Grace Chap', '100259680', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('330', 'Matrhew Lombard', '100294013', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('607', 'Matthew Kang', '100259662', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('646', 'Matthew Rodriguez', '100312645', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('914', 'Matthew Tolnay', '100222402', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('846', 'Max Mona', '100312688', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2209', 'Michael McGeever', '100259685', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2502', 'Michael Oguike', '100312663', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1603', 'Michael Podrid', '100282109', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('903', 'Muhammad Nadhi', '100294028', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('246', 'Nolan De Jesus', '100294086', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2605', 'Pablo Pimentel Gomes De Go', '100294096', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('845', 'Parisa O\'Connel', '100259684', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('845', 'Parisa O\'Connel', '100282110', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('913', 'Parris Allen', '100312655', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('505', 'Payal. Multani', '100312687', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('713', 'Raymond Galaviz', '100282187', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('740', 'Richard Zhang', '100259654', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('708', 'Robert Anderson', '100282197', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('913', 'Robert Del Real', '100294009', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('722', 'Rolando Garcia', '100165936', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1106', 'Ryan Huey', '100312684', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('246', 'Samuel Lee', '100312608', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('543', 'Samuel. Royal.', '100312670', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('621', 'Shane Falcinel', '100259657', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1503', 'Shi Deng', '100294030', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1901', 'Siyi Gao', '100312601', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2111', 'Sohpia Mahfooz', '100312620', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('423', 'Stefani Bennett', '100312674', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('423', 'Stefani Bennett', '100294081', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1103', 'Summer Wang', '100294050', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('608', 'Tanmayi Sai', '100282141', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1505', 'Thomas Ratliff', '100312600', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1608', 'Tommy Tran', '100222434', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2309', 'Tyler Frances', '100259637', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('343', 'Vera Ibes', '100312648', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2305', 'Victoria Loving', '100312643', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('427', 'Vignesh Sethurb', '100312640', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2601', 'Viktoriya Nebek', '100312654', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('308', 'Vivek Ravisanka', '100259683', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2503', 'Wendy Carmikle', '100282107', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('2609', 'Wouter Witvoet', '100259613', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1605', 'Xin Ting Wu', '100312637', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('1008', 'Yamini Dasu', '100312622', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('640', 'Yangsoo Kim', '100282123', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('0844', 'Yanlin Yu', '100312658', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('724', 'Yourou Wang', '100312682', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.'),
+    mk('245', 'Zehao Sun', '100312664', false, 'Added from TEZ registrant list (7/6/2026) — pre-existing credential, predates the March 2026 transponder bundle; not part of the Credentials stock ledger.')
+  ];
+  var added = 0;
+  rows.forEach(function(r) {
+    // existingByUnit is a snapshot of Parking BEFORE this import — deliberately not updated here,
+    // so multiple genuinely different people/vehicles at the same unit (co-residents) all get added;
+    // only units Gabino had already tracked in Parking before this ran are skipped.
+    if (existingByUnit[r.unit]) return;
+    state.parking.push(r);
+    added++;
+  });
+  state.preexistingParkingSeedV1 = true;
+  scheduleSave();
+  if (added) logActivity('parking', 'create', 'Imported ' + added + ' pre-existing parking credentials from TEZ registrant list (7/6/2026)', 'These predate the March 2026 transponder bundle and are not part of the Credentials stock ledger.');
+}
 function renderParking() {
   var list = (state.parking||[]).slice();
   var cnt=g('parking-count'); if(cnt) cnt.textContent=list.length+' credentials';
@@ -6178,9 +6346,10 @@ function renderParking() {
       return '<span style="font-size:11px;font-weight:600;color:var(--accent)">✓</span>' + (c.num ? '<span style="font-size:11px;color:var(--text2);margin-left:4px">#' + c.num + '</span>' : '');
     }
     var byTag = fmtByTag(p.addedBy, p.createdAt);
+    var preexistingBadge = p.preexisting ? ' <span style="background:rgba(107,114,128,0.12);color:var(--text3);font-size:10px;font-weight:600;border-radius:4px;padding:1px 6px;border:1px solid rgba(107,114,128,0.25)" title="Registered before the March 2026 transponder bundle — added from the TEZ registrant list, not part of the Credentials stock ledger">Pre-existing</span>' : '';
     html += '<tr style="' + rowOpacity + '">';
     html += '<td class="mono font-600">' + p.unit + '</td>';
-    html += '<td>' + p.resident + byTag + '</td>';
+    html += '<td>' + p.resident + preexistingBadge + byTag + '</td>';
     html += '<td>' + credCell(p.transponder) + '</td>';
     html += '<td>' + credCell(p.keyTag) + '</td>';
     html += '<td>' + credCell(p.valetSticker) + '</td>';
@@ -11692,6 +11861,7 @@ async function init() {
   migrateTransponderSetsV3();
   migrateTransponderSetsV4();
   backfillParkingCredentialLinks();
+  seedPreexistingParkingFromTEZ();
   wireTransponderInputs();
   refreshUnitDatalist();
   updatePropertyUI();
