@@ -8360,6 +8360,13 @@ function pdGetMaxDate(isLead) {
   return d.toISOString().split('T')[0];
 }
 
+// Unified logbook list — native logbook entries + concierge + security, one shared shape.
+// Used by the passdown editor, carry-over tracking, and text generation so all three agree on what "logbook" contains.
+function getUnifiedLogbook() {
+  return (state.logbook||[])
+    .concat((state.concierge||[]).map(function(c){ return Object.assign({}, c, {category:'request', location:'', status:c.status==='completed'?'resolved':c.status, createdAt:c.createdAt||Date.now()}); }))
+    .concat((state.security||[]).map(function(s){ return Object.assign({}, s, {category:'security', unit:s.unit||'', resident:'', createdAt:s.createdAt||Date.now(), status:s.status==='monitoring'?'in-progress':s.status}); }));
+}
 function getCarriedItemIds() {
   var t = today(), carried = {};
   getAllPassdowns(24).forEach(function(p) {
@@ -8393,7 +8400,7 @@ function getActiveAutoBlockIds() {
     if ((a.date===t && pdInShift(a.start, shift)) || (isLead && a.date>t && a.date<=maxDate)) ids.push(exKey);
   });
   (state.maintenance||[]).filter(function(m){ return (m.status==='open'||m.status==='in-progress') && !pdExcluded['mt_'+m.id]; }).forEach(function(m){ ids.push('mt_'+m.id); });
-  (state.concierge||[]).filter(function(c){ return c.status==='open' && !pdExcluded['c_'+c.id]; }).forEach(function(c){ ids.push('c_'+c.id); });
+  getUnifiedLogbook().filter(function(e){ return (e.status==='open'||e.status==='in-progress') && !pdExcluded['lb_'+e.id]; }).forEach(function(e){ ids.push('lb_'+e.id); });
   (state.laf||[]).filter(function(i){ return i.flaggedForPassdown && !i.claimedAt && !pdExcluded['laf_'+i.id]; }).forEach(function(i){ ids.push('laf_'+i.id); });
   return ids;
 }
@@ -8654,10 +8661,8 @@ function renderPdAutoBlocks(isLead) {
   });
   html += '</div>';
 
-  // Build unified logbook list for passdown
-  var lbAll = (state.logbook||[])
-    .concat((state.concierge||[]).map(function(c){ return Object.assign({}, c, {category:'request', location:'', status:c.status==='completed'?'resolved':c.status, createdAt:c.createdAt||Date.now()}); }))
-    .concat((state.security||[]).map(function(s){ return Object.assign({}, s, {category:'security', unit:s.unit||'', resident:'', createdAt:s.createdAt||Date.now(), status:s.status==='monitoring'?'in-progress':s.status}); }));
+  // Unified logbook list for passdown
+  var lbAll = getUnifiedLogbook();
 
   // Open / in-progress entries for passdown
   var openLb = lbAll.filter(function(e){ return e.status==='open' || e.status==='in-progress'; });
@@ -9016,13 +9021,16 @@ function generatePassdown() {
     });
   }
 
-  // Open concierge (skip excluded)
-  var openC = (state.concierge||[]).filter(function(c){ return c.status==='open' && !pdExcluded['c_'+c.id] && pdHasNote('c_'+c.id); });
-  if (openC.length) {
-    out += '\n🎭 Open Concierge Requests\n';
-    openC.forEach(function(c) {
-      var defNsC = c.nextAction || 'Follow up and update status once resolved.';
-      out += 'Unit ' + c.unit + ' – ' + c.resident + '\n' + c.type + (c.notes ? ': ' + c.notes : '') + '\nNext Action: ' + pdNote('c_'+c.id, defNsC) + '\n';
+  // Open logbook entries (native + concierge + security, unified — skip excluded/unnoted)
+  var openLbGen = getUnifiedLogbook().filter(function(e){ return (e.status==='open' || e.status==='in-progress') && !pdExcluded['lb_'+e.id] && pdHasNote('lb_'+e.id); });
+  if (openLbGen.length) {
+    out += '\n📓 Logbook\n';
+    openLbGen.forEach(function(e) {
+      var who = e.resident ? 'Unit ' + e.unit + ' – ' + e.resident : (e.location || '');
+      var defNsLb = e.nextAction || 'Follow up and update status once resolved.';
+      out += e.type + (who ? ' — ' + who : '') + (e.status==='in-progress' ? ' (In Progress)' : '') + '\n';
+      if (e.notes) out += e.notes + '\n';
+      out += 'Next Step: ' + pdNote('lb_'+e.id, defNsLb) + '\n';
     });
   }
 
@@ -9071,18 +9079,6 @@ function generatePassdown() {
       if (latestNote) out += 'Update: ' + latestNote + '\n';
       var defNsM = (m.log && m.log.length) ? 'Latest note: ' + m.log[m.log.length-1].note : (m.status === 'in-progress' ? 'In progress — monitor and update next shift.' : 'Pending — follow up with maintenance team.');
       out += 'Next Step: ' + pdNote('mt_'+m.id, defNsM) + '\n';
-    });
-  }
-
-  // Security incidents
-  var secGen = (state.security||[]).filter(function(s){ return (s.date===t || s.status==='monitoring') && !pdExcluded['sec_'+s.id] && pdHasNote('sec_'+s.id); });
-  if (secGen.length) {
-    out += '\n🛡 Incidents\n';
-    secGen.forEach(function(s) {
-      out += s.type + ' — ' + s.location + (s.time ? ' at ' + fmtTime(s.time) : '') + '\n';
-      out += 'Handled by: ' + s.handledBy + ' | Status: ' + (s.status==='monitoring'?'⚠ Monitoring':'✓ Resolved') + '\n';
-      if (s.notes) out += 'Notes: ' + s.notes + '\n';
-      out += 'Next Step: ' + pdNote('sec_'+s.id, s.status==='monitoring'?'Continue monitoring — update next shift.':'Resolved — no further action unless situation changes.') + '\n';
     });
   }
 
