@@ -7709,9 +7709,9 @@ function openUnitView(unit) {
   var parking = (state.parking||[]).filter(function(p){ return p.unit===unit && p.status!=='cancelled'; });
   html += uvSection('&#128664;', 'Parking Credentials', parking.map(function(p){
     var items = [];
-    if (p.transponder) items.push('Transponder #'+esc(p.transponderNum||''));
-    if (p.keytag) items.push('Key Tag #'+esc(p.keytagNum||''));
-    if (p.valet) items.push('Xpress Sticker #'+esc(p.valetNum||''));
+    if (p.transponder && p.transponder.issued) items.push('Transponder #'+esc(p.transponder.num||''));
+    if (p.keyTag && p.keyTag.issued) items.push('Key Tag #'+esc(p.keyTag.num||''));
+    if (p.valetSticker && p.valetSticker.issued) items.push('Xpress Sticker #'+esc(p.valetSticker.num||''));
     return items.join(' &middot; ') || '(no items listed)';
   }));
   // ── L&F ──
