@@ -654,6 +654,27 @@
   .unit-map-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:10px;color:var(--text3)}
   .unit-map-legend span{display:flex;align-items:center;gap:4px}
   .unit-map-legend .leg-dot{width:10px;height:10px;border-radius:2px;display:inline-block;flex-shrink:0}
+
+  /* ─── Moves print report ─── */
+  #moves-print-report{display:none}
+  #moves-print-report .mr-hdr{margin-bottom:16px;border-bottom:2px solid #000;padding-bottom:10px;display:flex;justify-content:space-between;align-items:baseline}
+  #moves-print-report .mr-title{font-size:18px;font-weight:700;font-family:var(--font-serif,serif);color:#000}
+  #moves-print-report .mr-note{font-size:9px;color:#444;margin-top:2px}
+  #moves-print-report .mr-sub{font-size:10px;color:#444}
+  #moves-print-report .mr-section{margin-bottom:22px}
+  #moves-print-report .mr-section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;border-bottom:1px solid #000;padding-bottom:3px;color:#000}
+  #moves-print-report table{width:100%;border-collapse:collapse}
+  #moves-print-report th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #000;padding:4px 6px;color:#000}
+  #moves-print-report td{padding:4px 6px;border-bottom:1px solid #ccc;font-size:12px;color:#000}
+  #moves-print-report tr{page-break-inside:avoid}
+  #moves-print-report tr.mr-flag td{font-weight:700}
+  #moves-print-report .mr-empty{color:#777;font-style:italic}
+  @media print{
+    body.printing-moves-report>*:not(#moves-print-report){display:none!important}
+    body.printing-moves-report{background:#fff!important}
+    body.printing-moves-report #moves-print-report{display:block!important;position:absolute;top:0;left:0;width:100%;padding:16px;background:#fff}
+    @page{margin:14mm}
+  }
 </style>
 </head>
 <body>
@@ -4417,32 +4438,16 @@ function printMovesReport() {
   }
   var _pc = getPropertyConfig();
   var genAt = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
-  var win = window.open('', '_blank');
-  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + esc(_pc.name || 'Chorus') + ' — Moves Report</title>'
-    + '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Georgia,serif;padding:28px;background:#fff;color:#000;font-size:12px}'
-    + '.mr-hdr{margin-bottom:16px;border-bottom:2px solid #000;padding-bottom:10px;display:flex;justify-content:space-between;align-items:baseline}'
-    + '.mr-title{font-size:18px;font-weight:700}'
-    + '.mr-sub{font-size:10px;color:#444}'
-    + '.mr-section{margin-bottom:22px}'
-    + '.mr-section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;border-bottom:1px solid #000;padding-bottom:3px}'
-    + 'table{width:100%;border-collapse:collapse}'
-    + 'th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #000;padding:4px 6px}'
-    + 'td{padding:4px 6px;border-bottom:1px solid #ccc;font-size:12px}'
-    + 'tr{page-break-inside:avoid}'
-    + 'tr.mr-flag td{font-weight:700}'
-    + '.mr-empty{color:#777;font-style:italic}'
-    + '.mr-note{font-size:9px;color:#777;margin-top:2px}'
-    + '@media print{@page{margin:14mm}body{padding:0}}</style>'
-    + '</head><body>'
-    + '<div class="mr-hdr"><div><div class="mr-title">' + esc(_pc.name || 'Chorus SF') + ' — Move Ins / Move Outs</div><div class="mr-note">Bold rows = today or past due</div></div><div class="mr-sub">Generated ' + esc(genAt) + '</div></div>'
+  var html = '<div class="mr-hdr"><div><div class="mr-title">' + esc(_pc.name || 'Chorus SF') + ' — Move Ins / Move Outs</div><div class="mr-note">Bold rows = today or past due</div></div><div class="mr-sub">Generated ' + esc(genAt) + '</div></div>'
     + '<div class="mr-section"><div class="mr-section-title">Move Ins (' + ins.length + ')</div>'
     + '<table><thead><tr><th>Unit</th><th>Resident</th><th>Lease Start</th></tr></thead><tbody>' + rowsHtml(ins) + '</tbody></table></div>'
     + '<div class="mr-section"><div class="mr-section-title">Move Outs (' + outs.length + ')</div>'
-    + '<table><thead><tr><th>Unit</th><th>Resident</th><th>Lease End</th></tr></thead><tbody>' + rowsHtml(outs) + '</tbody></table></div>'
-    + '</body></html>');
-  win.document.close();
-  setTimeout(function () { win.print(); }, 700);
+    + '<table><thead><tr><th>Unit</th><th>Resident</th><th>Lease End</th></tr></thead><tbody>' + rowsHtml(outs) + '</tbody></table></div>';
+  g('moves-print-report').innerHTML = html;
+  document.body.classList.add('printing-moves-report');
+  window.print();
 }
+window.addEventListener('afterprint', function () { document.body.classList.remove('printing-moves-report'); });
 function renderTightTurnovers() {
   var panel = g('tight-panel'), body = g('tight-body'); if (!panel || !body) return;
   var outs = (state.moves || []).filter(function (m) { return m.type === 'out' && !m.archivedAt; });
@@ -12709,5 +12714,6 @@ Drag the header to move · Drag corner to resize."></textarea>
   });
 })();
 </script>
+<div id="moves-print-report"></div>
 </body>
 </html>
