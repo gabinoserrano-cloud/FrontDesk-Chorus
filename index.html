@@ -6126,14 +6126,14 @@ function seedTranspondersV2() {
     mk('', false, 'Resident', '240', 'Beinan Zhou', 'Tesla Gray', '9DYF215', '100337046', 'No move-in record found — issue date unknown.'),
     mk('', false, 'Resident', '935', 'Blueground (corporate)', 'Mazda Black', '9GTA260', '100337059', 'Blueground corporate unit (their move-in dates not in master list) — issue date unknown.'),
     mk('', false, 'Resident', '237', 'McKenna Sweeney', 'Honda Black', '8SIY226', '100337064', 'SECOND set for unit 237 (Kailey Minks has the other) — issue date unknown.'),
-    mk('', false, 'Resident', '1903', 'Tammy Capistrant', 'Tesla', '7WEZ307', '100337075', 'CHECK: TEZ shows her with Ankush Jain 1803 plate 7WEZ307 — possible data error or duplicate registration.'),
-    mk('', false, 'Adjustment / Other', '', 'Shaan Varia — 1125 Stevens St', 'Tesla Gray', 'TBD', '100337087', 'CHECK: registered to an off-site address, not a Chorus unit.'),
+    mk('', false, 'Resident', '1903', 'Tammy Capistrant', 'Tesla', '7WEZ307', '100337075', 'Resolved 7/8/26 — this plate was also mistakenly credited to a Unit 1803 entry (removed); confirmed via Gmail this vehicle is hers.'),
+    mk('', false, 'Adjustment / Other', '', 'Shaan Varia — 1125 Stevens St', 'Tesla Gray', 'TBD', '100337087', 'Removed by applyTransponderCorrectionsV1() — registered to an off-site address, not recognized as a resident of this building.'),
     mk('', false, 'Resident', '1908', 'Mark Setlock', 'Lexus White', '9JXT044', '100337092', 'No move-in record found — issue date unknown.'),
     mk('', false, 'Resident', '320', 'Hannah Fields', 'Toyota', '9VHF704', '100340200', 'Moved in 2/7/26; set issued after March — exact date unknown.'),
     mk('', false, 'Resident', '745', 'Alec Chang', 'Tesla Blue', '85RH935', '100340204', 'No move-in record found — issue date unknown.'),
-    mk('', false, 'Adjustment / Other', '709', 'Carlos Camacho', 'VW Silver', '6KPF299', '100340295', 'CHECK: Align staff name, registered under unit 709 (lease 2/3/26).'),
+    mk('', false, 'Resident', '709', 'Carlos Camacho', 'VW Silver', '6KPF299', '100340295', 'Confirmed by Gabino — lease 2/3/26.'),
     mk('', false, 'Resident', '926', 'Daniel Corey', 'Honda Black', '9TJW143', '100340296', 'SECOND set for unit 926 — Nickel Group corporate unit (Misael Estrada has the other).'),
-    mk('', false, 'Motorcycle', '2109', 'Ben McClusky', 'Motorcycle', '23N0589', '100340297', 'CHECK: may be the SAME transponder as the documented March 2109 motorcycle (Heiki) — if so, delete one of the two.'),
+    mk('', false, 'Motorcycle', '2109', 'Ben McClusky', 'Motorcycle', '23N0589', '100340297', 'Confirmed by Gabino to be the same motorcycle as the documented March entry ("Heiki") — applyTransponderCorrectionsV1() merges the two and overwrites this note.'),
     mk('', false, 'Resident', '2206', 'Julia Yao', 'Tesla', 'EM65T52', '100340299', 'Moved in 9/30/25; set issued after March — exact date unknown.')
   ];
   found.forEach(function(e) { if (!have[e.nfc]) d.log.push(e); });
