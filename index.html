@@ -2495,7 +2495,7 @@ function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov
 var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Unit Tracker', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', parking: 'Parking Credentials', transponders: 'Transponders', security: 'Security Incidents', session: 'Login / Session', logbook: 'Logbook' };
 var patrolFilter = 'amenity';
 var SEC_ACTIONS = {
-  moves: '<button class="btn btn-secondary btn-sm" onclick="openLetterImport()">&#128231; Import Letter</button> <button class="btn btn-secondary btn-sm" onclick="openReconcile()">&#128269; Reconcile</button> <button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
+  moves: '<button class="btn btn-secondary btn-sm" onclick="openLetterImport()">&#128231; Import Letter</button> <button class="btn btn-secondary btn-sm" onclick="openReconcile()">&#128269; Reconcile</button> <button class="btn btn-secondary btn-sm" onclick="printMovesReport()">&#128424; Print Report</button> <button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
   maintenance: '<button class="btn btn-primary btn-sm" onclick="openAddMaint()">+ Log Issue</button>',
   guests: '<button class="btn btn-primary btn-sm" onclick="openAddGuest()">+ Log Guest</button>',
   keys: '<button class="btn btn-primary btn-sm" onclick="openAddKey()">+ Log Key</button>',
@@ -4395,6 +4395,53 @@ function deleteMove(id) {
   if (!state.deletedMoveIds) state.deletedMoveIds = [];
   state.deletedMoveIds.push(id); if (openMoveId === id) openMoveId = null;
   scheduleSave(); renderMoves(); updateBadges(); renderDash(); toast('Deleted');
+}
+function printMovesReport() {
+  var t = today();
+  var active = (state.moves || []).filter(function (m) { return !m.archivedAt; });
+  function names(m) {
+    var n = esc(m.resident || '');
+    var co = (m.coResidents || []).map(function (c) { return esc(c.name); });
+    if (co.length) n += ' + ' + co.join(', ');
+    return n;
+  }
+  function byDate(a, b) { return (a.date || '').localeCompare(b.date || ''); }
+  var ins = active.filter(function (m) { return m.type === 'in'; }).sort(byDate);
+  var outs = active.filter(function (m) { return m.type === 'out'; }).sort(byDate);
+  function rowsHtml(list) {
+    if (!list.length) return '<tr><td colspan="3" class="mr-empty">None scheduled</td></tr>';
+    return list.map(function (m) {
+      var flag = m.date && m.date <= t;
+      return '<tr class="' + (flag ? 'mr-flag' : '') + '"><td>' + esc(m.unit) + '</td><td>' + names(m) + '</td><td>' + fmtShort(m.date) + '</td></tr>';
+    }).join('');
+  }
+  var _pc = getPropertyConfig();
+  var genAt = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  var win = window.open('', '_blank');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + esc(_pc.name || 'Chorus') + ' — Moves Report</title>'
+    + '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Georgia,serif;padding:28px;background:#fff;color:#000;font-size:12px}'
+    + '.mr-hdr{margin-bottom:16px;border-bottom:2px solid #000;padding-bottom:10px;display:flex;justify-content:space-between;align-items:baseline}'
+    + '.mr-title{font-size:18px;font-weight:700}'
+    + '.mr-sub{font-size:10px;color:#444}'
+    + '.mr-section{margin-bottom:22px}'
+    + '.mr-section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;border-bottom:1px solid #000;padding-bottom:3px}'
+    + 'table{width:100%;border-collapse:collapse}'
+    + 'th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #000;padding:4px 6px}'
+    + 'td{padding:4px 6px;border-bottom:1px solid #ccc;font-size:12px}'
+    + 'tr{page-break-inside:avoid}'
+    + 'tr.mr-flag td{font-weight:700}'
+    + '.mr-empty{color:#777;font-style:italic}'
+    + '.mr-note{font-size:9px;color:#777;margin-top:2px}'
+    + '@media print{@page{margin:14mm}body{padding:0}}</style>'
+    + '</head><body>'
+    + '<div class="mr-hdr"><div><div class="mr-title">' + esc(_pc.name || 'Chorus SF') + ' — Move Ins / Move Outs</div><div class="mr-note">Bold rows = today or past due</div></div><div class="mr-sub">Generated ' + esc(genAt) + '</div></div>'
+    + '<div class="mr-section"><div class="mr-section-title">Move Ins (' + ins.length + ')</div>'
+    + '<table><thead><tr><th>Unit</th><th>Resident</th><th>Lease Start</th></tr></thead><tbody>' + rowsHtml(ins) + '</tbody></table></div>'
+    + '<div class="mr-section"><div class="mr-section-title">Move Outs (' + outs.length + ')</div>'
+    + '<table><thead><tr><th>Unit</th><th>Resident</th><th>Lease End</th></tr></thead><tbody>' + rowsHtml(outs) + '</tbody></table></div>'
+    + '</body></html>');
+  win.document.close();
+  setTimeout(function () { win.print(); }, 700);
 }
 function renderTightTurnovers() {
   var panel = g('tight-panel'), body = g('tight-body'); if (!panel || !body) return;
