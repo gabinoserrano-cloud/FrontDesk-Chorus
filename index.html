@@ -794,7 +794,12 @@
       </div>
       <div id="parking-view" style="display:none">
         <div class="card"><div class="card-hdr"><span class="card-title">Parking Credentials</span><span class="card-count" id="parking-count">0 credentials</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddParking()">+ Add Credential</button></div>
-        <div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident</th><th>Transponder</th><th>Key Tag</th><th>Xpress Sticker</th><th>Monthly Fee</th><th>Status</th><th>Notice Date</th><th></th></tr></thead><tbody id="parking-tbody"></tbody></table></div></div>
+        <div style="display:flex;gap:8px;align-items:center;padding:10px 14px 4px;flex-wrap:wrap">
+          <input type="text" id="pk-search" placeholder="Search unit or name&hellip;" style="flex:1;min-width:180px;font-size:12px;padding:6px 8px">
+          <select id="pk-filter-cat" style="font-size:12px;padding:6px 8px"><option value="">All categories</option><option>Resident</option><option>Staff</option><option>CBSF</option><option>Vendor</option></select>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);white-space:nowrap"><input type="checkbox" id="pk-filter-flagged" style="accent-color:var(--red)">🚩 Flagged only</label>
+        </div>
+        <div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Name</th><th>Transponder</th><th>Key Tag</th><th>Xpress Sticker</th><th>Monthly Fee</th><th>Status</th><th>Notice Date</th><th></th></tr></thead><tbody id="parking-tbody"></tbody></table></div></div>
       </div>
       <!-- Parking credential set inventory view -->
       <div id="transponder-view" style="display:none">
@@ -804,7 +809,7 @@
         <div class="card"><div class="card-hdr"><span class="card-title">Credential Log</span><span class="card-count" id="tp-count">0 entries</span><button class="btn btn-secondary btn-sm ml-auto" onclick="openTpReconcile()">&#128290; Reconcile Count</button><button class="btn btn-primary btn-sm" style="margin-left:6px" onclick="openAddTransponder()">+ Log Credentials</button></div>
         <div style="display:flex;gap:8px;align-items:center;padding:10px 14px 4px;flex-wrap:wrap">
           <input type="text" id="tp-search" placeholder="Search unit, name, vehicle, NFC #&hellip;" style="flex:1;min-width:180px;font-size:12px;padding:6px 8px">
-          <select id="tp-filter-cat" style="font-size:12px;padding:6px 8px"><option value="">All categories</option><option>Resident</option><option>Valet</option><option>Recology</option><option>Maintenance</option><option>Motorcycle</option><option>CBSF</option><option>Malfunction Replacement</option><option>Adjustment / Other</option></select>
+          <select id="tp-filter-cat" style="font-size:12px;padding:6px 8px"><option value="">All categories</option><option>Resident</option><option>Valet</option><option>Recology</option><option>Maintenance</option><option>Motorcycle</option><option>CBSF</option><option>Staff</option><option>Vendor</option><option>Malfunction Replacement</option><option>Adjustment / Other</option></select>
         </div>
         <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Unit / Recipient</th><th>Category</th><th title="T = transponder, K = key tag, X = Xpress sticker">Contents</th><th>Vehicle</th><th>NFC #</th><th>Status</th><th></th></tr></thead><tbody id="tp-tbody"></tbody></table></div></div>
         <div class="card" id="tp-history-card" style="margin-top:12px;display:none"><div class="card-hdr"><span class="card-title">Physical Count History</span><span class="card-count" id="tp-history-count"></span></div>
@@ -1453,8 +1458,9 @@
 <div class="modal-ov" id="modal-parking"><div class="modal" style="max-width:520px">
   <div class="modal-hdr"><span class="modal-title" id="modal-parking-title">Add Parking Credential</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-parking')">&#x2715;</button></div>
   <div class="modal-bdy">
-    <div class="fr"><div class="fg"><label>Unit #</label><input id="pk-unit" type="text"></div><div class="fg"><label>Resident Name</label><input id="pk-resident" type="text"></div></div>
-    <div class="fr"><div class="fg"><label>Monthly Fee ($)</label><input id="pk-fee" type="number" placeholder="e.g. 150" min="0"></div><div class="fg"><label>Start Date</label><input id="pk-start" type="date" data-no-autofill></div></div>
+    <div class="fr"><div class="fg"><label>Category</label><select id="pk-category" onchange="pkCategoryChange()"><option>Resident</option><option>Staff</option><option>CBSF</option><option>Vendor</option></select></div><div class="fg"><label>Name</label><input id="pk-resident" type="text" placeholder="Resident, staff, or vendor name"></div></div>
+    <div class="fr"><div class="fg"><label>Unit # <span id="pk-unit-hint" style="font-weight:400;color:var(--text3)">(required for residents)</span></label><input id="pk-unit" type="text"></div><div class="fg"><label>Monthly Fee ($)</label><input id="pk-fee" type="number" placeholder="e.g. 150" min="0"></div></div>
+    <div class="fr"><div class="fg"><label>Start Date</label><input id="pk-start" type="date" data-no-autofill></div></div>
     <div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px">
       <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Credentials Issued</div>
       <div class="fr" style="align-items:center;gap:10px;margin-bottom:8px">
@@ -1478,7 +1484,7 @@
 <div class="modal-ov" id="modal-transponder"><div class="modal" style="max-width:520px">
   <div class="modal-hdr"><span class="modal-title" id="modal-transponder-title">Log Transponder</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-transponder')">&#x2715;</button></div>
   <div class="modal-bdy">
-    <div class="fr"><div class="fg"><label>Date</label><input id="tp-date" type="date"></div><div class="fg"><label>Category</label><select id="tp-category"><option>Resident</option><option>Valet</option><option>Recology</option><option>Maintenance</option><option>Motorcycle</option><option>CBSF</option><option>Malfunction Replacement</option><option>Adjustment / Other</option></select></div></div>
+    <div class="fr"><div class="fg"><label>Date</label><input id="tp-date" type="date"></div><div class="fg"><label>Category</label><select id="tp-category"><option>Resident</option><option>Valet</option><option>Recology</option><option>Maintenance</option><option>Motorcycle</option><option>CBSF</option><option>Staff</option><option>Vendor</option><option>Malfunction Replacement</option><option>Adjustment / Other</option></select></div></div>
     <div class="fr"><div class="fg"><label>Unit # <span style="font-weight:400;color:var(--text3)">(if resident)</span></label><input id="tp-unit" type="text" list="unit-options"></div><div class="fg"><label>Recipient Name</label><input id="tp-recipient" type="text" placeholder="Resident, team, or entity"></div></div>
     <div class="fr"><div class="fg"><label>Sets</label><input id="tp-qty" type="number" min="0" value="1"></div><div class="fg"><label>Status</label><select id="tp-status"><option value="issued">Issued</option><option value="returned">Returned</option><option value="replaced">Replaced (swapped out)</option><option value="damaged">Damaged / Retired</option></select></div></div>
     <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px">
@@ -5510,11 +5516,17 @@ function logKeyContact(id) {
 
 // ─── PARKING CREDENTIALS ───
 var editingParkingId = null;
+function pkCategoryChange() {
+  var cat = g('pk-category') ? g('pk-category').value : 'Resident';
+  var hint = g('pk-unit-hint');
+  if (hint) hint.textContent = cat === 'Resident' ? '(required for residents)' : '(optional)';
+}
 function openAddParking() {
   editingParkingId = null;
   setModalMode('modal-parking-title','modal-parking-savebtn','Add Parking Credential','Save');
   ['pk-unit','pk-resident','pk-fee','pk-notes','pk-transponder-num','pk-keytag-num','pk-valet-num'].forEach(function(id){var el=g(id);if(el)el.value='';});
   ['pk-transponder','pk-keytag','pk-valet'].forEach(function(id){var el=g(id);if(el)el.checked=false;});
+  g('pk-category').value = 'Resident'; pkCategoryChange();
   g('pk-start').value = today();
   openModal('modal-parking');
 }
@@ -5522,6 +5534,7 @@ function openEditParking(id) {
   var p = (state.parking||[]).find(function(x){return x.id===id;}); if(!p) return;
   editingParkingId = id;
   setModalMode('modal-parking-title','modal-parking-savebtn','Edit Parking Credential','Save Changes');
+  g('pk-category').value = p.category || 'Resident'; pkCategoryChange();
   g('pk-unit').value=p.unit||''; g('pk-resident').value=p.resident||'';
   g('pk-fee').value=p.monthlyFee||''; g('pk-start').value=p.startDate||''; g('pk-notes').value=p.notes||'';
   g('pk-transponder').checked=p.transponder&&p.transponder.issued||false; g('pk-transponder-num').value=p.transponder&&p.transponder.num||'';
@@ -5530,10 +5543,13 @@ function openEditParking(id) {
   openModal('modal-parking');
 }
 function saveParking() {
+  var category = g('pk-category') ? g('pk-category').value : 'Resident';
   var unit=g('pk-unit').value.trim(), resident=g('pk-resident').value.trim();
-  if (!unit||!resident) { toast('Fill in unit and resident name'); return; }
+  if (!resident) { toast('Enter a name'); g('pk-resident').focus(); return; }
+  if (category === 'Resident' && !unit) { toast('Enter a unit number'); g('pk-unit').focus(); return; }
+  var label = unit ? 'Unit ' + unit : category + ' — ' + resident;
   var data = {
-    unit: unit, resident: resident, monthlyFee: g('pk-fee').value||'', startDate: g('pk-start').value||'', notes: g('pk-notes').value.trim(),
+    category: category, unit: unit, resident: resident, monthlyFee: g('pk-fee').value||'', startDate: g('pk-start').value||'', notes: g('pk-notes').value.trim(),
     transponder: { issued: g('pk-transponder').checked, num: g('pk-transponder-num').value.trim() },
     keyTag: { issued: g('pk-keytag').checked, num: g('pk-keytag-num').value.trim() },
     valetSticker: { issued: g('pk-valet').checked, num: g('pk-valet-num').value.trim() }
@@ -5543,50 +5559,62 @@ function saveParking() {
     var _pb = cloneData(p);
     Object.assign(p, data); editingParkingId=null;
     var tpEditCmd = syncParkingToCredentials(p);
-    var editCmds = [{ sec: 'parking', type: 'EDIT', id: p.id, before: _pb, after: cloneData(p), label: 'parking edit — Unit ' + unit }];
+    var editCmds = [{ sec: 'parking', type: 'EDIT', id: p.id, before: _pb, after: cloneData(p), label: 'parking edit — ' + label }];
     if (tpEditCmd) editCmds.push(tpEditCmd);
-    pushBatchUndo('parking', 'parking edit — Unit ' + unit, editCmds);
-    logActivity('parking', 'edit', 'Updated parking credential — Unit ' + unit + ' · ' + resident);
+    pushBatchUndo('parking', 'parking edit — ' + label, editCmds);
+    logActivity('parking', 'edit', 'Updated parking credential — ' + label + ' · ' + resident);
     scheduleSave(); closeModal('modal-parking'); renderParking(); renderTransponders(); toast('Updated');
   } else {
     if (!state.parking) state.parking=[];
-    var newP = Object.assign({ id:uid(), status:'active', cancelNoticeDate:null, returnedAt:null, addedBy:currentUser?currentUser.name:'', createdAt:Date.now(), tpLogId:null }, data);
+    var newP = Object.assign({ id:uid(), status:'active', cancelNoticeDate:null, returnedAt:null, addedBy:currentUser?currentUser.name:'', createdAt:Date.now(), tpLogId:null, flaggedDeparted:false }, data);
     state.parking.push(newP);
     var tpAddCmd = syncParkingToCredentials(newP);
-    var addCmds = [{ sec: 'parking', type: 'ADD', id: newP.id, data: newP, label: 'add parking — Unit ' + unit }];
+    var addCmds = [{ sec: 'parking', type: 'ADD', id: newP.id, data: newP, label: 'add parking — ' + label }];
     if (tpAddCmd) addCmds.push(tpAddCmd);
-    pushBatchUndo('parking', 'add parking — Unit ' + unit, addCmds);
-    logActivity('parking', 'create', 'Added parking credential — Unit ' + unit + ' · ' + resident, (data.transponder&&data.transponder.issued?'Transponder ✓ ':'')+( data.keyTag&&data.keyTag.issued?'Key Tag ✓ ':'')+( data.valetSticker&&data.valetSticker.issued?'Xpress Sticker ✓':''));
+    pushBatchUndo('parking', 'add parking — ' + label, addCmds);
+    logActivity('parking', 'create', 'Added parking credential — ' + label + ' · ' + resident, (data.transponder&&data.transponder.issued?'Transponder ✓ ':'')+( data.keyTag&&data.keyTag.issued?'Key Tag ✓ ':'')+( data.valetSticker&&data.valetSticker.issued?'Xpress Sticker ✓':''));
     scheduleSave(); closeModal('modal-parking'); renderParking(); renderTransponders(); toast('Parking credential added');
   }
 }
+function pkLabel(p) { return p.unit ? 'Unit ' + p.unit : (p.category || 'Resident') + ' — ' + p.resident; }
 function giveParkingNotice(id) {
   var p=(state.parking||[]).find(function(x){return x.id===id;}); if(!p) return;
-  if (!confirm('Mark 30-day cancellation notice submitted for Unit ' + p.unit + '?')) return;
+  if (!confirm('Mark 30-day cancellation notice submitted for ' + pkLabel(p) + '?')) return;
   var _pnb = cloneData(p);
   p.status='notice-given'; p.cancelNoticeDate=today();
-  pushUndo({ sec: 'parking', type: 'EDIT', id: p.id, before: _pnb, after: cloneData(p), label: 'parking notice — Unit ' + p.unit });
-  logActivity('parking', 'edit', '30-day notice given — Unit ' + p.unit + ' · ' + p.resident, 'Notice date: ' + today());
+  pushUndo({ sec: 'parking', type: 'EDIT', id: p.id, before: _pnb, after: cloneData(p), label: 'parking notice — ' + pkLabel(p) });
+  logActivity('parking', 'edit', '30-day notice given — ' + pkLabel(p) + ' · ' + p.resident, 'Notice date: ' + today());
   scheduleSave(); renderParking(); toast('30-day notice recorded');
 }
 function markParkingReturned(id) {
   var p=(state.parking||[]).find(function(x){return x.id===id;}); if(!p) return;
-  if (!confirm('Mark all parking credentials returned for Unit ' + p.unit + '?')) return;
+  if (!confirm('Mark all parking credentials returned for ' + pkLabel(p) + '?')) return;
   var _prb = cloneData(p);
   p.status='returned'; p.returnedAt=Date.now();
   var tpRetCmd = syncParkingToCredentials(p);
-  var retCmds = [{ sec: 'parking', type: 'EDIT', id: p.id, before: _prb, after: cloneData(p), label: 'parking returned — Unit ' + p.unit }];
+  var retCmds = [{ sec: 'parking', type: 'EDIT', id: p.id, before: _prb, after: cloneData(p), label: 'parking returned — ' + pkLabel(p) }];
   if (tpRetCmd) retCmds.push(tpRetCmd);
-  pushBatchUndo('parking', 'parking returned — Unit ' + p.unit, retCmds);
-  logActivity('parking', 'complete', 'Parking credentials returned — Unit ' + p.unit + ' · ' + p.resident + (tpRetCmd ? ' · Credentials stock updated' : ''));
+  pushBatchUndo('parking', 'parking returned — ' + pkLabel(p), retCmds);
+  logActivity('parking', 'complete', 'Parking credentials returned — ' + pkLabel(p) + ' · ' + p.resident + (tpRetCmd ? ' · Credentials stock updated' : ''));
   scheduleSave(); renderParking(); renderTransponders(); toast('Marked as returned');
 }
 function deleteParking(id) {
   var px=(state.parking||[]).find(function(x){return x.id===id;});
   var delHint = px && px.tpLogId ? ' The linked Credentials log entry stays as history — remove it separately in Credentials if this was a data-entry mistake.' : '';
   if(!confirm('Remove this Parking record?' + delHint)) return;
-  if (px) { pushUndo({ sec: 'parking', type: 'DELETE', id: id, data: px, label: 'delete parking — Unit ' + px.unit }); logActivity('parking','delete','Removed parking credential — Unit '+px.unit+' · '+px.resident); }
+  if (px) { pushUndo({ sec: 'parking', type: 'DELETE', id: id, data: px, label: 'delete parking — ' + pkLabel(px) }); logActivity('parking','delete','Removed parking credential — '+pkLabel(px)+' · '+px.resident); }
   state.parking=(state.parking||[]).filter(function(x){return x.id!==id;}); scheduleSave(); renderParking(); toast('Removed');
+}
+// Non-destructive marker for "this person may be gone — needs a look before I return/delete it."
+// Toggling does not touch status, the linked Credentials entry, or the stock ledger — it's just a
+// note-to-self surfaced as a badge + filter, so nothing gets silently cleaned up without a deliberate action.
+function toggleParkingFlag(id) {
+  var p=(state.parking||[]).find(function(x){return x.id===id;}); if(!p) return;
+  var _pfb = { flaggedDeparted: !!p.flaggedDeparted };
+  p.flaggedDeparted = !p.flaggedDeparted;
+  pushUndo({ sec: 'parking', type: 'EDIT', id: p.id, before: _pfb, after: { flaggedDeparted: p.flaggedDeparted }, label: (p.flaggedDeparted ? 'flag' : 'unflag') + ' — ' + pkLabel(p) });
+  logActivity('parking', 'edit', (p.flaggedDeparted ? 'Flagged as possibly departed — ' : 'Unflagged — ') + pkLabel(p) + ' · ' + p.resident);
+  scheduleSave(); renderParking(); toast(p.flaggedDeparted ? 'Flagged for review' : 'Flag removed');
 }
 // ── Bridge: keeps one Credentials log entry in sync with a Parking row's checked components.
 // One Parking row <-> at most one Credentials entry. Never deletes/overwrites a linked entry's
@@ -5602,14 +5630,14 @@ function syncParkingToCredentials(p) {
   var linked = p.tpLogId ? d.log.find(function(x){ return x.id === p.tpLogId; }) : null;
   if (linked) {
     var _tb = cloneData(linked);
-    linked.unit = p.unit; linked.recipient = p.resident;
+    linked.unit = p.unit; linked.recipient = p.resident; linked.category = p.category || 'Resident';
     if (p.transponder && p.transponder.num) linked.nfc = p.transponder.num;
     linked.qty = qty; linked.qtyTags = qtyTags; linked.qtyStickers = qtyStickers;
     linked.status = wantStatus;
     linked.returnedAt = wantStatus === 'returned' ? (linked.returnedAt || Date.now()) : null;
-    return { sec: 'transponders', path: ['transponders', 'log'], type: 'EDIT', id: linked.id, before: _tb, after: cloneData(linked), label: 'parking sync — Unit ' + p.unit };
+    return { sec: 'transponders', path: ['transponders', 'log'], type: 'EDIT', id: linked.id, before: _tb, after: cloneData(linked), label: 'parking sync — ' + pkLabel(p) };
   }
-  var newE = { id: uid(), date: p.startDate || today(), approx: false, category: 'Resident', unit: p.unit, recipient: p.resident, qty: qty, qtyTags: qtyTags, qtyStickers: qtyStickers, vehicle: '', plate: '', nfc: (p.transponder && p.transponder.num) || '', status: wantStatus, returnedAt: wantStatus === 'returned' ? Date.now() : null, notes: 'Synced from Parking tab', addedBy: p.addedBy || (currentUser ? currentUser.name : ''), createdAt: Date.now() };
+  var newE = { id: uid(), date: p.startDate || today(), approx: false, category: p.category || 'Resident', unit: p.unit, recipient: p.resident, qty: qty, qtyTags: qtyTags, qtyStickers: qtyStickers, vehicle: '', plate: '', nfc: (p.transponder && p.transponder.num) || '', status: wantStatus, returnedAt: wantStatus === 'returned' ? Date.now() : null, notes: 'Synced from Parking tab', addedBy: p.addedBy || (currentUser ? currentUser.name : ''), createdAt: Date.now() };
   d.log.push(newE);
   p.tpLogId = newE.id;
   return { sec: 'transponders', path: ['transponders', 'log'], type: 'ADD', id: newE.id, data: cloneData(newE), label: 'parking sync — Unit ' + p.unit };
@@ -5698,6 +5726,8 @@ function tpCatBadge(cat) {
     'Maintenance': ['rgba(217,119,6,0.10)', 'var(--amber)'],
     'Motorcycle': ['rgba(124,58,237,0.12)', '#7c3aed'],
     'CBSF': ['rgba(100,116,139,0.14)', '#64748b'],
+    'Staff': ['rgba(8,145,178,0.12)', '#0e7490'],
+    'Vendor': ['rgba(180,83,9,0.12)', '#b45309'],
     'Malfunction Replacement': ['rgba(192,53,53,0.10)', 'var(--red)'],
     'Adjustment / Other': ['rgba(107,114,128,0.10)', 'var(--text3)']
   };
@@ -6007,6 +6037,11 @@ function wireTransponderInputs() {
     g('tp-q-tags').value = mr ? '0' : String(v);
     g('tp-q-stick').value = mr ? '0' : String(v);
   });
+}
+function wireParkingInputs() {
+  var s = g('pk-search'); if (s) s.addEventListener('input', function() { renderParking(); });
+  var c = g('pk-filter-cat'); if (c) c.addEventListener('change', function() { renderParking(); });
+  var f = g('pk-filter-flagged'); if (f) f.addEventListener('change', function() { renderParking(); });
 }
 // One-time seed from the July 2026 manual reconciliation (Gmail + TEZ + Master List cross-reference).
 // 41 documented allocations + the 7/2 physical count of 30 (vs 59 calculated = 29 unaccounted).
@@ -6365,11 +6400,31 @@ function seedPreexistingParkingFromTEZ() {
   scheduleSave();
   if (added) logActivity('parking', 'create', 'Imported ' + added + ' pre-existing parking credentials from TEZ registrant list (7/6/2026)', 'These predate the March 2026 transponder bundle and are not part of the Credentials stock ledger.');
 }
+var PK_CAT_COLORS = {
+  'Staff': ['rgba(8,145,178,0.12)', '#0e7490'],
+  'CBSF': ['rgba(100,116,139,0.14)', '#64748b'],
+  'Vendor': ['rgba(180,83,9,0.12)', '#b45309']
+};
+function pkCategoryBadge(cat) {
+  if (!cat || cat === 'Resident') return '';
+  var c = PK_CAT_COLORS[cat] || PK_CAT_COLORS['CBSF'];
+  return ' <span style="background:' + c[0] + ';color:' + c[1] + ';font-size:10px;font-weight:600;border-radius:4px;padding:1px 6px">' + esc(cat) + '</span>';
+}
 function renderParking() {
-  var list = (state.parking||[]).slice();
-  var cnt=g('parking-count'); if(cnt) cnt.textContent=list.length+' credentials';
+  var all = state.parking||[];
+  var q = (g('pk-search') && g('pk-search').value || '').trim().toLowerCase();
+  var catF = g('pk-filter-cat') ? g('pk-filter-cat').value : '';
+  var flaggedOnly = g('pk-filter-flagged') && g('pk-filter-flagged').checked;
+  var list = all.filter(function(p) {
+    if (catF && (p.category || 'Resident') !== catF) return false;
+    if (flaggedOnly && !p.flaggedDeparted) return false;
+    if (q && (p.unit||'').toLowerCase().indexOf(q) === -1 && (p.resident||'').toLowerCase().indexOf(q) === -1) return false;
+    return true;
+  });
+  var cnt=g('parking-count'); if(cnt) cnt.textContent=list.length+' credential'+(list.length!==1?'s':'')+(list.length!==all.length?' of '+all.length:'');
   var tbody=g('parking-tbody'); if(!tbody) return;
-  if(!list.length){tbody.innerHTML='<tr><td colspan="9" class="tbl-empty">No parking credentials logged.</td></tr>';return;}
+  if(!all.length){tbody.innerHTML='<tr><td colspan="9" class="tbl-empty">No parking credentials logged.</td></tr>';return;}
+  if(!list.length){tbody.innerHTML='<tr><td colspan="9" class="tbl-empty">No credentials match your filter.</td></tr>';return;}
   list.sort(function(a,b){ var s={active:0,'notice-given':1,returned:2}; return (s[a.status]||0)-(s[b.status]||0)||(a.unit||'').localeCompare(b.unit||''); });
   var html='';
   list.forEach(function(p) {
@@ -6384,9 +6439,10 @@ function renderParking() {
     }
     var byTag = fmtByTag(p.addedBy, p.createdAt);
     var preexistingBadge = p.preexisting ? ' <span style="background:rgba(107,114,128,0.12);color:var(--text3);font-size:10px;font-weight:600;border-radius:4px;padding:1px 6px;border:1px solid rgba(107,114,128,0.25)" title="Registered before the March 2026 transponder bundle — added from the TEZ registrant list, not part of the Credentials stock ledger">Pre-existing</span>' : '';
+    var flagBadge = p.flaggedDeparted ? ' <span style="background:rgba(192,53,53,0.12);color:var(--red);font-size:10px;font-weight:600;border-radius:4px;padding:1px 6px;border:1px solid rgba(192,53,53,0.3)" title="Flagged — may be a past resident or former employee, needs review">🚩 Flagged</span>' : '';
     html += '<tr style="' + rowOpacity + '">';
-    html += '<td class="mono font-600">' + p.unit + '</td>';
-    html += '<td>' + p.resident + preexistingBadge + byTag + '</td>';
+    html += '<td class="mono font-600">' + (p.unit || '<span style="color:var(--text3);font-weight:400">—</span>') + '</td>';
+    html += '<td>' + p.resident + pkCategoryBadge(p.category) + preexistingBadge + flagBadge + byTag + '</td>';
     html += '<td>' + credCell(p.transponder) + '</td>';
     html += '<td>' + credCell(p.keyTag) + '</td>';
     html += '<td>' + credCell(p.valetSticker) + '</td>';
@@ -6396,6 +6452,7 @@ function renderParking() {
     html += '<td><div class="flex gap-4">';
     if (p.status==='active') html += '<button class="btn btn-ghost btn-xs" style="color:var(--amber)" onclick="giveParkingNotice(\'' + p.id + '\')">30-Day Notice</button>';
     if (p.status!=='returned') html += '<button class="btn btn-ghost btn-xs" style="color:var(--green)" onclick="markParkingReturned(\'' + p.id + '\')">✓ Returned</button>';
+    html += '<button class="btn btn-ghost btn-xs" style="color:' + (p.flaggedDeparted?'var(--red)':'var(--text3)') + '" title="' + (p.flaggedDeparted?'Remove flag':'Flag as possibly departed/former employee') + '" onclick="toggleParkingFlag(\'' + p.id + '\')">🚩</button>';
     html += '<button class="btn btn-ghost btn-xs" onclick="openEditParking(\'' + p.id + '\')">&#9998;</button>';
     html += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteParking(\'' + p.id + '\')">&#x2715;</button>';
     html += '</div></td></tr>';
@@ -11901,6 +11958,7 @@ async function init() {
   backfillParkingCredentialLinks();
   seedPreexistingParkingFromTEZ();
   wireTransponderInputs();
+  wireParkingInputs();
   refreshUnitDatalist();
   updatePropertyUI();
   lastSyncTs = Date.now();
