@@ -1866,6 +1866,11 @@ var SUPA_SYNC_PASS = 'uM7Jaq1HolIGJaolh3YwRD45LRbpNJ2h';
 var LOCAL_KEY = 'chorus-fd-v3';
 var syncTO = null, isSyncing = false, lastSyncTs = null, localDirty = false;
 var _supaSession = null;
+// Sync guard (added after the 2026-07-09 cloud wipe): a device may only push
+// once it has pulled a real cloud baseline this session, and any push/pull
+// that would erase a large share of the data is intercepted for confirmation.
+var cloudPullOk = false, lastGoodCounts = null, _allowRiskyPush = false, _wipeWarnTs = 0, _pendingRemote = null;
+var SYNC_WATCH = ['moves', 'keys', 'unitRecords', 'amenities', 'supplies', 'concierge', 'todos', 'accounts', 'logbook', 'parking'];
 
 async function supaSignIn() {
   var res = await fetch(SUPA_URL + '/auth/v1/token?grant_type=password', {
@@ -2092,10 +2097,30 @@ function loadLocal() {
   } catch (e) {}
 }
 function scheduleSave() { localDirty = true; saveLocal(); clearTimeout(syncTO); syncTO = setTimeout(pushCloud, 800); }
+function stateCounts(s) { var c = {}; SYNC_WATCH.forEach(function (k) { c[k] = (s && Array.isArray(s[k])) ? s[k].length : 0; }); return c; }
+// Collections that had >=5 items and would lose more than half of them.
+function syncDrops(prev, next) {
+  if (!prev) return [];
+  var drops = [];
+  SYNC_WATCH.forEach(function (k) { var o = prev[k] || 0, n = next[k] || 0; if (o >= 5 && n < o * 0.5) drops.push(k + ' ' + o + '→' + n); });
+  return drops;
+}
 async function pushCloud() {
   if (isSyncing) return;
+  if (!cloudPullOk) { setSyncStatus('error', 'Sync paused — refresh to reconnect'); return; }
+  var drops = syncDrops(lastGoodCounts, stateCounts(state));
+  if (drops.length && !_allowRiskyPush) {
+    setSyncStatus('error', 'Save blocked — data drop');
+    showSyncGuardNotice(drops);
+    return;
+  }
   isSyncing = true; setSyncStatus('syncing', 'Saving...');
-  try { await supaPush(state); lastSyncTs = Date.now(); localDirty = false; setSyncStatus('synced', 'Saved'); setTimeout(function () { setSyncStatus('synced', 'Synced'); }, 1500); }
+  try {
+    await supaPush(state);
+    lastSyncTs = Date.now(); localDirty = false; _allowRiskyPush = false;
+    lastGoodCounts = stateCounts(state);
+    setSyncStatus('synced', 'Saved'); setTimeout(function () { setSyncStatus('synced', 'Synced'); }, 1500);
+  }
   catch (e) { setSyncStatus('error', 'Offline - local only'); }
   isSyncing = false;
 }
@@ -2103,12 +2128,97 @@ async function pullCloud() {
   setSyncStatus('syncing', 'Loading...');
   try {
     var row = await supaGet();
-    if (row && row.data && Object.keys(row.data).length > 0) {
-      state = Object.assign(emptyState(), row.data);
+    if (row && row.data && Object.keys(row.data).length > 5) {
+      var incoming = Object.assign(emptyState(), row.data);
+      var localSnap = null;
+      try { var lr = localStorage.getItem(LOCAL_KEY); if (lr) localSnap = Object.assign(emptyState(), JSON.parse(lr)); } catch (e) {}
+      var drops = localSnap ? syncDrops(stateCounts(localSnap), stateCounts(incoming)) : [];
+      if (drops.length >= 2) {
+        // Cloud looks wiped compared to this device's local copy. Keep local,
+        // do NOT overwrite it, and let the user decide (heal cloud vs accept).
+        state = localSnap;
+        cloudPullOk = true;
+        lastGoodCounts = stateCounts(state);
+        lastSyncTs = row.updated_at ? new Date(row.updated_at).getTime() : Date.now();
+        _pendingRemote = { data: row.data, ts: lastSyncTs };
+        setSyncStatus('error', 'Cloud data looks wiped');
+        showRemoteWipeNotice(drops);
+        return;
+      }
+      state = incoming;
       saveLocal();
-    } else { loadLocal(); await supaPush(state); }
-    setSyncStatus('synced', 'Synced');
+      cloudPullOk = true;
+      lastGoodCounts = stateCounts(state);
+      if (row.updated_at) lastSyncTs = new Date(row.updated_at).getTime();
+      setSyncStatus('synced', 'Synced');
+    } else {
+      // Cloud row missing or empty. Never auto-push local data over it — this
+      // exact fallback is how a stale device wiped the cloud on 2026-07-09.
+      loadLocal();
+      setSyncStatus('error', 'Cloud empty — sync paused');
+      showCloudEmptyNotice();
+    }
   } catch (e) { loadLocal(); setSyncStatus('error', 'Offline - local data'); }
+}
+function _syncNoticeEl() {
+  var n = g('sync-guard-notice');
+  if (!n) { n = document.createElement('div'); n.id = 'sync-guard-notice'; document.body.appendChild(n); }
+  n.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:99999;background:var(--surface,#fff);color:var(--text,#111);border:2px solid var(--red,#B3352C);padding:14px 18px;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.35);font-size:14px;display:flex;align-items:center;gap:14px;max-width:92vw;flex-wrap:wrap';
+  return n;
+}
+var _syncBtnCss = 'background:var(--accent,#1A5C3E);color:#fff;border:none;padding:7px 13px;border-radius:6px;font-weight:600;cursor:pointer';
+var _syncBtnGhostCss = 'background:transparent;color:var(--text2,#555);border:1px solid var(--border,#ccc);padding:7px 12px;border-radius:6px;cursor:pointer';
+function showSyncGuardNotice(drops) {
+  var n = _syncNoticeEl();
+  n.innerHTML = '<span>&#9888;&#65039; <strong>Save blocked.</strong> Saving now would erase cloud data (' + esc(drops.join(', ')) + '). If you did not delete these on purpose, refresh to reload the latest data.</span>'
+    + '<button onclick="location.reload()" style="' + _syncBtnCss + '">Refresh &amp; reload</button>'
+    + '<button onclick="forceRiskyPush()" style="' + _syncBtnGhostCss + '">Deletions are intentional &mdash; save anyway</button>';
+}
+function forceRiskyPush() {
+  if (!currentUser || currentUser.role !== 'admin') { toast('Ask an admin to confirm this save'); return; }
+  _allowRiskyPush = true;
+  var e = g('sync-guard-notice'); if (e) e.remove();
+  if (typeof logActivity === 'function') logActivity('settings', 'sync', 'Admin overrode sync guard and saved a large data removal');
+  pushCloud();
+}
+function showCloudEmptyNotice() {
+  var n = _syncNoticeEl();
+  n.innerHTML = '<span>&#9888;&#65039; <strong>Cloud data is empty.</strong> Saving is paused so this device cannot overwrite the cloud. Restore from a backup, then refresh &mdash; or an admin can upload this device&#39;s data as the new cloud copy.</span>'
+    + '<button onclick="adoptLocalAsCloud()" style="' + _syncBtnGhostCss + '">Upload this device&#39;s data to the cloud</button>';
+}
+function adoptLocalAsCloud() {
+  if (!currentUser || currentUser.role !== 'admin') { toast('Admin access required'); return; }
+  if (!confirm('Upload THIS device\'s data as the new cloud copy? Only do this if the cloud is genuinely empty (fresh setup or confirmed loss).')) return;
+  cloudPullOk = true;
+  lastGoodCounts = stateCounts(state);
+  _allowRiskyPush = true;
+  var e = g('sync-guard-notice'); if (e) e.remove();
+  if (typeof logActivity === 'function') logActivity('settings', 'sync', 'Admin uploaded local data to an empty cloud');
+  pushCloud();
+}
+function showRemoteWipeNotice(drops) {
+  var n = _syncNoticeEl();
+  n.innerHTML = '<span>&#9888;&#65039; <strong>Another device tried to erase data</strong> (' + esc(drops.join(', ')) + '). This device kept the full data and is not adopting the deletion. Your next save will restore the cloud.</span>'
+    + '<button onclick="healCloudNow()" style="' + _syncBtnCss + '">Restore cloud now</button>'
+    + '<button onclick="acceptRemoteState()" style="' + _syncBtnGhostCss + '">Deletions are correct &mdash; accept them</button>';
+}
+function healCloudNow() {
+  var e = g('sync-guard-notice'); if (e) e.remove();
+  _pendingRemote = null;
+  if (typeof logActivity === 'function') logActivity('settings', 'sync', 'Restored cloud data after a suspected wipe from another device');
+  scheduleSave();
+}
+function acceptRemoteState() {
+  if (_pendingRemote) {
+    state = Object.assign(emptyState(), _pendingRemote.data);
+    saveLocal();
+    lastSyncTs = _pendingRemote.ts;
+    lastGoodCounts = stateCounts(state);
+    _pendingRemote = null;
+    renderSection(curSec); updateBadges();
+  }
+  var e = g('sync-guard-notice'); if (e) e.remove();
+  setSyncStatus('synced', 'Synced');
 }
 function showRefreshNotice() {
   var n = g('refresh-notice');
@@ -2127,6 +2237,7 @@ function restorePreSync() {
     if (!snap || !snap.state) { toast('Nothing to restore'); return; }
     state = snap.state; saveLocal();
     var e = g('refresh-notice'); if (e) e.remove();
+    _allowRiskyPush = true; // explicit user-chosen snapshot restore
     scheduleSave();
     renderSection(curSec); updateBadges(); if (typeof renderDash === 'function') renderDash();
     if (typeof logActivity === 'function') logActivity('settings', 'restore', 'Restored local version after a multi-device refresh');
@@ -2134,18 +2245,44 @@ function restorePreSync() {
   } catch (err) { toast('Restore failed'); }
 }
 setInterval(async function () {
-  if (isSyncing || localDirty) return;
+  if (isSyncing) return;
   try {
     var row = await supaGet();
-    if (row && row.updated_at) {
-      var ts = new Date(row.updated_at).getTime();
-      if (lastSyncTs && ts > lastSyncTs + 2000) {
-        try { localStorage.setItem('chorus-presync-snapshot', JSON.stringify({ ts: Date.now(), state: state })); } catch (e) {}
-        state = Object.assign(emptyState(), row.data);
-        saveLocal(); lastSyncTs = ts;
-        renderSection(curSec); updateBadges();
-        showRefreshNotice();
+    if (!row || !row.updated_at) return;
+    var ts = new Date(row.updated_at).getTime();
+    if (!cloudPullOk) {
+      // No clean baseline this session (offline at load, or cloud was empty).
+      // Establish one now; unsaved local edits stay protected by the push guard.
+      if (row.data && Object.keys(row.data).length > 5) {
+        lastGoodCounts = stateCounts(Object.assign(emptyState(), row.data));
+        cloudPullOk = true;
+        var ne = g('sync-guard-notice'); if (ne) ne.remove();
+        if (localDirty) { pushCloud(); }
+        else {
+          state = Object.assign(emptyState(), row.data);
+          saveLocal(); lastSyncTs = ts;
+          renderSection(curSec); updateBadges();
+          setSyncStatus('synced', 'Synced');
+        }
       }
+      return;
+    }
+    if (localDirty) return;
+    if (lastSyncTs && ts > lastSyncTs + 2000) {
+      var incoming = Object.assign(emptyState(), row.data);
+      var drops = syncDrops(stateCounts(state), stateCounts(incoming));
+      if (drops.length >= 2) {
+        // Suspected wipe pushed from another device — keep our data. The next
+        // local save (or "Restore cloud now") pushes the full data back.
+        if (_wipeWarnTs !== ts) { _wipeWarnTs = ts; _pendingRemote = { data: row.data, ts: ts }; showRemoteWipeNotice(drops); }
+        return;
+      }
+      try { localStorage.setItem('chorus-presync-snapshot', JSON.stringify({ ts: Date.now(), state: state })); } catch (e) {}
+      state = incoming;
+      saveLocal(); lastSyncTs = ts;
+      lastGoodCounts = stateCounts(state);
+      renderSection(curSec); updateBadges();
+      showRefreshNotice();
     }
   } catch (e) {}
 }, 30000);
@@ -2169,6 +2306,7 @@ function processImport() {
       var imported = JSON.parse(e.target.result);
       state = Object.assign(emptyState(), imported);
       state.accounts = preservedAccounts;
+      _allowRiskyPush = true; // explicit admin import may legitimately shrink data
       scheduleSave(); closeModal('modal-import'); renderAll(); toast('Imported');
     }
     catch (err) { toast('Invalid file'); }
@@ -2181,6 +2319,7 @@ function resetData() {
   var preservedAccounts = (state.accounts || []).slice();
   state = emptyState();
   state.accounts = preservedAccounts;
+  _allowRiskyPush = true; // explicit admin reset — bypass the drop guard once
   scheduleSave(); renderAll(); toast('Data reset');
 }
 
