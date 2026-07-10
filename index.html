@@ -7937,6 +7937,55 @@ function migrateTodosV1() {
   state.todosSchemaV1 = true;
   scheduleSave();
 }
+// One-time seed from the July 2026 open-loop audit (shift notes + retrospectives + Gmail).
+// Lands in Gabino's personal list; retries on next load if his account isn't found yet.
+function seedLoopTrackerTodosV1() {
+  if (state.loopTodosSeedV1) return;
+  var acct = (state.accounts || []).find(function (a) { return /gabino/i.test(a.name || ''); });
+  if (!acct) return;
+  var now = Date.now();
+  function T(text, note, category, status, owner, linkedUnit, dueDate, priority) {
+    return { id: uid(), text: text, note: note || null, priority: priority || 'normal', dueDate: dueDate || null,
+      category: category, linkedUnit: linkedUnit || '', owner: owner || '', staleDays: null,
+      status: status, done: false, createdAt: now, lastUpdated: now, addedBy: 'Loop Audit Jul 2026' };
+  }
+  var items = [
+    // Resident — waiting on someone
+    T('Unit 835 — confirm Blueground verified Elizabeth + approved Karmanya mail pickup', 'Blueground said 7/7 their internal team emailed "last Thursday" — no actual verification on record', 'resident', 'waiting', 'Blueground', '835'),
+    T('Unit 933 — Blueground guest parking: vehicle details still not sent', 'Jennifer Price, 7/30–10/5 · $595/mo to Blueground ledger · process sent 7/7', 'resident', 'waiting', 'Blueground', '933'),
+    T('Unit 727 — lease-end date dispute (Layaill Mustafa)', 'Escalated 7/6 · no reply traffic since · do not confirm a date at the desk', 'resident', 'waiting', 'Marissa', '727'),
+    T('Unit 1606 — ~$237 utility charge discrepancy (Paul Yap)', 'Escalated 7/6 · no reply traffic since', 'resident', 'waiting', 'Marissa', '1606'),
+    T('Unit 726 — concessions not yet applied to ledger (Ansh)', 'Escalated 7/6 · no reply traffic since', 'resident', 'waiting', 'Marissa', '726'),
+    T('Unit 239 — refrigerator repeat failure (Dania Duke)', 'Escalated to Carlos 7/6 w/ urgency · spoiled groceries · possible compensation convo → Faruk', 'resident', 'waiting', 'Carlos', '239'),
+    T('Unit 645 — confirm refund checks arrived + Roost amount corrected (Andrew Nguyen)', 'Silent since 6/23 · Ian owned it and has left · checks were to arrive at property', 'resident', 'waiting', 'Marissa', '645'),
+    // Building, Physical & Vendors
+    T('Reply to Piece of Cake Moving — close the partnership loop', 'Vendor followed up 6/29 + 7/6 after "passed to management" · answer either way', 'building', 'open', 'Me'),
+    T('Create missing/oversized package escalation protocol', 'Unit 2509 now 31 days on oversized wall — same pattern as 622 · 14-day auto-call idea from 5/10 never built', 'building', 'open', 'Me'),
+    T('Tighten key-return verification at shift handoff', 'Disputed returns logged for 521/2707 (6/30 PM passdown) · recurring since May', 'building', 'open', 'Me'),
+    T('Draft Blueground guest-info SOP (standing submission process)', 'Root cause of 835/933 gaps · Paige now requires CC on BG move-ins — formalize the rest', 'building', 'open', 'Me'),
+    // Leasing & Management
+    T('Arrange desk coverage for Mark’s vacation Jul 19–27', 'Committed to Ian 7/2 — Ian gone, nobody else tracking · coordinate w/ Kiran’s team (DataGovern)', 'leasing', 'open', 'Me', '', '2026-07-17', 'urgent'),
+    T('Review + send the United/Jonathan vehicle-list email (in Gmail drafts)', 'Asks for complete unfiltered 30 Otis list · draft reply on "Updated Vehicle List" thread', 'leasing', 'open', 'Me'),
+    T('Import welcome letters #1502 (7/31) + #1809 (7/18) into Moves', 'Arrived 7/8 · use 📧 Import Letter in Moves', 'leasing', 'open', 'Me'),
+    // Dashboard & Admin
+    T('Review Gusto hours for Jun 25 – Jul 8 pay period', '"Last chance" reminder 7/9 — 71h 27m on record', 'dashboard', 'open', 'Me', '', '2026-07-10', 'urgent'),
+    T('Cloudflare Access gate for the dashboard', 'Biggest open security gap — needs CF login + domain decision (chorusdesk.com?)', 'dashboard', 'open', 'Me'),
+    T('Upgrade PIN hashing SHA-256 → PBKDF2', 'Offline brute-force resistance for 4-digit PINs', 'dashboard', 'open', 'Me'),
+    T('Fix: supply adjustments don’t reverse on undo', 'Flagged 5/24, confirmed in 6/9 audit, then dropped', 'dashboard', 'open', 'Me'),
+    T('Decide: keep or remove Guest & Visitor section', 'RiseIO already owns guest logs — open since 5/12', 'dashboard', 'open', 'Me'),
+    T('Add 6 approved docs to official OneNote Property Bible', 'Emergency SOP, Escalation SOP, Disruptive SOP, Incident Report, Contact Sheet, Training Checklist', 'dashboard', 'open', 'Me'),
+    T('Laminate printed quick-reference cards', 'From 6/28 binder session', 'dashboard', 'open', 'Me'),
+    T('Build full Property Bible binder print set (24+ files)', 'Design locked 6/28 — template: Binder/binder-sample.html', 'dashboard', 'open', 'Me'),
+    T('Print-test Move-In/Move-Out Condition Form + find new reviewer', 'v1 ready since May — duplex bleed test on desk printer · CA Civil Code §1950.5 review was earmarked for Ian → needs Faruk or Paige', 'dashboard', 'open', 'Me')
+  ];
+  if (!state.userTodos) state.userTodos = {};
+  if (!state.userTodos[acct.id]) state.userTodos[acct.id] = [];
+  var listRef = state.userTodos[acct.id];
+  items.forEach(function (t) { listRef.push(t); });
+  state.loopTodosSeedV1 = true;
+  logActivity('todos', 'create', 'Seeded ' + items.length + ' to-dos from July 2026 open-loop audit', 'Categories: resident/building/leasing/dashboard · Owner: ' + acct.name);
+  scheduleSave();
+}
 var todosView = 'list';
 try { todosView = localStorage.getItem('chorus-todos-view') || 'list'; } catch (e) {}
 function setTodosView(v) { todosView = v; try { localStorage.setItem('chorus-todos-view', v); } catch (e) {} renderTodos(); }
@@ -12324,6 +12373,7 @@ async function init() {
   migrateTaskUpdatesV3();
   migrateMovePhaseCats();
   migrateTodosV1();
+  seedLoopTrackerTodosV1();
   seedDefaultTemplates();
   seedUnitRecords();
   seedTransponders();
