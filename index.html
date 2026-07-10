@@ -614,6 +614,29 @@
   .mv-bcard-prog>div{height:3px}
   .mv-bcard-cnt{font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--font-mono)}
   @media(max-width:650px){.mv-board-cols{display:flex;overflow-x:auto;padding-bottom:4px}.mv-board-col{flex:0 0 172px}}
+  /* ─── To-Do loop tracker ─── */
+  .td-board-cols{display:grid;gap:8px;grid-template-columns:repeat(4,minmax(0,1fr))}
+  .td-board-col{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:8px;min-height:70px}
+  .td-board-col-hdr{display:flex;justify-content:space-between;gap:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding:2px 4px 8px}
+  .td-bcard{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:8px;cursor:pointer;box-shadow:var(--shadow)}
+  .td-bcard:hover{border-color:var(--accent)}
+  .td-bcard:last-child{margin-bottom:0}
+  .td-bcard.stale{border:1.5px solid var(--amber)}
+  .td-bcard-text{font-size:13px;font-weight:600;line-height:1.35}
+  .td-bcard-meta{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+  .td-bcard-owner{font-size:11px;color:var(--text3);margin-top:5px}
+  @media(max-width:650px){.td-board-cols{display:flex;overflow-x:auto;padding-bottom:4px;grid-template-columns:none}.td-board-col{flex:0 0 200px}}
+  .pill-cat-resident{background:var(--accent-light);color:var(--accent)}
+  .pill-cat-building{background:var(--amber-light);color:var(--amber)}
+  .pill-cat-leasing{background:var(--purple-light);color:var(--purple)}
+  .pill-cat-dashboard{background:var(--surface2);color:var(--text3);border:1px solid var(--border2)}
+  .pill-status-open{background:var(--surface2);color:var(--text3)}
+  .pill-status-waiting{background:var(--amber-light);color:var(--amber)}
+  .pill-status-blocked{background:var(--red-light);color:var(--red)}
+  .pill-status-done{background:var(--green-light);color:var(--green)}
+  .td-filter-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .td-filter-pill{font-size:11px;padding:3px 10px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;white-space:nowrap}
+  .td-filter-pill.active{background:var(--accent);color:#fff;border-color:var(--accent)}
   /* ─── Settings ─── */
   #section-settings{max-width:840px}
   .set-pane{display:none}
@@ -859,13 +882,31 @@
       <div class="card mb-12"><div class="card-body">
         <div class="flex gap-8 items-center" style="flex-wrap:wrap">
           <input type="text" id="todo-input" placeholder="Add a to-do..." style="flex:1;min-width:160px" onkeydown="if(event.key==='Enter')openAddTodoFromBar()">
+          <select id="todo-category-quick" style="width:150px"></select>
           <input type="date" id="todo-date" style="width:140px">
           <select id="todo-priority" style="width:110px"><option value="normal">Normal</option><option value="urgent">Urgent</option></select>
           <button class="btn btn-primary" onclick="openAddTodoFromBar()">Add</button>
           <button class="btn btn-ghost btn-sm" onclick="clearDoneTodos()">Clear done</button>
         </div>
       </div></div>
-      <div class="card"><div class="card-hdr"><span class="card-title" id="todos-section-title">To-Do List</span><span class="card-count" id="todos-count">0 pending</span></div><div id="todos-list"></div></div>
+      <div class="sub-tabs" id="todos-tabs">
+        <div class="sub-tab td-cf active" onclick="setTodoCatFilter('all',this)">All</div>
+        <div class="sub-tab td-cf" onclick="setTodoCatFilter('resident',this)">Resident</div>
+        <div class="sub-tab td-cf" onclick="setTodoCatFilter('building',this)">Building, Physical &amp; Vendors</div>
+        <div class="sub-tab td-cf" onclick="setTodoCatFilter('leasing',this)">Leasing &amp; Management</div>
+        <div class="sub-tab td-cf" onclick="setTodoCatFilter('dashboard',this)">Dashboard &amp; Admin</div>
+        <div class="sub-tab td-vt" id="td-vt-list" style="margin-left:auto" title="List view" onclick="setTodosView('list')">&#9776; List</div>
+        <div class="sub-tab td-vt" id="td-vt-board" title="Loop board — see everything by status" onclick="setTodosView('board')">&#9638; Board</div>
+      </div>
+      <div class="sub-tabs" id="todos-status-tabs">
+        <div class="sub-tab td-sf active" onclick="setTodoStatusFilter('all',this)">All</div>
+        <div class="sub-tab td-sf" onclick="setTodoStatusFilter('open',this)">Open</div>
+        <div class="sub-tab td-sf" onclick="setTodoStatusFilter('waiting',this)">Waiting On</div>
+        <div class="sub-tab td-sf" onclick="setTodoStatusFilter('blocked',this)">Blocked</div>
+        <div class="sub-tab td-sf" onclick="setTodoStatusFilter('done',this)">Done</div>
+      </div>
+      <div class="card" id="todos-list-card"><div class="card-hdr"><span class="card-title" id="todos-section-title">To-Do List</span><span class="card-count" id="todos-count">0 pending</span></div><div id="todos-list"></div></div>
+      <div id="todos-board" style="display:none"></div>
     </div>
     <div class="section" id="section-laf">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterLAF('all',this)">All</div><div class="sub-tab" onclick="filterLAF('unclaimed',this)">Unclaimed</div><div class="sub-tab" onclick="filterLAF('claimed',this)">Claimed</div></div>
@@ -1545,9 +1586,18 @@
     <div class="fg"><label>Task</label><input id="td-text" type="text" placeholder="What needs to be done?"></div>
     <div class="fg"><label>For / Note <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="td-note" type="text" placeholder="e.g. Unit 802, follow-up on maintenance request..."></div>
     <div class="fr">
+      <div class="fg"><label>Category</label><select id="td-category"><option value="">&mdash; General &mdash;</option></select></div>
+      <div class="fg"><label>Linked Unit <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="td-unit" type="text" list="unit-options" placeholder="e.g. 835"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Status</label><select id="td-status"></select></div>
+      <div class="fg"><label>Owner / Waiting On <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="td-owner" type="text" placeholder="Me, Paige, Marissa, Blueground..."></div>
+    </div>
+    <div class="fr">
       <div class="fg"><label>Due Date</label><input id="td-date" type="date" data-no-autofill></div>
       <div class="fg"><label>Priority</label><select id="td-priority"><option value="normal">Normal</option><option value="urgent">Urgent</option></select></div>
     </div>
+    <div class="fg"><label>Flag as stale after <span style="font-weight:400;color:var(--text3)">(days, optional — default 5)</span></label><input id="td-staledays" type="number" min="1" placeholder="5"></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-todo')">Cancel</button><button class="btn btn-primary" id="modal-todo-savebtn" onclick="saveTodoModal()">Save</button></div>
 </div></div>
@@ -3814,14 +3864,14 @@ function saveMove() {
       postCallDate = dPost.getFullYear() + '-' + String(dPost.getMonth()+1).padStart(2,'0') + '-' + String(dPost.getDate()).padStart(2,'0');
     } catch(e) {}
     var myTodos = getCurrentTodos();
-    myTodos.push({ id: uid(), text: 'Pre-move call \u2014 ' + resident + ', Unit ' + unit, dueDate: preCallDate, priority: 'normal', done: false, note: '1 week before lease start \u2014 confirm everything is ready, any remaining tasks on their end', createdAt: Date.now(), moveRef: m.id });
-    myTodos.push({ id: uid(), text: 'Post move-in call \u2014 ' + resident + ', Unit ' + unit, dueDate: postCallDate, priority: 'normal', done: false, note: '3 days after lease start \u2014 how did the move go? any questions?', createdAt: Date.now(), moveRef: m.id });
+    myTodos.push({ id: uid(), text: 'Pre-move call \u2014 ' + resident + ', Unit ' + unit, dueDate: preCallDate, priority: 'normal', done: false, status: 'open', category: 'resident', linkedUnit: unit, note: '1 week before lease start \u2014 confirm everything is ready, any remaining tasks on their end', createdAt: Date.now(), lastUpdated: Date.now(), moveRef: m.id });
+    myTodos.push({ id: uid(), text: 'Post move-in call \u2014 ' + resident + ', Unit ' + unit, dueDate: postCallDate, priority: 'normal', done: false, status: 'open', category: 'resident', linkedUnit: unit, note: '3 days after lease start \u2014 how did the move go? any questions?', createdAt: Date.now(), lastUpdated: Date.now(), moveRef: m.id });
   }
   if (moveType === 'out') {
     var outTodosRef = getCurrentTodos();
     var outReminderDate = '';
     try { var dOut = new Date(); dOut.setDate(dOut.getDate() + 1); outReminderDate = dOut.toISOString().split('T')[0]; } catch(e) {}
-    outTodosRef.push({ id: uid(), text: 'Send move-out reminders \u2014 ' + resident + ', Unit ' + unit, dueDate: outReminderDate, priority: 'normal', done: false, note: 'Remind resident: book move-out time slot + inspection work order + return all keys & parking credentials to front desk', createdAt: Date.now(), moveRef: m.id });
+    outTodosRef.push({ id: uid(), text: 'Send move-out reminders \u2014 ' + resident + ', Unit ' + unit, dueDate: outReminderDate, priority: 'normal', done: false, status: 'open', category: 'resident', linkedUnit: unit, note: 'Remind resident: book move-out time slot + inspection work order + return all keys & parking credentials to front desk', createdAt: Date.now(), lastUpdated: Date.now(), moveRef: m.id });
   }
   pushUndo({ sec: 'moves', type: 'ADD', id: m.id, data: Object.assign({}, m), label: 'add move \u2014 Unit ' + unit });
   logActivity('moves', 'create', 'Added move \u2014 Unit ' + unit + ' (' + (moveType === 'in' ? 'Move In' : 'Move Out') + ') \u00b7 ' + resident);
@@ -4326,7 +4376,7 @@ function toggleTask(moveId, taskId, checked) {
     var wcDue = '';
     try { var wcD = new Date(); wcD.setDate(wcD.getDate() + 2); wcDue = wcD.toISOString().split('T')[0]; } catch(e) {}
     var wcTodos = getCurrentTodos();
-    wcTodos.push({ id: uid(), text: 'Welcome call — ' + m.resident + ', Unit ' + m.unit, dueDate: wcDue, priority: 'normal', done: false, note: '2-3 min call — did they receive the welcome letter? any questions so far?', createdAt: Date.now(), moveRef: m.id });
+    wcTodos.push({ id: uid(), text: 'Welcome call — ' + m.resident + ', Unit ' + m.unit, dueDate: wcDue, priority: 'normal', done: false, status: 'open', category: 'resident', linkedUnit: m.unit, note: '2-3 min call — did they receive the welcome letter? any questions so far?', createdAt: Date.now(), lastUpdated: Date.now(), moveRef: m.id });
     toast('Welcome letter logged — welcome call to-do created (due in 2 days)');
   }
   // ── Supply integration ──
@@ -7839,12 +7889,86 @@ function openAddTodoFromBar() {
   var text = (g('todo-input').value || '').trim();
   var date = g('todo-date').value || '';
   var pri = g('todo-priority').value || 'normal';
+  var cat = (g('todo-category-quick') && g('todo-category-quick').value) || '';
   g('todo-input').value = ''; g('todo-date').value = ''; g('todo-priority').value = 'normal';
-  openAddTodoModal(date, text, pri);
+  if (g('todo-category-quick')) g('todo-category-quick').value = '';
+  openAddTodoModal(date, text, pri, cat);
 }
+
+// ─── To-do loop tracker: categories, status, staleness ───
+var TODO_CATEGORIES = [
+  { key: 'resident', label: 'Resident' },
+  { key: 'building', label: 'Building, Physical & Vendors' },
+  { key: 'leasing', label: 'Leasing & Management' },
+  { key: 'dashboard', label: 'Dashboard & Admin' }
+];
+var TODO_STATUSES = [
+  { key: 'open', label: 'Open' },
+  { key: 'waiting', label: 'Waiting On' },
+  { key: 'blocked', label: 'Blocked' },
+  { key: 'done', label: 'Done' }
+];
+function todoCategoryLabel(key) { var c = TODO_CATEGORIES.find(function (x) { return x.key === key; }); return c ? c.label : 'General'; }
+function todoStatusLabel(key) { var s = TODO_STATUSES.find(function (x) { return x.key === key; }); return s ? s.label : 'Open'; }
+function todoStatus(t) { return t.status || (t.done ? 'done' : 'open'); }
+function todoStaleDays(t) { var ref = t.lastUpdated || t.createdAt || Date.now(); return Math.floor((Date.now() - ref) / 86400000); }
+function todoIsStale(t) { if (todoStatus(t) === 'done') return false; var threshold = t.staleDays || 5; return todoStaleDays(t) >= threshold; }
+function fillTodoCategorySelects() {
+  var catOpts = TODO_CATEGORIES.map(function (c) { return '<option value="' + c.key + '">' + c.label + '</option>'; }).join('');
+  var el1 = g('td-category'); if (el1 && !el1.dataset.filled) { el1.innerHTML = '<option value="">&mdash; General &mdash;</option>' + catOpts; el1.dataset.filled = '1'; }
+  var el2 = g('todo-category-quick'); if (el2 && !el2.dataset.filled) { el2.innerHTML = '<option value="">Category&hellip;</option>' + catOpts; el2.dataset.filled = '1'; }
+  var st = g('td-status'); if (st && !st.dataset.filled) { st.innerHTML = TODO_STATUSES.map(function (s) { return '<option value="' + s.key + '">' + s.label + '</option>'; }).join(''); st.dataset.filled = '1'; }
+}
+function migrateTodosV1() {
+  if (state.todosSchemaV1) return;
+  function fix(list) {
+    (list || []).forEach(function (t) {
+      if (!t) return;
+      if (!t.status) t.status = t.done ? 'done' : 'open';
+      if (!t.lastUpdated) t.lastUpdated = t.createdAt || Date.now();
+      if (t.category === undefined) t.category = '';
+      if (t.linkedUnit === undefined) t.linkedUnit = '';
+      if (t.owner === undefined) t.owner = '';
+      if (t.staleDays === undefined) t.staleDays = null;
+    });
+  }
+  fix(state.todos);
+  Object.keys(state.userTodos || {}).forEach(function (uidKey) { fix(state.userTodos[uidKey]); });
+  state.todosSchemaV1 = true;
+  scheduleSave();
+}
+var todosView = 'list';
+try { todosView = localStorage.getItem('chorus-todos-view') || 'list'; } catch (e) {}
+function setTodosView(v) { todosView = v; try { localStorage.setItem('chorus-todos-view', v); } catch (e) {} renderTodos(); }
+var todoCatFilter = 'all';
+function setTodoCatFilter(f, el) {
+  todoCatFilter = f;
+  document.querySelectorAll('#todos-tabs .td-cf').forEach(function (t) { t.classList.remove('active'); });
+  if (el) el.classList.add('active');
+  renderTodos();
+}
+var todoStatusFilter = 'all';
+function setTodoStatusFilter(f, el) {
+  todoStatusFilter = f;
+  document.querySelectorAll('#todos-status-tabs .td-sf').forEach(function (t) { t.classList.remove('active'); });
+  if (el) el.classList.add('active');
+  renderTodos();
+}
+function todoMatchesFilters(t) {
+  if (todoCatFilter !== 'all' && (t.category || '') !== todoCatFilter) return false;
+  if (todoStatusFilter !== 'all' && todoStatus(t) !== todoStatusFilter) return false;
+  return true;
+}
+function todoCatChip(t) { if (!t.category) return ''; return '<span class="pill pill-cat-' + t.category + '">' + todoCategoryLabel(t.category) + '</span>'; }
+function todoStatusChip(t) { var s = todoStatus(t); return '<span class="pill pill-status-' + s + '">' + todoStatusLabel(s) + '</span>'; }
+function todoStaleChip(t) { if (!todoIsStale(t)) return ''; return '<span class="stale-badge">&#9888; Stale &mdash; ' + todoStaleDays(t) + 'd</span>'; }
+function todoOwnerChip(t) { if (!t.owner) return ''; return '<span class="pill" style="background:var(--surface2);color:var(--text2)">&#128100; ' + esc(t.owner) + '</span>'; }
+function todoUnitChip(t) { if (!t.linkedUnit) return ''; return '<span class="pill" style="background:var(--surface2);color:var(--text2)">Unit ' + esc(t.linkedUnit) + '</span>'; }
+function todoTouch(t) { t.lastUpdated = Date.now(); }
 
 // ===== [TO-DO LIST] ==========================================================
 function renderTodos() {
+  fillTodoCategorySelects();
   // Admin user-switcher
   var switcherEl = g('todos-user-switcher');
   if (switcherEl) {
@@ -7868,6 +7992,15 @@ function renderTodos() {
   }
   var titleEl = g('todos-section-title');
   if (titleEl) titleEl.textContent = viewingName + 'To-Do List';
+  // Board \u21c4 list view switching
+  var isBoardView = todosView === 'board';
+  var vtL = g('td-vt-list'), vtB = g('td-vt-board');
+  if (vtL) vtL.classList.toggle('active', !isBoardView);
+  if (vtB) vtB.classList.toggle('active', isBoardView);
+  var listCard = g('todos-list-card'), boardWrap = g('todos-board'), statusTabs = g('todos-status-tabs');
+  if (listCard) listCard.style.display = isBoardView ? 'none' : '';
+  if (boardWrap) boardWrap.style.display = isBoardView ? '' : 'none';
+  if (statusTabs) statusTabs.style.display = isBoardView ? 'none' : '';
   var todos = getCurrentTodos();
   var sorted = todos.slice().sort(function (a, b) {
     if (a.done !== b.done) return a.done ? 1 : -1;
@@ -7892,11 +8025,16 @@ function renderTodos() {
     return 0;
   });
   var totalPending = pending + clTasks.length;
-  var cnt = g('todos-count'); if (cnt) cnt.textContent = totalPending + ' pending';
+  setBadge('badge-todos', totalPending); setMBadge('mb-todos', totalPending);
+  if (isBoardView) { renderTodosBoard(sorted); return; }
+  var filtered = sorted.filter(todoMatchesFilters);
+  var showCL = todoCatFilter === 'all' && (todoStatusFilter === 'all' || todoStatusFilter === 'open');
+  var cnt = g('todos-count');
+  if (cnt) cnt.textContent = (todoCatFilter !== 'all' || todoStatusFilter !== 'all') ? (filtered.length + (showCL ? clTasks.length : 0) + ' shown') : (totalPending + ' pending');
   var list = g('todos-list'); if (!list) return;
-  if (!sorted.length && !clTasks.length) { list.innerHTML = '<div class="text-3 text-sm" style="padding:18px 16px">No to-dos yet.</div>'; setBadge('badge-todos', 0); setMBadge('mb-todos', 0); return; }
+  if (!filtered.length && !(showCL && clTasks.length)) { list.innerHTML = '<div class="text-3 text-sm" style="padding:18px 16px">No to-dos match.</div>'; return; }
   var html = '';
-  sorted.forEach(function (t) {
+  filtered.forEach(function (t) {
     var urgIcon = (t.priority === 'urgent' && !t.done) ? '<span style="color:var(--red)">! </span>' : '';
     var due = t.dueDate ? '<span class="todo-due">Due: ' + fmtShort(t.dueDate) + '</span>' : '';
     html += '<div class="todo-item ' + (t.done ? 'done' : '') + '">';
@@ -7904,15 +8042,15 @@ function renderTodos() {
     html += '<div style="flex:1;min-width:0">';
     html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + urgIcon + t.text + '</div>';
     if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + t.note + '</div>';
-    html += '<div class="todo-meta">' + due + '<span class="text-xs text-3">' + new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span></div>';
+    html += '<div class="todo-meta">' + due + todoCatChip(t) + (t.done ? '' : todoStatusChip(t)) + todoUnitChip(t) + todoOwnerChip(t) + todoStaleChip(t) + '<span class="text-xs text-3">' + new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span></div>';
     html += '</div>';
     html += '<button class="btn btn-ghost btn-xs" onclick="openEditTodo(\'' + t.id + '\')" title="Edit">&#9998;</button>';
     html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteTodo(\'' + t.id + '\')">&#x2715;</button>';
     html += '</div>';
   });
-  if (clTasks.length) {
+  if (showCL && clTasks.length) {
     html += '<div style="padding:10px 14px 6px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px'
-      + (sorted.length ? ';border-top:1px solid var(--border);margin-top:4px' : '') + '">'
+      + (filtered.length ? ';border-top:1px solid var(--border);margin-top:4px' : '') + '">'
       + 'From Move Checklists</div>';
     clTasks.forEach(function (entry) {
       var t = entry.task, m = entry.move;
@@ -7929,7 +8067,35 @@ function renderTodos() {
     });
   }
   list.innerHTML = html;
-  setBadge('badge-todos', totalPending); setMBadge('mb-todos', totalPending);
+}
+function renderTodosBoard(sorted) {
+  var el = g('todos-board'); if (!el) return;
+  var filtered = sorted.filter(function (t) { return todoCatFilter === 'all' || (t.category || '') === todoCatFilter; });
+  if (!filtered.length) { el.innerHTML = '<div class="text-3 text-sm" style="text-align:center;padding:24px">No to-dos' + (todoCatFilter !== 'all' ? ' in this category' : '') + '.</div>'; return; }
+  var html = '<div class="td-board-cols">';
+  TODO_STATUSES.forEach(function (st) {
+    var col = filtered.filter(function (t) { return todoStatus(t) === st.key; });
+    col.sort(function (a, b) {
+      if (a.priority === 'urgent' && b.priority !== 'urgent') return -1;
+      if (b.priority === 'urgent' && a.priority !== 'urgent') return 1;
+      if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+      if (a.dueDate && !b.dueDate) return -1; if (!a.dueDate && b.dueDate) return 1;
+      return b.createdAt - a.createdAt;
+    });
+    html += '<div class="td-board-col"><div class="td-board-col-hdr"><span>' + st.label + '</span><span>' + (col.length || '') + '</span></div>';
+    col.forEach(function (t) {
+      var stale = todoIsStale(t);
+      html += '<div class="td-bcard' + (stale ? ' stale' : '') + '" onclick="openEditTodo(\'' + t.id + '\')">';
+      html += '<div class="td-bcard-text">' + (t.priority === 'urgent' && !t.done ? '<span style="color:var(--red)">! </span>' : '') + esc(t.text) + '</div>';
+      if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:3px">' + esc(t.note) + '</div>';
+      html += '<div class="td-bcard-meta">' + todoCatChip(t) + todoUnitChip(t) + (t.dueDate ? '<span class="pill" style="background:var(--surface2);color:var(--text2)">Due ' + fmtShort(t.dueDate) + '</span>' : '') + todoStaleChip(t) + '</div>';
+      if (t.owner) html += '<div class="td-bcard-owner">&#128100; ' + esc(t.owner) + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
 }
 function toggleTodo(id, checked) {
   var todos = getCurrentTodos();
@@ -7937,6 +8103,8 @@ function toggleTodo(id, checked) {
   if (t) {
     var before = cloneData(t);
     t.done = checked; t.completedAt = checked ? Date.now() : null;
+    t.status = checked ? 'done' : 'open';
+    todoTouch(t);
     pushUndo({ sec: 'todos', type: 'EDIT', path: currentTodosPath(), id: t.id, before: before, after: cloneData(t), label: (checked ? 'complete' : 'reopen') + ' to-do — ' + t.text });
     logActivity('todos', checked ? 'complete' : 'reopen', (checked ? 'Completed' : 'Reopened') + ' to-do — ' + t.text, 'Owner: ' + _todoOwnerLabel());
     scheduleSave(); renderTodos(); updateBadges(); renderDash();
@@ -10102,22 +10270,29 @@ function openEditLAF(id) {
 
 // ─── TODO INLINE EDIT ───
 var editingTodoId = null;
-function openAddTodoModal(dateStr, textStr, priorityStr) {
+function openAddTodoModal(dateStr, textStr, priorityStr, categoryStr) {
   editingTodoId = null;
+  fillTodoCategorySelects();
   g('modal-todo-title').textContent = 'Add To-Do';
   g('modal-todo-savebtn').textContent = 'Add';
   g('td-text').value = textStr || ''; g('td-note').value = '';
   g('td-date').value = dateStr || ''; g('td-priority').value = priorityStr || 'normal';
+  g('td-category').value = categoryStr || ''; g('td-unit').value = '';
+  g('td-status').value = 'open'; g('td-owner').value = ''; g('td-staledays').value = '';
   openModal('modal-todo');
   if (textStr) { setTimeout(function(){ var n=g('td-note'); if(n) n.focus(); }, 80); }
 }
 function openEditTodo(id) {
   var t = getCurrentTodos().find(function (x) { return x.id === id; }); if (!t) return;
   editingTodoId = id;
+  fillTodoCategorySelects();
   g('modal-todo-title').textContent = 'Edit To-Do';
   g('modal-todo-savebtn').textContent = 'Save Changes';
   g('td-text').value = t.text || ''; g('td-note').value = t.note || '';
   g('td-date').value = t.dueDate || ''; g('td-priority').value = t.priority || 'normal';
+  g('td-category').value = t.category || ''; g('td-unit').value = t.linkedUnit || '';
+  g('td-status').value = todoStatus(t); g('td-owner').value = t.owner || '';
+  g('td-staledays').value = t.staleDays || '';
   openModal('modal-todo');
 }
 function saveTodoModal() {
@@ -10125,20 +10300,29 @@ function saveTodoModal() {
   var note = g('td-note').value.trim() || null;
   var dueDate = g('td-date').value || null;
   var priority = g('td-priority').value;
+  var category = g('td-category').value || '';
+  var linkedUnit = g('td-unit').value.trim() || '';
+  var owner = g('td-owner').value.trim() || '';
+  var status = g('td-status').value || 'open';
+  var staleDays = g('td-staledays').value ? parseInt(g('td-staledays').value, 10) : null;
   if (editingTodoId) {
     var t = getCurrentTodos().find(function (x) { return x.id === editingTodoId; });
     if (t) {
       var before = cloneData(t);
       t.text = text; t.note = note; t.dueDate = dueDate; t.priority = priority;
+      t.category = category; t.linkedUnit = linkedUnit; t.owner = owner; t.staleDays = staleDays;
+      t.status = status; t.done = (status === 'done'); t.completedAt = (status === 'done') ? (t.completedAt || Date.now()) : null;
+      todoTouch(t);
       pushUndo({ sec: 'todos', type: 'EDIT', path: currentTodosPath(), id: t.id, before: before, after: cloneData(t), label: 'edit to-do — ' + text });
-      logActivity('todos', 'edit', 'Updated to-do — ' + text, activityFields(before, t, { text: 'Task', note: 'Note', dueDate: 'Due date', priority: 'Priority' }));
+      var afterDiff = { text: t.text, note: t.note, dueDate: t.dueDate, priority: t.priority, category: t.category, status: t.status, owner: t.owner, linkedUnit: t.linkedUnit };
+      logActivity('todos', 'edit', 'Updated to-do — ' + text, activityFields(before, afterDiff, { text: 'Task', note: 'Note', dueDate: 'Due date', priority: 'Priority', category: 'Category', status: 'Status', owner: 'Owner', linkedUnit: 'Unit' }));
     }
   } else {
     var todos = getCurrentTodos();
-    var todo = { id: uid(), text: text, note: note, priority: priority, dueDate: dueDate, done: false, createdAt: Date.now() };
+    var todo = { id: uid(), text: text, note: note, priority: priority, dueDate: dueDate, category: category, linkedUnit: linkedUnit, owner: owner, staleDays: staleDays, status: status, done: (status === 'done'), createdAt: Date.now(), lastUpdated: Date.now() };
     todos.push(todo);
     pushUndo({ sec: 'todos', type: 'ADD', path: currentTodosPath(), id: todo.id, data: todo, label: 'add to-do — ' + text });
-    logActivity('todos', 'create', 'Added to-do — ' + text, 'Owner: ' + _todoOwnerLabel() + (dueDate ? ' · Due: ' + fmtShort(dueDate) : '') + ' · Priority: ' + priority);
+    logActivity('todos', 'create', 'Added to-do — ' + text, 'Owner: ' + _todoOwnerLabel() + (dueDate ? ' · Due: ' + fmtShort(dueDate) : '') + ' · Priority: ' + priority + (category ? ' · Category: ' + todoCategoryLabel(category) : ''));
   }
   var wasEditing = !!editingTodoId;
   closeModal('modal-todo'); editingTodoId = null;
@@ -12139,6 +12323,7 @@ async function init() {
   migrateTaskUpdatesV2();
   migrateTaskUpdatesV3();
   migrateMovePhaseCats();
+  migrateTodosV1();
   seedDefaultTemplates();
   seedUnitRecords();
   seedTransponders();
