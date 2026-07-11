@@ -2494,7 +2494,7 @@ function cloneData(obj) {
   try { return JSON.parse(JSON.stringify(obj)); }
   catch (e) { return obj; }
 }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], transponders: { startingInventory: 100, log: [], counts: [] }, security: [], logbook: [], propertyConfig: {} }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, archivedTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], transponders: { startingInventory: 100, log: [], counts: [] }, security: [], logbook: [], propertyConfig: {} }; }
 
 // ─── SHIFT LOG ───
 function getShiftLog() {
@@ -7931,6 +7931,17 @@ function currentTodosPath() {
   var vid = (currentUser.role === 'admin' && todosViewingId) ? todosViewingId : currentUser.id;
   return ['userTodos', vid];
 }
+function _archTodosKey() {
+  if (!currentUser) return '_shared';
+  return (currentUser.role === 'admin' && todosViewingId) ? todosViewingId : currentUser.id;
+}
+function getCurrentArchivedTodos() {
+  if (!state.archivedTodos) state.archivedTodos = {};
+  var k = _archTodosKey();
+  if (!state.archivedTodos[k]) state.archivedTodos[k] = [];
+  return state.archivedTodos[k];
+}
+function currentArchivedTodosPath() { return ['archivedTodos', _archTodosKey()]; }
 function addTodo() {
   var input = g('todo-input'), text = input.value.trim(); if (!text) { toast('Enter a to-do first'); return; }
   if (currentUser && currentUser.role === 'admin' && todosViewingId && todosViewingId !== currentUser.id) { toast('Switch to your own list to add tasks'); return; }
@@ -8139,6 +8150,7 @@ function renderTodos() {
   var cnt = g('todos-count');
   if (cnt) cnt.textContent = (todoCatFilter !== 'all' || todoStatusFilter !== 'all') ? (filtered.length + (showCL ? clTasks.length : 0) + ' shown') : (totalPending + ' pending');
   var list = g('todos-list'); if (!list) return;
+  if (todoStatusFilter === 'done') { renderTodosDoneHistory(filtered, list, cnt); return; }
   if (!filtered.length && !(showCL && clTasks.length)) { list.innerHTML = '<div class="text-3 text-sm" style="padding:18px 16px">No to-dos match.</div>'; return; }
   var html = '';
   filtered.forEach(function (t) {
@@ -8174,6 +8186,46 @@ function renderTodos() {
     });
   }
   list.innerHTML = html;
+}
+// Done tab = completion history: current done items + archived ones, grouped by day.
+function renderTodosDoneHistory(currentDone, listEl, cntEl) {
+  var arch = getCurrentArchivedTodos().filter(function (t) { return todoCatFilter === 'all' || (t.category || '') === todoCatFilter; });
+  var rows = currentDone.map(function (t) { return { t: t, archived: false, ts: t.completedAt || t.lastUpdated || t.createdAt || 0 }; })
+    .concat(arch.map(function (t) { return { t: t, archived: true, ts: t.completedAt || t.archivedAt || t.lastUpdated || 0 }; }));
+  if (cntEl) cntEl.textContent = rows.length + ' completed';
+  if (!rows.length) { listEl.innerHTML = '<div class="text-3 text-sm" style="padding:18px 16px">Nothing completed yet.</div>'; return; }
+  rows.sort(function (a, b) { return b.ts - a.ts; });
+  var html = '', lastDay = '';
+  rows.forEach(function (r) {
+    var d = new Date(r.ts);
+    var day = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    if (day !== lastDay) {
+      html += '<div style="padding:10px 14px 6px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px' + (lastDay ? ';border-top:1px solid var(--border);margin-top:4px' : '') + '">' + day + '</div>';
+      lastDay = day;
+    }
+    var t = r.t;
+    html += '<div class="todo-item done">';
+    if (r.archived) {
+      html += '<span style="width:16px;text-align:center;color:var(--green);flex-shrink:0">&#10003;</span>';
+    } else {
+      html += '<input type="checkbox" checked onchange="toggleTodo(\'' + t.id + '\',this.checked)">';
+    }
+    html += '<div style="flex:1;min-width:0">';
+    html += '<div class="todo-text strk">' + t.text + '</div>';
+    if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + t.note + '</div>';
+    html += '<div class="todo-meta">' + todoCatChip(t) + todoUnitChip(t) + todoOwnerChip(t)
+      + '<span class="text-xs text-3">' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + '</span>'
+      + (r.archived ? '<span class="text-xs text-3">archived</span>' : '') + '</div>';
+    html += '</div>';
+    if (r.archived) {
+      html += '<button class="btn btn-ghost btn-xs" onclick="restoreArchivedTodo(\'' + t.id + '\')" title="Restore to Open">&#8617; Restore</button>';
+    } else {
+      html += '<button class="btn btn-ghost btn-xs" onclick="openEditTodo(\'' + t.id + '\')" title="Edit">&#9998;</button>';
+      html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteTodo(\'' + t.id + '\')">&#x2715;</button>';
+    }
+    html += '</div>';
+  });
+  listEl.innerHTML = html;
 }
 function renderTodosBoard(sorted) {
   var el = g('todos-board'); if (!el) return;
@@ -8228,13 +8280,41 @@ function deleteTodo(id) {
   scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Removed');
 }
 function clearDoneTodos() {
-  if (!confirm('Clear completed to-dos?')) return;
-  var before = cloneData(getCurrentTodos());
-  var after = getCurrentTodos().filter(function (t) { return !t.done; });
-  setCurrentTodos(after);
-  pushSetUndo('todos', currentTodosPath(), before, cloneData(after), 'clear completed to-dos');
-  logActivity('todos', 'delete', 'Cleared completed to-dos', (before.length - after.length) + ' completed item(s) removed · Owner: ' + _todoOwnerLabel());
-  scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Cleared');
+  var moved = getCurrentTodos().filter(function (t) { return t.done; });
+  if (!moved.length) { toast('No completed to-dos to archive'); return; }
+  if (!confirm('Archive ' + moved.length + ' completed to-do(s)? They stay viewable under the Done tab.')) return;
+  var listBefore = cloneData(getCurrentTodos());
+  var archBefore = cloneData(getCurrentArchivedTodos());
+  var now = Date.now();
+  var keep = getCurrentTodos().filter(function (t) { return !t.done; });
+  var arch = getCurrentArchivedTodos();
+  moved.forEach(function (t) { var c = cloneData(t); c.archivedAt = now; arch.push(c); });
+  setCurrentTodos(keep);
+  pushBatchUndo('todos', 'archive completed to-dos', [
+    { sec: 'todos', type: 'SET', path: currentTodosPath(), before: listBefore, after: cloneData(keep), label: 'archive completed — list' },
+    { sec: 'todos', type: 'SET', path: currentArchivedTodosPath(), before: archBefore, after: cloneData(arch), label: 'archive completed — archive' }
+  ]);
+  logActivity('todos', 'archive', 'Archived completed to-dos', moved.length + ' item(s) moved to Done history · Owner: ' + _todoOwnerLabel());
+  scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Archived ' + moved.length + ' — see Done tab');
+}
+function restoreArchivedTodo(id) {
+  var arch = getCurrentArchivedTodos();
+  var t = arch.find(function (x) { return x.id === id; });
+  if (!t) return;
+  var listBefore = cloneData(getCurrentTodos());
+  var archBefore = cloneData(arch);
+  var restored = cloneData(t);
+  delete restored.archivedAt;
+  restored.done = false; restored.status = 'open'; restored.completedAt = null; restored.lastUpdated = Date.now();
+  var archAfter = arch.filter(function (x) { return x.id !== id; });
+  state.archivedTodos[_archTodosKey()] = archAfter;
+  getCurrentTodos().push(restored);
+  pushBatchUndo('todos', 'restore to-do — ' + (t.text || ''), [
+    { sec: 'todos', type: 'SET', path: currentArchivedTodosPath(), before: archBefore, after: cloneData(archAfter), label: 'restore — archive' },
+    { sec: 'todos', type: 'SET', path: currentTodosPath(), before: listBefore, after: cloneData(getCurrentTodos()), label: 'restore — list' }
+  ]);
+  logActivity('todos', 'reopen', 'Restored archived to-do — ' + (t.text || ''), 'Owner: ' + _todoOwnerLabel());
+  scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Restored to Open');
 }
 
 // ─── LOST & FOUND ───
