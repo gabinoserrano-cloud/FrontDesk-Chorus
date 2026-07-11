@@ -895,6 +895,7 @@
         <div class="sub-tab td-cf" onclick="setTodoCatFilter('building',this)">Building, Physical &amp; Vendors</div>
         <div class="sub-tab td-cf" onclick="setTodoCatFilter('leasing',this)">Leasing &amp; Management</div>
         <div class="sub-tab td-cf" onclick="setTodoCatFilter('dashboard',this)">Dashboard &amp; Admin</div>
+        <div class="sub-tab td-cf" id="td-assigned-pill" style="display:none" onclick="setTodoAssignedView(this)">&#128100; Assigned by me</div>
         <div class="sub-tab td-vt" id="td-vt-list" style="margin-left:auto" title="List view" onclick="setTodosView('list')">&#9776; List</div>
         <div class="sub-tab td-vt" id="td-vt-board" title="Loop board — see everything by status" onclick="setTodosView('board')">&#9638; Board</div>
       </div>
@@ -1595,11 +1596,39 @@
     </div>
     <div class="fr">
       <div class="fg"><label>Due Date</label><input id="td-date" type="date" data-no-autofill></div>
+      <div class="fg"><label>Due Shift <span style="font-weight:400;color:var(--text3)">(optional)</span></label><select id="td-shift"><option value="">&mdash; any time &mdash;</option><option value="am">AM shift</option><option value="pm">PM shift</option><option value="overnight">Overnight</option></select></div>
+    </div>
+    <div class="fr">
       <div class="fg"><label>Priority</label><select id="td-priority"><option value="normal">Normal</option><option value="urgent">Urgent</option></select></div>
+      <div class="fg" id="td-assign-wrap" style="display:none"><label>Assign To</label><select id="td-assign"></select></div>
     </div>
     <div class="fg"><label>Flag as stale after <span style="font-weight:400;color:var(--text3)">(days, optional — default 5)</span></label><input id="td-staledays" type="number" min="1" placeholder="5"></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-todo')">Cancel</button><button class="btn btn-primary" id="modal-todo-savebtn" onclick="saveTodoModal()">Save</button></div>
+</div></div>
+
+<div class="modal-ov" id="modal-todo-flag"><div class="modal" style="max-width:420px">
+  <div class="modal-hdr"><span class="modal-title">Flag a Problem</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-todo-flag')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Can&rsquo;t take this task? Say why — it goes back to whoever assigned it, and it&rsquo;s off your plate honestly instead of sitting ignored.</div>
+    <div class="fg"><label>Reason</label><select id="tdf-reason">
+      <option value="dont-know-how">Don&rsquo;t know how — need training</option>
+      <option value="blocked">Blocked — need something first</option>
+      <option value="no-time">No time this shift</option>
+      <option value="wrong-person">Wrong person for this</option>
+    </select></div>
+    <div class="fg"><label>Note <span style="font-weight:400;color:var(--text3)">(optional)</span></label><textarea id="tdf-note" rows="2" placeholder="What do you need, or who should handle it?"></textarea></div>
+  </div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-todo-flag')">Cancel</button><button class="btn btn-primary" onclick="submitFlagTodo()">Flag It</button></div>
+</div></div>
+
+<div class="modal-ov" id="modal-assigned-ack"><div class="modal" style="max-width:520px">
+  <div class="modal-hdr"><span class="modal-title">&#128100; Tasks Assigned to You</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-assigned-ack')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <div style="font-size:12px;color:var(--text3);margin-bottom:10px">New tasks were assigned to you. Accept each one, or flag a problem if you can&rsquo;t take it.</div>
+    <div id="assigned-ack-list"></div>
+  </div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-assigned-ack')">Later</button></div>
 </div></div>
 
 <div class="modal-ov" id="modal-amenity"><div class="modal">
@@ -8061,6 +8090,7 @@ function setTodosView(v) { todosView = v; try { localStorage.setItem('chorus-tod
 var todoCatFilter = 'all';
 function setTodoCatFilter(f, el) {
   todoCatFilter = f;
+  todoAssignedView = false;
   document.querySelectorAll('#todos-tabs .td-cf').forEach(function (t) { t.classList.remove('active'); });
   if (el) el.classList.add('active');
   renderTodos();
@@ -8070,6 +8100,14 @@ function setTodoStatusFilter(f, el) {
   todoStatusFilter = f;
   document.querySelectorAll('#todos-status-tabs .td-sf').forEach(function (t) { t.classList.remove('active'); });
   if (el) el.classList.add('active');
+  if (todoAssignedView) {
+    // leaving the assigned view via a status tab: reset category pills to All
+    todoAssignedView = false;
+    todoCatFilter = 'all';
+    document.querySelectorAll('#todos-tabs .td-cf').forEach(function (x) { x.classList.remove('active'); });
+    var first = document.querySelector('#todos-tabs .td-cf');
+    if (first) first.classList.add('active');
+  }
   renderTodos();
 }
 function todoMatchesFilters(t) {
@@ -8083,6 +8121,152 @@ function todoStaleChip(t) { if (!todoIsStale(t)) return ''; return '<span class=
 function todoOwnerChip(t) { if (!t.owner) return ''; return '<span class="pill" style="background:var(--surface2);color:var(--text2)">&#128100; ' + esc(t.owner) + '</span>'; }
 function todoUnitChip(t) { if (!t.linkedUnit) return ''; return '<span class="pill" style="background:var(--surface2);color:var(--text2)">Unit ' + esc(t.linkedUnit) + '</span>'; }
 function todoTouch(t) { t.lastUpdated = Date.now(); }
+// ─── Task assignment: admin delegates, assignee accepts or flags, silence goes stale ───
+var TODO_SHIFTS = { am: 'AM shift', pm: 'PM shift', overnight: 'Overnight' };
+var TODO_FLAG_REASONS = { 'dont-know-how': "Don't know how — need training", 'blocked': 'Blocked — need something first', 'no-time': 'No time this shift', 'wrong-person': 'Wrong person for this' };
+function todoShiftChip(t) { if (!t.dueShift || !TODO_SHIFTS[t.dueShift]) return ''; return '<span class="pill" style="background:var(--purple-light);color:var(--purple)">' + TODO_SHIFTS[t.dueShift] + '</span>'; }
+function todoFromChip(t) { if (!t.assignedBy) return ''; return '<span class="pill" style="background:var(--accent-light);color:var(--accent)">&#128100; from ' + esc(t.assignedBy.name || '') + '</span>'; }
+function todoAckChip(t) {
+  if (!t.assignedBy || t.done) return '';
+  if (!t.ack) return '<span class="pill" style="background:var(--amber-light);color:var(--amber)">awaiting ack</span>';
+  if (t.ack.status === 'flagged') return '<span class="pill" style="background:var(--red-light);color:var(--red)">&#9888; ' + (TODO_FLAG_REASONS[t.ack.reason] || 'flagged') + '</span>';
+  return '<span class="pill" style="background:var(--green-light);color:var(--green)">&#10003; accepted</span>';
+}
+function ackAssignedTodo(id) {
+  var todos = getCurrentTodos();
+  var t = todos.find(function (x) { return x.id === id; });
+  if (!t || !t.assignedBy || t.ack) return;
+  var before = cloneData(t);
+  t.ack = { status: 'accepted', ts: Date.now(), by: currentUser ? currentUser.name : '' };
+  todoTouch(t);
+  pushUndo({ sec: 'todos', type: 'EDIT', path: currentTodosPath(), id: t.id, before: before, after: cloneData(t), label: 'accept assigned to-do — ' + t.text });
+  logActivity('todos', 'edit', 'Accepted assigned to-do — ' + t.text, 'Assigned by: ' + (t.assignedBy.name || ''));
+  scheduleSave(); renderTodos(); updateBadges(); refreshAssignedAckModal(); toast('Accepted');
+}
+var flaggingTodoId = null;
+function openFlagTodo(id) {
+  flaggingTodoId = id;
+  var r = g('tdf-reason'); if (r) r.value = 'dont-know-how';
+  var n = g('tdf-note'); if (n) n.value = '';
+  openModal('modal-todo-flag');
+}
+function submitFlagTodo() {
+  var todos = getCurrentTodos();
+  var t = todos.find(function (x) { return x.id === flaggingTodoId; });
+  if (!t || !t.assignedBy) { closeModal('modal-todo-flag'); flaggingTodoId = null; return; }
+  var before = cloneData(t);
+  t.ack = { status: 'flagged', reason: g('tdf-reason').value, note: g('tdf-note').value.trim(), ts: Date.now(), by: currentUser ? currentUser.name : '' };
+  t.status = 'blocked';
+  todoTouch(t);
+  pushUndo({ sec: 'todos', type: 'EDIT', path: currentTodosPath(), id: t.id, before: before, after: cloneData(t), label: 'flag assigned to-do — ' + t.text });
+  logActivity('todos', 'edit', 'Flagged assigned to-do — ' + t.text, (TODO_FLAG_REASONS[t.ack.reason] || t.ack.reason) + (t.ack.note ? ' · ' + t.ack.note : '') + ' · Assigned by: ' + (t.assignedBy.name || ''));
+  closeModal('modal-todo-flag'); flaggingTodoId = null;
+  scheduleSave(); renderTodos(); updateBadges(); refreshAssignedAckModal();
+  toast('Flagged — ' + (t.assignedBy.name || 'the assigner') + ' will see it');
+}
+function takeBackAssignedTodo(userId, id) {
+  if (!currentUser || currentUser.role !== 'admin') return;
+  var src = (state.userTodos || {})[userId] || [];
+  var t = src.find(function (x) { return x.id === id; });
+  if (!t) return;
+  var srcBefore = cloneData(src);
+  if (!state.userTodos[currentUser.id]) state.userTodos[currentUser.id] = [];
+  var mine = state.userTodos[currentUser.id];
+  var mineBefore = cloneData(mine);
+  var moved = cloneData(t);
+  delete moved.assignedBy; delete moved.assignedAt; moved.ack = null;
+  if (moved.status === 'blocked') moved.status = 'open';
+  moved.lastUpdated = Date.now();
+  state.userTodos[userId] = src.filter(function (x) { return x.id !== id; });
+  mine.push(moved);
+  var fromAcct = (state.accounts || []).find(function (a) { return a.id === userId; });
+  pushBatchUndo('todos', 'take back assigned to-do — ' + (t.text || ''), [
+    { sec: 'todos', type: 'SET', path: ['userTodos', userId], before: srcBefore, after: cloneData(state.userTodos[userId]), label: 'take back — theirs' },
+    { sec: 'todos', type: 'SET', path: ['userTodos', currentUser.id], before: mineBefore, after: cloneData(mine), label: 'take back — mine' }
+  ]);
+  logActivity('todos', 'edit', 'Took back assigned to-do — ' + (t.text || ''), 'From: ' + (fromAcct ? fromAcct.name : userId));
+  scheduleSave(); renderTodos(); updateBadges(); toast('Moved to your list');
+}
+var todoAssignedView = false;
+function setTodoAssignedView(el) {
+  todoAssignedView = true;
+  document.querySelectorAll('#todos-tabs .td-cf').forEach(function (x) { x.classList.remove('active'); });
+  if (el) el.classList.add('active');
+  renderTodos();
+}
+function getAssignedByMe() {
+  if (!currentUser) return [];
+  var rows = [];
+  (state.accounts || []).forEach(function (a) {
+    if (a.id === currentUser.id) return;
+    ((state.userTodos || {})[a.id] || []).forEach(function (t) {
+      if (t.assignedBy && t.assignedBy.id === currentUser.id) rows.push({ t: t, acct: a });
+    });
+  });
+  return rows;
+}
+function renderAssignedByMe(listEl, cntEl) {
+  var rows = getAssignedByMe();
+  if (cntEl) cntEl.textContent = rows.filter(function (r) { return !r.t.done; }).length + ' delegated open';
+  if (!rows.length) { listEl.innerHTML = '<div class="text-3 text-sm" style="padding:18px 16px">Nothing assigned yet — use &ldquo;Assign To&rdquo; when adding a to-do.</div>'; return; }
+  var rank = function (t) { if (t.done) return 3; if (t.ack && t.ack.status === 'flagged') return 0; if (!t.ack) return 1; return 2; };
+  rows.sort(function (a, b) {
+    var d = rank(a.t) - rank(b.t); if (d) return d;
+    if (a.t.dueDate && b.t.dueDate) return a.t.dueDate.localeCompare(b.t.dueDate);
+    if (a.t.dueDate) return -1; if (b.t.dueDate) return 1;
+    return (b.t.assignedAt || 0) - (a.t.assignedAt || 0);
+  });
+  var html = '', lastAcct = '';
+  rows.forEach(function (r) {
+    var t = r.t;
+    if (r.acct.name !== lastAcct) {
+      html += '<div style="padding:10px 14px 6px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px' + (lastAcct ? ';border-top:1px solid var(--border);margin-top:4px' : '') + '">' + esc(r.acct.name) + '</div>';
+      lastAcct = r.acct.name;
+    }
+    var statusChip = t.done ? '<span class="pill pill-status-done">&#10003; Done</span>' : todoAckChip(t);
+    var due = t.dueDate ? '<span class="todo-due">Due: ' + fmtShort(t.dueDate) + '</span>' : '';
+    html += '<div class="todo-item ' + (t.done ? 'done' : '') + '">';
+    html += '<div style="flex:1;min-width:0">';
+    html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + t.text + '</div>';
+    if (t.ack && t.ack.status === 'flagged' && t.ack.note) html += '<div style="font-size:11px;color:var(--red);margin-top:2px">&ldquo;' + esc(t.ack.note) + '&rdquo;</div>';
+    else if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + t.note + '</div>';
+    html += '<div class="todo-meta">' + statusChip + due + todoShiftChip(t) + todoCatChip(t) + todoUnitChip(t) + todoStaleChip(t) + '</div>';
+    html += '</div>';
+    if (!t.done) html += '<button class="btn btn-ghost btn-xs" onclick="takeBackAssignedTodo(\'' + r.acct.id + '\',\'' + t.id + '\')" title="Take back to my list">&#8617; Take back</button>';
+    html += '</div>';
+  });
+  listEl.innerHTML = html;
+}
+function checkAssignedTodosOnLogin() {
+  if (!currentUser) return;
+  var pend = ((state.userTodos || {})[currentUser.id] || []).filter(function (t) { return t.assignedBy && !t.ack && !t.done; });
+  if (!pend.length) return;
+  var open = document.querySelector('.modal-ov.open');
+  if (open) { setTimeout(checkAssignedTodosOnLogin, 1500); return; }
+  renderAssignedAckModal();
+  openModal('modal-assigned-ack');
+}
+function renderAssignedAckModal() {
+  var el = g('assigned-ack-list'); if (!el) return;
+  var pend = ((state.userTodos || {})[currentUser ? currentUser.id : ''] || []).filter(function (t) { return t.assignedBy && !t.ack && !t.done; });
+  if (!pend.length) { closeModal('modal-assigned-ack'); return; }
+  var html = '';
+  pend.forEach(function (t) {
+    html += '<div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px">';
+    html += '<div style="font-size:13px;font-weight:600">' + t.text + '</div>';
+    if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + t.note + '</div>';
+    html += '<div class="todo-meta" style="margin-top:4px">' + todoFromChip(t) + (t.dueDate ? '<span class="todo-due">Due: ' + fmtShort(t.dueDate) + '</span>' : '') + todoShiftChip(t) + todoCatChip(t) + todoUnitChip(t) + '</div>';
+    html += '<div style="display:flex;gap:6px;margin-top:8px">';
+    html += '<button class="btn btn-sm btn-green" onclick="ackAssignedTodo(\'' + t.id + '\')">&#10003; Got it</button>';
+    html += '<button class="btn btn-sm btn-secondary" onclick="openFlagTodo(\'' + t.id + '\')">&#9888; Flag a problem</button>';
+    html += '</div></div>';
+  });
+  el.innerHTML = html;
+}
+function refreshAssignedAckModal() {
+  var m = g('modal-assigned-ack');
+  if (m && m.classList.contains('open')) renderAssignedAckModal();
+}
 
 // ===== [TO-DO LIST] ==========================================================
 function renderTodos() {
@@ -8110,15 +8294,17 @@ function renderTodos() {
   }
   var titleEl = g('todos-section-title');
   if (titleEl) titleEl.textContent = viewingName + 'To-Do List';
-  // Board \u21c4 list view switching
-  var isBoardView = todosView === 'board';
+  var ap = g('td-assigned-pill');
+  if (ap) ap.style.display = (currentUser && currentUser.role === 'admin') ? '' : 'none';
+  // Board \u21c4 list view switching (assigned view always renders in the list card)
+  var isBoardView = todosView === 'board' && !todoAssignedView;
   var vtL = g('td-vt-list'), vtB = g('td-vt-board');
   if (vtL) vtL.classList.toggle('active', !isBoardView);
   if (vtB) vtB.classList.toggle('active', isBoardView);
   var listCard = g('todos-list-card'), boardWrap = g('todos-board'), statusTabs = g('todos-status-tabs');
   if (listCard) listCard.style.display = isBoardView ? 'none' : '';
   if (boardWrap) boardWrap.style.display = isBoardView ? '' : 'none';
-  if (statusTabs) statusTabs.style.display = isBoardView ? 'none' : '';
+  if (statusTabs) statusTabs.style.display = (isBoardView || todoAssignedView) ? 'none' : '';
   var todos = getCurrentTodos();
   var sorted = todos.slice().sort(function (a, b) {
     if (a.done !== b.done) return a.done ? 1 : -1;
@@ -8144,6 +8330,7 @@ function renderTodos() {
   });
   var totalPending = pending + clTasks.length;
   setBadge('badge-todos', totalPending); setMBadge('mb-todos', totalPending);
+  if (todoAssignedView) { var alEl = g('todos-list'); if (alEl) renderAssignedByMe(alEl, g('todos-count')); return; }
   if (isBoardView) { renderTodosBoard(sorted); return; }
   var filtered = sorted.filter(todoMatchesFilters);
   var showCL = todoCatFilter === 'all' && (todoStatusFilter === 'all' || todoStatusFilter === 'open');
@@ -8161,8 +8348,12 @@ function renderTodos() {
     html += '<div style="flex:1;min-width:0">';
     html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + urgIcon + t.text + '</div>';
     if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + t.note + '</div>';
-    html += '<div class="todo-meta">' + due + todoCatChip(t) + (t.done ? '' : todoStatusChip(t)) + todoUnitChip(t) + todoOwnerChip(t) + todoStaleChip(t) + '<span class="text-xs text-3">' + new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span></div>';
+    html += '<div class="todo-meta">' + due + todoShiftChip(t) + todoCatChip(t) + (t.done ? '' : todoStatusChip(t)) + todoFromChip(t) + todoAckChip(t) + todoUnitChip(t) + todoOwnerChip(t) + todoStaleChip(t) + '<span class="text-xs text-3">' + new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span></div>';
     html += '</div>';
+    if (t.assignedBy && !t.ack && !t.done && !isViewingOther) {
+      html += '<button class="btn btn-ghost btn-xs" style="color:var(--green)" onclick="ackAssignedTodo(\'' + t.id + '\')" title="Accept this task">&#10003;</button>';
+      html += '<button class="btn btn-ghost btn-xs" style="color:var(--amber)" onclick="openFlagTodo(\'' + t.id + '\')" title="Flag a problem">&#9888;</button>';
+    }
     html += '<button class="btn btn-ghost btn-xs" onclick="openEditTodo(\'' + t.id + '\')" title="Edit">&#9998;</button>';
     html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteTodo(\'' + t.id + '\')">&#x2715;</button>';
     html += '</div>';
@@ -8247,7 +8438,7 @@ function renderTodosBoard(sorted) {
       html += '<div class="td-bcard' + (stale ? ' stale' : '') + '" onclick="openEditTodo(\'' + t.id + '\')">';
       html += '<div class="td-bcard-text">' + (t.priority === 'urgent' && !t.done ? '<span style="color:var(--red)">! </span>' : '') + esc(t.text) + '</div>';
       if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:3px">' + esc(t.note) + '</div>';
-      html += '<div class="td-bcard-meta">' + todoCatChip(t) + todoUnitChip(t) + (t.dueDate ? '<span class="pill" style="background:var(--surface2);color:var(--text2)">Due ' + fmtShort(t.dueDate) + '</span>' : '') + todoStaleChip(t) + '</div>';
+      html += '<div class="td-bcard-meta">' + todoCatChip(t) + todoFromChip(t) + todoAckChip(t) + todoUnitChip(t) + (t.dueDate ? '<span class="pill" style="background:var(--surface2);color:var(--text2)">Due ' + fmtShort(t.dueDate) + '</span>' : '') + todoShiftChip(t) + todoStaleChip(t) + '</div>';
       if (t.owner) html += '<div class="td-bcard-owner">&#128100; ' + esc(t.owner) + '</div>';
       html += '</div>';
     });
@@ -10466,6 +10657,18 @@ function openAddTodoModal(dateStr, textStr, priorityStr, categoryStr) {
   g('td-date').value = dateStr || ''; g('td-priority').value = priorityStr || 'normal';
   g('td-category').value = categoryStr || ''; g('td-unit').value = '';
   g('td-status').value = 'open'; g('td-owner').value = ''; g('td-staledays').value = '';
+  var sh = g('td-shift'); if (sh) sh.value = '';
+  var aw = g('td-assign-wrap'), as = g('td-assign');
+  if (aw && as) {
+    if (currentUser && currentUser.role === 'admin' && (state.accounts || []).length > 1) {
+      var opts = '<option value="">Myself</option>';
+      (state.accounts || []).forEach(function (a) { if (a.id !== currentUser.id) opts += '<option value="' + a.id + '">' + esc(a.name) + '</option>'; });
+      as.innerHTML = opts; as.value = '';
+      aw.style.display = '';
+    } else {
+      aw.style.display = 'none';
+    }
+  }
   openModal('modal-todo');
   if (textStr) { setTimeout(function(){ var n=g('td-note'); if(n) n.focus(); }, 80); }
 }
@@ -10480,23 +10683,27 @@ function openEditTodo(id) {
   g('td-category').value = t.category || ''; g('td-unit').value = t.linkedUnit || '';
   g('td-status').value = todoStatus(t); g('td-owner').value = t.owner || '';
   g('td-staledays').value = t.staleDays || '';
+  var sh = g('td-shift'); if (sh) sh.value = t.dueShift || '';
+  var aw = g('td-assign-wrap'); if (aw) aw.style.display = 'none'; // no reassignment on edit — take back + reassign instead
   openModal('modal-todo');
 }
 function saveTodoModal() {
   var text = g('td-text').value.trim(); if (!text) { toast('Enter a task first'); return; }
   var note = g('td-note').value.trim() || null;
   var dueDate = g('td-date').value || null;
+  var dueShift = (g('td-shift') && g('td-shift').value) || null;
   var priority = g('td-priority').value;
   var category = g('td-category').value || '';
   var linkedUnit = g('td-unit').value.trim() || '';
   var owner = g('td-owner').value.trim() || '';
   var status = g('td-status').value || 'open';
   var staleDays = g('td-staledays').value ? parseInt(g('td-staledays').value, 10) : null;
+  var assignedName = null;
   if (editingTodoId) {
     var t = getCurrentTodos().find(function (x) { return x.id === editingTodoId; });
     if (t) {
       var before = cloneData(t);
-      t.text = text; t.note = note; t.dueDate = dueDate; t.priority = priority;
+      t.text = text; t.note = note; t.dueDate = dueDate; t.dueShift = dueShift; t.priority = priority;
       t.category = category; t.linkedUnit = linkedUnit; t.owner = owner; t.staleDays = staleDays;
       t.status = status; t.done = (status === 'done'); t.completedAt = (status === 'done') ? (t.completedAt || Date.now()) : null;
       todoTouch(t);
@@ -10505,16 +10712,31 @@ function saveTodoModal() {
       logActivity('todos', 'edit', 'Updated to-do — ' + text, activityFields(before, afterDiff, { text: 'Task', note: 'Note', dueDate: 'Due date', priority: 'Priority', category: 'Category', status: 'Status', owner: 'Owner', linkedUnit: 'Unit' }));
     }
   } else {
-    var todos = getCurrentTodos();
-    var todo = { id: uid(), text: text, note: note, priority: priority, dueDate: dueDate, category: category, linkedUnit: linkedUnit, owner: owner, staleDays: staleDays, status: status, done: (status === 'done'), createdAt: Date.now(), lastUpdated: Date.now() };
-    todos.push(todo);
-    pushUndo({ sec: 'todos', type: 'ADD', path: currentTodosPath(), id: todo.id, data: todo, label: 'add to-do — ' + text });
-    logActivity('todos', 'create', 'Added to-do — ' + text, 'Owner: ' + _todoOwnerLabel() + (dueDate ? ' · Due: ' + fmtShort(dueDate) : '') + ' · Priority: ' + priority + (category ? ' · Category: ' + todoCategoryLabel(category) : ''));
+    var todo = { id: uid(), text: text, note: note, priority: priority, dueDate: dueDate, dueShift: dueShift, category: category, linkedUnit: linkedUnit, owner: owner, staleDays: staleDays, status: status, done: (status === 'done'), createdAt: Date.now(), lastUpdated: Date.now() };
+    var aw = g('td-assign-wrap'), as = g('td-assign');
+    var assigneeId = (aw && as && aw.style.display !== 'none') ? as.value : '';
+    if (assigneeId && currentUser && currentUser.role === 'admin' && assigneeId !== currentUser.id) {
+      var acct = (state.accounts || []).find(function (a) { return a.id === assigneeId; });
+      if (!state.userTodos) state.userTodos = {};
+      if (!state.userTodos[assigneeId]) state.userTodos[assigneeId] = [];
+      todo.assignedBy = { id: currentUser.id, name: currentUser.name };
+      todo.assignedAt = Date.now();
+      todo.ack = null;
+      state.userTodos[assigneeId].push(todo);
+      assignedName = acct ? acct.name : 'team member';
+      pushUndo({ sec: 'todos', type: 'ADD', path: ['userTodos', assigneeId], id: todo.id, data: todo, label: 'assign to-do — ' + text });
+      logActivity('todos', 'create', 'Assigned to-do to ' + assignedName + ' — ' + text, (dueDate ? 'Due: ' + fmtShort(dueDate) + ' · ' : '') + (dueShift && TODO_SHIFTS[dueShift] ? TODO_SHIFTS[dueShift] + ' · ' : '') + 'Priority: ' + priority);
+    } else {
+      var todos = getCurrentTodos();
+      todos.push(todo);
+      pushUndo({ sec: 'todos', type: 'ADD', path: currentTodosPath(), id: todo.id, data: todo, label: 'add to-do — ' + text });
+      logActivity('todos', 'create', 'Added to-do — ' + text, 'Owner: ' + _todoOwnerLabel() + (dueDate ? ' · Due: ' + fmtShort(dueDate) : '') + ' · Priority: ' + priority + (category ? ' · Category: ' + todoCategoryLabel(category) : ''));
+    }
   }
   var wasEditing = !!editingTodoId;
   closeModal('modal-todo'); editingTodoId = null;
   scheduleSave(); renderTodos(); updateBadges(); renderDash();
-  toast(wasEditing ? 'Updated' : 'Added');
+  toast(wasEditing ? 'Updated' : (assignedName ? 'Assigned to ' + assignedName : 'Added'));
 }
 
 // ─── CALENDAR ───
@@ -12281,6 +12503,7 @@ async function submitPin() {
     setTimeout(checkFirstLoginWelcome, 300);
     setTimeout(checkCarriedItemsOnLogin, 600);
     setTimeout(checkPassdownAcknowledgementOnLogin, 1200);
+    setTimeout(checkAssignedTodosOnLogin, 2000);
   } else {
     loginPinEntry = '';
     var fails = parseInt(sessionStorage.getItem(failKey) || '0') + 1;
