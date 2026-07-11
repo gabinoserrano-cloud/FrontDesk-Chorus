@@ -1960,6 +1960,64 @@ async function supaPush(d) {
   });
   if (!res.ok) throw new Error('push ' + res.status);
 }
+// ─── Email-triage inbox ───
+// External triage sessions drop to-dos into a side row (id='todo-inbox') instead of
+// editing the main state row — no race with a live dashboard session. The app drains
+// that row here: merge into the target account's list (dedupe by id + srcThread),
+// then clear the row. All-or-nothing: if any item's account can't be resolved yet,
+// nothing is merged and the row is left for the next attempt.
+async function mergeTodoInbox() {
+  if (!cloudPullOk) return;
+  try {
+    var hdrs = await getSupaHdr();
+    var res = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox&select=data', { headers: hdrs });
+    if (!res.ok) return;
+    var rows = await res.json();
+    var inbox = rows[0] && rows[0].data && rows[0].data.todos;
+    if (!Array.isArray(inbox) || !inbox.length) return;
+    var resolved = [];
+    for (var i = 0; i < inbox.length; i++) {
+      var item = inbox[i];
+      if (!item || !item.text) continue;
+      var want = String(item.targetAccount || 'gabino').toLowerCase();
+      var acct = (state.accounts || []).find(function (a) { return (a.name || '').toLowerCase().indexOf(want) !== -1; });
+      if (!acct) return; // accounts not ready / unknown target — retry next cycle, row untouched
+      resolved.push({ item: item, acctId: acct.id });
+    }
+    var added = 0;
+    resolved.forEach(function (r) {
+      var item = r.item;
+      if (!state.userTodos) state.userTodos = {};
+      if (!state.userTodos[r.acctId]) state.userTodos[r.acctId] = [];
+      var list = state.userTodos[r.acctId];
+      var dup = list.some(function (t) { return t.id === item.id || (item.srcThread && t.srcThread === item.srcThread); });
+      if (dup) return;
+      list.push({
+        id: item.id || uid(), text: String(item.text), note: item.note || null,
+        priority: item.priority === 'urgent' ? 'urgent' : 'normal', dueDate: item.dueDate || null,
+        category: item.category || '', linkedUnit: item.linkedUnit || '', owner: item.owner || '',
+        staleDays: item.staleDays || null,
+        status: TODO_STATUSES.some(function (s) { return s.key === item.status; }) ? item.status : 'open',
+        done: false, createdAt: Date.now(), lastUpdated: Date.now(),
+        srcThread: item.srcThread || '', addedBy: item.addedBy || 'Email Triage'
+      });
+      added++;
+    });
+    await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox', {
+      method: 'PATCH',
+      headers: await getSupaHdr({ 'Prefer': 'return=minimal' }),
+      body: JSON.stringify({ data: { todos: [] }, updated_at: new Date().toISOString() })
+    });
+    if (added) {
+      logActivity('todos', 'create', 'Imported ' + added + ' to-do(s) from email triage inbox', (resolved.length - added) ? ((resolved.length - added) + ' duplicate(s) skipped') : '');
+      scheduleSave();
+      if (typeof curSec !== 'undefined' && curSec === 'todos') renderTodos();
+      updateBadges();
+      toast(added + ' to-do' + (added > 1 ? 's' : '') + ' added from email triage');
+    }
+  } catch (e) {}
+}
+setInterval(function () { mergeTodoInbox(); }, 300000);
 // ===== [APP STATE & GLOBALS] =================================================
 function setSyncStatus(cls, msg) {
   var dot = g('sync-dot'), lbl = g('sync-label');
@@ -12374,6 +12432,7 @@ async function init() {
   migrateMovePhaseCats();
   migrateTodosV1();
   seedLoopTrackerTodosV1();
+  await mergeTodoInbox();
   seedDefaultTemplates();
   seedUnitRecords();
   seedTransponders();
