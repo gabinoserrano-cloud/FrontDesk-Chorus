@@ -1,0 +1,25 @@
+name: Nightly Data Backup
+
+# Copies the dashboard's cloud state into a rolling per-day backup row
+# (backup-d01..backup-d31) so there's always ~a month of daily snapshots.
+on:
+  schedule:
+    - cron: "10 9 * * *"   # daily 09:10 UTC = 2:10am PDT / 1:10am PST
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Back up dashboard state
+        env:
+          SUPA_ANON: ${{ secrets.SUPA_ANON }}
+          SUPA_EMAIL: ${{ secrets.SUPA_EMAIL }}
+          SUPA_PASS: ${{ secrets.SUPA_PASS }}
+        run: python3 .github/scripts/nightly_backup.py

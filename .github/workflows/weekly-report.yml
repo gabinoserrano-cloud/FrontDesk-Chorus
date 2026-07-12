@@ -22,4 +22,7 @@ jobs:
           GMAIL_USER: gabinoserrano21@gmail.com
           REPORT_FROM: gabinoserrano21@gmail.com
           REPORT_TO: gserrano@alignrealestate.com
+          SUPA_ANON: ${{ secrets.SUPA_ANON }}
+          SUPA_EMAIL: ${{ secrets.SUPA_EMAIL }}
+          SUPA_PASS: ${{ secrets.SUPA_PASS }}
         run: python3 .github/scripts/weekly_report.py
