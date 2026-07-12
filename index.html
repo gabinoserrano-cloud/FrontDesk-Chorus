@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chorus — Front Desk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garant:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg:#F4F0EA;--surface:#FFFFFF;--surface2:#EDE8E1;--border:rgba(26,20,10,0.12);--border2:rgba(26,20,10,0.06);
@@ -14,7 +14,7 @@
     --green:#1A6640;--green-light:#E2EFE8;--red:#C03535;--red-light:#FAEBEB;
     --amber:#B57020;--amber-light:#FBF0DC;--purple:#6044B2;--purple-light:#ECEAFA;
     --sidebar-w:220px;--header-h:54px;--radius:6px;
-    --font-serif:'Cormorant Garant',Georgia,serif;--font-mono:'DM Mono',monospace;
+    --font-serif:'Cormorant Garamond',Georgia,serif;--font-mono:'DM Mono',monospace;
     --shadow:0 1px 4px rgba(26,24,20,0.07),0 1px 2px rgba(26,24,20,0.04);
     --shadow-md:0 4px 16px rgba(26,24,20,0.10),0 2px 4px rgba(26,24,20,0.06);
     --ease-out:cubic-bezier(0.23,1,0.32,1);
@@ -1811,7 +1811,7 @@
         <option>General</option>
       </select>
     </div>
-    <div class="fg"><label>Message</label><textarea id="tmpl-body" rows="7" placeholder="Type the full message text here…" style="resize:vertical"></textarea></div>
+    <div class="fg"><label>Message</label><textarea id="tmpl-body-input" rows="7" placeholder="Type the full message text here…" style="resize:vertical"></textarea></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-template')">Cancel</button><button class="btn btn-primary" onclick="saveTemplate()">Save</button></div>
 </div></div>
@@ -1899,41 +1899,42 @@
 </div>
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 // ╔══════════════════════════════════════════════════════════════════════════╗
 // ║  FrontDesk Chorus — index.html                                          ║
 // ║  Single-file dashboard for Chorus SF front desk operations              ║
 // ╠══════════════════════════════════════════════════════════════════════════╣
-// ║  FILE MAP  (Cmd+G / Ctrl+G to jump to line)                            ║
-// ║                                                                         ║
-// ║  ~1318   Supabase Config                                                ║
-// ║  ~1339   App State & Globals                                            ║
-// ║  ~1565   Core Utilities  (uid, esc, today, fmtShort, toast, g)         ║
-// ║  ~1589   Undo System & Activity Log                                     ║
-// ║  ~1730   Navigation & Routing                                           ║
-// ║  ~1886   Modal & Badge Utilities                                        ║
-// ║  ~1927   Dashboard                                                      ║
-// ║  ~2059   Move-Ins / Move-Outs                                           ║
-// ║  ~2752   Vacant Units                                                   ║
-// ║  ~2848   Concierge Log                                                  ║
-// ║  ~2969   Maintenance                                                    ║
-// ║  ~3179   Key Tracker                                                    ║
-// ║  ~3406   Security Incidents                                             ║
-// ║  ~3518   Amenity Bookings                                               ║
-// ║  ~3609   Tours                                                          ║
-// ║  ~3664   Patrol & Walk-Through                                          ║
-// ║  ~4417   To-Do List                                                     ║
-// ║  ~4520   Lost & Found                                                   ║
-// ║  ~4640   Supplies                                                       ║
-// ║  ~4915   Resident Profiles                                              ║
-// ║  ~5068   Daily Passdown Builder                                         ║
-// ║  ~6060   Passdown History                                               ║
-// ║  ~6281   Calendar                                                       ║
-// ║  ~6862   Property Guide                                                 ║
-// ║  ~6902   Team & Staff                                                   ║
-// ║  ~7200   Settings                                                       ║
-// ║  ~7777   Login / Auth                                                   ║
-// ║  ~7969   App Initialization                                             ║
+// ║  FILE MAP  (Cmd+G / Ctrl+G to jump to line — regenerated 2026-07-11)    ║
+// ║                                                                          ║
+// ║  ~1940   Supabase Config                                                 ║
+// ║  ~2060   App State & Globals                                             ║
+// ║  ~2482   Core Utilities                                                  ║
+// ║  ~2608   Undo System & Activity Log                                      ║
+// ║  ~2830   Navigation & Routing                                            ║
+// ║  ~2996   Modal & Badge Utilities                                         ║
+// ║  ~3062   Dashboard                                                       ║
+// ║  ~3309   Move-Ins / Move-Outs                                            ║
+// ║  ~4788   Concierge Log                                                   ║
+// ║  ~5203   Maintenance                                                     ║
+// ║  ~5574   Key Tracker                                                     ║
+// ║  ~6839   Security Incidents                                              ║
+// ║  ~7014   Amenity Bookings                                                ║
+// ║  ~8317   To-Do List                                                      ║
+// ║  ~8575   Lost & Found                                                    ║
+// ║  ~8622   Unit Tracker                                                    ║
+// ║  ~8861   Supplies                                                        ║
+// ║  ~9422   Daily Passdown Builder                                          ║
+// ║  ~10500  Passdown History                                                ║
+// ║  ~10790  Calendar                                                        ║
+// ║  ~11371  Property Guide                                                  ║
+// ║  ~11412  Team & Staff                                                    ║
+// ║  ~11712  Property Config                                                 ║
+// ║  ~11773  Settings                                                        ║
+// ║  ~12405  Display Settings                                                ║
+// ║  ~12478  Welcome Modal                                                   ║
+// ║  ~12516  Login / Auth                                                    ║
+// ║  ~12760  App Initialization                                              ║
+// ║  ~13013  Message Templates                                               ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
 
 // ===== [SUPABASE CONFIG] =====================================================
@@ -1976,6 +1977,15 @@ async function getSupaHdr(extra) {
 async function supaGet() {
   var hdrs = await getSupaHdr();
   var res = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.main&select=data,updated_at', { headers: hdrs });
+  if (!res.ok) throw new Error('fetch ' + res.status);
+  var rows = await res.json();
+  return rows[0] || null;
+}
+// Timestamp-only probe (~60 bytes). The full row is >1MB, so the 30s poll checks
+// this first and only downloads the data when another device actually saved.
+async function supaGetMeta() {
+  var hdrs = await getSupaHdr();
+  var res = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.main&select=updated_at', { headers: hdrs });
   if (!res.ok) throw new Error('fetch ' + res.status);
   var rows = await res.json();
   return rows[0] || null;
@@ -2044,7 +2054,7 @@ async function mergeTodoInbox() {
       updateBadges();
       toast(added + ' to-do' + (added > 1 ? 's' : '') + ' added from email triage');
     }
-  } catch (e) {}
+  } catch (e) { console.warn('mergeTodoInbox failed:', e); }
 }
 setInterval(function () { mergeTodoInbox(); }, 300000);
 // ===== [APP STATE & GLOBALS] =================================================
@@ -2226,12 +2236,12 @@ var WT_FLOORS = [
 ];
 
 // ─── PERSISTENCE ───
-function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(state)); } catch (e) {} }
+function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(state)); } catch (e) { console.warn('saveLocal failed (likely storage quota):', e); } }
 function loadLocal() {
   try {
     var raw = localStorage.getItem(LOCAL_KEY);
     if (raw) state = Object.assign(emptyState(), JSON.parse(raw));
-  } catch (e) {}
+  } catch (e) { console.warn('loadLocal failed:', e); }
 }
 function scheduleSave() { localDirty = true; saveLocal(); clearTimeout(syncTO); syncTO = setTimeout(pushCloud, 800); }
 function stateCounts(s) { var c = {}; SYNC_WATCH.forEach(function (k) { c[k] = (s && Array.isArray(s[k])) ? s[k].length : 0; }); return c; }
@@ -2258,7 +2268,7 @@ async function pushCloud() {
     lastGoodCounts = stateCounts(state);
     setSyncStatus('synced', 'Saved'); setTimeout(function () { setSyncStatus('synced', 'Synced'); }, 1500);
   }
-  catch (e) { setSyncStatus('error', 'Offline - local only'); }
+  catch (e) { console.warn('pushCloud failed:', e); setSyncStatus('error', 'Offline - local only'); }
   isSyncing = false;
 }
 async function pullCloud() {
@@ -2295,7 +2305,7 @@ async function pullCloud() {
       setSyncStatus('error', 'Cloud empty — sync paused');
       showCloudEmptyNotice();
     }
-  } catch (e) { loadLocal(); setSyncStatus('error', 'Offline - local data'); }
+  } catch (e) { console.warn('pullCloud failed:', e); loadLocal(); setSyncStatus('error', 'Offline - local data'); }
 }
 function _syncNoticeEl() {
   var n = g('sync-guard-notice');
@@ -2384,6 +2394,14 @@ function restorePreSync() {
 setInterval(async function () {
   if (isSyncing) return;
   try {
+    // Cheap timestamp check first; skip the ~1MB row download when nothing changed.
+    var meta = await supaGetMeta();
+    if (!meta || !meta.updated_at) return;
+    var metaTs = new Date(meta.updated_at).getTime();
+    if (cloudPullOk) {
+      if (localDirty) return;                                  // local edits pending — push path owns this
+      if (lastSyncTs && metaTs <= lastSyncTs + 2000) return;   // nothing new in the cloud
+    }
     var row = await supaGet();
     if (!row || !row.updated_at) return;
     var ts = new Date(row.updated_at).getTime();
@@ -2421,7 +2439,7 @@ setInterval(async function () {
       renderSection(curSec); updateBadges();
       showRefreshNotice();
     }
-  } catch (e) {}
+  } catch (e) { console.warn('sync poll failed:', e); }
 }, 30000);
 
 function exportData() {
@@ -2505,13 +2523,39 @@ function purgeDeadResidentProfiles() {
   state.residentProfilesPurged = true;
   if (had) scheduleSave();
 }
-function today() {
-  var d = new Date();
+// Recurring payload housekeeping (2026-07-11 audit): the whole state syncs on every
+// save, so keep the hot row lean. The nightly cloud backup rows hold history beyond
+// these windows.
+function housekeepState() {
+  var changed = false;
+  // Activity log: 300 entries covers weeks of desk activity; beyond that it was dead weight in every sync.
+  if ((state.activityLog || []).length > 300) { state.activityLog = state.activityLog.slice(0, 300); changed = true; }
+  // Passdowns age out of the synced row after 90 days.
+  var cutoff = Date.now() - 90 * 86400000;
+  function prunePd(lst) {
+    if (!Array.isArray(lst)) return lst;
+    var keep = lst.filter(function (p) { return ((p && (p.createdAt || p.sentAt)) || Date.now()) >= cutoff; });
+    if (keep.length !== lst.length) changed = true;
+    return keep;
+  }
+  Object.keys(state.userPassdowns || {}).forEach(function (k) { state.userPassdowns[k] = prunePd(state.userPassdowns[k]); });
+  state.passdowns = prunePd(state.passdowns || []);
+  // Legacy shared to-do list: only ever held loadTestData output (verified against cloud data
+  // 2026-07-11), and logged-in users can never see it. Clear once.
+  if (!state.legacyTodosClearedV1) {
+    if ((state.todos || []).length) { state.todos = []; _allowRiskyPush = true; }
+    state.legacyTodosClearedV1 = true;
+    changed = true;
+  }
+  if (changed) scheduleSave();
+}
+function localDateStr(d) {
   var yr = d.getFullYear();
   var mo = String(d.getMonth() + 1).padStart(2, '0');
   var dy = String(d.getDate()).padStart(2, '0');
   return yr + '-' + mo + '-' + dy;
 }
+function today() { return localDateStr(new Date()); }
 // A move counts as "today" if its appointment is today, or — when it has no appointment — its scheduled date is today.
 // Single source of truth shared by the dashboard and the Moves tab so the two never disagree.
 function moveIsToday(m, t) { t = t || today(); return m.apptDate === t || (!m.apptDate && m.date === t); }
@@ -2687,7 +2731,7 @@ function logActivity(section, action, desc, details) {
   if (!state.activityLog) state.activityLog = [];
   var entry = { id: uid(), ts: Date.now(), by: currentUser ? currentUser.name : 'System', byId: currentUser ? currentUser.id : null, section: section, action: action, desc: desc, details: details || '' };
   state.activityLog.unshift(entry);
-  if (state.activityLog.length > 1000) state.activityLog = state.activityLog.slice(0, 1000);
+  if (state.activityLog.length > 300) state.activityLog = state.activityLog.slice(0, 300);
 }
 
 function activityFields(before, after, labels) {
@@ -2731,7 +2775,7 @@ function renderActivityLog() {
   });
 
   var userOpts = '<option value="">All Team Members</option>';
-  (state.accounts || []).forEach(function(a) { userOpts += '<option value="' + a.id + '"' + (filterUser === a.id ? ' selected' : '') + '>' + a.name + '</option>'; });
+  (state.accounts || []).forEach(function(a) { userOpts += '<option value="' + a.id + '"' + (filterUser === a.id ? ' selected' : '') + '>' + esc(a.name) + '</option>'; });
 
   var secOpts = '<option value="">All Sections</option>';
   var secs = ['moves','maintenance','guests','keys','amenities','tours','walkthrough','laf','passdown','logbook','residents','supplies','todos','units','parking','transponders','settings','activity','session'];
@@ -2762,7 +2806,7 @@ function renderActivityLog() {
       html += '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'
         + '<span style="font-size:11px;color:var(--text3);min-width:58px;padding-top:1px">' + timeStr + '</span>'
         + '<div style="flex:1;min-width:0">'
-        + '<div style="font-size:13px;color:var(--text1)">' + (e.desc || '') + '</div>'
+        + '<div style="font-size:13px;color:var(--text1)">' + esc(e.desc || '') + '</div>'
         + (e.details ? '<div style="font-size:11px;color:var(--text2);margin-top:2px;line-height:1.4">' + esc(e.details) + '</div>' : '')
         + '<div style="font-size:11px;color:var(--text3);margin-top:2px">'
         + '<span style="color:' + actionColor + ';font-weight:600;text-transform:capitalize">' + (e.action || '') + '</span>'
@@ -2933,12 +2977,14 @@ async function loadTestData() {
   // PM find
   state.laf.push({ id: uid(), item: 'AirPods Pro (white case, no label)', location: 'Rooftop terrace — near seating area', foundBy: 'Jamie L.', claimedBy: '', status: 'unclaimed', addedBy: pmBy, createdAt: now - 3600000*2 });
 
-  // ── TO-DOS ───────────────────────────────────────────────────────────────
-  if (!state.todos) state.todos = [];
-  state.todos.push({ id: uid(), text: 'Call elevator vendor re: annual inspection — due this week', priority: 'high', done: false, note: 'Contact: Apex Elevators, (415) 555-0190', addedBy: amBy, createdAt: now - 3600000*8 });
-  state.todos.push({ id: uid(), text: 'Confirm rooftop setup for Unit 1108 birthday event (6pm)', priority: 'medium', done: false, note: 'Check chairs, verify guest count is 8, caterer ETA 5:30pm', addedBy: amBy, createdAt: now - 3600000*5 });
-  state.todos.push({ id: uid(), text: 'Follow up with Unit 402 re: HVAC tech appointment tomorrow', priority: 'medium', done: false, note: 'Resident: Maria Santos. Tech window 10am–12pm.', addedBy: pmBy, createdAt: now - 3600000*2 });
-  state.todos.push({ id: uid(), text: 'Restock front desk key card supply — getting low', priority: 'low', done: false, note: 'Under 10 blank cards remaining', addedBy: nocBy, createdAt: now - 3600000*12 });
+  // ── TO-DOS (into the current admin's personal list — the legacy shared list is invisible once logged in) ──
+  if (!state.userTodos) state.userTodos = {};
+  if (!state.userTodos[currentUser.id]) state.userTodos[currentUser.id] = [];
+  var tdList = state.userTodos[currentUser.id];
+  tdList.push({ id: uid(), text: 'Call elevator vendor re: annual inspection — due this week', priority: 'high', done: false, status: 'open', lastUpdated: now, note: 'Contact: Apex Elevators, (415) 555-0190', addedBy: amBy, createdAt: now - 3600000*8 });
+  tdList.push({ id: uid(), text: 'Confirm rooftop setup for Unit 1108 birthday event (6pm)', priority: 'medium', done: false, status: 'open', lastUpdated: now, note: 'Check chairs, verify guest count is 8, caterer ETA 5:30pm', addedBy: amBy, createdAt: now - 3600000*5 });
+  tdList.push({ id: uid(), text: 'Follow up with Unit 402 re: HVAC tech appointment tomorrow', priority: 'medium', done: false, status: 'open', lastUpdated: now, note: 'Resident: Maria Santos. Tech window 10am–12pm.', addedBy: pmBy, createdAt: now - 3600000*2 });
+  tdList.push({ id: uid(), text: 'Restock front desk key card supply — getting low', priority: 'low', done: false, status: 'open', lastUpdated: now, note: 'Under 10 blank cards remaining', addedBy: nocBy, createdAt: now - 3600000*12 });
 
   // ── INCIDENT LOG (legacy — no new entries; demo data is in logbook) ──────
   if (!state.security) state.security = [];
@@ -3021,7 +3067,7 @@ function renderDash() {
   var todayM = active.filter(function (m) { return moveIsToday(m, t); });
   var needsAppt = active.filter(function (m) { return m.type === 'in' && !m.apptDate && !m.apptTbd && m.date >= t; });
   var d7 = new Date(); d7.setDate(d7.getDate() + 7);
-  var wEnd = d7.toISOString().split('T')[0];
+  var wEnd = localDateStr(d7);
   var weekM = active.filter(function (m) { return m.date >= t && m.date <= wEnd; });
   var openMt = (state.maintenance || []).filter(function (m) { return m.status !== 'resolved'; });
   var openConcierge = (state.concierge || []).filter(function (c) { return c.status === 'open'; });
@@ -3112,17 +3158,17 @@ function renderDash() {
   html += '<div class="dash-grid">';
   html += '<div class="card"><div class="card-hdr"><span class="card-title">Today\'s Moves</span><span class="card-count">' + todayM.length + ' scheduled</span></div><div class="card-body" style="padding:8px 14px">';
   if (!todayM.length) html += '<div class="text-3 text-sm">No moves today</div>';
-  else todayM.forEach(function (m) { var dn = (m.tasks || []).filter(function (t) { return t.done; }).length, tot = (m.tasks || []).length; var pct2 = tot ? Math.round(dn/tot*100) : 0; var apptStr = m.apptTime ? fmtTime(m.apptTime) : (m.apptDate ? 'Appt confirmed' : ''); html += '<div class="mrd"><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'IN' : 'OUT') + '</span><span class="mono text-sm">Unit ' + m.unit + '</span><span style="flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + m.resident + (apptStr ? ' <span style="font-weight:400;color:var(--text3)">· ' + apptStr + '</span>' : '') + '</span>' + (pct2===100 ? '<span class="pill pill-resolved" style="font-size:10px">Done</span>' : '<span class="text-xs text-3">' + dn + '/' + tot + '</span>') + '</div>'; });
+  else todayM.forEach(function (m) { var dn = (m.tasks || []).filter(function (t) { return t.done; }).length, tot = (m.tasks || []).length; var pct2 = tot ? Math.round(dn/tot*100) : 0; var apptStr = m.apptTime ? fmtTime(m.apptTime) : (m.apptDate ? 'Appt confirmed' : ''); html += '<div class="mrd"><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'IN' : 'OUT') + '</span><span class="mono text-sm">Unit ' + esc(m.unit) + '</span><span style="flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(m.resident) + (apptStr ? ' <span style="font-weight:400;color:var(--text3)">· ' + apptStr + '</span>' : '') + '</span>' + (pct2===100 ? '<span class="pill pill-resolved" style="font-size:10px">Done</span>' : '<span class="text-xs text-3">' + dn + '/' + tot + '</span>') + '</div>'; });
   html += '</div></div>';
-  var d30 = new Date(); d30.setDate(d30.getDate()+30); var wEnd30 = d30.toISOString().split('T')[0];
+  var d30 = new Date(); d30.setDate(d30.getDate()+30); var wEnd30 = localDateStr(d30);
   var withP = active.filter(function (m) { return (m.tasks || []).length > 0 && m.date >= t && m.date <= wEnd30; });
   html += '<div class="card"><div class="card-hdr"><span class="card-title">Move Progress</span></div><div class="card-body" style="padding:8px 14px">';
   if (!withP.length) html += '<div class="text-3 text-sm">No active moves with tasks</div>';
-  else withP.slice(0, 5).forEach(function (m) { var dn = (m.tasks || []).filter(function (t) { return t.done; }).length, tot = (m.tasks || []).length, pct = Math.round(dn / tot * 100); var bc = pct < 30 ? 'var(--red)' : pct < 70 ? 'var(--amber)' : 'var(--green)'; html += '<div style="margin-bottom:8px"><div class="flex items-center gap-4" style="margin-bottom:3px"><span class="text-sm font-600" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + m.resident + '</span><span class="mono text-xs text-3">Unit ' + m.unit + '</span><span class="mono text-xs text-3 ml-auto">' + dn + '/' + tot + '</span></div><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div></div>'; });
+  else withP.slice(0, 5).forEach(function (m) { var dn = (m.tasks || []).filter(function (t) { return t.done; }).length, tot = (m.tasks || []).length, pct = Math.round(dn / tot * 100); var bc = pct < 30 ? 'var(--red)' : pct < 70 ? 'var(--amber)' : 'var(--green)'; html += '<div style="margin-bottom:8px"><div class="flex items-center gap-4" style="margin-bottom:3px"><span class="text-sm font-600" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(m.resident) + '</span><span class="mono text-xs text-3">Unit ' + esc(m.unit) + '</span><span class="mono text-xs text-3 ml-auto">' + dn + '/' + tot + '</span></div><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div></div>'; });
   html += '</div></div></div><div class="dash-grid3">';
   html += '<div class="card"><div class="card-hdr"><span class="card-title">Open Maintenance</span></div><div class="card-body" style="padding:8px 14px">';
   if (!openMt.length) html += '<div class="text-3 text-sm">No open issues</div>';
-  else openMt.slice(0, 5).forEach(function (m) { var bc = m.priority === 'high' ? 'var(--red)' : m.priority === 'medium' ? 'var(--amber)' : '#B0AEA7'; html += '<div class="flex items-center gap-8" style="padding:4px 0;border-bottom:1px solid var(--border2)"><div style="width:7px;height:7px;border-radius:50%;background:' + bc + ';flex-shrink:0"></div><span class="text-sm" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Unit ' + m.unit + ': ' + m.issue + '</span><span class="pill pill-' + (m.status === 'in-progress' ? 'inprogress' : 'open') + '" style="font-size:10px">' + m.status + '</span></div>'; });
+  else openMt.slice(0, 5).forEach(function (m) { var bc = m.priority === 'high' ? 'var(--red)' : m.priority === 'medium' ? 'var(--amber)' : '#B0AEA7'; html += '<div class="flex items-center gap-8" style="padding:4px 0;border-bottom:1px solid var(--border2)"><div style="width:7px;height:7px;border-radius:50%;background:' + bc + ';flex-shrink:0"></div><span class="text-sm" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Unit ' + esc(m.unit) + ': ' + esc(m.issue) + '</span><span class="pill pill-' + (m.status === 'in-progress' ? 'inprogress' : 'open') + '" style="font-size:10px">' + m.status + '</span></div>'; });
   html += '</div></div>';
   var overdueK = issuedK.filter(function(k) { return k.type === 'one-time' && k.issuedAt && (Date.now() - k.issuedAt) >= 2 * 3600000; });
   html += '<div class="card"><div class="card-hdr"><span class="card-title">Keys Out</span>'
@@ -3160,7 +3206,7 @@ function renderDash() {
     html += '<div class="card" style="margin-top:14px"><div class="card-hdr"><span class="card-title">&#128738; Ready for Turnover</span><span class="card-count">' + turnoverReady.length + ' unit' + (turnoverReady.length > 1 ? 's' : '') + '</span><button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="navToMoves(\'turnover\')">View all &rarr;</button></div><div class="card-body" style="padding:8px 14px">';
     turnoverReady.forEach(function (m) {
       var tasksTotal = (m.tasks || []).length;
-      html += '<div class="flex items-center gap-8" style="padding:5px 0;border-bottom:1px solid var(--border2);cursor:pointer" onclick="navToMoves(\'turnover\')"><span class="pill pill-out" style="font-size:10px">OUT</span><span class="mono font-600 text-sm">Unit ' + m.unit + '</span><span class="text-sm" style="flex:1">' + m.resident + '</span><span class="text-xs text-3 mono">Out: ' + fmtShort(m.date) + '</span><span class="pill pill-resolved" style="font-size:10px;margin-left:6px">' + tasksTotal + '/' + tasksTotal + ' done</span></div>';
+      html += '<div class="flex items-center gap-8" style="padding:5px 0;border-bottom:1px solid var(--border2);cursor:pointer" onclick="navToMoves(\'turnover\')"><span class="pill pill-out" style="font-size:10px">OUT</span><span class="mono font-600 text-sm">Unit ' + esc(m.unit) + '</span><span class="text-sm" style="flex:1">' + esc(m.resident) + '</span><span class="text-xs text-3 mono">Out: ' + fmtShort(m.date) + '</span><span class="pill pill-resolved" style="font-size:10px;margin-left:6px">' + tasksTotal + '/' + tasksTotal + ' done</span></div>';
     });
     html += '</div></div>';
   }
@@ -3256,7 +3302,7 @@ function dashSearch(q) {
   (state.concierge || []).filter(function (c) { return (c.resident || '').toLowerCase().includes(ql) || (c.unit || '').toLowerCase().includes(ql); }).forEach(function (c) { results.push({ label: c.resident + ' — Unit ' + c.unit, sub: 'Concierge · ' + c.type + ' · ' + c.status, sec: 'concierge' }); });
   if (!results.length) { res.innerHTML = '<div class="sr-item text-3">No results</div>'; res.style.display = ''; return; }
   var html = '';
-  results.slice(0, 8).forEach(function (r) { html += '<div class="sr-item" onclick="navToSearch(\'' + r.sec + '\')"><div class="text-sm font-600">' + r.label + '</div><div class="text-xs text-3">' + r.sub + '</div></div>'; });
+  results.slice(0, 8).forEach(function (r) { html += '<div class="sr-item" onclick="navToSearch(\'' + r.sec + '\')"><div class="text-sm font-600">' + esc(r.label) + '</div><div class="text-xs text-3">' + esc(r.sub) + '</div></div>'; });
   res.innerHTML = html; res.style.display = '';
 }
 function navToSearch(sec) { g('dash-results').style.display = 'none'; g('dash-search-input').value = ''; var item = document.querySelector('.nav-item[data-sec="' + sec + '"]'); if (item) nav(item); }
@@ -3578,18 +3624,18 @@ function fmtTime(t) {
 function fmtLogged(ts) {
   if (!ts) return '';
   var d = new Date(ts);
-  var dateStr = d.toISOString().split('T')[0];
+  var dateStr = localDateStr(d);
   if (dateStr === today()) return 'logged today at ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
   return 'logged ' + d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
 }
 function fmtByTag(addedBy, createdAt) {
   var datePart = '';
   if (createdAt) {
-    var d = new Date(createdAt), ds = d.toISOString().split('T')[0];
+    var d = new Date(createdAt), ds = localDateStr(d);
     datePart = ds === today() ? d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
   }
   var parts = [];
-  if (addedBy) parts.push('by ' + addedBy);
+  if (addedBy) parts.push('by ' + esc(addedBy));
   if (datePart) parts.push(datePart);
   return parts.length ? '<span class="by-tag">' + parts.join(' · ') + '</span>' : '';
 }
@@ -3957,7 +4003,7 @@ function saveMove() {
   if (moveType === 'out') {
     var outTodosRef = getCurrentTodos();
     var outReminderDate = '';
-    try { var dOut = new Date(); dOut.setDate(dOut.getDate() + 1); outReminderDate = dOut.toISOString().split('T')[0]; } catch(e) {}
+    try { var dOut = new Date(); dOut.setDate(dOut.getDate() + 1); outReminderDate = localDateStr(dOut); } catch(e) {}
     outTodosRef.push({ id: uid(), text: 'Send move-out reminders \u2014 ' + resident + ', Unit ' + unit, dueDate: outReminderDate, priority: 'normal', done: false, status: 'open', category: 'resident', linkedUnit: unit, note: 'Remind resident: book move-out time slot + inspection work order + return all keys & parking credentials to front desk', createdAt: Date.now(), lastUpdated: Date.now(), moveRef: m.id });
   }
   pushUndo({ sec: 'moves', type: 'ADD', id: m.id, data: Object.assign({}, m), label: 'add move \u2014 Unit ' + unit });
@@ -3999,14 +4045,14 @@ function buildCL(m, filterCat) {
   var filteredNote = (tasks.length < allTasksTotal) ? ' <span style="font-size:10px;color:var(--text3);font-weight:400">(' + tasks.length + ' shown)</span>' : '';
   var coRes = m.coResidents || [];
   var totalResidents = 1 + coRes.length;
-  var html = '<div class="cl-hdr"><span class="cl-title">' + m.resident + ' - Unit ' + m.unit + '</span><span class="cl-prog-txt">' + allTasksDone + '/' + allTasksTotal + ' tasks' + filteredNote + '</span>';
+  var html = '<div class="cl-hdr"><span class="cl-title">' + esc(m.resident) + ' - Unit ' + esc(m.unit) + '</span><span class="cl-prog-txt">' + allTasksDone + '/' + allTasksTotal + ' tasks' + filteredNote + '</span>';
   html += '<div class="ml-auto flex gap-4"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();resetCL(\'' + m.id + '\')">Reset</button>';
   html += '<button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();openAddTask(\'' + m.id + '\')">+ Task</button></div></div>';
   // Co-residents panel
   html += '<div style="padding:6px 0 2px;border-bottom:1px solid var(--border2);margin-bottom:4px" onclick="event.stopPropagation()">';
   html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
   html += '<span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap">Residents</span>';
-  html += '<span style="font-size:12px;color:var(--text2)">' + m.resident + '</span>';
+  html += '<span style="font-size:12px;color:var(--text2)">' + esc(m.resident) + '</span>';
   coRes.forEach(function(cr) {
     html += '<span style="display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border-radius:12px;padding:1px 8px 1px 10px;font-size:12px">'
       + cr.name
@@ -4243,7 +4289,7 @@ function renderMoves() {
     var allActive = (state.moves || []).filter(function(m) { return !m.archivedAt; });
     var statToday = allActive.filter(function(m) { return moveIsToday(m, t); });
     var oneWeekOut = new Date(); oneWeekOut.setDate(oneWeekOut.getDate() + 7);
-    var weekStr = oneWeekOut.toISOString().split('T')[0];
+    var weekStr = localDateStr(oneWeekOut);
     var statWeek = allActive.filter(function(m) { return m.date >= t && m.date <= weekStr; });
     var statNoAppt = allActive.filter(function(m) { return !m.apptDate && !m.apptTbd && m.date >= t; });
     var statPMI = allActive.filter(function(m) {
@@ -4461,7 +4507,7 @@ function toggleTask(moveId, taskId, checked) {
   if (checked && m.type === 'in' && t.text === 'Send Welcome Letter' && !m.welcomeLetterSent) {
     m.welcomeLetterSent = true;
     var wcDue = '';
-    try { var wcD = new Date(); wcD.setDate(wcD.getDate() + 2); wcDue = wcD.toISOString().split('T')[0]; } catch(e) {}
+    try { var wcD = new Date(); wcD.setDate(wcD.getDate() + 2); wcDue = localDateStr(wcD); } catch(e) {}
     var wcTodos = getCurrentTodos();
     wcTodos.push({ id: uid(), text: 'Welcome call — ' + m.resident + ', Unit ' + m.unit, dueDate: wcDue, priority: 'normal', done: false, status: 'open', category: 'resident', linkedUnit: m.unit, note: '2-3 min call — did they receive the welcome letter? any questions so far?', createdAt: Date.now(), lastUpdated: Date.now(), moveRef: m.id });
     toast('Welcome letter logged — welcome call to-do created (due in 2 days)');
@@ -4820,7 +4866,7 @@ function renderConcierge() {
     var cid = c.id;
     var entriesHtml = log.map(function (e, idx) {
       var d = new Date(e.ts); var tf = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-      return '<div class="act-log-entry" id="cle-' + cid + '-' + idx + '" style="display:flex;align-items:flex-start;gap:4px"><div style="flex:1"><span class="act-log-meta">' + tf + (e.by ? ' · ' + e.by : '') + '</span><span class="act-log-note"> ' + e.note + '</span></div>'
+      return '<div class="act-log-entry" id="cle-' + cid + '-' + idx + '" style="display:flex;align-items:flex-start;gap:4px"><div style="flex:1"><span class="act-log-meta">' + tf + (e.by ? ' · ' + esc(e.by) : '') + '</span><span class="act-log-note"> ' + esc(e.note) + '</span></div>'
         + '<button class="btn btn-ghost btn-xs" style="opacity:0.45;flex-shrink:0;padding:1px 4px" onclick="editConciergeLog(\'' + cid + '\',' + idx + ')" title="Edit">✏</button>'
         + '<button class="btn btn-ghost btn-xs" style="color:var(--red);opacity:0.45;flex-shrink:0;padding:1px 4px" onclick="deleteConciergeLog(\'' + cid + '\',' + idx + ')" title="Delete">×</button>'
         + '</div>';
@@ -4927,7 +4973,7 @@ function openEditLogbook(id) {
   var native = (state.logbook||[]).find(function(x){ return x.id===id; });
   if (!native) { toast('Legacy entries cannot be edited here'); return; }
   editingLogbookId = id;
-  var dateEl = g('lb-date'); if (dateEl) dateEl.value = e.createdAt ? new Date(e.createdAt).toISOString().split('T')[0] : today();
+  var dateEl = g('lb-date'); if (dateEl) dateEl.value = e.createdAt ? localDateStr(new Date(e.createdAt)) : today();
   var timeEl = g('lb-time'); if (timeEl) timeEl.value = e.time || '';
   var typeEl = g('lb-type'); if (typeEl) typeEl.value = e.type || 'Dry Cleaning';
   var otherEl = g('lb-other'); if (otherEl) otherEl.value = '';
@@ -5191,13 +5237,13 @@ function renderMaint() {
     var log = m.log || (m.desc ? [{ ts: m.createdAt, by: m.addedBy || '', note: m.desc }] : []);
     var logCount = log.length;
     var latestNote = logCount ? log[logCount - 1].note : (m.desc || '');
-    var desc = latestNote ? '<div class="text-xs text-2" style="margin-top:2px">' + latestNote + '</div>' : '';
+    var desc = latestNote ? '<div class="text-xs text-2" style="margin-top:2px">' + esc(latestNote) + '</div>' : '';
     var mtBy = fmtByTag(m.addedBy, m.createdAt);
     var logBtnLabel = logCount > 1 ? '&#128221; ' + logCount + ' updates' : '&#128221; Log';
     html += '<tr>';
     var woBadge = m.workorder ? ' <span style="display:inline-block;font-size:10px;font-weight:600;background:rgba(34,197,94,0.12);color:#16a34a;border:1px solid rgba(34,197,94,0.25);border-radius:4px;padding:1px 6px;vertical-align:middle">WO Filed</span>' : '';
-    html += '<td class="mono font-600">' + m.unit + '</td>';
-    html += '<td><div class="font-600">' + m.issue + woBadge + mtBy + '</div>' + desc + '</td>';
+    html += '<td class="mono font-600">' + esc(m.unit) + '</td>';
+    html += '<td><div class="font-600">' + esc(m.issue) + woBadge + mtBy + '</div>' + desc + '</td>';
     html += '<td><span class="pill pill-' + m.priority + '">' + m.priority + '</span></td>';
     html += '<td><select class="ie-sel" onchange="updateMaintStatus(\'' + m.id + '\',this.value)"><option value="open" ' + (m.status === 'open' ? 'selected' : '') + '>Open</option><option value="in-progress" ' + (m.status === 'in-progress' ? 'selected' : '') + '>In Progress</option><option value="resolved" ' + (m.status === 'resolved' ? 'selected' : '') + '>Resolved</option></select></td>';
     html += '<td class="text-xs text-3">' + new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</td>';
@@ -5208,7 +5254,7 @@ function renderMaint() {
     var mid = m.id;
     var entriesHtml = log.map(function (e, idx) {
       var d = new Date(e.ts); var tf = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-      return '<div class="act-log-entry" id="mle-' + mid + '-' + idx + '" style="display:flex;align-items:flex-start;gap:4px"><div style="flex:1"><span class="act-log-meta">' + tf + (e.by ? ' · ' + e.by : '') + '</span><span class="act-log-note"> ' + e.note + '</span></div>'
+      return '<div class="act-log-entry" id="mle-' + mid + '-' + idx + '" style="display:flex;align-items:flex-start;gap:4px"><div style="flex:1"><span class="act-log-meta">' + tf + (e.by ? ' · ' + esc(e.by) : '') + '</span><span class="act-log-note"> ' + esc(e.note) + '</span></div>'
         + '<button class="btn btn-ghost btn-xs" style="opacity:0.45;flex-shrink:0;padding:1px 4px" onclick="editMaintLog(\'' + mid + '\',' + idx + ')" title="Edit">✏</button>'
         + '<button class="btn btn-ghost btn-xs" style="color:var(--red);opacity:0.45;flex-shrink:0;padding:1px 4px" onclick="deleteMaintLog(\'' + mid + '\',' + idx + ')" title="Delete">×</button>'
         + '</div>';
@@ -5692,13 +5738,13 @@ function renderKeys() {
     var overdueTag = isOverdue ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + overdueHrs + 'h ' + overdueMin + 'm OUT</span>' : '';
     var staleTag = isStale ? '<span class="stale-badge">&#9888; Stale &mdash; ' + staleCount + ' shift' + (staleCount !== 1 ? 's' : '') + '</span>' : '';
     var isVendor = k.type === 'vendor';
-    var vendorLine = isVendor && k.company ? '<div style="font-size:11px;color:var(--text3)">' + k.company + (k.workArea ? ' · ' + k.workArea : '') + '</div>' : '';
+    var vendorLine = isVendor && k.company ? '<div style="font-size:11px;color:var(--text3)">' + esc(k.company) + (k.workArea ? ' · ' + esc(k.workArea) : '') + '</div>' : '';
     var holderLine = '';
     if (k.type === 'one-time') {
       if (k.issuedTo === 'resident') {
         holderLine = '<div style="font-size:11px;color:var(--text3);font-style:italic">Resident holding key</div>';
       } else if (k.guest) {
-        holderLine = '<div style="font-size:11px;color:var(--text3)">Guest: ' + k.guest + '</div>';
+        holderLine = '<div style="font-size:11px;color:var(--text3)">Guest: ' + esc(k.guest) + '</div>';
       }
     }
     var nameCell = k.name + holderLine + vendorLine + kyBy;
@@ -5726,7 +5772,7 @@ function renderKeys() {
     var vendorOverdueTag = vendorOverdue ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 5px;margin-left:4px">⚠ ' + Math.floor(vendorOverdueMs/3600000) + 'h OUT</span>' : '';
     var timeOutCell = (isOneTime && k.timeout) ? '<span class="mono text-xs">' + fmtTime(k.timeout) + '</span>' : (isOneTime && k.issuedAt ? '<span class="mono text-xs text-3">' + new Date(k.issuedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + '</span>' : (isVendor && k.vendorReturn ? '<span class="mono text-xs">Back by ' + fmtTime(k.vendorReturn) + '</span>' : '<span class="text-xs text-3">-</span>'));
     html += '<tr class="' + rowClass + '"' + (isVendorIssued ? ' style="background:rgba(55,138,221,0.10)"' : rowStyle ? rowStyle : '') + '>';
-    html += '<td class="mono font-600">' + k.unit + '</td>';
+    html += '<td class="mono font-600">' + esc(k.unit) + '</td>';
     html += '<td>' + nameCell + feeBadge + oneTimeFee + '</td>';
     html += '<td class="text-sm">' + k.type + overdueTag + staleTag + vendorOverdueTag + '</td>';
     html += '<td class="mono text-sm">' + (k.fob || '-') + '</td>';
@@ -5775,7 +5821,7 @@ function renderKeys() {
       }
       html += '</div></td></tr>';
     } else if (isOneTime && k.status !== 'issued' && k.notes) {
-      html += '<tr' + rowStyle + '><td colspan="7" style="font-size:11px;color:var(--text2);padding:2px 12px 6px;font-style:italic">&#128221; ' + k.notes + '</td></tr>';
+      html += '<tr' + rowStyle + '><td colspan="7" style="font-size:11px;color:var(--text2);padding:2px 12px 6px;font-style:italic">&#128221; ' + esc(k.notes) + '</td></tr>';
     }
   });
   tbody.innerHTML = html;
@@ -6769,8 +6815,8 @@ function renderParking() {
     var preexistingBadge = p.preexisting ? ' <span style="background:rgba(107,114,128,0.12);color:var(--text3);font-size:10px;font-weight:600;border-radius:4px;padding:1px 6px;border:1px solid rgba(107,114,128,0.25)" title="Registered before the March 2026 transponder bundle — added from the TEZ registrant list, not part of the Credentials stock ledger">Pre-existing</span>' : '';
     var flagBadge = p.flaggedDeparted ? ' <span style="background:rgba(192,53,53,0.12);color:var(--red);font-size:10px;font-weight:600;border-radius:4px;padding:1px 6px;border:1px solid rgba(192,53,53,0.3)" title="Flagged — may be a past resident or former employee, needs review">🚩 Flagged</span>' : '';
     html += '<tr style="' + rowOpacity + '">';
-    html += '<td class="mono font-600">' + (p.unit || '<span style="color:var(--text3);font-weight:400">—</span>') + '</td>';
-    html += '<td>' + p.resident + pkCategoryBadge(p.category) + preexistingBadge + flagBadge + byTag + '</td>';
+    html += '<td class="mono font-600">' + (p.unit ? esc(p.unit) : '<span style="color:var(--text3);font-weight:400">—</span>') + '</td>';
+    html += '<td>' + esc(p.resident) + pkCategoryBadge(p.category) + preexistingBadge + flagBadge + byTag + '</td>';
     html += '<td>' + credCell(p.transponder) + '</td>';
     html += '<td>' + credCell(p.keyTag) + '</td>';
     html += '<td>' + credCell(p.valetSticker) + '</td>';
@@ -6989,8 +7035,8 @@ function renderAmenities() {
     var typePill = '<span class="pill ' + (a.type === 'event' ? 'pill-event' : 'pill-reservation') + '">' + (a.type === 'event' ? 'Event' : 'Reservation') + '</span>';
     var closeoutPill = pendingCloseout ? ' <span class="pending-closeout-badge">&#9888; Pending close-out</span>' : (isClosed ? ' <span style="font-size:10px;color:var(--green);background:var(--green-light);border-radius:4px;padding:1px 6px;font-weight:600">&#10003; Closed out</span>' : '');
     html += '<tr' + rowStyle + '>';
-    html += '<td class="font-600">' + a.resident + amBy + '</td>';
-    html += '<td class="mono">' + a.unit + '</td>';
+    html += '<td class="font-600">' + esc(a.resident) + amBy + '</td>';
+    html += '<td class="mono">' + esc(a.unit) + '</td>';
     html += '<td class="text-sm">' + a.space + '</td>';
     html += '<td class="mono text-sm">' + fmtShort(a.date) + '</td>';
     html += '<td class="text-sm">' + time + '</td>';
@@ -7442,8 +7488,8 @@ function openManualScan() {
   }
   var cpOpts = checkpoints.map(function(cp) { return '<option value="' + cp.id + '">' + cp.name + (cp.location ? ' \u2014 ' + cp.location : '') + '</option>'; }).join('');
   var staffHtml = staff.length
-    ? ('<select id="ms-staff">' + staff.map(function(s) { return '<option value="' + s + '"' + (s === remembered ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select>')
-    : ('<input type="text" id="ms-staff" placeholder="Your name" value="' + remembered + '">');
+    ? ('<select id="ms-staff">' + staff.map(function(s) { return '<option value="' + esc(s) + '"' + (s === remembered ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('') + '</select>')
+    : ('<input type="text" id="ms-staff" placeholder="Your name" value="' + esc(remembered) + '">');
   var bdy = g('manual-scan-bdy');
   bdy.innerHTML = '<div class="fg"><label>Checkpoint</label><select id="ms-checkpoint">' + cpOpts + '</select></div>'
     + '<div class="fg"><label>Staff Name</label>' + staffHtml + '</div>';
@@ -8227,9 +8273,9 @@ function renderAssignedByMe(listEl, cntEl) {
     var due = t.dueDate ? '<span class="todo-due">Due: ' + fmtShort(t.dueDate) + '</span>' : '';
     html += '<div class="todo-item ' + (t.done ? 'done' : '') + '">';
     html += '<div style="flex:1;min-width:0">';
-    html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + t.text + '</div>';
+    html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + esc(t.text) + '</div>';
     if (t.ack && t.ack.status === 'flagged' && t.ack.note) html += '<div style="font-size:11px;color:var(--red);margin-top:2px">&ldquo;' + esc(t.ack.note) + '&rdquo;</div>';
-    else if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + t.note + '</div>';
+    else if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + esc(t.note) + '</div>';
     html += '<div class="todo-meta">' + statusChip + due + todoShiftChip(t) + todoCatChip(t) + todoUnitChip(t) + todoStaleChip(t) + '</div>';
     html += '</div>';
     if (!t.done) html += '<button class="btn btn-ghost btn-xs" onclick="takeBackAssignedTodo(\'' + r.acct.id + '\',\'' + t.id + '\')" title="Take back to my list">&#8617; Take back</button>';
@@ -8253,8 +8299,8 @@ function renderAssignedAckModal() {
   var html = '';
   pend.forEach(function (t) {
     html += '<div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px">';
-    html += '<div style="font-size:13px;font-weight:600">' + t.text + '</div>';
-    if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + t.note + '</div>';
+    html += '<div style="font-size:13px;font-weight:600">' + esc(t.text) + '</div>';
+    if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + esc(t.note) + '</div>';
     html += '<div class="todo-meta" style="margin-top:4px">' + todoFromChip(t) + (t.dueDate ? '<span class="todo-due">Due: ' + fmtShort(t.dueDate) + '</span>' : '') + todoShiftChip(t) + todoCatChip(t) + todoUnitChip(t) + '</div>';
     html += '<div style="display:flex;gap:6px;margin-top:8px">';
     html += '<button class="btn btn-sm btn-green" onclick="ackAssignedTodo(\'' + t.id + '\')">&#10003; Got it</button>';
@@ -8277,7 +8323,7 @@ function renderTodos() {
     if (currentUser && currentUser.role === 'admin' && (state.accounts||[]).length > 1) {
       var opts = '<option value="">My List</option>';
       (state.accounts||[]).forEach(function(a) {
-        if (a.id !== currentUser.id) opts += '<option value="' + a.id + '"' + (todosViewingId===a.id?' selected':'') + '>' + a.name + '</option>';
+        if (a.id !== currentUser.id) opts += '<option value="' + a.id + '"' + (todosViewingId===a.id?' selected':'') + '>' + esc(a.name) + '</option>';
       });
       switcherEl.innerHTML = '<label style="font-size:12px;color:var(--text2);margin-right:6px">Viewing:</label>'
         + '<select style="font-size:12px;border:1px solid var(--border);border-radius:5px;padding:3px 6px;background:var(--surface)" onchange="todosViewingId=this.value||null;renderTodos()">' + opts + '</select>';
@@ -8346,8 +8392,8 @@ function renderTodos() {
     html += '<div class="todo-item ' + (t.done ? 'done' : '') + '">';
     html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTodo(\'' + t.id + '\',this.checked)">';
     html += '<div style="flex:1;min-width:0">';
-    html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + urgIcon + t.text + '</div>';
-    if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + t.note + '</div>';
+    html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + urgIcon + esc(t.text) + '</div>';
+    if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + esc(t.note) + '</div>';
     html += '<div class="todo-meta">' + due + todoShiftChip(t) + todoCatChip(t) + (t.done ? '' : todoStatusChip(t)) + todoFromChip(t) + todoAckChip(t) + todoUnitChip(t) + todoOwnerChip(t) + todoStaleChip(t) + '<span class="text-xs text-3">' + new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span></div>';
     html += '</div>';
     if (t.assignedBy && !t.ack && !t.done && !isViewingOther) {
@@ -8368,9 +8414,9 @@ function renderTodos() {
       html += '<div class="todo-item ' + (t.done ? 'done' : '') + '">';
       html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTask(\'' + m.id + '\',\'' + t.id + '\',this.checked);renderTodos()">';
       html += '<div style="flex:1;min-width:0">';
-      html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + t.text + '</div>';
+      html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + esc(t.text) + '</div>';
       html += '<div class="todo-meta">' + due + '<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:4px;padding:1px 5px">'
-        + 'Unit ' + m.unit + ' \u00b7 ' + m.resident.split(' ')[0] + '</span></div>';
+        + 'Unit ' + esc(m.unit) + ' \u00b7 ' + esc(m.resident.split(' ')[0]) + '</span></div>';
       html += '</div>';
       html += '<button class="btn btn-ghost btn-xs" onclick="openEditMove(\'' + m.id + '\')" title="Open move">&#8599;</button>';
       html += '</div>';
@@ -8402,8 +8448,8 @@ function renderTodosDoneHistory(currentDone, listEl, cntEl) {
       html += '<input type="checkbox" checked onchange="toggleTodo(\'' + t.id + '\',this.checked)">';
     }
     html += '<div style="flex:1;min-width:0">';
-    html += '<div class="todo-text strk">' + t.text + '</div>';
-    if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + t.note + '</div>';
+    html += '<div class="todo-text strk">' + esc(t.text) + '</div>';
+    if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + esc(t.note) + '</div>';
     html += '<div class="todo-meta">' + todoCatChip(t) + todoUnitChip(t) + todoOwnerChip(t)
       + '<span class="text-xs text-3">' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + '</span>'
       + (r.archived ? '<span class="text-xs text-3">archived</span>' : '') + '</div>';
@@ -8616,7 +8662,7 @@ function openEditUnitRecord(id) {
   g('ur-notes').value = r.notes || '';
   var hint = g('ur-wifi-hint');
   if (hint && r.wifiExpiry) {
-    var t0 = today(); var d15 = new Date(); d15.setDate(d15.getDate()+15); var d15s = d15.toISOString().split('T')[0];
+    var t0 = today(); var d15 = new Date(); d15.setDate(d15.getDate()+15); var d15s = localDateStr(d15);
     if (r.wifiExpiry < t0) hint.innerHTML = '<span style="color:var(--red)">&#9888; Expired &mdash; renew</span>';
     else if (r.wifiExpiry <= d15s) hint.innerHTML = '<span style="color:#92400e">&#9650; Expiring soon</span>';
     else hint.innerHTML = '';
@@ -8943,7 +8989,7 @@ function renderSupplies() {
           return '<div class="act-log-entry" style="display:flex;align-items:flex-start;gap:8px;padding:4px 14px;font-size:12px">'
             + '<span style="font-weight:700;min-width:26px;color:' + (e.delta < 0 ? 'var(--red)' : 'var(--green)') + '">' + dStr + '</span>'
             + '<span style="flex:1;color:var(--text2)">' + (e.note || '') + '</span>'
-            + '<span style="color:var(--text3);white-space:nowrap">' + edStr + (e.by ? ' · ' + e.by : '') + '</span>'
+            + '<span style="color:var(--text3);white-space:nowrap">' + edStr + (e.by ? ' · ' + esc(e.by) : '') + '</span>'
             + '</div>';
         }).join('');
         var listStartInfo = (s.startQty != null && s.startDate) ? '<span class="sup-start-info" style="display:block">Started: ' + s.startQty + ' · ' + fmtShort(s.startDate) + '</span>' : '';
@@ -9146,7 +9192,7 @@ function deleteSupply(id) {
 
 function renderResidents() {
   var t = today();
-  var d15 = new Date(); d15.setDate(d15.getDate()+15); var d15s = d15.toISOString().split('T')[0];
+  var d15 = new Date(); d15.setDate(d15.getDate()+15); var d15s = localDateStr(d15);
   var allRecs = state.unitRecords || [];
 
   // one-time self-heal: lift migrated roommate lines ("+ Name, Name") out of notes into a roommates field
@@ -9303,7 +9349,7 @@ function renderResidents() {
 }
 
 function getWifiRenewals() {
-  var d15 = new Date(); d15.setDate(d15.getDate()+15); var d15s = d15.toISOString().split('T')[0];
+  var d15 = new Date(); d15.setDate(d15.getDate()+15); var d15s = localDateStr(d15);
   return (state.unitRecords||[]).filter(function(r){ return r.wifiExpiry && r.wifiExpiry <= d15s; }).sort(function(a,b){ return a.wifiExpiry < b.wifiExpiry ? -1 : 1; });
 }
 // ─── PASSDOWN ───
@@ -9424,7 +9470,7 @@ function pdGetLookahead() {
 function pdGetMaxDate(isLead) {
   var la = isLead ? pdGetLookahead() : 0;
   var d = new Date(); d.setDate(d.getDate() + la);
-  return d.toISOString().split('T')[0];
+  return localDateStr(d);
 }
 
 // Unified logbook list — native logbook entries + concierge + security, one shared shape.
@@ -9446,7 +9492,7 @@ function getActiveAutoBlockIds() {
   var isLead = currentUser && currentUser.role === 'admin';
   var la = isLead ? pdGetLookahead() : 0;
   var maxD = new Date(); maxD.setDate(maxD.getDate() + la);
-  var maxDate = maxD.toISOString().split('T')[0];
+  var maxDate = localDateStr(maxD);
   var activeOneTime = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued'; });
   if (activeOneTime.length && !pdExcluded['keys_summary']) ids.push('keys_summary');
   if (tpEventsForDate(t).total && !pdExcluded['tp_summary']) ids.push('tp_summary');
@@ -9614,7 +9660,7 @@ function renderPdAutoBlocks(isLead) {
   var pdSections = []; // section nav tracker: { id, icon, label, count }
   var shift = g('pd-shift') ? g('pd-shift').value : 'PM';
   var maxDate = pdGetMaxDate(isLead);
-  var tmrw = (function(){ var d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
+  var tmrw = (function(){ var d=new Date(); d.setDate(d.getDate()+1); return localDateStr(d); })();
   function dayLblAuto(d) { if(d===t) return 'Today'; if(d===tmrw) return 'Tomorrow'; return fmtShort(d); }
   var moves = state.moves||[];
 
@@ -9664,7 +9710,7 @@ function renderPdAutoBlocks(isLead) {
     else allIns.forEach(function(m) {
       var apptD = m.apptDate || m.date;
       var tag = apptD !== t ? '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>' : '';
-      var content = tag + '<strong>Unit ' + m.unit + ' – ' + m.resident + '</strong>' + pdYouBadge(m);
+      var content = tag + '<strong>Unit ' + esc(m.unit) + ' – ' + esc(m.resident) + '</strong>' + pdYouBadge(m);
       if (isMoveCompleted(m)) content += ' <span style="font-size:10px;background:#D1FAE5;color:#065F46;border-radius:3px;padding:1px 5px;margin-left:2px">✓ Completed</span>';
       content += ' | Lease: ' + dayLblAuto(m.date);
       if (m.apptDate) { content += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); } else content += ' <span style="font-size:10px;background:var(--amber-light);color:var(--amber);border-radius:3px;padding:1px 5px">No Appt</span>';
@@ -9686,7 +9732,7 @@ function renderPdAutoBlocks(isLead) {
     allOuts.forEach(function(m) {
       var apptD = m.apptDate || m.date;
       var tag = apptD !== t ? '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>' : '';
-      var content = tag + '<strong>Unit ' + m.unit + ' – ' + m.resident + '</strong>' + pdYouBadge(m);
+      var content = tag + '<strong>Unit ' + esc(m.unit) + ' – ' + esc(m.resident) + '</strong>' + pdYouBadge(m);
       if (isMoveCompleted(m)) content += ' <span style="font-size:10px;background:#D1FAE5;color:#065F46;border-radius:3px;padding:1px 5px;margin-left:2px">✓ Completed</span>';
       content += ' | Lease end: ' + dayLblAuto(m.date);
       if (m.apptDate) { content += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); } else content += ' <span style="font-size:10px;background:var(--amber-light);color:var(--amber);border-radius:3px;padding:1px 5px">No Appt</span>';
@@ -9702,7 +9748,7 @@ function renderPdAutoBlocks(isLead) {
       if (allOuts.length) html += '<div style="height:4px"></div>';
       outstandingKeyMoves.forEach(function(m) {
         var koKey = 'keys_out_' + m.id;
-        var content = '<strong>Unit ' + m.unit + ' – ' + m.resident + '</strong>'
+        var content = '<strong>Unit ' + esc(m.unit) + ' – ' + esc(m.resident) + '</strong>'
           + ' <span style="font-size:10px;background:rgba(217,119,6,0.12);color:var(--amber);border:1px solid rgba(217,119,6,0.3);border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:600">⚠ Keys not collected</span>'
           + ' | Lease ended: ' + dayLblAuto(m.date)
           + (m.apptDate ? ' | Move appt: ' + dayLblAuto(m.apptDate) : '');
@@ -9721,7 +9767,7 @@ function renderPdAutoBlocks(isLead) {
   if (!allAm.length) html += '<div style="color:var(--text3)">None today' + (isLead ? ' or upcoming' : '') + '</div>';
   else allAm.forEach(function(a) {
     var tag = a.date!==t ? '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(a.date) + '</span>' : '';
-    var content = tag + '<strong>' + a.space + '</strong> – ' + a.resident + ' (Unit ' + a.unit + ')' + pdYouBadge(a);
+    var content = tag + '<strong>' + esc(a.space) + '</strong> – ' + esc(a.resident) + ' (Unit ' + esc(a.unit) + ')' + pdYouBadge(a);
     if (a.start) content += ' ' + fmtTime(a.start) + (a.end ? '–' + fmtTime(a.end) : '');
     if (a.notes) content += ' | ' + a.notes;
     html += pdAutoRow('am_' + a.id, content, 'Confirm booking details and ensure space is prepared.', !!carriedSet['am_'+a.id]);
@@ -9762,7 +9808,7 @@ function renderPdAutoBlocks(isLead) {
       summaryContent += '<div style="margin-top:6px;font-size:12px;line-height:1.8">';
       overdueKeys.forEach(function(k) {
         var ms = now - k.issuedAt, hrs = Math.floor(ms/3600000), mins = Math.floor((ms%3600000)/60000);
-        summaryContent += '<span style="color:var(--red)">⚠</span> Unit ' + k.unit + ' – ' + k.name + (k.fob ? ' · Key #' + k.fob : '') + (k.guest ? ' / Guest: ' + k.guest : '') + ' <span style="color:var(--red);font-weight:600">(' + hrs + 'h ' + mins + 'm out)</span><br>';
+        summaryContent += '<span style="color:var(--red)">⚠</span> Unit ' + esc(k.unit) + ' – ' + esc(k.name) + (k.fob ? ' · Key #' + esc(k.fob) : '') + (k.guest ? ' / Guest: ' + esc(k.guest) : '') + ' <span style="color:var(--red);font-weight:600">(' + hrs + 'h ' + mins + 'm out)</span><br>';
       });
       summaryContent += '</div>';
     }
@@ -9816,8 +9862,8 @@ function renderPdAutoBlocks(isLead) {
       var woBadge = m.workorder ? ' <span style="font-size:10px;font-weight:600;background:rgba(34,197,94,0.12);color:#16a34a;border:1px solid rgba(34,197,94,0.25);border-radius:4px;padding:1px 6px">WO Filed</span>' : '';
       var statusLabel = { open: 'Open', 'in-progress': 'In Progress' }[m.status] || m.status;
       var priLabel = m.priority.charAt(0).toUpperCase() + m.priority.slice(1);
-      var content = '<strong>Unit ' + m.unit + ' – ' + m.issue + '</strong>' + pdYouBadge(m) + woBadge + ' <span style="font-size:11px;color:' + priBadge + ';font-weight:600">' + priLabel + '</span> · ' + statusLabel;
-      if (m.desc) content += '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + m.desc + '</div>';
+      var content = '<strong>Unit ' + esc(m.unit) + ' – ' + esc(m.issue) + '</strong>' + pdYouBadge(m) + woBadge + ' <span style="font-size:11px;color:' + priBadge + ';font-weight:600">' + priLabel + '</span> · ' + statusLabel;
+      if (m.desc) content += '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + esc(m.desc) + '</div>';
       var defNsMt = (m.log && m.log.length) ? 'Latest note: ' + m.log[m.log.length-1].note : 'Escalate to maintenance or follow up on resolution status.';
       var mtKey = 'mt_' + m.id;
       if (m.log && m.log.length && pdNotes[mtKey] === undefined) pdNotes[mtKey] = defNsMt;
@@ -9842,11 +9888,11 @@ function renderPdAutoBlocks(isLead) {
     pendingFees.forEach(function(k) {
       var content, defNs;
       if (k.isReplacement) {
-        content = '<strong>Unit ' + k.unit + ' – ' + k.name + '</strong> — Replacement key card issued — <strong>$100</strong>';
+        content = '<strong>Unit ' + esc(k.unit) + ' – ' + esc(k.name) + '</strong> — Replacement key card issued — <strong>$100</strong>';
         defNs = 'Add $100 replacement key card fee to resident ledger for Unit ' + k.unit + '.';
       } else {
         var hrs = Math.floor((Date.now()-k.issuedAt)/3600000);
-        content = '<strong>Unit ' + k.unit + ' – ' + k.name + '</strong>' + (k.guest?' / Guest: '+k.guest:'') + ' — One-time key not returned (' + hrs + 'h out, resident contacted) — <strong>$25</strong>';
+        content = '<strong>Unit ' + esc(k.unit) + ' – ' + esc(k.name) + '</strong>' + (k.guest?' / Guest: '+esc(k.guest):'') + ' — One-time key not returned (' + hrs + 'h out, resident contacted) — <strong>$25</strong>';
         defNs = 'Add $25 one-time key non-return fee to resident ledger for Unit ' + k.unit + '.';
       }
       html += pdAutoRow('fee_'+k.id, content, defNs, !!carriedSet['fee_'+k.id], true);
@@ -9982,7 +10028,7 @@ function generatePassdown() {
   }
 
   var now = Date.now();
-  var tmrwG = (function(){ var d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
+  var tmrwG = (function(){ var d=new Date(); d.setDate(d.getDate()+1); return localDateStr(d); })();
   function dayLbl(d) { if(d===t) return 'Today'; if(d===tmrwG) return 'Tomorrow'; return fmtShort(d); }
   var genCarriedSet = getCarriedItemIds();
   function isCarriedNoNote(key) { return !!(genCarriedSet[key] && (!pdNotes[key] || !pdNotes[key].trim())); }
@@ -11154,10 +11200,10 @@ function renderWeekCal() {
   var unitSet = new Set((state.moves || []).filter(function (m) { return !m.archivedAt; }).map(function (m) { return m.unit; }));
   var units = Array.from(unitSet).sort(function (a, b) { return parseInt(a) - parseInt(b); });
   var html = '<div style="overflow-x:auto"><table class="cal-week-tbl"><thead><tr><th>Unit</th>';
-  days.forEach(function (d) { var ds = d.toISOString().split('T')[0]; html += '<th class="' + (ds === todayStr ? 'today-hdr' : '') + '">' + d.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' + d.getDate() + '</th>'; });
+  days.forEach(function (d) { var ds = localDateStr(d); html += '<th class="' + (ds === todayStr ? 'today-hdr' : '') + '">' + d.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' + d.getDate() + '</th>'; });
   html += '</tr></thead><tbody>';
   if (!units.length) html += '<tr><td colspan="8" class="tbl-empty">No moves scheduled.</td></tr>';
-  else units.forEach(function (unit) { html += '<tr><td class="unit-lbl">' + unit + '</td>'; days.forEach(function (d) { var ds = d.toISOString().split('T')[0]; html += '<td class="' + (ds === todayStr ? 'today-col' : '') + '">' + getChips(ds, unit, 'week') + '</td>'; }); html += '</tr>'; });
+  else units.forEach(function (unit) { html += '<tr><td class="unit-lbl">' + unit + '</td>'; days.forEach(function (d) { var ds = localDateStr(d); html += '<td class="' + (ds === todayStr ? 'today-col' : '') + '">' + getChips(ds, unit, 'week') + '</td>'; }); html += '</tr>'; });
   var hasTodos = getCurrentTodos().some(function (t) { return t.dueDate; });
   var hasAmenities = (state.amenities || []).length > 0;
   var hasTaskDates = (state.moves || []).some(function (m) { return (m.tasks || []).some(function (t) { return t.dueDate; }); });
@@ -11165,7 +11211,7 @@ function renderWeekCal() {
   if (hasTodos || hasAmenities || hasTaskDates || hasTours) {
     html += '<tr><td class="unit-lbl" style="color:var(--text3)">General</td>';
     days.forEach(function (d) {
-      var ds = d.toISOString().split('T')[0];
+      var ds = localDateStr(d);
       html += '<td class="' + (ds === todayStr ? 'today-col' : '') + '">' + getChips(ds, null, 'week') + '</td>';
     });
     html += '</tr>';
@@ -11530,7 +11576,7 @@ function openTeamEntryModal(entry) {
   editingTeamEntryId = entry ? entry.id : null;
   var staff = (state.teamstaff || []);
   var staffOpts = staff.length
-    ? staff.map(function (s) { return '<option value="' + s + '">' + s + '</option>'; }).join('')
+    ? staff.map(function (s) { return '<option value="' + esc(s) + '">' + esc(s) + '</option>'; }).join('')
     : '<option value="">— No staff configured —</option>';
   var modal = g('modal-team-entry');
   if (!modal) {
@@ -12607,11 +12653,11 @@ function moveAccount(i, dir) {
 function editAccount(id) {
   var acct = (state.accounts||[]).find(function(a){return a.id===id;}); if (!acct) return;
   var isMe = acct.id === currentUser.id;
-  var bdy = '<div class="fg"><label>Name</label><input type="text" id="ea-name" value="' + acct.name + '" style="width:100%"></div>'
+  var bdy = '<div class="fg"><label>Name</label><input type="text" id="ea-name" value="' + esc(acct.name) + '" style="width:100%"></div>'
     + '<div class="fg"><label>Role</label><select id="ea-role" style="width:100%"' + (isMe?' disabled title="Cannot change your own role"':'') + '><option value="staff"' + (acct.role==='staff'?' selected':'') + '>Staff</option><option value="admin"' + (acct.role==='admin'?' selected':'') + '>Admin</option></select></div>'
     + (isMe ? '<p style="font-size:12px;color:var(--text3);margin-top:4px">You cannot change your own role.</p>' : '')
-    + '<div class="fg"><label>Job Title <span style="font-weight:400;color:var(--text3)">(sign-off)</span></label><input type="text" id="ea-title" value="' + (acct.jobTitle||'') + '" placeholder="e.g. Front Desk Associate | Chorus – SF" style="width:100%"></div>'
-    + '<div class="fg"><label>Work Email <span style="font-weight:400;color:var(--text3)">(sign-off)</span></label><input type="text" id="ea-email" value="' + (acct.workEmail||'') + '" placeholder="e.g. name@alignrealestate.com" style="width:100%"></div>';
+    + '<div class="fg"><label>Job Title <span style="font-weight:400;color:var(--text3)">(sign-off)</span></label><input type="text" id="ea-title" value="' + esc(acct.jobTitle||'') + '" placeholder="e.g. Front Desk Associate | Chorus – SF" style="width:100%"></div>'
+    + '<div class="fg"><label>Work Email <span style="font-weight:400;color:var(--text3)">(sign-off)</span></label><input type="text" id="ea-email" value="' + esc(acct.workEmail||'') + '" placeholder="e.g. name@alignrealestate.com" style="width:100%"></div>';
   var ov = g('modal-edit-account');
   if (!ov) {
     ov = document.createElement('div');
@@ -12730,6 +12776,7 @@ async function init() {
   await pullCloud();
   await migratePinsToHashed();
   purgeDeadResidentProfiles();
+  housekeepState();
   migrateTaskUpdatesV2();
   migrateTaskUpdatesV3();
   migrateMovePhaseCats();
@@ -12774,18 +12821,19 @@ function getCurrentShiftLabel() {
   return 'Overnight';                                      // 11:30pm–7:30am
 }
 function getShiftIdForTs(ts) {
+  // Local dates only — toISOString() is UTC and flips the date at 5pm PDT, splitting one shift in two.
   var d = new Date(ts);
   var mins = d.getHours()*60 + d.getMinutes();
   var shift, dateStr;
   if (mins >= 7*60 && mins < 15*60+30) {
-    shift = 'AM'; dateStr = d.toISOString().split('T')[0];
+    shift = 'AM'; dateStr = localDateStr(d);
   } else if (mins >= 15*60+30 && mins < 23*60+30) {
-    shift = 'PM'; dateStr = d.toISOString().split('T')[0];
+    shift = 'PM'; dateStr = localDateStr(d);
   } else {
     shift = 'Overnight';
     // Before 7:30am belongs to the previous calendar day's overnight
-    if (mins < 7*60+30) { var prev = new Date(ts - 86400000); dateStr = prev.toISOString().split('T')[0]; }
-    else { dateStr = d.toISOString().split('T')[0]; }
+    if (mins < 7*60+30) { dateStr = localDateStr(new Date(ts - 86400000)); }
+    else { dateStr = localDateStr(d); }
   }
   return dateStr + '-' + shift;
 }
@@ -13253,7 +13301,7 @@ function tmplCopy(id) {
 function openAddTemplate() {
   editingTemplateId = null;
   g('modal-template-title').textContent = 'Add Template';
-  ['tmpl-title','tmpl-body'].forEach(function(id) { g(id).value = ''; });
+  ['tmpl-title','tmpl-body-input'].forEach(function(id) { g(id).value = ''; });
   g('tmpl-cat').value = 'General';
   openModal('modal-template');
   setTimeout(function() { g('tmpl-title').focus(); }, 80);
@@ -13265,7 +13313,7 @@ function editTemplate(id) {
   g('modal-template-title').textContent = 'Edit Template';
   g('tmpl-title').value = t.title;
   g('tmpl-cat').value = t.category;
-  g('tmpl-body').value = t.body;
+  g('tmpl-body-input').value = t.body;
   openModal('modal-template');
   setTimeout(function() { g('tmpl-title').focus(); }, 80);
 }
@@ -13273,9 +13321,9 @@ function editTemplate(id) {
 function saveTemplate() {
   var title = g('tmpl-title').value.trim();
   var cat   = g('tmpl-cat').value;
-  var body  = g('tmpl-body').value.trim();
+  var body  = g('tmpl-body-input').value.trim();
   if (!title) { toast('Enter a title'); g('tmpl-title').focus(); return; }
-  if (!body)  { toast('Enter the message text'); g('tmpl-body').focus(); return; }
+  if (!body)  { toast('Enter the message text'); g('tmpl-body-input').focus(); return; }
   if (!state.templates) state.templates = [];
   if (editingTemplateId) {
     var t = state.templates.find(function(x) { return x.id === editingTemplateId; });
