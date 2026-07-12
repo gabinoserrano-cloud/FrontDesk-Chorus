@@ -26,10 +26,12 @@ import os, sys, json, re, html, smtplib, urllib.request, collections, datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+# Credentials come from GitHub Actions secrets only — this file is in a public
+# repo, so hardcoded fallbacks would (and previously did) expose the sync password.
 SUPA_URL  = os.environ.get("SUPA_URL",  "https://adovwmwpvwomljggscge.supabase.co")
-SUPA_ANON = os.environ.get("SUPA_ANON", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkb3Z3bXdwdndvbWxqZ2dzY2dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNzkxNjcsImV4cCI6MjA5MDg1NTE2N30.dZgl3jEL1FbBSe_gM3LN9Tc3wGGmsf_Bq6YaKJf4dyk")
-SUPA_EMAIL= os.environ.get("SUPA_EMAIL","sync@chorusfd.internal")
-SUPA_PASS = os.environ.get("SUPA_PASS", "uM7Jaq1HolIGJaolh3YwRD45LRbpNJ2h")
+SUPA_ANON = os.environ.get("SUPA_ANON", "")
+SUPA_EMAIL= os.environ.get("SUPA_EMAIL","")
+SUPA_PASS = os.environ.get("SUPA_PASS", "")
 
 REPORT_FROM = os.environ.get("REPORT_FROM", "gabinoserrano21@gmail.com")
 REPORT_TO   = os.environ.get("REPORT_TO",   "gserrano@alignrealestate.com")
@@ -53,6 +55,9 @@ def _get(url, headers):
     with urllib.request.urlopen(req, timeout=90) as r: return json.load(r)
 
 def fetch_state():
+    if not (SUPA_ANON and SUPA_EMAIL and SUPA_PASS):
+        die("Missing SUPA_ANON / SUPA_EMAIL / SUPA_PASS env vars. Add them as "
+            "repository secrets (Settings > Secrets and variables > Actions).")
     tok = _post(SUPA_URL + "/auth/v1/token?grant_type=password",
                 {"Content-Type": "application/json", "apikey": SUPA_ANON},
                 {"email": SUPA_EMAIL, "password": SUPA_PASS}).get("access_token")

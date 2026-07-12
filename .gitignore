@@ -3,3 +3,19 @@ AUDIT.md
 .claude/
 .DS_Store
 report.html
+
+# Personal / property documents that live in this folder but must not be published
+orgcharts.pdf
+Property Bible/
+Binder/
+quick-reference-cards.html
+sgt-tour-key-labels-avery8460.html
+SGT Tour Key Labels - Avery 8460.pdf
+
+# Brand assets + local tooling not part of the deployed site
+Icon-*.png
+Wordmark-*.png
+serve.py
+
+# Stale browser-save artifacts (extracted copies of index.html's inline JS)
+script_*.js
