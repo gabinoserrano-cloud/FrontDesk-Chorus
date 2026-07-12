@@ -13,7 +13,7 @@ an admin machine:
 Config via env vars (set as GitHub Actions secrets — no fallbacks on purpose):
   SUPA_URL, SUPA_ANON, SUPA_EMAIL, SUPA_PASS
 """
-import os, sys, json, datetime, urllib.request
+import os, sys, json, datetime, urllib.request, urllib.error
 
 SUPA_URL  = os.environ.get("SUPA_URL", "https://adovwmwpvwomljggscge.supabase.co")
 SUPA_ANON = os.environ.get("SUPA_ANON", "")
@@ -32,9 +32,23 @@ def call(path, method="GET", body=None, headers=None):
         h.update(headers)
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(SUPA_URL + path, data=data, headers=h, method=method)
-    with urllib.request.urlopen(req, timeout=120) as r:
-        raw = r.read()
-        return json.loads(raw) if raw.strip() else None
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            raw = r.read()
+            return json.loads(raw) if raw.strip() else None
+    except urllib.error.HTTPError as e:
+        detail = ""
+        try:
+            detail = e.read().decode()[:300]
+        except Exception:
+            pass
+        # Surface WHICH credential Supabase rejected so a bad secret is obvious.
+        hint = ""
+        if "Invalid API key" in detail:
+            hint = " -> the SUPA_ANON secret is wrong/truncated."
+        elif "Invalid login" in detail or "invalid_grant" in detail:
+            hint = " -> the SUPA_EMAIL or SUPA_PASS secret is wrong."
+        die("Supabase %s %d on %s: %s%s" % (method, e.code, path, detail, hint))
 
 
 def main():
