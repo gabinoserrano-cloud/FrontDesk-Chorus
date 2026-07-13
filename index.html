@@ -1228,6 +1228,11 @@
           </div>
         </div>
         <div class="card mb-12">
+          <div class="card-hdr"><span class="set-ico" data-icon="activity"></span><span class="card-title">Recurring Reminders</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddRecurring()">+ Add Reminder</button></div>
+          <p class="set-desc" style="padding:0 14px 8px">Tasks that reappear on a schedule instead of getting archived once — physical inventory counts, cleaning checks, anything periodic. Shows on the Dashboard when due.</p>
+          <div id="settings-recurring" style="padding:0"></div>
+        </div>
+        <div class="card mb-12">
           <div class="card-hdr"><span class="set-ico" data-icon="mappin"></span><span class="card-title">Walkthrough Floors &amp; Areas</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddWTFloor()">+ Add Floor</button></div>
           <div id="settings-wt-floors" style="padding:0"></div>
         </div>
@@ -1417,9 +1422,10 @@
       <div class="fg"><label>Expected Return Time</label><input id="ky-vendor-return" type="time"></div>
     </div>
     <div id="ky-replacement-wrap" style="display:none;padding:8px 0;border-top:1px solid var(--border);margin-top:4px">
+      <div class="fg" style="margin-bottom:8px"><label>Key Kind</label><select id="ky-kind" onchange="updateReplacementFeeLabel()"><option value="unit">Unit Key</option><option value="mail">Mail Key</option></select></div>
       <div style="display:flex;align-items:center;gap:8px">
         <input type="checkbox" id="ky-replacement" style="width:16px;height:16px;accent-color:var(--accent)">
-        <label for="ky-replacement" style="margin:0;font-weight:500;cursor:pointer;font-size:13px">Replacement card — $100 fee added to resident ledger</label>
+        <label for="ky-replacement" id="ky-replacement-label" style="margin:0;font-weight:500;cursor:pointer;font-size:13px">Replacement card — $100 fee added to resident ledger</label>
       </div>
     </div>
     <div class="fr"><div class="fg"><label>Status</label><select id="ky-status"><option value="issued">Issued</option><option value="returned">Returned</option></select></div><div class="fg"><label>Expiry Date</label><input id="ky-expiry" type="date"></div></div>
@@ -2514,6 +2520,19 @@ async function migratePinsToHashed() {
   if (state.patrolPin && !isPinHashed(state.patrolPin)) { state.patrolPin = await hashPin(state.patrolPin, PATROLPIN_SALT); changed = true; }
   if (changed) scheduleSave();
 }
+// One-time switch (2026-07-12): Key Cards – Blank Stock stopped being auto-tracked because
+// keys/mail keys are routinely reused between residents (cleaned and put back per the
+// Return of Keys process) and the checkout desk can't reliably tell "reused" from "new
+// blank card" at the moment of use. Whatever number was left over from auto-tracking is
+// unreliable, so this clears it to null ("Not yet counted") rather than leave a wrong
+// number looking authoritative until the first physical count comes in.
+function migrateKeyCardsToManualCountV1() {
+  if (state.keyCardsManualCountV1) return;
+  var s = (state.supplies || []).find(function(x) { return x.name === 'Key Cards – Blank Stock'; });
+  if (s) { s.qty = null; s.lastCountedAt = null; }
+  state.keyCardsManualCountV1 = true;
+  scheduleSave();
+}
 // One-time purge of dead residentProfiles: zero readers/writers (verified 2026-06-13; June audit confirms migration complete).
 // ~600 stale PII entries still ride in the synced payload; drop them once and push the cleaned state.
 function purgeDeadResidentProfiles() {
@@ -2567,7 +2586,7 @@ function cloneData(obj) {
   try { return JSON.parse(JSON.stringify(obj)); }
   catch (e) { return obj; }
 }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, archivedTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], transponders: { startingInventory: 100, log: [], counts: [] }, security: [], logbook: [], propertyConfig: {} }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, archivedTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], transponders: { startingInventory: 100, log: [], counts: [] }, security: [], logbook: [], propertyConfig: {}, recurringReminders: [] }; }
 
 // ─── SHIFT LOG ───
 function getShiftLog() {
@@ -3152,6 +3171,17 @@ function renderDash() {
       var daysLeft = Math.floor((new Date(r.wifiExpiry+'T00:00:00') - new Date(wt2+'T00:00:00')) / 86400000);
       var label = expired ? '<span style="color:var(--red);font-weight:600">EXPIRED ' + fmtShort(r.wifiExpiry) + '</span>' : '<span style="color:var(--amber)">Expires ' + fmtShort(r.wifiExpiry) + (daysLeft === 0 ? ' (today)' : ' (' + daysLeft + 'd)') + '</span>';
       html += '<div class="tight-row"><strong>Unit ' + esc(r.unit) + '</strong> — ' + esc(r.leaseholder||r.residentName||'') + ' &nbsp;' + label + '<button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="navToSec(\'residents\');setTimeout(function(){openEditUnitRecord(\'' + r.id + '\')},150)">Renew</button></div>';
+    });
+    html += '</div>';
+  }
+  var rrDue = rrData().filter(function(r){ return rrIsDue(r); });
+  if (rrDue.length) {
+    html += '<div style="background:var(--amber-light);border:1px solid rgba(201,164,94,0.45);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px">';
+    html += '<div style="font-size:12px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">&#128257; Recurring Reminders Due</div>';
+    rrDue.forEach(function(r) {
+      var dLeft = rrDaysUntil(r);
+      var label = dLeft < 0 ? '<span style="color:var(--red);font-weight:600">' + (-dLeft) + 'd overdue</span>' : '<span style="color:var(--amber)">Due today</span>';
+      html += '<div class="tight-row"><strong>' + esc(r.label) + '</strong> &nbsp;' + label + '<button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="promptCompleteRecurring(\'' + r.id + '\')">Complete</button></div>';
     });
     html += '</div>';
   }
@@ -4537,20 +4567,18 @@ function toggleTask(moveId, taskId, checked) {
         toast('Keys for this task are already in the Key Tracker');
       } else {
         var keyNote = isMailKey ? 'Mail key — created from move-in checklist' : 'Created from move-in checklist';
-        var mainKeyEntry = { id: uid(), unit: m.unit, name: m.resident, type: 'resident', fob: '', status: 'issued', notes: keyNote, addedBy: currentUser ? currentUser.name : '', srcMoveId: m.id, srcTaskText: t.text, issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null };
+        var keyKindTag = isMailKey ? 'mail' : 'unit';
+        var mainKeyEntry = { id: uid(), unit: m.unit, name: m.resident, type: 'resident', keyKind: keyKindTag, fob: '', status: 'issued', notes: keyNote, addedBy: currentUser ? currentUser.name : '', srcMoveId: m.id, srcTaskText: t.text, issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null };
         state.keys.push(mainKeyEntry);
         cmds.push({ sec: 'keys', type: 'ADD', id: mainKeyEntry.id, data: cloneData(mainKeyEntry), label: 'key created — Unit ' + m.unit });
         if (m.coResidents && m.coResidents.length) {
           m.coResidents.forEach(function(cr) {
-            var coKeyEntry = { id: uid(), unit: m.unit, name: cr.name, type: 'resident', fob: '', status: 'issued', notes: keyNote + ' (co-resident)', addedBy: currentUser ? currentUser.name : '', srcMoveId: m.id, srcTaskText: t.text, issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null };
+            var coKeyEntry = { id: uid(), unit: m.unit, name: cr.name, type: 'resident', keyKind: keyKindTag, fob: '', status: 'issued', notes: keyNote + ' (co-resident)', addedBy: currentUser ? currentUser.name : '', srcMoveId: m.id, srcTaskText: t.text, issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null };
             state.keys.push(coKeyEntry);
             cmds.push({ sec: 'keys', type: 'ADD', id: coKeyEntry.id, data: cloneData(coKeyEntry), label: 'key created — Unit ' + m.unit + ' (co-resident)' });
           });
         }
-        var qtyNum = parseInt(t.qty) || (1 + (m.coResidents ? m.coResidents.length : 0));
-        var supCmd1 = applySupplyAdjustment('Key Cards – Blank Stock', -qtyNum, 'Keys prepared — Unit ' + m.unit + ' · ' + m.resident);
-        if (supCmd1) cmds.push(supCmd1);
-        toast('Key entry created in Key Tracker — blank stock updated');
+        toast('Key entry created in Key Tracker');
         if (curSec === 'keys') renderKeys();
       }
     }
@@ -4564,8 +4592,6 @@ function toggleTask(moveId, taskId, checked) {
           var _kcb = { status: k.status, returnedAt: k.returnedAt };
           k.status = 'returned'; k.returnedAt = Date.now();
           cmds.push({ sec: 'keys', type: 'EDIT', id: k.id, before: _kcb, after: { status: k.status, returnedAt: k.returnedAt }, label: 'key returned — Unit ' + m.unit });
-          var supCmd2 = applySupplyAdjustment('Key Cards – Blank Stock', +1, 'Returned — Unit ' + m.unit + ' (move-out checklist)');
-          if (supCmd2) cmds.push(supCmd2);
         });
         logActivity('keys', 'complete', 'Keys returned — Unit ' + m.unit + ' · ' + m.resident + ' (move-out checklist)');
         renderKeys(); updateBadges(); renderDash();
@@ -4687,6 +4713,23 @@ function removeCoResident(moveId, coId) {
   boardTaskRefresh(moveId);
 }
 function archiveMove(id) {
+  var m = (state.moves || []).find(function (x) { return x.id === id; }); if (!m) return;
+  if (m.type === 'out') {
+    var outstanding = (state.keys || []).filter(function(k) { return k.unit === m.unit && k.status === 'issued'; });
+    if (outstanding.length) {
+      var names = outstanding.map(function(k) { return esc(k.name) + (k.keyKind === 'mail' ? ' (mail key)' : ''); }).join(', ');
+      showConfirm(
+        '⚠ Keys Still Outstanding',
+        '<strong>' + outstanding.length + '</strong> key(s) for Unit ' + esc(m.unit) + ' ' + (outstanding.length === 1 ? 'is' : 'are') + ' still marked issued — ' + names + '. Fee tracking keeps running either way, but this is the only visible reminder in the passdown — it disappears once the move is archived.<br><br>Archive anyway?',
+        'Archive Anyway', 'Cancel',
+        function() { _doArchiveMove(id); }
+      );
+      return;
+    }
+  }
+  _doArchiveMove(id);
+}
+function _doArchiveMove(id) {
   var m = (state.moves || []).find(function (x) { return x.id === id; }); if (!m) return;
   var _arch = m.archivedAt;
   m.archivedAt = Date.now(); if (openMoveId === id) openMoveId = null;
@@ -5308,8 +5351,6 @@ function saveGuest() {
     state.keys.push(guestKeyEntry);
     gst.linkedKeyId = guestKeyEntry.id;
     gCmds.push({ sec: 'keys', type: 'ADD', id: guestKeyEntry.id, data: cloneData(guestKeyEntry), label: 'guest key issued — Unit ' + unit });
-    var gSupCmd1 = applySupplyAdjustment('Key Cards – Blank Stock', -1, 'Issued for guest — Unit ' + unit);
-    if (gSupCmd1) gCmds.push(gSupCmd1);
     var gSupCmd2 = applySupplyAdjustment('One-Time Cards – Active Issued', +1, 'Issued for guest — Unit ' + unit + ' · ' + name);
     if (gSupCmd2) gCmds.push(gSupCmd2);
     renderKeys();
@@ -5358,8 +5399,6 @@ function updateGuestStatus(id, val) {
           var _lkb = { status: linkedKey.status, returnedAt: linkedKey.returnedAt };
           linkedKey.status = 'returned'; linkedKey.returnedAt = Date.now();
           gsCmds.push({ sec: 'keys', type: 'EDIT', id: linkedKey.id, before: _lkb, after: { status: linkedKey.status, returnedAt: linkedKey.returnedAt }, label: 'guest key returned — Unit ' + gst.unit });
-          var gsSupCmd1 = applySupplyAdjustment('Key Cards – Blank Stock', +1, 'Returned — guest key Unit ' + gst.unit + ' · ' + gst.name);
-          if (gsSupCmd1) gsCmds.push(gsSupCmd1);
           var gsSupCmd2 = applySupplyAdjustment('One-Time Cards – Active Issued', -1, 'Returned — guest key Unit ' + gst.unit + ' · ' + gst.name);
           if (gsSupCmd2) gsCmds.push(gsSupCmd2);
           renderKeys();
@@ -5486,8 +5525,6 @@ function saveQuickKey() {
   state.keys.push(k);
   var qkCmds = [{ sec: 'keys', type: 'ADD', id: k.id, data: Object.assign({}, k), label: 'issue card #' + _quickKeyCardNum + ' — Unit ' + unit }];
   logActivity('keys', 'create', 'Issued one-time card #' + _quickKeyCardNum + ' — Unit ' + unit + ' · ' + name + (guest ? ' / Guest: ' + guest : ''));
-  var qkSupCmd1 = applySupplyAdjustment('Key Cards – Blank Stock', -1, 'Issued — Card #' + _quickKeyCardNum + ' · Unit ' + unit + ' · ' + name);
-  if (qkSupCmd1) qkCmds.push(qkSupCmd1);
   var qkSupCmd2 = applySupplyAdjustment('One-Time Cards – Active Issued', +1, 'Issued — Card #' + _quickKeyCardNum + ' · Unit ' + unit + ' · ' + name);
   if (qkSupCmd2) qkCmds.push(qkSupCmd2);
   pushBatchUndo('keys', 'issue card #' + _quickKeyCardNum + ' — Unit ' + unit, qkCmds);
@@ -5556,6 +5593,12 @@ function keyTypeChange() {
   if (t === 'one-time') {
     var gr = g('ky-issued-to-guest'); if (gr) { gr.checked = true; keyIssuedToChange(); }
   }
+  updateReplacementFeeLabel();
+}
+function updateReplacementFeeLabel() {
+  var kind = g('ky-kind') ? g('ky-kind').value : 'unit';
+  var lbl = g('ky-replacement-label');
+  if (lbl) lbl.textContent = 'Replacement card — $' + (kind === 'mail' ? '25' : '100') + ' fee added to resident ledger';
 }
 function saveKey() {
   var unit = g('ky-unit').value.trim(), name = g('ky-name').value.trim();
@@ -5570,15 +5613,14 @@ function saveKey() {
     var _kb = Object.assign({}, k);
     k.unit=unit; k.name=name; k.type=type; k.fob=g('ky-fob').value.trim(); k.status=g('ky-status').value; k.expiry=g('ky-expiry').value||null; k.notes=g('ky-notes').value.trim(); k.guest=guest; k.timeout=timeout; k.issuedTo=issuedTo;
     k.company=g('ky-company')?g('ky-company').value.trim():''; k.workArea=g('ky-workarea')?g('ky-workarea').value.trim():''; k.vendorReturn=g('ky-vendor-return')?g('ky-vendor-return').value:'';
-    var wasReplacement = k.isReplacement; k.isReplacement=g('ky-replacement')?g('ky-replacement').checked:false; if(k.isReplacement&&!wasReplacement){k.fee=100;k.feeAddedToLedger=false;k.feeWaived=false;k.feeAddedAt=null;k.feeAddedBy='';}
+    if (type === 'resident' || type === 'joiner') k.keyKind = g('ky-kind') ? g('ky-kind').value : (k.keyKind || 'unit');
+    var wasReplacement = k.isReplacement; k.isReplacement=g('ky-replacement')?g('ky-replacement').checked:false; if(k.isReplacement&&!wasReplacement){k.fee=(k.keyKind==='mail')?25:100;k.feeAddedToLedger=false;k.feeWaived=false;k.feeAddedAt=null;k.feeAddedBy='';}
     var wasReturned = !!k.returnedAt;
     var kCmds = [];
     if (k.status==='returned' && !k.returnedAt) {
       k.returnedAt=Date.now();
       // Increment blank stock when a physical key is returned
       if (k.type !== 'mobile' && !wasReturned) {
-        var kSupCmd1 = applySupplyAdjustment('Key Cards – Blank Stock', +1, 'Returned — Unit ' + k.unit + ' · ' + k.name + (currentUser ? ' · ' + currentUser.name : ''));
-        if (kSupCmd1) kCmds.push(kSupCmd1);
         if (k.type === 'one-time') { var kSupCmd2 = applySupplyAdjustment('One-Time Cards – Active Issued', -1, 'Returned — Unit ' + k.unit + ' · ' + k.name); if (kSupCmd2) kCmds.push(kSupCmd2); }
         if (k.type === 'vendor') { var kSupCmd3 = applySupplyAdjustment('Vendor Cards – Active Issued', -1, 'Returned — ' + (k.company || k.name) + ' · Unit ' + k.unit); if (kSupCmd3) kCmds.push(kSupCmd3); }
       }
@@ -5591,15 +5633,14 @@ function saveKey() {
   var issuedAt = now;
   if (timeout) { var base = new Date(); var parts = timeout.split(':'); base.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0); issuedAt = base.getTime(); }
   var isRepl = g('ky-replacement') ? g('ky-replacement').checked : false;
-  var k = { id: uid(), unit: unit, name: name, guest: guest, issuedTo: issuedTo, timeout: timeout, type: type, fob: g('ky-fob').value.trim(), status: g('ky-status').value, expiry: g('ky-expiry').value || null, notes: g('ky-notes').value.trim(), issuedAt: issuedAt, returnedAt: null, addedBy: currentUser ? currentUser.name : '', createdAt: now, company: g('ky-company')?g('ky-company').value.trim():'', workArea: g('ky-workarea')?g('ky-workarea').value.trim():'', vendorReturn: g('ky-vendor-return')?g('ky-vendor-return').value:'', isReplacement: isRepl, fee: isRepl ? 100 : 0, feeAddedToLedger: false, feeWaived: false, feeAddedAt: null, feeAddedBy: '', contacts: [], reachedOut: false, reachedOutAt: null };
+  var keyKind = (type === 'resident' || type === 'joiner') ? (g('ky-kind') ? g('ky-kind').value : 'unit') : null;
+  var k = { id: uid(), unit: unit, name: name, guest: guest, issuedTo: issuedTo, timeout: timeout, type: type, keyKind: keyKind, fob: g('ky-fob').value.trim(), status: g('ky-status').value, expiry: g('ky-expiry').value || null, notes: g('ky-notes').value.trim(), issuedAt: issuedAt, returnedAt: null, addedBy: currentUser ? currentUser.name : '', createdAt: now, company: g('ky-company')?g('ky-company').value.trim():'', workArea: g('ky-workarea')?g('ky-workarea').value.trim():'', vendorReturn: g('ky-vendor-return')?g('ky-vendor-return').value:'', isReplacement: isRepl, fee: isRepl ? (keyKind==='mail'?25:100) : 0, feeAddedToLedger: false, feeWaived: false, feeAddedAt: null, feeAddedBy: '', contacts: [], reachedOut: false, reachedOutAt: null };
   if (!state.keys) state.keys = [];
   state.keys.push(k);
   var kaCmds = [{ sec: 'keys', type: 'ADD', id: k.id, data: Object.assign({}, k), label: 'add key — Unit ' + unit }];
   logActivity('keys', 'create', 'Logged key — Unit ' + unit + ' · ' + name + ' (' + type + (isRepl ? ' · replacement' : '') + ')'); scheduleSave(); closeModal('modal-key'); renderCardDrawer(); renderKeys(); updateBadges(); renderDash();
   // Decrement blank key card stock when a physical key is issued
   if (k.status === 'issued' && k.type !== 'mobile') {
-    var kaSupCmd1 = applySupplyAdjustment('Key Cards – Blank Stock', -1, 'Issued — Unit ' + k.unit + ' · ' + k.name + (k.addedBy ? ' · ' + k.addedBy : ''));
-    if (kaSupCmd1) kaCmds.push(kaSupCmd1);
     if (k.type === 'one-time') { var kaSupCmd2 = applySupplyAdjustment('One-Time Cards – Active Issued', +1, 'Issued — Unit ' + k.unit + ' · ' + k.name); if (kaSupCmd2) kaCmds.push(kaSupCmd2); }
     if (k.type === 'vendor') { var kaSupCmd3 = applySupplyAdjustment('Vendor Cards – Active Issued', +1, 'Issued — ' + (k.company || k.name) + ' · Unit ' + k.unit); if (kaSupCmd3) kaCmds.push(kaSupCmd3); }
   }
@@ -5655,14 +5696,7 @@ function renderKeys() {
         var contactCount2 = contacts2.length;
         var overdueTag2 = isOverdue2 ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + overdueHrs2 + 'h ' + overdueMin2 + 'm OUT</span>' : '';
         var staleTag2 = isStale2 ? '<span class="stale-badge">&#9888; Stale &mdash; ' + staleCount2 + ' shift' + (staleCount2 !== 1 ? 's' : '') + '</span>' : '';
-        var feeBadge2 = '';
-        if (k.isReplacement && k.fee && !k.feeAddedToLedger && !k.feeWaived) {
-          feeBadge2 = '<div style="margin-top:6px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:var(--amber);font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">&#128179; $100 &mdash; Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px" onclick="markFeeToLedger(\'' + k.id + '\')">&#10003; Added</button><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px;color:var(--text3)" onclick="waiveKeyFee(\'' + k.id + '\')">Waive</button></div>';
-        } else if (k.isReplacement && k.feeAddedToLedger) {
-          feeBadge2 = '<div style="margin-top:3px"><span style="font-size:10px;color:var(--green);font-weight:600">&#10003; $100 added to ledger</span></div>';
-        } else if (k.isReplacement && k.feeWaived) {
-          feeBadge2 = '<div style="margin-top:3px"><span style="font-size:10px;color:var(--text3)">$100 waived</span></div>';
-        }
+        var feeBadge2 = keyFeeBadgesHtml(k);
         var oneTimeFee2 = '';
         if (isOverdue2 && !k.feeAddedToLedger && !k.feeWaived && contactCount2 >= 3) {
           oneTimeFee2 = '<div style="margin-top:6px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:var(--amber);font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">&#128179; $25 &mdash; Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px" onclick="markFeeToLedger(\'' + k.id + '\')">&#10003; Added</button><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px;color:var(--text3)" onclick="waiveKeyFee(\'' + k.id + '\')">Waive</button></div>';
@@ -5784,14 +5818,7 @@ function renderKeys() {
     }
     var nameCell = k.name + holderLine + vendorLine + kyBy;
     // Fee badges
-    var feeBadge = '';
-    if (k.isReplacement && k.fee && !k.feeAddedToLedger && !k.feeWaived) {
-      feeBadge = '<div style="margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:var(--amber);font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">💳 $100 — Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px" onclick="event.stopPropagation();markFeeToLedger(\'' + k.id + '\')">✓ Added</button><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px;color:var(--text3)" onclick="event.stopPropagation();waiveKeyFee(\'' + k.id + '\')">Waive</button></div>';
-    } else if (k.isReplacement && k.fee && k.feeAddedToLedger) {
-      feeBadge = '<div style="margin-top:3px"><span style="font-size:10px;color:var(--green);font-weight:600">✓ $100 added to ledger' + (k.feeAddedAt ? ' · ' + new Date(k.feeAddedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '') + '</span></div>';
-    } else if (k.isReplacement && k.fee && k.feeWaived) {
-      feeBadge = '<div style="margin-top:3px"><span style="font-size:10px;color:var(--text3)">$100 waived</span></div>';
-    }
+    var feeBadge = keyFeeBadgesHtml(k);
     // Overdue one-time fee badge (unlocks after 3 contacts)
     var oneTimeFee = '';
     if (isOneTime && isIssued && isOverdue && !k.feeAddedToLedger && !k.feeWaived) {
@@ -5871,8 +5898,6 @@ function updateKeyStatus(id, val) {
   if (val === 'returned' && !k.returnedAt) {
     k.returnedAt = Date.now();
     if (k.type !== 'mobile' && wasIssued) {
-      var ksSupCmd1 = applySupplyAdjustment('Key Cards – Blank Stock', +1, 'Returned — Unit ' + k.unit + ' · ' + k.name + (currentUser ? ' · ' + currentUser.name : ''));
-      if (ksSupCmd1) ksCmds.push(ksSupCmd1);
       if (k.type === 'one-time') { var ksSupCmd2 = applySupplyAdjustment('One-Time Cards – Active Issued', -1, 'Returned — Unit ' + k.unit + ' · ' + k.name); if (ksSupCmd2) ksCmds.push(ksSupCmd2); }
       if (k.type === 'vendor') { var ksSupCmd3 = applySupplyAdjustment('Vendor Cards – Active Issued', -1, 'Returned — ' + (k.company || k.name) + ' · Unit ' + k.unit); if (ksSupCmd3) ksCmds.push(ksSupCmd3); }
     }
@@ -5892,8 +5917,6 @@ function logKeyReturn(id) {
   k.status = 'returned'; k.returnedAt = Date.now();
   var krCmds = [];
   if (k.type !== 'mobile' && wasIssued) {
-    var krSupCmd1 = applySupplyAdjustment('Key Cards – Blank Stock', +1, 'Returned — Unit ' + k.unit + ' · ' + k.name + (currentUser ? ' · ' + currentUser.name : ''));
-    if (krSupCmd1) krCmds.push(krSupCmd1);
     if (k.type === 'one-time') { var krSupCmd2 = applySupplyAdjustment('One-Time Cards – Active Issued', -1, 'Returned — Unit ' + k.unit + ' · ' + k.name); if (krSupCmd2) krCmds.push(krSupCmd2); }
     if (k.type === 'vendor') { var krSupCmd3 = applySupplyAdjustment('Vendor Cards – Active Issued', -1, 'Returned — ' + (k.company || k.name) + ' · Unit ' + k.unit); if (krSupCmd3) krCmds.push(krSupCmd3); }
   }
@@ -5905,17 +5928,96 @@ function logKeyReturn(id) {
 function deleteKey(id) { if (!confirm('Remove?')) return; var kx=(state.keys||[]).find(function(x){return x.id===id;}); if (kx) pushUndo({ sec: 'keys', type: 'DELETE', id: id, data: Object.assign({}, kx), label: 'delete key — Unit ' + kx.unit }); logActivity('keys','delete','Removed key'+(kx?' — Unit '+kx.unit+' · '+kx.name:'')); state.keys = (state.keys || []).filter(function (k) { return k.id !== id; }); scheduleSave(); renderKeys(); updateBadges(); toast('Removed'); }
 function markFeeToLedger(id) {
   var k = (state.keys||[]).find(function(x){return x.id===id;}); if(!k) return;
+  var amt = k.isReplacement ? (k.fee || 100) : 25;
   var _kb = { feeAddedToLedger: k.feeAddedToLedger, feeAddedAt: k.feeAddedAt, feeAddedBy: k.feeAddedBy };
   k.feeAddedToLedger = true; k.feeAddedAt = Date.now(); k.feeAddedBy = currentUser ? currentUser.name : '';
   pushUndo({ sec: 'keys', type: 'EDIT', id: k.id, before: _kb, after: { feeAddedToLedger: k.feeAddedToLedger, feeAddedAt: k.feeAddedAt, feeAddedBy: k.feeAddedBy }, label: 'fee to ledger — Unit ' + k.unit });
-  logActivity('keys', 'edit', 'Marked $100 replacement fee added to ledger — Unit ' + k.unit + ' · ' + k.name);
+  logActivity('keys', 'edit', 'Marked $' + amt + ' fee added to ledger — Unit ' + k.unit + ' · ' + k.name);
   scheduleSave(); renderKeys(); toast('Fee marked as added to ledger');
 }
 function waiveKeyFee(id) {
   var k = (state.keys||[]).find(function(x){return x.id===id;}); if(!k) return;
-  if (!confirm('Waive this fee?')) return;
+  var amt = k.isReplacement ? (k.fee || 100) : 25;
+  if (!confirm('Waive this $' + amt + ' fee?')) return;
   pushUndo({ sec: 'keys', type: 'EDIT', id: k.id, before: { feeWaived: false }, after: { feeWaived: true }, label: 'waive fee — Unit ' + k.unit });
-  k.feeWaived = true; logActivity('keys', 'edit', 'Waived $100 replacement fee — Unit ' + k.unit + ' · ' + k.name); scheduleSave(); renderKeys(); toast('Fee waived');
+  k.feeWaived = true; logActivity('keys', 'edit', 'Waived $' + amt + ' fee — Unit ' + k.unit + ' · ' + k.name); scheduleSave(); renderKeys(); toast('Fee waived');
+}
+// ── Unreturned-key fee (2026-07-12): $100/key once lease-end + 1 day passes with no
+// return logged. Independent of markFeeToLedger/waiveKeyFee above (a key could carry
+// both an earlier replacement fee AND later become unreturned at move-out) and tracked
+// entirely on the key record, so archiving the move-out never stops it accruing.
+function unreturnedDaysOut(k) {
+  if (!k.unreturnedLeaseEnd) return 0;
+  var endTs = k.returnedAt || Date.now();
+  return Math.max(0, Math.floor((endTs - new Date(k.unreturnedLeaseEnd + 'T00:00:00').getTime()) / 86400000));
+}
+function checkUnreturnedKeyFees() {
+  var t = today();
+  (state.moves || []).filter(function(m) { return m.type === 'out' && m.date; }).forEach(function(m) {
+    var daysPast = Math.floor((new Date(t + 'T00:00:00') - new Date(m.date + 'T00:00:00')) / 86400000);
+    if (daysPast < 1) return;
+    var keyTask = (m.tasks || []).find(function(tk) { return tk.cat === 'Keys & Access' && /unit keys/i.test(tk.text); });
+    if (keyTask && keyTask.done) return;
+    (state.keys || []).filter(function(k) {
+      return k.unit === m.unit && k.status === 'issued' && (k.type === 'resident' || k.type === 'joiner') && !k.unreturnedFee;
+    }).forEach(function(k) {
+      k.unreturnedFee = 100;
+      k.unreturnedFlaggedAt = Date.now();
+      k.unreturnedLeaseEnd = m.date;
+      k.unreturnedFeeAddedToLedger = false;
+      k.unreturnedFeeWaived = false;
+      logActivity('keys', 'edit', 'Flagged $100 unreturned-key fee — Unit ' + k.unit + ' · ' + k.name, daysPast + ' day(s) past lease end');
+    });
+  });
+  scheduleSave();
+}
+function markUnreturnedFeeToLedger(id) {
+  var k = (state.keys||[]).find(function(x){return x.id===id;}); if(!k) return;
+  var _kb = { unreturnedFeeAddedToLedger: k.unreturnedFeeAddedToLedger, unreturnedFeeAddedAt: k.unreturnedFeeAddedAt, unreturnedFeeAddedBy: k.unreturnedFeeAddedBy };
+  k.unreturnedFeeAddedToLedger = true; k.unreturnedFeeAddedAt = Date.now(); k.unreturnedFeeAddedBy = currentUser ? currentUser.name : '';
+  pushUndo({ sec: 'keys', type: 'EDIT', id: k.id, before: _kb, after: { unreturnedFeeAddedToLedger: true, unreturnedFeeAddedAt: k.unreturnedFeeAddedAt, unreturnedFeeAddedBy: k.unreturnedFeeAddedBy }, label: 'unreturned fee to ledger — Unit ' + k.unit });
+  logActivity('keys', 'edit', 'Marked $' + k.unreturnedFee + ' unreturned-key fee added to ledger — Unit ' + k.unit + ' · ' + k.name);
+  scheduleSave(); renderKeys(); toast('Fee marked as added to ledger');
+}
+function waiveUnreturnedFee(id) {
+  var k = (state.keys||[]).find(function(x){return x.id===id;}); if(!k) return;
+  if (!confirm('Waive this $' + k.unreturnedFee + ' unreturned-key fee?')) return;
+  pushUndo({ sec: 'keys', type: 'EDIT', id: k.id, before: { unreturnedFeeWaived: false }, after: { unreturnedFeeWaived: true }, label: 'waive unreturned fee — Unit ' + k.unit });
+  k.unreturnedFeeWaived = true;
+  logActivity('keys', 'edit', 'Waived $' + k.unreturnedFee + ' unreturned-key fee — Unit ' + k.unit + ' · ' + k.name);
+  scheduleSave(); renderKeys(); toast('Fee waived');
+}
+// Shared fee-badge renderer for Key Tracker rows (replaces the near-duplicate blocks
+// that used to be hand-copied between the table and card views).
+function keyFeeBadgesHtml(k) {
+  var out = '';
+  function badge(amountLabel, addFn, waiveFn) {
+    return '<div style="margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:var(--amber);font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">💳 ' + amountLabel + ' — Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px" onclick="event.stopPropagation();' + addFn + '(\'' + k.id + '\')">✓ Added</button><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px;color:var(--text3)" onclick="event.stopPropagation();' + waiveFn + '(\'' + k.id + '\')">Waive</button></div>';
+  }
+  if (k.isReplacement && k.fee) {
+    if (!k.feeAddedToLedger && !k.feeWaived) out += badge('$' + k.fee, 'markFeeToLedger', 'waiveKeyFee');
+    else if (k.feeAddedToLedger) out += '<div style="margin-top:3px"><span style="font-size:10px;color:var(--green);font-weight:600">✓ $' + k.fee + ' added to ledger</span></div>';
+    else if (k.feeWaived) out += '<div style="margin-top:3px"><span style="font-size:10px;color:var(--text3)">$' + k.fee + ' waived</span></div>';
+  }
+  if (k.unreturnedFee) {
+    if (!k.unreturnedFeeAddedToLedger && !k.unreturnedFeeWaived) out += badge('$' + k.unreturnedFee + ' unreturned (' + unreturnedDaysOut(k) + 'd)', 'markUnreturnedFeeToLedger', 'waiveUnreturnedFee');
+    else if (k.unreturnedFeeAddedToLedger) out += '<div style="margin-top:3px"><span style="font-size:10px;color:var(--green);font-weight:600">✓ $' + k.unreturnedFee + ' unreturned fee added to ledger</span></div>';
+    else if (k.unreturnedFeeWaived) out += '<div style="margin-top:3px"><span style="font-size:10px;color:var(--text3)">$' + k.unreturnedFee + ' unreturned fee waived</span></div>';
+  }
+  return out;
+}
+// One-time migration (2026-07-12): existing key records predate the mail/unit distinction
+// (both were type:'resident' with only free-text notes telling them apart). Infer from notes.
+function migrateKeyKindV1() {
+  if (state.keyKindMigrationV1) return;
+  var changed = false;
+  (state.keys || []).forEach(function(k) {
+    if (k.keyKind || (k.type !== 'resident' && k.type !== 'joiner')) return;
+    k.keyKind = /mail\s*key/i.test(k.notes || '') ? 'mail' : 'unit';
+    changed = true;
+  });
+  state.keyKindMigrationV1 = true;
+  if (changed) scheduleSave();
 }
 function logKeyContact(id) {
   var k = (state.keys||[]).find(function(x){return x.id===id;}); if(!k) return;
@@ -8927,9 +9029,10 @@ function renderSupplies() {
   var el = g('supplies-body'); if (!el) return;
   var isAdmin = !currentUser || currentUser.role === 'admin';
   var supplies = state.supplies;
-  var supOut  = supplies.filter(function(s){ return s.lowAt != null && s.qty === 0; }).length;
-  var supLow  = supplies.filter(function(s){ return s.lowAt != null && s.qty > 0 && s.qty <= s.lowAt; }).length;
-  var supOk   = supplies.filter(function(s){ return s.lowAt == null || s.qty > s.lowAt; }).length;
+  var supUncounted = supplies.filter(function(s){ return s.qty == null; }).length;
+  var supOut  = supplies.filter(function(s){ return s.qty != null && s.lowAt != null && s.qty === 0; }).length;
+  var supLow  = supplies.filter(function(s){ return s.qty != null && s.lowAt != null && s.qty > 0 && s.qty <= s.lowAt; }).length;
+  var supOk   = supplies.filter(function(s){ return s.qty != null && (s.lowAt == null || s.qty > s.lowAt); }).length;
   var cats = ['Office Supplies', 'Printer & Paper', 'Key Cards & Access', 'Other'];
 
   // ── tabs ──
@@ -8946,6 +9049,7 @@ function renderSupplies() {
       + '<div class="stat-card" style="border-color:var(--green)"><div class="stat-num" style="color:var(--green)">' + supOk + '</div><div class="stat-lbl">In Stock</div></div>'
       + (supLow ? '<div class="stat-card" style="border-color:var(--amber)"><div class="stat-num" style="color:var(--amber)">' + supLow + '</div><div class="stat-lbl">Running Low</div></div>' : '')
       + (supOut ? '<div class="stat-card" style="border-color:var(--red)"><div class="stat-num" style="color:var(--red)">' + supOut + '</div><div class="stat-lbl">Out of Stock</div></div>' : '')
+      + (supUncounted ? '<div class="stat-card" style="border-color:var(--text3)"><div class="stat-num" style="color:var(--text3)">' + supUncounted + '</div><div class="stat-lbl">Not Yet Counted</div></div>' : '')
       + '</div>';
 
     // ── category grids ──
@@ -8957,7 +9061,9 @@ function renderSupplies() {
         + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px">';
       items.forEach(function(s) {
         var accentColor, statusLabel, cardBg;
-        if (s.lowAt == null) {
+        if (s.qty == null) {
+          accentColor = 'var(--text3)'; statusLabel = 'Not yet counted'; cardBg = 'var(--surface2)';
+        } else if (s.lowAt == null) {
           accentColor = 'var(--text3)'; statusLabel = 'Active count'; cardBg = 'var(--surface)';
         } else if (s.qty === 0) {
           accentColor = 'var(--red)'; statusLabel = 'Out of stock'; cardBg = 'var(--red-light,#fef2f2)';
@@ -8979,13 +9085,16 @@ function renderSupplies() {
             + ' ' + (lastLog.note || '') + '<br>' + llTime + (lastLog.by ? ' · ' + lastLog.by.split(' ')[0] : '') + '</div>';
         }
         var startLine = '';
-        if (s.startQty != null && s.startDate) {
+        if (s.qty != null && s.startQty != null && s.startDate) {
           var usedAmt = (s.startQty || 0) - (s.qty || 0);
           startLine = '<div class="sup-start-info">Started: ' + s.startQty + ' · ' + fmtShort(s.startDate) + (usedAmt !== 0 ? ' · ' + (usedAmt > 0 ? usedAmt + ' used' : Math.abs(usedAmt) + ' added') : '') + '</div>';
         }
+        var qtyDisplay = s.qty == null
+          ? '<div style="font-size:16px;font-weight:700;color:var(--text3);line-height:1.1;margin:8px 0">Not yet counted</div>'
+          : '<div style="font-size:34px;font-weight:800;color:' + accentColor + ';line-height:1.1;margin:4px 0">' + s.qty + '<span style="font-size:12px;font-weight:400;color:var(--text3);margin-left:4px">' + s.unit + '</span></div>';
         html += '<div style="background:' + cardBg + ';border:1px solid var(--border2);border-radius:var(--radius);border-top:3px solid ' + accentColor + ';padding:14px 12px;display:flex;flex-direction:column;gap:4px">'
           + '<div style="font-size:12px;font-weight:600;color:var(--text2);line-height:1.3;min-height:30px">' + s.name + '</div>'
-          + '<div style="font-size:34px;font-weight:800;color:' + accentColor + ';line-height:1.1;margin:4px 0">' + (s.qty || 0) + '<span style="font-size:12px;font-weight:400;color:var(--text3);margin-left:4px">' + s.unit + '</span></div>'
+          + qtyDisplay
           + '<div style="font-size:11px;font-weight:600;color:' + accentColor + '">' + statusLabel + '</div>'
           + startLine
           + (isAdmin ? '<div style="display:flex;gap:6px;margin-top:6px">'
@@ -9007,7 +9116,9 @@ function renderSupplies() {
       html += '<div class="card" style="margin-bottom:14px"><div class="card-hdr"><span class="card-title">' + cat + '</span><span class="card-count">' + items.length + ' item' + (items.length !== 1 ? 's' : '') + '</span></div>';
       items.forEach(function(s) {
         var statusBadge;
-        if (s.lowAt != null) {
+        if (s.qty == null) {
+          statusBadge = '<span class="pill" style="background:var(--surface2);color:var(--text3);font-size:10px">Not counted</span>';
+        } else if (s.lowAt != null) {
           if (s.qty === 0) statusBadge = '<span class="pill" style="background:var(--red-light,#fef2f2);color:var(--red);border:1px solid var(--red);font-size:10px">Out</span>';
           else if (s.qty <= s.lowAt) statusBadge = '<span class="pill" style="background:#fef9c3;color:#92400e;border:1px solid #fcd34d;font-size:10px">Low</span>';
           else statusBadge = '<span class="pill" style="background:var(--green-light);color:var(--green);border:1px solid #C8E4B0;font-size:10px">In Stock</span>';
@@ -9038,7 +9149,7 @@ function renderSupplies() {
           + '<span class="sup-name">' + s.name + listStartInfo + '</span>'
           + statusBadge
           + (isAdmin ? '<button class="sup-qty-btn" onclick="adjustSupply(\'' + s.id + '\',-1)">&#8722;</button>' : '')
-          + '<span class="sup-qty-num"' + (isAdmin ? ' onclick="setSupplyQtyPrompt(\'' + s.id + '\')" title="Click to set exact qty"' : '') + '>' + (s.qty || 0) + '</span>'
+          + '<span class="sup-qty-num"' + (isAdmin ? ' onclick="setSupplyQtyPrompt(\'' + s.id + '\')" title="Click to set exact qty"' : '') + '>' + (s.qty == null ? '—' : s.qty) + '</span>'
           + (isAdmin ? '<button class="sup-qty-btn" onclick="adjustSupply(\'' + s.id + '\',1)">&#43;</button>' : '')
           + '<span class="sup-unit">' + s.unit + '</span>'
           + updTag + logBtn
@@ -9171,6 +9282,29 @@ function applySupplyAdjustment(supName, delta, note) {
   if (curSec === 'supplies') renderSupplies();
   if (curSec === 'todos') renderTodos();
   return { sec: 'supplies', type: 'EDIT', id: s.id, before: before, after: after, label: 'supply adjustment — ' + s.name };
+}
+
+// Sets an exact physical count (not a delta) — the periodic-recount counterpart to
+// applySupplyAdjustment, used for items where automatic in/out tracking was turned off
+// (e.g. Key Cards – Blank Stock, which gets reused between residents in ways the system
+// can't reliably classify). Clears the "Not yet counted" state by stamping lastCountedAt.
+function setSupplyExactCount(supName, newQty, note) {
+  if (!state.supplies) state.supplies = [];
+  var s = state.supplies.find(function(x) { return x.name === supName; });
+  if (!s) return null;
+  if (!s.log) s.log = [];
+  var by = currentUser ? currentUser.name : '';
+  var before = { qty: s.qty, updatedAt: s.updatedAt, updatedBy: s.updatedBy, log: cloneData(s.log), lastCountedAt: s.lastCountedAt };
+  var prevQty = s.qty || 0;
+  var delta = newQty - prevQty;
+  s.qty = Math.max(0, newQty);
+  s.lastCountedAt = Date.now();
+  s.updatedAt = Date.now(); s.updatedBy = by;
+  s.log.push({ ts: Date.now(), by: by, delta: delta, prevQty: prevQty, newQty: s.qty, note: note || 'Physical count' });
+  var after = { qty: s.qty, updatedAt: s.updatedAt, updatedBy: s.updatedBy, log: cloneData(s.log), lastCountedAt: s.lastCountedAt };
+  checkSupplyLowStockTodos(); scheduleSave(); updateBadges(); renderDash();
+  if (curSec === 'supplies') renderSupplies();
+  return { sec: 'supplies', type: 'EDIT', id: s.id, before: before, after: after, label: 'physical count — ' + s.name };
 }
 
 var _qaSupplyId = null, _qaNewQty = 0;
@@ -9926,11 +10060,11 @@ function renderPdAutoBlocks(isLead) {
 
   // Fees to ledger
   var pendingFees = (state.keys||[]).filter(function(k){
-    if (k.feeAddedToLedger || k.feeWaived) return false;
-    if (k.isReplacement && k.fee) return true;
-    if (k.type==='one-time' && k.status==='issued' && k.reachedOut) {
-      var ms = k.issuedAt ? Date.now()-k.issuedAt : 0; return ms >= 2*3600000;
+    if (k.isReplacement && k.fee && !k.feeAddedToLedger && !k.feeWaived) return true;
+    if (k.type==='one-time' && k.status==='issued' && k.reachedOut && !k.feeAddedToLedger && !k.feeWaived) {
+      var ms = k.issuedAt ? Date.now()-k.issuedAt : 0; if (ms >= 2*3600000) return true;
     }
+    if (k.unreturnedFee && !k.unreturnedFeeAddedToLedger && !k.unreturnedFeeWaived) return true;
     return false;
   });
   if (pendingFees.length) {
@@ -9938,9 +10072,13 @@ function renderPdAutoBlocks(isLead) {
     html += '<div class="pd-auto-block" id="pd-blk-fees" style="border-color:rgba(217,119,6,0.35)"><div class="pd-auto-hdr" style="color:var(--amber)">💳 Charges to Add to Ledger</div>';
     pendingFees.forEach(function(k) {
       var content, defNs;
-      if (k.isReplacement) {
-        content = '<strong>Unit ' + esc(k.unit) + ' – ' + esc(k.name) + '</strong> — Replacement key card issued — <strong>$100</strong>';
-        defNs = 'Add $100 replacement key card fee to resident ledger for Unit ' + k.unit + '.';
+      if (k.isReplacement && k.fee && !k.feeAddedToLedger && !k.feeWaived) {
+        content = '<strong>Unit ' + esc(k.unit) + ' – ' + esc(k.name) + '</strong> — Replacement ' + (k.keyKind==='mail'?'mail key':'key card') + ' issued — <strong>$' + k.fee + '</strong>';
+        defNs = 'Add $' + k.fee + ' replacement fee to resident ledger for Unit ' + k.unit + '.';
+      } else if (k.unreturnedFee && !k.unreturnedFeeAddedToLedger && !k.unreturnedFeeWaived) {
+        var daysOut = unreturnedDaysOut(k);
+        content = '<strong>Unit ' + esc(k.unit) + ' – ' + esc(k.name) + '</strong> — Key not returned, ' + daysOut + ' day' + (daysOut!==1?'s':'') + ' past lease end — <strong>$' + k.unreturnedFee + '</strong>';
+        defNs = 'Add $' + k.unreturnedFee + ' unreturned-key fee to resident ledger for Unit ' + k.unit + ' (' + daysOut + ' days and counting — notify Paige/management for the daily holdover charge).';
       } else {
         var hrs = Math.floor((Date.now()-k.issuedAt)/3600000);
         content = '<strong>Unit ' + esc(k.unit) + ' – ' + esc(k.name) + '</strong>' + (k.guest?' / Guest: '+esc(k.guest):'') + ' — One-time key not returned (' + hrs + 'h out, resident contacted) — <strong>$25</strong>';
@@ -10259,17 +10397,22 @@ function generatePassdown() {
 
   // Charges to ledger
   var pendingFeesGen = (state.keys||[]).filter(function(k){
-    if (k.feeAddedToLedger || k.feeWaived || pdExcluded['fee_'+k.id]) return false;
-    if (k.isReplacement && k.fee) return true;
-    if (k.type==='one-time' && k.status==='issued' && k.reachedOut) { var ms2=k.issuedAt?now-k.issuedAt:0; return ms2>=2*3600000; }
+    if (pdExcluded['fee_'+k.id]) return false;
+    if (k.isReplacement && k.fee && !k.feeAddedToLedger && !k.feeWaived) return true;
+    if (k.type==='one-time' && k.status==='issued' && k.reachedOut && !k.feeAddedToLedger && !k.feeWaived) { var ms2=k.issuedAt?now-k.issuedAt:0; if (ms2>=2*3600000) return true; }
+    if (k.unreturnedFee && !k.unreturnedFeeAddedToLedger && !k.unreturnedFeeWaived) return true;
     return false;
   });
   if (pendingFeesGen.length) {
     out += '\n💳 Charges to Add to Ledger\n';
     pendingFeesGen.forEach(function(k) {
-      if (k.isReplacement) {
-        out += 'Unit ' + k.unit + ' – ' + k.name + ' — Replacement key card — $100\n';
-        out += 'Next Step: ' + pdNote('fee_'+k.id, 'Add $100 replacement key card fee to resident ledger.') + '\n';
+      if (k.isReplacement && k.fee && !k.feeAddedToLedger && !k.feeWaived) {
+        out += 'Unit ' + k.unit + ' – ' + k.name + ' — Replacement ' + (k.keyKind==='mail'?'mail key':'key card') + ' — $' + k.fee + '\n';
+        out += 'Next Step: ' + pdNote('fee_'+k.id, 'Add $' + k.fee + ' replacement fee to resident ledger.') + '\n';
+      } else if (k.unreturnedFee && !k.unreturnedFeeAddedToLedger && !k.unreturnedFeeWaived) {
+        var daysOut2 = unreturnedDaysOut(k);
+        out += 'Unit ' + k.unit + ' – ' + k.name + ' — Key not returned, ' + daysOut2 + ' day' + (daysOut2!==1?'s':'') + ' past lease end — $' + k.unreturnedFee + '\n';
+        out += 'Next Step: ' + pdNote('fee_'+k.id, 'Add $' + k.unreturnedFee + ' unreturned-key fee to resident ledger. ' + daysOut2 + ' days and counting — notify Paige/management for the daily holdover charge.') + '\n';
       } else {
         var hrs2 = Math.floor((now-k.issuedAt)/3600000);
         out += 'Unit ' + k.unit + ' – ' + k.name + (k.guest?' / Guest: '+k.guest:'') + ' — Key not returned (' + hrs2 + 'h, contacted) — $25\n';
@@ -10652,6 +10795,7 @@ function openAddKey() {
   ['ky-unit','ky-name','ky-fob','ky-notes','ky-guest','ky-timeout','ky-company','ky-workarea','ky-vendor-return'].forEach(function(id){var el=g(id);if(el)el.value='';});
   g('ky-type').value='resident'; g('ky-status').value='issued'; g('ky-expiry').value='';
   var rCb=g('ky-replacement'); if(rCb) rCb.checked=false;
+  var kkEl=g('ky-kind'); if(kkEl) kkEl.value='unit';
   var gr=g('ky-issued-to-guest'); if(gr) gr.checked=true;
   keyTypeChange();
   openModal('modal-key');
@@ -10670,6 +10814,7 @@ function openEditKey(id) {
   var wEl=g('ky-workarea'); if(wEl) wEl.value=k.workArea||'';
   var vrEl=g('ky-vendor-return'); if(vrEl) vrEl.value=k.vendorReturn||'';
   var rCb=g('ky-replacement'); if(rCb) rCb.checked=k.isReplacement||false;
+  var kkEl=g('ky-kind'); if(kkEl) kkEl.value=k.keyKind||'unit';
   var itVal = k.issuedTo || 'guest';
   var itEl = g('ky-issued-to-' + itVal); if (itEl) itEl.checked = true;
   keyTypeChange();
@@ -11821,6 +11966,114 @@ function savePropertyConfig() {
   toast('Property info saved');
 }
 
+// ===== [RECURRING REMINDERS] =================================================
+// Lightweight recurring-task primitive (2026-07-12): a labeled item with a cadence
+// in days that reappears after each completion instead of being archived. Optionally
+// linked to a supply item — completing it then asks for the actual physical count and
+// sets that supply's qty directly (see setSupplyExactCount), rather than just a checkbox.
+var editingRecurringId = null;
+function rrData() { if (!state.recurringReminders) state.recurringReminders = []; return state.recurringReminders; }
+function rrDaysUntil(r) { if (!r.dueDate) return 0; return Math.round((new Date(r.dueDate + 'T00:00:00') - new Date(today() + 'T00:00:00')) / 86400000); }
+function rrIsDue(r) { return rrDaysUntil(r) <= 0; }
+function seedRecurringRemindersV1() {
+  if (state.recurringRemindersSeedV1) return;
+  var list = rrData();
+  if (!list.some(function(r) { return r.targetSupplyName === 'Key Cards – Blank Stock'; })) {
+    var due = new Date(); due.setDate(due.getDate() + 14);
+    list.push({ id: uid(), label: 'Physical count — Key Cards', intervalDays: 14, requireValue: true, valueLabel: 'Cards counted', targetSupplyName: 'Key Cards – Blank Stock', lastCompletedAt: null, lastCompletedBy: '', dueDate: localDateStr(due), createdAt: Date.now() });
+  }
+  state.recurringRemindersSeedV1 = true;
+  scheduleSave();
+}
+function renderRecurringReminders() {
+  var el = g('settings-recurring'); if (!el) return;
+  var list = rrData();
+  if (!list.length) { el.innerHTML = '<div class="text-3 text-sm" style="padding:10px 14px">No recurring reminders yet.</div>'; return; }
+  var html = '';
+  list.forEach(function(r) {
+    var d = rrDaysUntil(r);
+    var status = d < 0 ? '<span style="color:var(--red);font-weight:600">' + (-d) + 'd overdue</span>' : d === 0 ? '<span style="color:var(--amber);font-weight:600">Due today</span>' : '<span style="color:var(--text3)">Due in ' + d + 'd</span>';
+    html += '<div class="set-row"><div><div class="set-lbl">' + esc(r.label) + '</div><div class="set-hint">Every ' + r.intervalDays + ' days'
+      + (r.targetSupplyName ? ' · updates "' + esc(r.targetSupplyName) + '"' : '') + ' · Last done: '
+      + (r.lastCompletedAt ? fmtShort(localDateStr(new Date(r.lastCompletedAt))) + (r.lastCompletedBy ? ' by ' + esc(r.lastCompletedBy) : '') : 'never') + '</div></div>'
+      + '<div class="flex gap-8 items-center">' + status
+      + '<button class="btn btn-ghost btn-xs" onclick="openEditRecurring(\'' + r.id + '\')" title="Edit">&#9998;</button>'
+      + '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteRecurring(\'' + r.id + '\')">&#x2715;</button></div></div>';
+  });
+  el.innerHTML = html;
+}
+function openAddRecurring() { editingRecurringId = null; openRecurringModal(); }
+function openEditRecurring(id) { editingRecurringId = id; openRecurringModal(); }
+function openRecurringModal() {
+  var r = editingRecurringId ? rrData().find(function(x) { return x.id === editingRecurringId; }) : null;
+  var supOpts = '<option value="">— None (simple checkbox) —</option>' + (state.supplies || []).map(function(s) {
+    return '<option value="' + esc(s.name) + '"' + (r && r.targetSupplyName === s.name ? ' selected' : '') + '>' + esc(s.name) + '</option>';
+  }).join('');
+  var bdy = '<div class="fg"><label>Label</label><input type="text" id="rr-label" value="' + (r ? esc(r.label) : '') + '" placeholder="e.g. Recount Key Cards"></div>'
+    + '<div class="fg"><label>Repeats every</label><div class="flex gap-8 items-center"><input type="number" id="rr-interval" min="1" max="365" value="' + (r ? r.intervalDays : 14) + '" style="width:76px"><span class="set-hint">days</span></div></div>'
+    + '<div class="fg"><label>Linked supply item (optional)</label><select id="rr-supply">' + supOpts + '</select><div class="set-hint">If set, completing this reminder asks for the counted quantity and sets that item\'s stock directly — for things staff physically count (like Key Cards) rather than a plain to-do.</div></div>';
+  var ov = g('modal-recurring');
+  if (!ov) { ov = document.createElement('div'); ov.className = 'modal-ov'; ov.id = 'modal-recurring'; document.body.appendChild(ov); }
+  ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">' + (r ? 'Edit' : 'Add') + ' Recurring Reminder</span><button class="modal-close" onclick="closeModal(\'modal-recurring\')">&#x2715;</button></div>'
+    + '<div class="modal-bdy">' + bdy + '</div>'
+    + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-recurring\')">Cancel</button><button class="btn btn-primary" onclick="saveRecurring()">Save</button></div></div>';
+  openModal('modal-recurring');
+}
+function saveRecurring() {
+  var label = (g('rr-label').value || '').trim(); if (!label) { toast('Enter a label'); return; }
+  var interval = parseInt(g('rr-interval').value, 10) || 14;
+  var supplyName = g('rr-supply').value || '';
+  var list = rrData();
+  if (editingRecurringId) {
+    var r = list.find(function(x) { return x.id === editingRecurringId; }); if (!r) return;
+    r.label = label; r.intervalDays = interval; r.targetSupplyName = supplyName; r.requireValue = !!supplyName; r.valueLabel = supplyName ? 'Counted quantity' : '';
+    logActivity('settings', 'edit', 'Updated recurring reminder — ' + label);
+  } else {
+    var due = new Date(); due.setDate(due.getDate() + interval);
+    list.push({ id: uid(), label: label, intervalDays: interval, requireValue: !!supplyName, valueLabel: supplyName ? 'Counted quantity' : '', targetSupplyName: supplyName, lastCompletedAt: null, lastCompletedBy: '', dueDate: localDateStr(due), createdAt: Date.now() });
+    logActivity('settings', 'create', 'Added recurring reminder — ' + label);
+  }
+  editingRecurringId = null;
+  scheduleSave(); closeModal('modal-recurring'); renderRecurringReminders(); renderDash();
+  toast('Saved');
+}
+function deleteRecurring(id) {
+  if (!confirm('Delete this recurring reminder?')) return;
+  var list = rrData();
+  var r = list.find(function(x) { return x.id === id; });
+  state.recurringReminders = list.filter(function(x) { return x.id !== id; });
+  logActivity('settings', 'delete', 'Deleted recurring reminder' + (r ? (' — ' + r.label) : ''));
+  scheduleSave(); renderRecurringReminders(); renderDash(); toast('Deleted');
+}
+function promptCompleteRecurring(id) {
+  var r = rrData().find(function(x) { return x.id === id; }); if (!r) return;
+  if (!r.requireValue) { completeRecurring(id, null); return; }
+  var val = prompt((r.valueLabel || 'Value') + ' for "' + r.label + '":', '');
+  if (val === null) return;
+  completeRecurring(id, val);
+}
+function completeRecurring(id, enteredValue) {
+  var r = rrData().find(function(x) { return x.id === id; }); if (!r) return;
+  var cmds = [];
+  var _rb = { lastCompletedAt: r.lastCompletedAt, lastCompletedBy: r.lastCompletedBy, dueDate: r.dueDate };
+  if (r.requireValue) {
+    var n = parseInt(enteredValue, 10);
+    if (isNaN(n) || n < 0) { toast('Enter a valid count'); return; }
+    if (r.targetSupplyName) {
+      var supCmd = setSupplyExactCount(r.targetSupplyName, n, 'Recurring count — ' + r.label);
+      if (supCmd) cmds.push(supCmd);
+    }
+  }
+  r.lastCompletedAt = Date.now(); r.lastCompletedBy = currentUser ? currentUser.name : '';
+  var nextDue = new Date(); nextDue.setDate(nextDue.getDate() + (r.intervalDays || 14));
+  r.dueDate = localDateStr(nextDue);
+  cmds.push({ sec: 'recurringReminders', type: 'EDIT', id: r.id, before: _rb, after: { lastCompletedAt: r.lastCompletedAt, lastCompletedBy: r.lastCompletedBy, dueDate: r.dueDate }, label: 'complete recurring — ' + r.label });
+  pushBatchUndo('recurringReminders', 'complete recurring — ' + r.label, cmds);
+  logActivity('settings', 'complete', 'Completed recurring reminder — ' + r.label, r.requireValue ? ('Counted: ' + enteredValue) : '');
+  scheduleSave(); renderRecurringReminders(); renderDash();
+  toast(r.label + ' — done. Next due ' + fmtShort(r.dueDate));
+}
+
 // ===== [SETTINGS] ============================================================
 var settingsTab = 'general';
 function setSettingsTab(t, el) {
@@ -11847,6 +12100,7 @@ function renderSettings() {
   if (isAdmin) renderTeamAccounts();
   renderTaskList('in');
   renderTaskList('out');
+  renderRecurringReminders();
   renderSettingsWTFloors();
   renderAmenitySpaceSettings();
   renderTeamStaff();
@@ -12828,6 +13082,10 @@ async function init() {
   await migratePinsToHashed();
   purgeDeadResidentProfiles();
   housekeepState();
+  migrateKeyCardsToManualCountV1();
+  migrateKeyKindV1();
+  checkUnreturnedKeyFees();
+  seedRecurringRemindersV1();
   migrateTaskUpdatesV2();
   migrateTaskUpdatesV3();
   migrateMovePhaseCats();
