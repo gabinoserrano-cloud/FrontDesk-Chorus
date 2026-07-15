@@ -1343,7 +1343,7 @@
 </div></div>
 
 <div class="modal-ov" id="modal-board-cl"><div class="modal" style="max-width:780px">
-  <div class="modal-hdr"><span class="modal-title" id="board-cl-title">Move Checklist</span><button class="modal-close" aria-label="Close" onclick="closeBoardCL()">&#x2715;</button></div>
+  <div class="modal-hdr"><span class="modal-title" id="board-cl-title">Move Checklist</span><button class="btn btn-secondary btn-xs" id="board-cl-edit-btn" style="margin-left:auto;margin-right:8px" onclick="editMoveFromBoard()" title="Edit move details (dates, total, notes)">&#9998; Edit Details</button><button class="modal-close" aria-label="Close" onclick="closeBoardCL()">&#x2715;</button></div>
   <div class="cl-inner" id="board-cl-body" style="max-height:72vh;overflow-y:auto"></div>
 </div></div>
 
@@ -1610,7 +1610,7 @@
     </div>
     <div class="fg"><label>Flag as stale after <span style="font-weight:400;color:var(--text3)">(days, optional — default 5)</span></label><input id="td-staledays" type="number" min="1" placeholder="5"></div>
   </div>
-  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-todo')">Cancel</button><button class="btn btn-primary" id="modal-todo-savebtn" onclick="saveTodoModal()">Save</button></div>
+  <div class="modal-ftr"><button class="btn btn-ghost btn-sm" id="modal-todo-delete-btn" style="color:var(--red);display:none" onclick="deleteTodoFromModal()">Delete</button><button class="btn btn-secondary" onclick="closeModal('modal-todo')">Cancel</button><button class="btn btn-primary" id="modal-todo-savebtn" onclick="saveTodoModal()">Save</button></div>
 </div></div>
 
 <div class="modal-ov" id="modal-todo-flag"><div class="modal" style="max-width:420px">
@@ -2018,8 +2018,10 @@ async function mergeTodoInbox() {
     var res = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox&select=data', { headers: hdrs });
     if (!res.ok) return;
     var rows = await res.json();
-    var inbox = rows[0] && rows[0].data && rows[0].data.todos;
-    if (!Array.isArray(inbox) || !inbox.length) return;
+    var rowData = (rows[0] && rows[0].data) || {};
+    var inbox = Array.isArray(rowData.todos) ? rowData.todos : [];
+    var moveUpdates = Array.isArray(rowData.moveUpdates) ? rowData.moveUpdates : [];
+    if (!inbox.length && !moveUpdates.length) return;
     var resolved = [];
     for (var i = 0; i < inbox.length; i++) {
       var item = inbox[i];
@@ -2029,6 +2031,9 @@ async function mergeTodoInbox() {
       if (!acct) return; // accounts not ready / unknown target — retry next cycle, row untouched
       resolved.push({ item: item, acctId: acct.id });
     }
+    // moveUpdates fall back to a to-do when no card matches — they need Gabino's account too
+    var gabAcct = (state.accounts || []).find(function (a) { return (a.name || '').toLowerCase().indexOf('gabino') !== -1; });
+    if (moveUpdates.length && !gabAcct) return;
     var added = 0;
     resolved.forEach(function (r) {
       var item = r.item;
@@ -2048,18 +2053,78 @@ async function mergeTodoInbox() {
       });
       added++;
     });
+    // Apply queued welcome-letter data to move-in cards: fill blanks only, never
+    // overwrite, flag mismatches — mirrors updateMoveFromLetter. No matching card
+    // → becomes a to-do so Gabino decides whether it's a new move.
+    var movesTouched = 0;
+    moveUpdates.forEach(function (mu) {
+      if (!mu || !mu.unit) return;
+      var stamp = 'letter:' + (mu.srcThread || mu.id || '');
+      var unitNorm = function (u) { return String(u || '').replace(/^0+(?=\d)/, ''); }; // letters/passdowns zero-pad units, Moves cards don't
+      var card = (state.moves || []).find(function (mv) { return !mv.archivedAt && mv.type === 'in' && unitNorm(mv.unit) === unitNorm(mu.unit); });
+      if (card) {
+        if ((card.notes || '').indexOf(stamp) !== -1) return; // already applied
+        var flags = [];
+        if (mu.leaseStart) {
+          if (!card.date || card.date === 'TBD') card.date = mu.leaseStart;
+          else if (card.date !== mu.leaseStart) flags.push('⚠ Letter lease start ' + mu.leaseStart + ' differs from this entry (' + card.date + ') — verify');
+        }
+        if (mu.total) {
+          var curTotal = String(card.total || '').trim();
+          if (!curTotal) card.total = mu.total;
+          else if (curTotal.replace(/[,$\s]/g, '') !== String(mu.total).replace(/[,$\s]/g, '')) flags.push('⚠ Letter total $' + mu.total + ' differs from this entry ($' + curTotal + ') — verify');
+        }
+        if (!String(card.resident || '').trim() && mu.primaryName) {
+          card.resident = mu.primaryName;
+          flags.push('Resident name guessed from email — confirm');
+        }
+        var addNote = ['Welcome letter auto-imported ' + today() + ' [' + stamp + ']'];
+        if (mu.emails && mu.emails.length) addNote.push('Resident email(s): ' + mu.emails.join(', '));
+        addNote = addNote.concat(flags);
+        card.notes = (card.notes || '').trim() ? (card.notes.trim() + '\n' + addNote.join('\n')) : addNote.join('\n');
+        logActivity('moves', 'edit', 'Welcome letter data applied — Unit ' + mu.unit + (flags.length ? ' (' + flags.length + ' flag(s) to verify)' : ''), mu.addedBy || 'Email Triage');
+        movesTouched++;
+      } else {
+        if (!state.userTodos) state.userTodos = {};
+        if (!state.userTodos[gabAcct.id]) state.userTodos[gabAcct.id] = [];
+        var glist = state.userTodos[gabAcct.id];
+        var mdup = glist.some(function (t) { return (mu.srcThread && t.srcThread === mu.srcThread); });
+        if (mdup) return;
+        var bits = [];
+        if (mu.primaryName) bits.push(mu.primaryName + '(?)');
+        if (mu.leaseStart) bits.push('lease start ' + mu.leaseStart);
+        if (mu.total) bits.push('move-in total $' + mu.total);
+        if (mu.emails && mu.emails.length) bits.push(mu.emails.join(', '));
+        glist.push({
+          id: mu.id || uid(),
+          text: 'New move-in? Welcome letter #' + mu.unit + ' — no card in Moves yet',
+          note: (bits.join(' · ') || 'no details parsed') + ' — confirm if this needs a move card, then use 📧 Import Letter',
+          priority: 'normal', dueDate: null, category: 'leasing', linkedUnit: String(mu.unit),
+          owner: 'Me', staleDays: null, status: 'open', done: false,
+          createdAt: Date.now(), lastUpdated: Date.now(),
+          srcThread: mu.srcThread || '', addedBy: mu.addedBy || 'Email Triage'
+        });
+        added++;
+      }
+    });
+    var merged = added || movesTouched;
+    if (merged) {
+      if (added) logActivity('todos', 'create', 'Imported ' + added + ' to-do(s) from email triage inbox', (resolved.length + moveUpdates.length - merged) ? 'duplicates skipped' : '');
+      scheduleSave();
+      await pushCloud();
+      if (localDirty) return; // save didn't land — keep the inbox row so the next cycle retries (drain is idempotent)
+      if (typeof curSec !== 'undefined' && curSec === 'todos') renderTodos();
+      if (movesTouched && typeof curSec !== 'undefined' && curSec === 'moves') renderMoves();
+      updateBadges();
+      toast((added ? added + ' to-do' + (added > 1 ? 's' : '') : '') + (added && movesTouched ? ' + ' : '') + (movesTouched ? movesTouched + ' move card(s) updated' : '') + ' from email triage');
+    }
+    // Clear the queue only once the merged state is confirmed saved (or nothing was new).
+    var cleared = Object.assign({}, rowData, { todos: [], moveUpdates: [] });
     await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox', {
       method: 'PATCH',
       headers: await getSupaHdr({ 'Prefer': 'return=minimal' }),
-      body: JSON.stringify({ data: { todos: [] }, updated_at: new Date().toISOString() })
+      body: JSON.stringify({ data: cleared, updated_at: new Date().toISOString() })
     });
-    if (added) {
-      logActivity('todos', 'create', 'Imported ' + added + ' to-do(s) from email triage inbox', (resolved.length - added) ? ((resolved.length - added) + ' duplicate(s) skipped') : '');
-      scheduleSave();
-      if (typeof curSec !== 'undefined' && curSec === 'todos') renderTodos();
-      updateBadges();
-      toast(added + ' to-do' + (added > 1 ? 's' : '') + ' added from email triage');
-    }
   } catch (e) { console.warn('mergeTodoInbox failed:', e); }
 }
 setInterval(function () { mergeTodoInbox(); }, 300000);
@@ -2191,6 +2256,7 @@ var DEFAULT_OUT_TASKS = [
   { text: 'Elevator pads removed after move', cat: 'Elevator' },
   { text: 'Unit cleaned and ready for next resident', cat: 'Wrap-Up' },
   { text: 'Unit status updated to Vacant', cat: 'Wrap-Up' },
+  { text: 'Update Master List with move-out', cat: 'Wrap-Up' },
   { text: 'Notify leasing of completed move-out', cat: 'Wrap-Up' }
 ];
 var DEFAULT_AMENITY_SPACES = [
@@ -3488,9 +3554,15 @@ function openBoardCL(id) {
   boardCLId = id;
   var ttl = g('board-cl-title'); if (ttl) ttl.textContent = (m.type === 'in' ? 'Move-In' : 'Move-Out') + ' — Unit ' + m.unit;
   var body = g('board-cl-body'); if (body) body.innerHTML = buildCL(m, 'board');
+  var editBtn = g('board-cl-edit-btn'); if (editBtn) editBtn.style.display = (currentUser && currentUser.role === 'staff') ? 'none' : '';
   openModal('modal-board-cl');
 }
 function closeBoardCL() { boardCLId = null; closeModal('modal-board-cl'); }
+function editMoveFromBoard() {
+  var id = boardCLId; if (!id) return;
+  closeBoardCL();
+  openEditMove(id);
+}
 function boardTaskRefresh(moveId) {
   var bMod = g('modal-board-cl');
   if (bMod && bMod.classList.contains('open') && boardCLId === moveId) {
@@ -4156,9 +4228,9 @@ function buildCL(m, filterCat) {
     }
     // Note button
     var hasNote = t.note && t.note.trim();
-    html += '<button class="btn btn-ghost btn-xs" style="padding:1px 4px;flex-shrink:0;opacity:' + (hasNote ? '1' : '0.35') + '" title="Note" onclick="event.stopPropagation();toggleTaskNote(\'' + t.id + '\')">' + (hasNote ? '💬' : '💬') + '</button>';
+    html += '<button class="btn btn-ghost btn-xs" style="padding:1px 4px;flex-shrink:0;opacity:' + (hasNote ? '1' : '0.35') + '" title="Note" onclick="event.stopPropagation();toggleTaskNote(this)">' + (hasNote ? '💬' : '💬') + '</button>';
     // ··· button
-    html += '<button class="btn btn-ghost btn-xs" style="padding:1px 5px;flex-shrink:0" title="More options" onclick="event.stopPropagation();toggleTaskExtra(\'' + t.id + '\')">···</button>';
+    html += '<button class="btn btn-ghost btn-xs" style="padding:1px 5px;flex-shrink:0" title="More options" onclick="event.stopPropagation();toggleTaskExtra(this)">···</button>';
     // Delete button
     html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);padding:1px 5px;flex-shrink:0" onclick="deleteTask(\'' + m.id + '\',\'' + t.id + '\')">&#x2715;</button>';
     html += '</div>';
@@ -4221,14 +4293,19 @@ function updateTaskField(moveId, taskId, field, value) {
   if (field === 'cat' && movesView === 'board' && curSec === 'moves') renderMovesBoard();
 }
 
-function toggleTaskNote(taskId) {
-  var el = g('task-note-' + taskId); if (!el) return;
+function toggleTaskNote(btn) {
+  // Look up relative to the clicked button (not by raw task ID) — the same task's
+  // checklist markup is rendered into hidden table/mobile-card copies too, so a
+  // getElementById(taskId) lookup can silently toggle an invisible duplicate.
+  var item = btn.closest ? btn.closest('.cl-item') : null; if (!item) return;
+  var el = item.nextElementSibling; if (!el) return;
   var hidden = el.style.display === 'none';
   el.style.display = hidden ? '' : 'none';
   if (hidden) { var ta = el.querySelector('textarea'); if (ta) ta.focus(); }
 }
-function toggleTaskExtra(taskId) {
-  var el = g('task-extra-' + taskId); if (!el) return;
+function toggleTaskExtra(btn) {
+  var item = btn.closest ? btn.closest('.cl-item') : null; if (!item) return;
+  var el = item.nextElementSibling && item.nextElementSibling.nextElementSibling; if (!el) return;
   el.style.display = (el.style.display === 'none') ? '' : 'none';
 }
 
@@ -4796,7 +4873,9 @@ function deleteMove(id) {
 }
 function printMovesReport() {
   var t = today();
-  var active = (state.moves || []).filter(function (m) { return !m.archivedAt; });
+  // Current/upcoming only — exclude overdue-but-not-yet-archived moves so the report
+  // doesn't fill up with stale entries whose checklist just hasn't been closed out.
+  var active = (state.moves || []).filter(function (m) { return !m.archivedAt && (!m.date || m.date === 'TBD' || m.date >= t); });
   function names(m) {
     var n = esc(m.resident || '');
     var co = (m.coResidents || []).map(function (c) { return esc(c.name); });
@@ -10895,6 +10974,7 @@ function openAddTodoModal(dateStr, textStr, priorityStr, categoryStr) {
   fillTodoCategorySelects();
   g('modal-todo-title').textContent = 'Add To-Do';
   g('modal-todo-savebtn').textContent = 'Add';
+  var delBtnA = g('modal-todo-delete-btn'); if (delBtnA) delBtnA.style.display = 'none';
   g('td-text').value = textStr || ''; g('td-note').value = '';
   g('td-date').value = dateStr || ''; g('td-priority').value = priorityStr || 'normal';
   g('td-category').value = categoryStr || ''; g('td-unit').value = '';
@@ -10927,7 +11007,14 @@ function openEditTodo(id) {
   g('td-staledays').value = t.staleDays || '';
   var sh = g('td-shift'); if (sh) sh.value = t.dueShift || '';
   var aw = g('td-assign-wrap'); if (aw) aw.style.display = 'none'; // no reassignment on edit — take back + reassign instead
+  var delBtnE = g('modal-todo-delete-btn'); if (delBtnE) delBtnE.style.display = '';
   openModal('modal-todo');
+}
+function deleteTodoFromModal() {
+  if (!editingTodoId) return;
+  var id = editingTodoId;
+  closeModal('modal-todo'); editingTodoId = null;
+  deleteTodo(id);
 }
 function saveTodoModal() {
   var text = g('td-text').value.trim(); if (!text) { toast('Enter a task first'); return; }
