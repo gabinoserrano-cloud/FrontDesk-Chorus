@@ -3681,6 +3681,14 @@ function buildTimeSlots() {
   }
 }
 
+// Service Elevator / Loading Dock are physical resources shared between the single
+// Moves reservation and however many Amenity Bookings get logged against them —
+// the two conflict checks below cross-reference each other so a double-booking on
+// either side gets caught regardless of which section it was made from.
+var ELEVATOR_DOCK_SPACES = ['Service Elevator', 'Loading Dock'];
+function spaceHitsElevatorDock(spaceStr) {
+  return ELEVATOR_DOCK_SPACES.some(function (s) { return (spaceStr || '').indexOf(s) !== -1; });
+}
 function checkApptConflict(date, startTime, excludeId) {
   if (!date || !startTime) return null;
   // A block is 3 hours. Check if any other move on same date has overlapping block.
@@ -3692,6 +3700,24 @@ function checkApptConflict(date, startTime, excludeId) {
   }).forEach(function (m) {
     var ms = timeToMins(m.apptTime), me = ms + 180;
     if (startMins < me && endMins > ms) conflicts.push(m);
+  });
+  // Cross-check Amenity Bookings on the same shared elevator/dock
+  (state.amenities || []).filter(function (a) {
+    return a.date === date && spaceHitsElevatorDock(a.space);
+  }).forEach(function (a) {
+    var as = a.start ? timeToMins(a.start) : 0, ae = a.end ? timeToMins(a.end) : 24 * 60;
+    if (startMins < ae && endMins > as) conflicts.push({ unit: a.unit, resident: a.resident + ' — ' + a.space + ' booking', apptTime: a.start });
+  });
+  return conflicts.length ? conflicts : null;
+}
+// Reverse direction: does a proposed Amenity Booking collide with an existing Moves reservation?
+function checkMoveConflictForAmenity(spaceStr, date, start, end) {
+  if (!spaceHitsElevatorDock(spaceStr) || !date) return null;
+  var s1 = start ? timeToMins(start) : 0, e1 = end ? timeToMins(end) : 24 * 60;
+  var conflicts = (state.moves || []).filter(function (m) {
+    if (m.archivedAt || m.apptDate !== date || !m.apptTime) return false;
+    var s2 = timeToMins(m.apptTime), e2 = s2 + 180;
+    return s1 < e2 && s2 < e1;
   });
   return conflicts.length ? conflicts : null;
 }
@@ -7211,6 +7237,11 @@ function saveAmenity() {
       var ecNames = editConflicts.map(function(x){ return x.resident + ' (Unit ' + x.unit + ')' + (x.start ? ' ' + fmtTime(x.start) + (x.end ? '–' + fmtTime(x.end) : '') : ''); }).join(', ');
       if (!confirm('⚠ Conflict: ' + space + ' is already booked on ' + fmtShort(date) + ' — ' + ecNames + '.\n\nSave anyway?')) return;
     }
+    var editMoveConflicts = checkMoveConflictForAmenity(space, date, editStart, editEnd);
+    if (editMoveConflicts) {
+      var emNames = editMoveConflicts.map(function(m){ return 'Unit ' + m.unit + ' (' + m.resident + ')' + (m.apptTime ? ' ' + fmtTime(m.apptTime) : ''); }).join(', ');
+      if (!confirm('⚠ Conflict: ' + space + ' already has a move reservation on ' + fmtShort(date) + ' — ' + emNames + '.\n\nSave anyway?')) return;
+    }
     var _ab = Object.assign({}, a);
     a.resident=resident; a.unit=unit; a.space=space; a.date=date; a.start=editStart; a.end=editEnd; a.type=g('am-type').value; a.fee=g('am-fee').value.trim(); a.notes=g('am-notes').value.trim();
     pushUndo({ sec: 'amenities', type: 'EDIT', id: a.id, before: _ab, after: Object.assign({}, a), label: 'amenity edit — Unit ' + unit });
@@ -7227,6 +7258,11 @@ function saveAmenity() {
   if (conflicts.length) {
     var names = conflicts.map(function(x){ return x.resident + ' (Unit ' + x.unit + ')' + (x.start ? ' ' + fmtTime(x.start) + (x.end ? '–' + fmtTime(x.end) : '') : ''); }).join(', ');
     if (!confirm('⚠ Conflict: ' + space + ' is already booked on ' + fmtShort(date) + ' — ' + names + '.\n\nAdd anyway?')) return;
+  }
+  var newMoveConflicts = checkMoveConflictForAmenity(space, date, newStart, newEnd);
+  if (newMoveConflicts) {
+    var nmNames = newMoveConflicts.map(function(m){ return 'Unit ' + m.unit + ' (' + m.resident + ')' + (m.apptTime ? ' ' + fmtTime(m.apptTime) : ''); }).join(', ');
+    if (!confirm('⚠ Conflict: ' + space + ' already has a move reservation on ' + fmtShort(date) + ' — ' + nmNames + '.\n\nAdd anyway?')) return;
   }
   var a = { id: uid(), resident: resident, unit: unit, space: space, date: date, start: newStart, end: newEnd, type: g('am-type').value, fee: g('am-fee').value.trim(), notes: g('am-notes').value.trim(), addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
   if (!state.amenities) state.amenities = [];
