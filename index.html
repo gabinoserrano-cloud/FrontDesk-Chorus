@@ -626,6 +626,17 @@
   .td-bcard-meta{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
   .td-bcard-owner{font-size:11px;color:var(--text3);margin-top:5px}
   @media(max-width:650px){.td-board-cols{display:flex;overflow-x:auto;padding-bottom:4px;grid-template-columns:none}.td-board-col{flex:0 0 200px}}
+  /* Focus view — computed Eisenhower quadrants + today's 1-2-3 picks */
+  .focus-grid{display:grid;gap:8px;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .focus-quad{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:8px;min-height:70px}
+  .focus-quad-hdr{display:flex;justify-content:space-between;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);padding:2px 2px 8px}
+  .focus-strip{display:grid;gap:10px;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .focus-slot{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;box-shadow:var(--shadow)}
+  .focus-slot input[type=checkbox]{width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:var(--accent);cursor:pointer}
+  .focus-slot.empty{border-style:dashed;background:transparent;box-shadow:none;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:12px;min-height:52px}
+  .focus-tier-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);padding:0 2px 6px}
+  @media(max-width:900px){.focus-strip{grid-template-columns:1fr}}
+  @media(max-width:650px){.focus-grid{grid-template-columns:1fr}}
   .pill-cat-resident{background:var(--accent-light);color:var(--accent)}
   .pill-cat-building{background:var(--amber-light);color:var(--amber)}
   .pill-cat-leasing{background:var(--purple-light);color:var(--purple)}
@@ -898,6 +909,7 @@
         <div class="sub-tab td-cf" id="td-assigned-pill" style="display:none" onclick="setTodoAssignedView(this)">&#128100; Assigned by me</div>
         <div class="sub-tab td-vt" id="td-vt-list" style="margin-left:auto" title="List view" onclick="setTodosView('list')">&#9776; List</div>
         <div class="sub-tab td-vt" id="td-vt-board" title="Loop board — see everything by status" onclick="setTodosView('board')">&#9638; Board</div>
+        <div class="sub-tab td-vt" id="td-vt-focus" title="Focus — today's 1-2-3 picks + auto-sorted quadrants" onclick="setTodosView('focus')">&#9678; Focus</div>
       </div>
       <div class="sub-tabs" id="todos-status-tabs">
         <div class="sub-tab td-sf active" onclick="setTodoStatusFilter('all',this)">All</div>
@@ -908,6 +920,7 @@
       </div>
       <div class="card" id="todos-list-card"><div class="card-hdr"><span class="card-title" id="todos-section-title">To-Do List</span><span class="card-count" id="todos-count">0 pending</span></div><div id="todos-list"></div></div>
       <div id="todos-board" style="display:none"></div>
+      <div id="todos-focus" style="display:none"></div>
     </div>
     <div class="section" id="section-laf">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterLAF('all',this)">All</div><div class="sub-tab" onclick="filterLAF('unclaimed',this)">Unclaimed</div><div class="sub-tab" onclick="filterLAF('claimed',this)">Claimed</div></div>
@@ -2021,7 +2034,8 @@ async function mergeTodoInbox() {
     var rowData = (rows[0] && rows[0].data) || {};
     var inbox = Array.isArray(rowData.todos) ? rowData.todos : [];
     var moveUpdates = Array.isArray(rowData.moveUpdates) ? rowData.moveUpdates : [];
-    if (!inbox.length && !moveUpdates.length) return;
+    var amenityUpdates = Array.isArray(rowData.amenityUpdates) ? rowData.amenityUpdates : [];
+    if (!inbox.length && !moveUpdates.length && !amenityUpdates.length) return;
     var resolved = [];
     for (var i = 0; i < inbox.length; i++) {
       var item = inbox[i];
@@ -2059,7 +2073,8 @@ async function mergeTodoInbox() {
     var movesTouched = 0;
     moveUpdates.forEach(function (mu) {
       if (!mu || !mu.unit) return;
-      var stamp = 'letter:' + (mu.srcThread || mu.id || '');
+      var isBooking = mu.kind === 'booking'; // RiseIO booking vs welcome letter
+      var stamp = (isBooking ? 'booking:' : 'letter:') + (mu.srcThread || mu.id || '');
       var unitNorm = function (u) { return String(u || '').replace(/^0+(?=\d)/, ''); }; // letters/passdowns zero-pad units, Moves cards don't
       var card = (state.moves || []).find(function (mv) { return !mv.archivedAt && mv.type === 'in' && unitNorm(mv.unit) === unitNorm(mu.unit); });
       if (card) {
@@ -2074,15 +2089,23 @@ async function mergeTodoInbox() {
           if (!curTotal) card.total = mu.total;
           else if (curTotal.replace(/[,$\s]/g, '') !== String(mu.total).replace(/[,$\s]/g, '')) flags.push('⚠ Letter total $' + mu.total + ' differs from this entry ($' + curTotal + ') — verify');
         }
+        if (mu.apptDate) {
+          if (!card.apptDate) { card.apptDate = mu.apptDate; if (mu.apptTime && !card.apptTime) card.apptTime = mu.apptTime; card.apptTbd = false; }
+          else if (card.apptDate !== mu.apptDate) flags.push('⚠ Booking appt date ' + mu.apptDate + ' differs from this entry (' + card.apptDate + ') — verify');
+          else if (mu.apptTime && card.apptTime && card.apptTime !== mu.apptTime) flags.push('⚠ Booking appt time ' + mu.apptTime + ' differs from this entry (' + card.apptTime + ') — verify');
+          else if (mu.apptTime && !card.apptTime) card.apptTime = mu.apptTime;
+        }
         if (!String(card.resident || '').trim() && mu.primaryName) {
           card.resident = mu.primaryName;
           flags.push('Resident name guessed from email — confirm');
         }
-        var addNote = ['Welcome letter auto-imported ' + today() + ' [' + stamp + ']'];
+        var srcLabel = isBooking ? 'RiseIO booking' : 'Welcome letter';
+        var addNote = [srcLabel + ' auto-imported ' + today() + ' [' + stamp + ']'];
         if (mu.emails && mu.emails.length) addNote.push('Resident email(s): ' + mu.emails.join(', '));
+        if (mu.note) addNote.push(String(mu.note));
         addNote = addNote.concat(flags);
         card.notes = (card.notes || '').trim() ? (card.notes.trim() + '\n' + addNote.join('\n')) : addNote.join('\n');
-        logActivity('moves', 'edit', 'Welcome letter data applied — Unit ' + mu.unit + (flags.length ? ' (' + flags.length + ' flag(s) to verify)' : ''), mu.addedBy || 'Email Triage');
+        logActivity('moves', 'edit', srcLabel + ' data applied — Unit ' + mu.unit + (flags.length ? ' (' + flags.length + ' flag(s) to verify)' : ''), mu.addedBy || 'Email Triage');
         movesTouched++;
       } else {
         if (!state.userTodos) state.userTodos = {};
@@ -2094,11 +2117,13 @@ async function mergeTodoInbox() {
         if (mu.primaryName) bits.push(mu.primaryName + '(?)');
         if (mu.leaseStart) bits.push('lease start ' + mu.leaseStart);
         if (mu.total) bits.push('move-in total $' + mu.total);
+        if (mu.apptDate) bits.push('appt ' + mu.apptDate + (mu.apptTime ? ' ' + mu.apptTime : ''));
         if (mu.emails && mu.emails.length) bits.push(mu.emails.join(', '));
+        if (mu.note) bits.push(String(mu.note));
         glist.push({
           id: mu.id || uid(),
-          text: 'New move-in? Welcome letter #' + mu.unit + ' — no card in Moves yet',
-          note: (bits.join(' · ') || 'no details parsed') + ' — confirm if this needs a move card, then use 📧 Import Letter',
+          text: (isBooking ? 'New move? RiseIO booking #' : 'New move-in? Welcome letter #') + mu.unit + ' — no card in Moves yet',
+          note: (bits.join(' · ') || 'no details parsed') + (isBooking ? ' — confirm if this needs a move card' : ' — confirm if this needs a move card, then use 📧 Import Letter'),
           priority: 'normal', dueDate: null, category: 'leasing', linkedUnit: String(mu.unit),
           owner: 'Me', staleDays: null, status: 'open', done: false,
           createdAt: Date.now(), lastUpdated: Date.now(),
@@ -2107,19 +2132,75 @@ async function mergeTodoInbox() {
         added++;
       }
     });
-    var merged = added || movesTouched;
+    // Apply queued amenity/event bookings: a matching booking (unit+space+date) gets
+    // blanks filled (mismatches flagged, never overwritten); no match → a new booking
+    // is created with any space/elevator conflicts flagged in its notes — the drain
+    // runs headless, so conflicts warn rather than block like saveAmenity's confirm().
+    var amenitiesTouched = 0;
+    amenityUpdates.forEach(function (au) {
+      if (!au || !au.unit || !au.space || !au.date) return;
+      var stamp = 'booking:' + (au.srcThread || au.id || '');
+      var unorm = function (u) { return String(u || '').replace(/^0+(?=\d)/, ''); };
+      if (!state.amenities) state.amenities = [];
+      if (state.amenities.some(function (a) { return (a.notes || '').indexOf(stamp) !== -1; })) return; // already applied
+      var flags = [];
+      var match = state.amenities.find(function (a) {
+        return unorm(a.unit) === unorm(au.unit) && a.date === au.date && String(a.space || '').toLowerCase() === String(au.space || '').toLowerCase();
+      });
+      if (match) {
+        if (au.start) {
+          if (!match.start) { match.start = au.start; if (au.end && !match.end) match.end = au.end; }
+          else if (match.start !== au.start) flags.push('⚠ Email start ' + au.start + ' differs from this entry (' + match.start + ') — verify');
+          else if (au.end && !match.end) match.end = au.end;
+        }
+        if (!String(match.resident || '').trim() && au.resident) match.resident = au.resident;
+        if (!String(match.fee || '').trim() && au.fee) match.fee = au.fee;
+        var amNote = ['Booking email auto-imported ' + today() + ' [' + stamp + ']'];
+        if (au.note) amNote.push(String(au.note));
+        amNote = amNote.concat(flags);
+        match.notes = (match.notes || '').trim() ? (match.notes.trim() + '\n' + amNote.join('\n')) : amNote.join('\n');
+        logActivity('amenities', 'edit', 'Booking email data applied — Unit ' + au.unit + ' · ' + au.space + (flags.length ? ' (' + flags.length + ' flag(s) to verify)' : ''), au.addedBy || 'Email Triage');
+      } else {
+        var s1 = au.start || '', e1 = au.end || '23:59';
+        state.amenities.forEach(function (x) {
+          if (String(x.space || '').toLowerCase() !== String(au.space || '').toLowerCase() || x.date !== au.date) return;
+          if (s1 && x.start && !(s1 < (x.end || '23:59') && x.start < e1)) return;
+          flags.push('⚠ Conflict: ' + au.space + ' already booked — ' + (x.resident || '?') + ' (Unit ' + (x.unit || '?') + ')' + (x.start ? ' ' + x.start + (x.end ? '–' + x.end : '') : '') + ' — verify');
+        });
+        var mvc = checkMoveConflictForAmenity(au.space, au.date, au.start, au.end);
+        if (mvc) flags.push('⚠ Conflict: move reservation same day — ' + mvc.map(function (m) { return 'Unit ' + m.unit + (m.apptTime ? ' ' + m.apptTime : ''); }).join(', ') + ' — verify');
+        var newNote = ['Auto-imported from email triage ' + today() + ' [' + stamp + ']'];
+        if (au.note) newNote.push(String(au.note));
+        newNote = newNote.concat(flags);
+        state.amenities.push({
+          id: au.id || uid(), resident: au.resident || '', unit: String(au.unit), space: au.space,
+          date: au.date, start: au.start || '', end: au.end || '',
+          type: au.type === 'event' ? 'event' : 'booking', fee: au.fee || '',
+          notes: newNote.join('\n'), addedBy: au.addedBy || 'Email Triage', createdAt: Date.now()
+        });
+        logActivity('amenities', 'create', 'Added amenity booking from email triage — Unit ' + au.unit + ' · ' + au.space + ' · ' + au.date + (flags.length ? ' (' + flags.length + ' flag(s) to verify)' : ''), au.addedBy || 'Email Triage');
+      }
+      amenitiesTouched++;
+    });
+    var merged = added + movesTouched + amenitiesTouched;
     if (merged) {
-      if (added) logActivity('todos', 'create', 'Imported ' + added + ' to-do(s) from email triage inbox', (resolved.length + moveUpdates.length - merged) ? 'duplicates skipped' : '');
+      if (added) logActivity('todos', 'create', 'Imported ' + added + ' to-do(s) from email triage inbox', (resolved.length + moveUpdates.length + amenityUpdates.length - merged) ? 'duplicates skipped' : '');
       scheduleSave();
       await pushCloud();
       if (localDirty) return; // save didn't land — keep the inbox row so the next cycle retries (drain is idempotent)
       if (typeof curSec !== 'undefined' && curSec === 'todos') renderTodos();
       if (movesTouched && typeof curSec !== 'undefined' && curSec === 'moves') renderMoves();
+      if (amenitiesTouched && typeof curSec !== 'undefined' && curSec === 'amenities') renderAmenities();
+      if (amenitiesTouched && typeof renderCalendar === 'function') renderCalendar();
       updateBadges();
-      toast((added ? added + ' to-do' + (added > 1 ? 's' : '') : '') + (added && movesTouched ? ' + ' : '') + (movesTouched ? movesTouched + ' move card(s) updated' : '') + ' from email triage');
+      var parts = [];
+      if (added) parts.push(added + ' to-do' + (added > 1 ? 's' : ''));
+      if (movesTouched) parts.push(movesTouched + ' move card(s) updated');
+      if (amenitiesTouched) parts.push(amenitiesTouched + ' amenity booking(s)');
+      toast(parts.join(' + ') + ' from email triage');
     }
     // Clear the queue only once the merged state is confirmed saved (or nothing was new).
-    var cleared = Object.assign({}, rowData, { todos: [], moveUpdates: [] });
+    var cleared = Object.assign({}, rowData, { todos: [], moveUpdates: [], amenityUpdates: [] });
     await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox', {
       method: 'PATCH',
       headers: await getSupaHdr({ 'Prefer': 'return=minimal' }),
@@ -8424,6 +8505,12 @@ function todoStatusChip(t) { var s = todoStatus(t); return '<span class="pill pi
 function todoStaleChip(t) { if (!todoIsStale(t)) return ''; return '<span class="stale-badge">&#9888; Stale &mdash; ' + todoStaleDays(t) + 'd</span>'; }
 function todoOwnerChip(t) { if (!t.owner) return ''; return '<span class="pill" style="background:var(--surface2);color:var(--text2)">&#128100; ' + esc(t.owner) + '</span>'; }
 function todoUnitChip(t) { if (!t.linkedUnit) return ''; return '<span class="pill" style="background:var(--surface2);color:var(--text2)">Unit ' + esc(t.linkedUnit) + '</span>'; }
+function todoPickChip(t) {
+  if (t.done) return '';
+  var tier = focusPickTier(t); if (!tier) return '';
+  var lbl = { big: 'Big', med: 'Medium', small: 'Small' }[tier] || tier;
+  return '<span class="pill" style="background:var(--amber-light);color:var(--amber)">&#9733; Today &middot; ' + lbl + '</span>';
+}
 function todoTouch(t) { t.lastUpdated = Date.now(); }
 // ─── Task assignment: admin delegates, assignee accepts or flags, silence goes stale ───
 var TODO_SHIFTS = { am: 'AM shift', pm: 'PM shift', overnight: 'Overnight' };
@@ -8602,13 +8689,16 @@ function renderTodos() {
   if (ap) ap.style.display = (currentUser && currentUser.role === 'admin') ? '' : 'none';
   // Board \u21c4 list view switching (assigned view always renders in the list card)
   var isBoardView = todosView === 'board' && !todoAssignedView;
-  var vtL = g('td-vt-list'), vtB = g('td-vt-board');
-  if (vtL) vtL.classList.toggle('active', !isBoardView);
+  var isFocusView = todosView === 'focus' && !todoAssignedView;
+  var vtL = g('td-vt-list'), vtB = g('td-vt-board'), vtF = g('td-vt-focus');
+  if (vtL) vtL.classList.toggle('active', !isBoardView && !isFocusView);
   if (vtB) vtB.classList.toggle('active', isBoardView);
-  var listCard = g('todos-list-card'), boardWrap = g('todos-board'), statusTabs = g('todos-status-tabs');
-  if (listCard) listCard.style.display = isBoardView ? 'none' : '';
+  if (vtF) vtF.classList.toggle('active', isFocusView);
+  var listCard = g('todos-list-card'), boardWrap = g('todos-board'), focusWrap = g('todos-focus'), statusTabs = g('todos-status-tabs');
+  if (listCard) listCard.style.display = (isBoardView || isFocusView) ? 'none' : '';
   if (boardWrap) boardWrap.style.display = isBoardView ? '' : 'none';
-  if (statusTabs) statusTabs.style.display = (isBoardView || todoAssignedView) ? 'none' : '';
+  if (focusWrap) focusWrap.style.display = isFocusView ? '' : 'none';
+  if (statusTabs) statusTabs.style.display = (isBoardView || isFocusView || todoAssignedView) ? 'none' : '';
   var todos = getCurrentTodos();
   var sorted = todos.slice().sort(function (a, b) {
     if (a.done !== b.done) return a.done ? 1 : -1;
@@ -8636,6 +8726,7 @@ function renderTodos() {
   setBadge('badge-todos', totalPending); setMBadge('mb-todos', totalPending);
   if (todoAssignedView) { var alEl = g('todos-list'); if (alEl) renderAssignedByMe(alEl, g('todos-count')); return; }
   if (isBoardView) { renderTodosBoard(sorted); return; }
+  if (isFocusView) { renderTodosFocus(sorted); return; }
   var filtered = sorted.filter(todoMatchesFilters);
   var showCL = todoCatFilter === 'all' && (todoStatusFilter === 'all' || todoStatusFilter === 'open');
   var cnt = g('todos-count');
@@ -8652,7 +8743,7 @@ function renderTodos() {
     html += '<div style="flex:1;min-width:0">';
     html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + urgIcon + esc(t.text) + '</div>';
     if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + esc(t.note) + '</div>';
-    html += '<div class="todo-meta">' + due + todoShiftChip(t) + todoCatChip(t) + (t.done ? '' : todoStatusChip(t)) + todoFromChip(t) + todoAckChip(t) + todoUnitChip(t) + todoOwnerChip(t) + todoStaleChip(t) + '<span class="text-xs text-3">' + new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span></div>';
+    html += '<div class="todo-meta">' + todoPickChip(t) + due + todoShiftChip(t) + todoCatChip(t) + (t.done ? '' : todoStatusChip(t)) + todoFromChip(t) + todoAckChip(t) + todoUnitChip(t) + todoOwnerChip(t) + todoStaleChip(t) + '<span class="text-xs text-3">' + new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span></div>';
     html += '</div>';
     if (t.assignedBy && !t.ack && !t.done && !isViewingOther) {
       html += '<button class="btn btn-ghost btn-xs" style="color:var(--green)" onclick="ackAssignedTodo(\'' + t.id + '\')" title="Accept this task">&#10003;</button>';
@@ -8742,9 +8833,144 @@ function renderTodosBoard(sorted) {
       html += '<div class="td-bcard' + (stale ? ' stale' : '') + '" onclick="openEditTodo(\'' + t.id + '\')">';
       html += '<div class="td-bcard-text">' + (t.priority === 'urgent' && !t.done ? '<span style="color:var(--red)">! </span>' : '') + esc(t.text) + '</div>';
       if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:3px">' + esc(t.note) + '</div>';
-      html += '<div class="td-bcard-meta">' + todoCatChip(t) + todoFromChip(t) + todoAckChip(t) + todoUnitChip(t) + (t.dueDate ? '<span class="pill" style="background:var(--surface2);color:var(--text2)">Due ' + fmtShort(t.dueDate) + '</span>' : '') + todoShiftChip(t) + todoStaleChip(t) + '</div>';
+      html += '<div class="td-bcard-meta">' + todoPickChip(t) + todoCatChip(t) + todoFromChip(t) + todoAckChip(t) + todoUnitChip(t) + (t.dueDate ? '<span class="pill" style="background:var(--surface2);color:var(--text2)">Due ' + fmtShort(t.dueDate) + '</span>' : '') + todoShiftChip(t) + todoStaleChip(t) + '</div>';
       if (t.owner) html += '<div class="td-bcard-owner">&#128100; ' + esc(t.owner) + '</div>';
       html += '</div>';
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+// ─── Focus view: computed Eisenhower quadrants + today's 1-2-3 picks ───
+// Quadrants are derived from fields to-dos already carry (priority, dueDate,
+// status, staleness, TODAY moves) — nothing new to maintain. Picks are stored
+// per account keyed like archived to-dos, stamped with today's date, so they
+// reset themselves each shift. The 1-2-3 strip doubles as the WIP cap.
+var FOCUS_TIERS = [{ key: 'big', label: '1 Big', cap: 1 }, { key: 'med', label: '2 Medium', cap: 2 }, { key: 'small', label: '3 Small', cap: 3 }];
+var FOCUS_QUADS = [
+  { key: 'now', label: 'Do now', color: 'var(--red)', hint: 'urgent / due or overdue / TODAY move / stale flare' },
+  { key: 'scheduled', label: 'Scheduled', color: 'var(--accent)', hint: 'future due date — moves to Do now on its own' },
+  { key: 'waiting', label: 'Waiting on others', color: 'var(--amber)', hint: 'their move — flares into Do now when stale' },
+  { key: 'someday', label: 'Someday / no clock', color: 'var(--text3)', hint: 'no date, normal priority' }
+];
+function getFocusPicks() {
+  if (!state.focusPicks) state.focusPicks = {};
+  var k = _archTodosKey();
+  var p = state.focusPicks[k];
+  if (!p || p.date !== today()) { p = { date: today(), big: [], med: [], small: [] }; state.focusPicks[k] = p; }
+  FOCUS_TIERS.forEach(function (tr) { if (!Array.isArray(p[tr.key])) p[tr.key] = []; });
+  return p;
+}
+function focusTodayMoveUnits() {
+  var map = {}, t = today();
+  (state.moves || []).forEach(function (m) {
+    if (m.archivedAt) return;
+    if (m.date === t || m.apptDate === t) map[String(m.unit || '').replace(/^0+(?=\d)/, '')] = true;
+  });
+  return map;
+}
+function todoFocusQuadrant(t, todayUnits) {
+  if (t.done) return null;
+  var st = todoStatus(t);
+  if (st === 'waiting' || st === 'blocked') return todoIsStale(t) ? 'now' : 'waiting';
+  if (t.priority === 'urgent') return 'now';
+  if (t.dueDate && t.dueDate <= today()) return 'now';
+  if (t.linkedUnit && todayUnits[String(t.linkedUnit).replace(/^0+(?=\d)/, '')]) return 'now';
+  return t.dueDate ? 'scheduled' : 'someday';
+}
+function focusUrgencyScore(t) {
+  var d = today();
+  if (t.dueDate && t.dueDate < d) return 0;
+  if (t.dueDate === d) return 1;
+  if (t.priority === 'urgent') return 2;
+  var st = todoStatus(t);
+  if ((st === 'waiting' || st === 'blocked') && todoIsStale(t)) return 3;
+  return 4;
+}
+function focusRankCompare(a, b) {
+  return focusUrgencyScore(a) - focusUrgencyScore(b)
+    || String(a.dueDate || '9999').localeCompare(String(b.dueDate || '9999'))
+    || (a.createdAt || 0) - (b.createdAt || 0);
+}
+function focusPickTier(t) {
+  var p = getFocusPicks();
+  for (var i = 0; i < FOCUS_TIERS.length; i++) if (p[FOCUS_TIERS[i].key].indexOf(t.id) !== -1) return FOCUS_TIERS[i].key;
+  return null;
+}
+function toggleFocusPick(id) {
+  var p = getFocusPicks(), had = false;
+  FOCUS_TIERS.forEach(function (tr) { var i = p[tr.key].indexOf(id); if (i !== -1) { p[tr.key].splice(i, 1); had = true; } });
+  if (!had) {
+    var open = FOCUS_TIERS.find(function (tr) { return p[tr.key].length < tr.cap; });
+    if (!open) { toast('All 6 slots are full — finish or unpick something first'); return; }
+    p[open.key].push(id);
+  }
+  scheduleSave(); renderTodos();
+}
+function acceptFocusSuggestion() {
+  var units = focusTodayMoveUnits();
+  var q1 = getCurrentTodos().filter(function (t) { return todoFocusQuadrant(t, units) === 'now' && !focusPickTier(t); });
+  q1.sort(focusRankCompare);
+  var p = getFocusPicks(), took = 0;
+  FOCUS_TIERS.forEach(function (tr) {
+    while (p[tr.key].length < tr.cap && q1.length) { p[tr.key].push(q1.shift().id); took++; }
+  });
+  if (!took) { toast('Nothing in Do now to suggest'); return; }
+  scheduleSave(); renderTodos(); toast("Today's 1-2-3 set — work top-down, big first");
+}
+function renderTodosFocus(sorted) {
+  var el = g('todos-focus'); if (!el) return;
+  var todos = getCurrentTodos(), units = focusTodayMoveUnits();
+  var quads = { now: [], scheduled: [], waiting: [], someday: [] };
+  sorted.forEach(function (t) { var q = todoFocusQuadrant(t, units); if (q) quads[q].push(t); });
+  quads.now.sort(focusRankCompare);
+  quads.scheduled.sort(function (a, b) { return String(a.dueDate || '9999').localeCompare(String(b.dueDate || '9999')); });
+  var p = getFocusPicks();
+  // completed/deleted picks free their slot automatically
+  FOCUS_TIERS.forEach(function (tr) {
+    p[tr.key] = p[tr.key].filter(function (id) {
+      var t = todos.find(function (x) { return x.id === id; }); return t && !t.done;
+    });
+  });
+  var picked = p.big.length + p.med.length + p.small.length;
+  var html = '<div class="card mb-12"><div class="card-hdr"><span class="card-title">Today\'s 1-2-3 &mdash; ' + fmtShort(today()) + '</span>'
+    + '<span class="card-count">' + picked + ' of 6 picked &middot; work top-down</span>'
+    + (picked < 6 && quads.now.length ? '<button class="btn btn-secondary btn-sm ml-auto" onclick="acceptFocusSuggestion()">&#9733; Suggest from Do now</button>' : '')
+    + '</div><div class="card-body"><div class="focus-strip">';
+  FOCUS_TIERS.forEach(function (tr) {
+    html += '<div><div class="focus-tier-tag">' + tr.label + ' &middot; ' + p[tr.key].length + '/' + tr.cap + '</div>';
+    p[tr.key].forEach(function (id) {
+      var t = todos.find(function (x) { return x.id === id; }); if (!t) return;
+      html += '<div class="focus-slot" style="margin-bottom:6px;display:flex;gap:8px;align-items:flex-start">'
+        + '<input type="checkbox" title="Mark done" onchange="toggleTodo(\'' + t.id + '\',this.checked)">'
+        + '<div style="flex:1;min-width:0;cursor:pointer" onclick="openEditTodo(\'' + t.id + '\')">'
+        + '<div style="font-size:13px;font-weight:600;line-height:1.35">' + (t.priority === 'urgent' ? '<span style="color:var(--red)">! </span>' : '') + esc(t.text) + '</div>'
+        + (t.dueDate ? '<div style="font-size:11px;color:var(--text3);margin-top:2px">Due ' + fmtShort(t.dueDate) + '</div>' : '')
+        + '</div>'
+        + '<button class="btn btn-ghost btn-xs" title="Unpick" onclick="toggleFocusPick(\'' + t.id + '\')">&#x2715;</button></div>';
+    });
+    for (var i = p[tr.key].length; i < tr.cap; i++) html += '<div class="focus-slot empty" style="margin-bottom:6px">&#9734; pick from Do now</div>';
+    html += '</div>';
+  });
+  html += '</div></div></div><div class="focus-grid">';
+  FOCUS_QUADS.forEach(function (qd) {
+    var list = quads[qd.key];
+    html += '<div class="focus-quad" style="border-top:3px solid ' + qd.color + '"><div class="focus-quad-hdr" title="' + qd.hint + '"><span>' + qd.label + '</span><span>' + (list.length || '') + '</span></div>';
+    if (!list.length) html += '<div class="text-3 text-sm" style="padding:6px 2px">Nothing here.</div>';
+    list.forEach(function (t) {
+      var tier = focusPickTier(t);
+      var flare = qd.key === 'now' && (todoStatus(t) === 'waiting' || todoStatus(t) === 'blocked');
+      html += '<div class="td-bcard" style="display:flex;gap:8px;align-items:flex-start;cursor:default">'
+        + '<div style="flex:1;min-width:0;cursor:pointer" onclick="openEditTodo(\'' + t.id + '\')">'
+        + '<div class="td-bcard-text">' + (t.priority === 'urgent' ? '<span style="color:var(--red)">! </span>' : '') + esc(t.text) + '</div>'
+        + '<div class="td-bcard-meta">'
+        + (t.dueDate ? '<span class="pill" style="background:var(--surface2);color:var(--text2)">Due ' + fmtShort(t.dueDate) + '</span>' : '')
+        + (flare ? '<span class="pill" style="background:var(--amber-light);color:var(--amber)">&#9888; flared from Waiting &mdash; ' + todoStaleDays(t) + 'd</span>' : todoStaleChip(t))
+        + todoUnitChip(t) + todoOwnerChip(t) + todoCatChip(t)
+        + '</div></div>'
+        + (qd.key === 'now' || tier ? '<button class="btn btn-ghost btn-xs" title="' + (tier ? 'Unpick' : 'Pick for today') + '"' + (tier ? ' style="color:var(--amber)"' : '') + ' onclick="toggleFocusPick(\'' + t.id + '\')">' + (tier ? '&#9733;' : '&#9734;') + '</button>' : '')
+        + '</div>';
     });
     html += '</div>';
   });
@@ -12714,6 +12940,15 @@ function hideLogin() {
   startSessionTimer();
   if (typeof npLoad === 'function') npLoad();
   if (currentUser) logActivity('session', 'login', currentUser.name + ' logged in');
+  // Daily focus nudge: no 1-2-3 picked yet today and Do-now items are waiting
+  try {
+    var fp = getFocusPicks();
+    if (!(fp.big.length + fp.med.length + fp.small.length)) {
+      var fu = focusTodayMoveUnits();
+      var fn = getCurrentTodos().filter(function (t) { return todoFocusQuadrant(t, fu) === 'now'; }).length;
+      if (fn) toast('★ ' + fn + ' item' + (fn > 1 ? 's' : '') + ' in Do now — pick your 1-2-3 (To-Dos › Focus)');
+    }
+  } catch (e) {}
 }
 function renderLoginScreen() {
   detachPinKeyboard();
