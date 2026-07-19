@@ -25,10 +25,10 @@
   body.text-lg #content{zoom:1.14}body.text-lg .modal-ov .modal{zoom:1.14}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%}
-  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;display:flex;height:100vh;overflow:hidden}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;display:flex;height:100vh;height:100dvh;overflow:hidden}
 
   /* SIDEBAR */
-  #sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:#0D1B2A;border-right:0.5px solid rgba(255,255,255,0.09);display:flex;flex-direction:column;height:100vh;overflow-y:auto;overflow-x:hidden;z-index:200;transition:width 220ms ease-out,min-width 220ms ease-out,transform 220ms var(--ease-out);flex-shrink:0}
+  #sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:#0D1B2A;border-right:0.5px solid rgba(255,255,255,0.09);display:flex;flex-direction:column;height:100vh;height:100dvh;overflow-y:auto;overflow-x:hidden;z-index:200;transition:width 220ms ease-out,min-width 220ms ease-out,transform 220ms var(--ease-out);flex-shrink:0}
   body.sc #sidebar{width:52px;min-width:52px}
   body.sc .sb-logo .bldg,body.sc .sb-logo .sub,body.sc .sb-logo .date-chip,body.sc .nav-label,body.sc .nav-item .nav-txt,body.sc .badge,body.sc .footer-btn span:not(:first-child),body.sc .save-status{display:none}
   body.sc .nav-item{justify-content:center;padding:10px 0}
@@ -39,7 +39,7 @@
     #sidebar{position:fixed;top:0;left:0;height:100vh;transform:translateX(-100%);box-shadow:0 0 40px rgba(0,0,0,0.6)}
     #sidebar.mob-open{transform:translateX(0)}
     #sb-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:199}
-    #sidebar.mob-open~#sb-ov{display:block}
+    /* scrim visibility is driven by openMobSidebar()/closeMobSidebar() inline style */
     body.sc #sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w)}
     body.sc #sidebar .sb-logo .bldg,body.sc #sidebar .sb-logo .sub,body.sc #sidebar .sb-logo .date-chip,body.sc #sidebar .nav-label,body.sc #sidebar .nav-item .nav-txt,body.sc #sidebar .badge,body.sc #sidebar .footer-btn span:not(:first-child),body.sc #sidebar .save-status{display:unset}
     body.sc #sidebar .nav-item{justify-content:flex-start;padding:7px 14px}
@@ -48,10 +48,10 @@
   }
   .sb-logo{padding:18px 16px 14px;border-bottom:0.5px solid rgba(255,255,255,0.09)}
   .sb-logo .bldg{font-size:16px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;font-family:var(--font-serif);color:#F0EBE0}
-  .sb-logo .sub{font-size:10px;color:rgba(255,255,255,0.32);margin-top:2px;font-family:var(--font-mono);letter-spacing:.4px}
+  .sb-logo .sub{font-size:10px;color:rgba(255,255,255,0.55);margin-top:2px;font-family:var(--font-mono);letter-spacing:.4px}
   .sb-logo .date-chip{display:inline-block;margin-top:8px;background:rgba(26,92,62,0.25);color:#7ECBA0;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;font-family:var(--font-mono)}
   .nav-group{padding:10px 0 4px}
-  .nav-label{font-size:9.5px;font-weight:600;color:rgba(148,185,215,0.45);text-transform:uppercase;letter-spacing:1px;padding:0 14px 4px;white-space:nowrap;overflow:hidden}
+  .nav-label{font-size:9.5px;font-weight:600;color:rgba(148,185,215,0.70);text-transform:uppercase;letter-spacing:1px;padding:0 14px 4px;white-space:nowrap;overflow:hidden}
   .nav-item{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;color:rgba(255,255,255,0.46);font-size:13px;font-weight:400;border-left:2px solid transparent;transition:background 120ms ease-out,color 120ms ease-out,border-left-color 120ms ease-out;position:relative;user-select:none;white-space:nowrap}
   .nav-item:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.80)}
   .nav-item.active{background:rgba(255,255,255,0.10);color:#FFFFFF;border-left-color:#1A5C3E;font-weight:500}
@@ -60,9 +60,9 @@
   .badge.vis{display:block}
   .badge.badge-red{background:var(--red);color:#fff}
   .sb-footer{margin-top:auto;padding:10px 10px 14px;border-top:0.5px solid rgba(255,255,255,0.09);display:flex;flex-direction:column;gap:4px}
-  .footer-btn{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:var(--radius);font-size:11.5px;color:rgba(255,255,255,0.38);cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;width:100%;text-align:left;transition:background .1s;white-space:nowrap}
+  .footer-btn{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:var(--radius);font-size:11.5px;color:rgba(255,255,255,0.60);cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;width:100%;text-align:left;transition:background .1s;white-space:nowrap}
   .footer-btn:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.75)}
-  .save-status{font-size:10px;color:rgba(255,255,255,0.24);padding:0 8px 4px;font-family:var(--font-mono);white-space:nowrap;overflow:hidden}
+  .save-status{font-size:10px;color:rgba(255,255,255,0.55);padding:0 8px 4px;font-family:var(--font-mono);white-space:nowrap;overflow:hidden}
   .sync-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;background:rgba(255,255,255,0.25)}
   .sync-dot.synced{background:#6DBB5A}.sync-dot.syncing{background:#1A5C3E;animation:pulse 1s infinite}.sync-dot.error{background:#E05A5A}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
@@ -78,6 +78,16 @@
   @media(max-width:700px){#mob-menu{display:flex;align-items:center}}
   .hdr-title{font-size:15px;font-weight:600;letter-spacing:-.2px}
   .hdr-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:nowrap}
+  #hdr-more{display:none}
+  /* Mobile: header actions collapse into a ⋯ overflow menu so they never run off-screen */
+  @media(max-width:700px){
+    .hdr-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+    #hdr-more{display:inline-flex;margin-left:auto;flex-shrink:0}
+    #hdr-more.no-actions{display:none}
+    #hdr-actions{position:absolute;top:calc(100% + 4px);right:8px;margin-left:0;flex-direction:column;align-items:stretch;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-md);padding:8px;gap:6px;z-index:140;display:none;min-width:196px;max-width:calc(100vw - 16px)}
+    #hdr-actions.open{display:flex}
+    #hdr-actions .btn{width:100%;justify-content:flex-start;padding:10px 12px;font-size:13.5px}
+  }
   #content{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch;max-width:1280px}
   @media(max-width:700px){#content{padding:12px;padding-bottom:80px}}
   .section{display:none}.section.active{display:block}
@@ -117,6 +127,8 @@
   /* FLOATING NOTEPAD */
   #notepad-tab{position:fixed;right:-1px;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;text-orientation:mixed;background:var(--surface);border:1px solid var(--border);border-right:none;border-radius:8px 0 0 8px;padding:14px 8px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:7px;box-shadow:-3px 0 12px rgba(0,0,0,.3);transition:background .12s,color .12s;z-index:1000;user-select:none}
   #notepad-tab:hover{background:var(--accent);color:#fff}
+  /* Mobile: dock the edge tab above the bottom nav instead of over mid-screen content, and keep it under modals */
+  @media(max-width:700px){#notepad-tab{top:auto;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:none;padding:10px 7px;font-size:10px;letter-spacing:.5px;z-index:140}}
   #notepad-tab .np-dot{width:6px;height:6px;border-radius:50%;background:#e53e3e;flex-shrink:0;display:none}
   #notepad-panel{position:fixed;right:0;top:50%;transform:translateY(-50%);width:300px;background:var(--surface);border:1px solid var(--border);border-right:none;border-radius:10px 0 0 10px;box-shadow:-8px 0 32px rgba(0,0,0,.4);z-index:1001;display:none;overflow:hidden;min-width:240px;min-height:180px}
   #notepad-panel.np-free{border-right:1px solid var(--border);border-radius:10px;transform:none}
@@ -148,6 +160,14 @@
   .btn-ghost{background:none;color:var(--text2);border:none;padding:5px 8px}.btn-ghost:hover{background:var(--bg);color:var(--text)}
   .ks-btn{border:1px solid var(--border2)!important;border-radius:20px!important;padding:3px 10px!important;font-size:11px!important}.ks-btn.active{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}
   .btn-green{background:var(--green-light);color:var(--green);border-color:#C8E4B0}
+  .btn-danger{background:var(--red);color:#fff;border-color:var(--red)}.btn-danger:hover{background:#a52a2a}
+  /* In-app confirm dialog — replaces native confirm() for a consistent, on-brand look */
+  .confirm-ov{display:none;position:fixed;inset:0;background:rgba(20,18,15,.55);z-index:3000;align-items:center;justify-content:center;padding:20px}
+  .confirm-ov.open{display:flex}
+  .confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-md);max-width:400px;width:100%;padding:20px 22px;animation:scaleIn 160ms var(--ease-out)}
+  .confirm-msg{font-size:14px;line-height:1.55;color:var(--text);white-space:pre-line;margin-bottom:18px}
+  .confirm-actions{display:flex;gap:8px;justify-content:flex-end}
+  @media(max-width:599px){.confirm-actions{flex-direction:column-reverse}.confirm-actions .btn{width:100%;justify-content:center;padding:11px}}
   .btn-sm{padding:5px 10px;font-size:12px}.btn-xs{padding:3px 7px;font-size:11px;border-radius:5px}
   @media(max-width:700px){.btn-sm,.btn-xs{min-height:36px;display:inline-flex;align-items:center;justify-content:center}}
 
@@ -156,8 +176,13 @@
   input:focus,select:focus,textarea:focus{border-color:var(--accent)}
   textarea{resize:vertical;min-height:80px}
   label{font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:4px}
+  label.req::after{content:" *";color:var(--red);font-weight:700}
+  .field-invalid{border-color:var(--red)!important;box-shadow:0 0 0 2px rgba(192,53,53,0.22)!important}
+  .field-err{color:var(--red);font-size:11.5px;margin-top:4px;font-weight:500}
   .fg{margin-bottom:12px}.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media(max-width:480px){.fr{grid-template-columns:1fr;gap:0}}
+  /* Prevent iOS Safari auto-zoom: any focused control under 16px zooms the viewport */
+  @media(max-width:700px){input,select,textarea{font-size:16px}}
 
   /* TABLE */
   .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -216,7 +241,10 @@
   @media(max-width:600px){.dash-grid{grid-template-columns:1fr}.dash-grid3{grid-template-columns:1fr}}
   .tight-alert{background:#FFF8E6;border:1px solid #F5D39A;border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;font-size:12.5px}
   .ta-title{font-weight:600;color:var(--amber);margin-bottom:4px}
-  .tight-row{display:flex;align-items:center;gap:8px;padding:3px 0;flex-wrap:wrap}
+  .tight-row{display:flex;align-items:center;gap:8px;padding:3px 0}
+  .tight-row .tr-main{flex:1;min-width:0}
+  .tight-row .btn{flex-shrink:0}
+  @media(max-width:700px){.tight-row{padding:6px 0}.tight-row .btn{padding:7px 12px}}
   .mrd{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border2)}.mrd:last-child{border-bottom:none}
   .search-wrap{position:relative;margin-bottom:14px}
   .search-wrap input{padding-left:34px}
@@ -248,8 +276,8 @@
   .cl-cat-input:hover,.cl-cat-input:focus{background:var(--bg)}
 
   /* MOBILE MOVE CARDS */
-  @media(max-width:650px){.moves-tbl-wrap{display:none}#moves-cards{display:block}}
-  @media(min-width:651px){.moves-tbl-wrap{display:block}#moves-cards{display:none}}
+  @media(max-width:700px){.moves-tbl-wrap{display:none}#moves-cards{display:block}}
+  @media(min-width:701px){.moves-tbl-wrap{display:block}#moves-cards{display:none}}
   .move-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;box-shadow:var(--shadow);overflow:hidden}
   .mc-hdr{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer}.mc-hdr:active{background:var(--bg)}
   .mc-meta{flex:1;min-width:0}.mc-name{font-size:14px;font-weight:600}
@@ -358,6 +386,7 @@
   .ml-auto{margin-left:auto}.mt-8{margin-top:8px}.mt-12{margin-top:12px}.mb-8{margin-bottom:8px}.mb-12{margin-bottom:12px}
   .text-2{color:var(--text2)}.text-3{color:var(--text3)}.text-sm{font-size:12px}.text-xs{font-size:11px}
   .mono{font-family:'DM Mono',monospace}.font-600{font-weight:600}
+  .tar{text-align:right}.tabnum{font-variant-numeric:tabular-nums}
   .done-text{text-decoration:line-through;color:var(--text3)}.archive-row td{opacity:.55}
   /* MOVE APPOINTMENT STATES */
   .appt-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
@@ -465,17 +494,23 @@
   /* Hairline card borders + warm shadow */
   .card{border-color:rgba(26,24,20,0.09);box-shadow:0 1px 4px rgba(26,24,20,0.06),0 1px 2px rgba(26,24,20,0.03)}
   /* Primary button — sage green */
-  .btn-primary{background:#4E8A70;color:#fff;border-color:#4E8A70}
-  .btn-primary:hover{background:#3A6E58;color:#fff}
+  .btn-primary{background:#3E7A5E;color:#fff;border-color:#3E7A5E}
+  .btn-primary:hover{background:#2F614A;color:#fff}
   /* Active tab — gold */
-  .sub-tab.active{background:#4E8A70;color:#fff;border-color:#4E8A70;font-weight:600}
+  .sub-tab.active{background:#3E7A5E;color:#fff;border-color:#3E7A5E;font-weight:600}
   .sub-tab:hover{background:var(--surface2)}
   /* Gold focus rings */
-  input:focus,select:focus,textarea:focus{border-color:#4E8A70;box-shadow:0 0 0 2px rgba(78,138,112,0.38)}
+  input:focus,select:focus,textarea:focus{border-color:#3E7A5E;box-shadow:0 0 0 2px rgba(62,122,94,0.40)}
+  /* Contrast (AA): darker amber pill text on light, lighter on dark */
+  .pill-medium,.pill-inprogress{color:#8A5510}
+  body.dark-mode .pill-medium,body.dark-mode .pill-inprogress{color:#E0A55E}
+  /* Global keyboard focus ring — every interactive element gets a visible focus state */
+  a:focus-visible,button:focus-visible,[role="button"]:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.nav-item:focus-visible,.sub-tab:focus-visible,.mn-item:focus-visible,.stat-clickable:focus-visible{outline:2px solid #3E7A5E;outline-offset:2px;border-radius:4px}
+  .nav-item:focus-visible,.mn-item:focus-visible{outline-color:#8FC7AC;outline-offset:-2px}
   /* Mobile nav — dark */
   #mob-nav{background:#141C1C;border-top:0.5px solid rgba(78,138,112,0.18)}
-  .mn-item{color:rgba(255,255,255,0.38)}
-  .mn-item.active{color:#4E8A70}
+  .mn-item{color:rgba(255,255,255,0.46)}
+  .mn-item.active{color:#7FBEA0}
   /* Move row selected */
   .move-row.sel>td{background:rgba(78,138,112,0.08)!important}
   .cl-text-input:hover,.cl-text-input:focus{background:rgba(78,138,112,0.09)}
@@ -549,11 +584,11 @@
   #login-overlay{background:#080F18}
   .login-box{background:#0D1B2A;border:0.5px solid rgba(255,255,255,0.12);box-shadow:0 24px 64px rgba(0,0,0,0.60)}
   .login-logo{font-family:var(--font-serif);font-size:22px;font-weight:600;color:#F0EBE0;letter-spacing:.4px}
-  .login-sub{color:rgba(255,255,255,0.38)}
+  .login-sub{color:rgba(255,255,255,0.62)}
   .acct-btn{background:#122030;border:0.5px solid rgba(255,255,255,0.10);color:rgba(255,255,255,0.78)}
   .acct-btn:hover{background:rgba(26,92,62,0.18);border-color:#1A5C3E;color:#7ECBA0}
   .acct-avatar{background:rgba(26,92,62,0.22);color:#7ECBA0}
-  .acct-role-tag{color:rgba(255,255,255,0.28)}
+  .acct-role-tag{color:rgba(255,255,255,0.62)}
   .pin-dot{border-color:rgba(255,255,255,0.22)}
   .pin-dot.filled{background:#1A5C3E;border-color:#1A5C3E}
   .pin-key{background:#122030;border:0.5px solid rgba(255,255,255,0.10);color:rgba(255,255,255,0.78)}
@@ -783,6 +818,7 @@
       <button id="btn-undo" onclick="applyUndo()" title="Undo (⌘Z)" class="btn btn-ghost btn-sm" disabled style="opacity:0.35;font-size:15px;padding:3px 8px;line-height:1">↩</button>
       <button id="btn-redo" onclick="applyRedo()" title="Redo (⌘⇧Z)" class="btn btn-ghost btn-sm" disabled style="opacity:0.35;font-size:15px;padding:3px 8px;line-height:1">↪</button>
     </div>
+    <button id="hdr-more" class="btn btn-ghost btn-sm" onclick="toggleHdrActions(event)" aria-label="More actions" aria-expanded="false" style="font-size:17px;padding:3px 10px;line-height:1">&#8943;</button>
     <div class="hdr-actions" id="hdr-actions"></div>
   </div>
   <div id="content">
@@ -812,7 +848,7 @@
         <div class="card-hdr"><span class="card-title" id="moves-card-title">Scheduled Moves</span><span class="card-count" id="moves-count">0 entries</span>
           <div class="ml-auto flex gap-8" id="moves-admin-actions"><button class="btn btn-ghost btn-sm" id="btn-move-logged" onclick="toggleMoveLogged()" title="Show/hide logged by column">Logged By</button><button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button></div>
         </div>
-        <div class="tbl-wrap"><table><thead><tr id="moves-thead-row"><th class="th-sort" onclick="sortMoves('unit')">Unit</th><th class="th-sort" onclick="sortMoves('name')">Resident</th><th class="th-sort" onclick="sortMoves('date')">Lease Date</th><th class="th-sort" onclick="sortMoves('type')">Type</th><th class="th-sort" onclick="sortMoves('appt')">Reservation</th><th>Total</th><th>Notes</th><th id="moves-th-logged" style="display:none">Logged By</th><th></th></tr></thead><tbody id="moves-tbody"></tbody></table></div>
+        <div class="tbl-wrap"><table><thead><tr id="moves-thead-row"><th class="th-sort" onclick="sortMoves('unit')">Unit</th><th class="th-sort" onclick="sortMoves('name')">Resident</th><th class="th-sort" onclick="sortMoves('date')">Lease Date</th><th class="th-sort" onclick="sortMoves('type')">Type</th><th class="th-sort" onclick="sortMoves('appt')">Reservation</th><th class="tar">Total</th><th>Notes</th><th id="moves-th-logged" style="display:none">Logged By</th><th></th></tr></thead><tbody id="moves-tbody"></tbody></table></div>
       </div>
       <div id="moves-cards"></div>
       <div class="card" id="tight-panel" style="display:none"><div class="card-hdr"><span class="card-title">Tight Turnovers</span></div><div class="card-body" id="tight-body"></div></div>
@@ -830,6 +866,7 @@
     </div>
     <div class="section" id="section-keys">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterKeys('drawer',this)">🗝 Card Drawer</div><div class="sub-tab" onclick="filterKeys('issued',this)">Currently Out</div><div class="sub-tab" onclick="filterKeys('fobs',this)">Resident Fobs</div><div class="sub-tab" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('parking',this)">🚗 Parking</div><div class="sub-tab" onclick="filterKeys('transponders',this)">📡 Credentials</div></div>
+      <div id="keys-dupe-banner" style="display:none"></div>
       <div class="key-stat-row" id="keys-stats" style="display:none"></div>
       <div id="keys-sort-bar" style="display:none;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
         <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-right:2px">Sort:</span>
@@ -1338,11 +1375,11 @@
 <div class="modal-ov" id="modal-move"><div class="modal">
   <div class="modal-hdr"><span class="modal-title" id="move-modal-title">Add Move</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-move')">&#x2715;</button></div>
   <div class="modal-bdy">
-    <div class="fr"><div class="fg"><label>Unit #</label><input id="mv-unit" type="text" placeholder="e.g. 1204"></div><div class="fg"><label>Type</label><select id="mv-type" onchange="updateMoveModalLabels()"><option value="in">Move In</option><option value="out">Move Out</option></select></div></div>
-    <div class="fg"><label>Resident Name</label><input id="mv-resident" type="text"><div id="mv-resident-hint" style="display:none;font-size:11.5px;color:#b45309;margin-top:5px;font-weight:600">&#9888; Guessed from the email &mdash; please confirm.</div></div>
+    <div class="fr"><div class="fg"><label class="req">Unit #</label><input id="mv-unit" type="text" placeholder="e.g. 1204"></div><div class="fg"><label>Type</label><select id="mv-type" onchange="updateMoveModalLabels()"><option value="in">Move In</option><option value="out">Move Out</option></select></div></div>
+    <div class="fg"><label class="req">Resident Name</label><input id="mv-resident" type="text"><div id="mv-resident-hint" style="display:none;font-size:11.5px;color:#b45309;margin-top:5px;font-weight:600">&#9888; Guessed from the email &mdash; please confirm.</div></div>
     <div style="background:var(--accent-light);border-radius:var(--radius);padding:10px 13px;margin-bottom:12px">
       <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Lease</div>
-      <div class="fr"><div class="fg" style="margin-bottom:0"><label id="mv-label-date">Lease Start Date</label><div style="display:flex;align-items:center;gap:8px"><input id="mv-date" type="date" data-no-autofill style="flex:1"><label style="display:flex;align-items:center;gap:5px;font-weight:400;font-size:12px;white-space:nowrap;margin:0;cursor:pointer;color:var(--text2)"><input type="checkbox" id="mv-date-tbd" style="width:auto;accent-color:var(--accent)" onchange="mvDateTbdChange()"> TBD</label></div></div><div class="fg" style="margin-bottom:0"><label id="mv-label-total">Move-In Total ($)</label><input id="mv-total" type="text" placeholder="e.g. 4500"></div></div>
+      <div class="fr"><div class="fg" style="margin-bottom:0"><label id="mv-label-date" class="req">Lease Start Date</label><div style="display:flex;align-items:center;gap:8px"><input id="mv-date" type="date" data-no-autofill style="flex:1"><label style="display:flex;align-items:center;gap:5px;font-weight:400;font-size:12px;white-space:nowrap;margin:0;cursor:pointer;color:var(--text2)"><input type="checkbox" id="mv-date-tbd" style="width:auto;accent-color:var(--accent)" onchange="mvDateTbdChange()"> TBD</label></div></div><div class="fg" style="margin-bottom:0"><label id="mv-label-total">Move-In Total ($)</label><input id="mv-total" type="text" placeholder="e.g. 4500"></div></div>
       <div class="fg" id="mv-lease-status-row" style="margin-top:8px;margin-bottom:0"><label>Lease Status</label><select id="mv-lease-status"><option value="">— Not set —</option><option value="pending_countersign">Pending Countersign</option><option value="fully_signed">Fully Signed</option><option value="cancelled">Cancelled</option></select></div>
     </div>
     <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px 13px;margin-bottom:12px">
@@ -1917,6 +1954,22 @@
   <div class="cal-pop-body" id="cal-pop-body"></div>
 </div>
 <div id="toast" role="status" aria-live="polite"></div>
+<div id="confirm-ov" class="confirm-ov" role="alertdialog" aria-modal="true" aria-labelledby="confirm-msg">
+  <div class="confirm-box">
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" id="confirm-cancel">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok">Confirm</button>
+    </div>
+  </div>
+</div>
+<div class="modal-ov" id="modal-key-cleanup">
+  <div class="modal">
+    <div class="modal-hdr"><span class="modal-title">Duplicate Key Records</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-key-cleanup')">&times;</button></div>
+    <div class="modal-bdy" id="key-cleanup-body"></div>
+    <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-key-cleanup')">Cancel</button><button class="btn btn-danger" id="key-cleanup-run" onclick="runKeyCleanup()">Remove selected duplicates</button></div>
+  </div>
+</div>
 
 <script>
 // ╔══════════════════════════════════════════════════════════════════════════╗
@@ -2486,9 +2539,9 @@ function showCloudEmptyNotice() {
   n.innerHTML = '<span>&#9888;&#65039; <strong>Cloud data is empty.</strong> Saving is paused so this device cannot overwrite the cloud. Restore from a backup, then refresh &mdash; or an admin can upload this device&#39;s data as the new cloud copy.</span>'
     + '<button onclick="adoptLocalAsCloud()" style="' + _syncBtnGhostCss + '">Upload this device&#39;s data to the cloud</button>';
 }
-function adoptLocalAsCloud() {
+async function adoptLocalAsCloud() {
   if (!currentUser || currentUser.role !== 'admin') { toast('Admin access required'); return; }
-  if (!confirm('Upload THIS device\'s data as the new cloud copy? Only do this if the cloud is genuinely empty (fresh setup or confirmed loss).')) return;
+  if (!await confirmModal('Upload THIS device\'s data as the new cloud copy? Only do this if the cloud is genuinely empty (fresh setup or confirmed loss).')) return;
   cloudPullOk = true;
   lastGoodCounts = stateCounts(state);
   _allowRiskyPush = true;
@@ -2621,9 +2674,9 @@ function processImport() {
   };
   reader.readAsText(file);
 }
-function resetData() {
+async function resetData() {
   if (!currentUser || currentUser.role !== 'admin') { toast('Admin access required'); return; }
-  if (!confirm('Reset ALL data? Cannot be undone.')) return;
+  if (!await confirmModal('Reset ALL data? Cannot be undone.')) return;
   var preservedAccounts = (state.accounts || []).slice();
   state = emptyState();
   state.accounts = preservedAccounts;
@@ -2726,6 +2779,15 @@ function today() { return localDateStr(new Date()); }
 // Single source of truth shared by the dashboard and the Moves tab so the two never disagree.
 function moveIsToday(m, t) { t = t || today(); return m.apptDate === t || (!m.apptDate && m.date === t); }
 function fmtShort(d) { if (!d) return '-'; if (d === 'TBD') return 'TBD'; return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+// Human-readable "time out" duration: minutes under an hour, hours under 2 days, then days — so a key out for weeks reads "53d", not "1283h".
+function fmtDurOut(ms) {
+  if (!ms || ms < 0) return '';
+  var mins = Math.floor(ms / 60000);
+  if (mins < 60) return mins + 'm';
+  var hrs = Math.floor(mins / 60);
+  if (hrs < 48) return hrs + 'h ' + (mins % 60) + 'm';
+  return Math.floor(hrs / 24) + 'd';
+}
 function toast(msg) { var e = g('toast'); e.textContent = msg; e.classList.add('show'); setTimeout(function () { e.classList.remove('show'); }, 2500); }
 function g(id) { return document.getElementById(id); }
 function cloneData(obj) {
@@ -2888,6 +2950,9 @@ function updateUndoButtons() {
 }
 
 document.addEventListener('keydown', function(e) {
+  // Let the browser's native undo/redo win while the user is editing a field.
+  var t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
   if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); applyUndo(); }
   if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); applyRedo(); }
 });
@@ -2999,7 +3064,7 @@ function openMobSidebar() { g('sidebar').classList.add('mob-open'); g('sb-ov').s
 function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov').style.display = 'none'; }
 
 // ─── NAV ───
-var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Unit Tracker', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', parking: 'Parking Credentials', transponders: 'Transponders', security: 'Security Incidents', session: 'Login / Session', logbook: 'Logbook' };
+var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Unit Tracker', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', parking: 'Parking Credentials', transponders: 'Transponders', security: 'Security Incidents', session: 'Login / Session', logbook: 'Logbook', supplies: 'Supplies & Inventory' };
 var patrolFilter = 'amenity';
 var SEC_ACTIONS = {
   moves: '<button class="btn btn-secondary btn-sm" onclick="openLetterImport()">&#128231; Import Letter</button> <button class="btn btn-secondary btn-sm" onclick="openReconcile()">&#128269; Reconcile</button> <button class="btn btn-secondary btn-sm" onclick="printMovesReport()">&#128424; Print Report</button> <button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
@@ -3029,6 +3094,28 @@ function helpBtn(sec) {
   if (!SEC_HELP[sec]) return '';
   return '<button class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:13px;color:var(--text3)" title="How to use this section" onclick="showSectionHelp(\'' + SEC_HELP[sec] + '\')">?</button>';
 }
+// Header overflow menu (mobile): the ⋯ button only matters when the section has actions.
+function syncHdrMore() {
+  var acts = g('hdr-actions'), more = g('hdr-more');
+  if (!acts || !more) return;
+  acts.classList.remove('open');
+  more.setAttribute('aria-expanded', 'false');
+  more.classList.toggle('no-actions', !acts.children.length);
+}
+function toggleHdrActions(e) {
+  if (e) e.stopPropagation();
+  var acts = g('hdr-actions'), more = g('hdr-more');
+  var open = acts.classList.toggle('open');
+  if (more) more.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+// Close the overflow menu on outside-click or after an action inside it fires.
+document.addEventListener('click', function (e) {
+  var acts = g('hdr-actions');
+  if (!acts || !acts.classList.contains('open')) return;
+  if (e.target.closest('#hdr-actions')) { acts.classList.remove('open'); return; }
+  if (e.target.closest('#hdr-more')) return;
+  acts.classList.remove('open');
+});
 function nav(item) {
   var sec = item.dataset.sec;
   var staffBlocked = currentUser && currentUser.role === 'staff' && (STAFF_HIDDEN.indexOf(sec) !== -1 || (state.staffHiddenSections||[]).indexOf(sec) !== -1);
@@ -3042,6 +3129,7 @@ function nav(item) {
   g('section-' + sec).classList.add('active');
   g('hdr-title').textContent = SEC_TITLES[sec] || sec;
   g('hdr-actions').innerHTML = getSecActions(sec);
+  syncHdrMore();
   curSec = sec; renderSection(sec); closeMobSidebar();
 }
 function mobNav(item) {
@@ -3055,6 +3143,7 @@ function mobNav(item) {
   g('section-' + sec).classList.add('active');
   g('hdr-title').textContent = SEC_TITLES[sec] || sec;
   g('hdr-actions').innerHTML = getSecActions(sec);
+  syncHdrMore();
   curSec = sec; renderSection(sec);
 }
 function renderSection(sec) {
@@ -3066,7 +3155,7 @@ function renderAll() { renderSection(curSec); updateBadges(); }
 // ─── TEST DATA ───
 async function loadTestData() {
   if (!currentUser || currentUser.role !== 'admin') { toast('Admin access required'); return; }
-  if (!confirm('This will add test entries to every section so you can try the passdown builder. Your existing data will stay — test items will be added alongside it. Continue?')) return;
+  if (!await confirmModal('This will add test entries to every section so you can try the passdown builder. Your existing data will stay — test items will be added alongside it. Continue?')) return;
   var t = today();
   var now = Date.now();
   var amBy = 'Alex R.', pmBy = 'Jamie L.', nocBy = 'Sam T.';
@@ -3184,26 +3273,157 @@ document.addEventListener('change', function (e) {
   if (!rec || !rec.leaseholder) return;
   var resEl = g(resId); if (resEl && !resEl.value.trim()) resEl.value = rec.leaseholder;
 });
+// Promise-based styled replacement for native confirm(). Resolves true on Confirm, false on Cancel/Escape/backdrop.
+// Usage mirrors confirm(): `if (!await confirmModal('…')) return;`
+function confirmModal(message, opts) {
+  opts = opts || {};
+  return new Promise(function (resolve) {
+    var ov = g('confirm-ov'), okBtn = g('confirm-ok'), cancelBtn = g('confirm-cancel');
+    g('confirm-msg').textContent = message;
+    okBtn.textContent = opts.okLabel || 'Confirm';
+    cancelBtn.textContent = opts.cancelLabel || 'Cancel';
+    okBtn.className = 'btn ' + (opts.danger === false ? 'btn-primary' : 'btn-danger');
+    var prevFocus = document.activeElement;
+    function done(val) {
+      ov.classList.remove('open');
+      okBtn.onclick = null; cancelBtn.onclick = null; ov.onclick = null;
+      document.removeEventListener('keydown', onKey, true);
+      if (prevFocus && prevFocus.focus) { try { prevFocus.focus({ preventScroll: true }); } catch (e) {} }
+      resolve(val);
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); done(false); }
+      else if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); done(true); }
+    }
+    okBtn.onclick = function () { done(true); };
+    cancelBtn.onclick = function () { done(false); };
+    ov.onclick = function (e) { if (e.target === ov) done(false); };
+    document.addEventListener('keydown', onKey, true);
+    ov.classList.add('open');
+    setTimeout(function () { try { okBtn.focus({ preventScroll: true }); } catch (e) {} }, 40);
+  });
+}
+var _modalStack = [];
+var _modalReturnFocus = null;
 function openModal(id) {
-  g(id).classList.add('open');
+  var ov = g(id);
+  ov.classList.add('open');
+  ov.dataset.dirty = '';
+  if (!_modalStack.length) _modalReturnFocus = document.activeElement;
+  var si = _modalStack.indexOf(id); if (si !== -1) _modalStack.splice(si, 1);
+  _modalStack.push(id);
   refreshUnitDatalist();
-  g(id).querySelectorAll('input[type=date]').forEach(function (f) { if (!f.value && !f.hasAttribute('data-no-autofill')) f.value = today(); });
+  ov.querySelectorAll('input[type=date]').forEach(function (f) { if (!f.value && !f.hasAttribute('data-no-autofill')) f.value = today(); });
+  // Move focus into the modal so keyboard users land inside it, not stranded on the page behind.
+  setTimeout(function () {
+    var first = ov.querySelector('input:not([type=hidden]):not([disabled]),select,textarea,button.modal-close,[href],button');
+    if (first) try { first.focus({ preventScroll: true }); } catch (e) { first.focus(); }
+  }, 40);
 }
 function closeModal(id) {
-  g(id).classList.remove('open');
+  var ov = g(id);
+  ov.classList.remove('open');
+  var si = _modalStack.indexOf(id); if (si !== -1) _modalStack.splice(si, 1);
+  if (!_modalStack.length && _modalReturnFocus && _modalReturnFocus.focus) {
+    try { _modalReturnFocus.focus({ preventScroll: true }); } catch (e) {}
+    _modalReturnFocus = null;
+  }
   if (curSec === 'passdown' && ['modal-maint','modal-logbook','modal-key','modal-amenity'].indexOf(id) !== -1) {
     setTimeout(function(){ renderPdAutoBlocks(currentUser && currentUser.role === 'admin'); }, 150);
   }
 }
-document.addEventListener('click', function (e) { if (e.target.classList.contains('modal-ov')) e.target.classList.remove('open'); });
-document.addEventListener('keydown', function (e) { if (e.key === 'Escape') document.querySelectorAll('.modal-ov.open').forEach(function (m) { m.classList.remove('open'); }); });
+// Guarded close for the "accidental" paths (overlay click / Escape): warn if the form has unsaved edits.
+function attemptCloseModalOv(ov) {
+  if (!ov || !ov.classList.contains('open')) return;
+  if (ov.dataset.dirty === '1' && !confirm('Discard your changes to this form?')) return;
+  closeModal(ov.id);
+}
+// Any edit inside an open modal marks it dirty, so the close-guard knows there's something to lose.
+document.addEventListener('input', function (e) {
+  var ov = e.target.closest && e.target.closest('.modal-ov.open');
+  if (ov) ov.dataset.dirty = '1';
+  if (e.target.classList && e.target.classList.contains('field-invalid')) clearErr(e.target);
+});
+// ── Inline form validation (P1-5): mark a field, show the reason under it, focus the first offender ──
+function fieldError(el, msg) {
+  if (!el) return;
+  el.classList.add('field-invalid');
+  var host = (el.closest && el.closest('.fg')) || el.parentNode;
+  var n = host.querySelector(':scope > .field-err');
+  if (!n) { n = document.createElement('div'); n.className = 'field-err'; host.appendChild(n); }
+  n.textContent = msg;
+}
+function clearErr(el) {
+  if (!el) return;
+  el.classList.remove('field-invalid');
+  var host = (el.closest && el.closest('.fg')) || el.parentNode;
+  var n = host && host.querySelector(':scope > .field-err');
+  if (n) n.remove();
+}
+// specs: [[el, isValid, message], ...] — returns true if all valid, else marks all and focuses the first invalid.
+function requireFields(specs) {
+  var firstBad = null;
+  specs.forEach(function (s) {
+    if (s[1]) clearErr(s[0]);
+    else { fieldError(s[0], s[2]); if (!firstBad) firstBad = s[0]; }
+  });
+  if (firstBad) {
+    try { firstBad.focus({ preventScroll: true }); } catch (e) { firstBad.focus(); }
+    if (firstBad.scrollIntoView) firstBad.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    return false;
+  }
+  return true;
+}
+document.addEventListener('click', function (e) { if (e.target.classList.contains('modal-ov') && e.target.classList.contains('open')) attemptCloseModalOv(e.target); });
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  if (g('confirm-ov') && g('confirm-ov').classList.contains('open')) return; // confirm dialog handles its own Escape
+  // Close only the top-most modal, not every open one at once.
+  for (var i = _modalStack.length - 1; i >= 0; i--) {
+    var ov = g(_modalStack[i]);
+    if (ov && ov.classList.contains('open')) { attemptCloseModalOv(ov); return; }
+  }
+  var fallback = document.querySelector('.modal-ov.open');
+  if (fallback) attemptCloseModalOv(fallback);
+});
+
+// ── Keyboard accessibility (A-1): make div-based controls focusable + operable ──
+var A11Y_INTERACTIVE = '.nav-item,.sub-tab,.mn-item,.stat-clickable';
+function enhanceA11y(root) {
+  (root || document).querySelectorAll(A11Y_INTERACTIVE).forEach(function (el) {
+    if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+    if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+  });
+}
+// Enter/Space activate a focused div-control, matching native button behavior.
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+  var el = document.activeElement;
+  if (el && el.matches && el.matches(A11Y_INTERACTIVE) && el.tagName !== 'BUTTON' && el.tagName !== 'A' && el.tagName !== 'INPUT' && el.tagName !== 'SELECT' && el.tagName !== 'TEXTAREA') {
+    e.preventDefault();
+    el.click();
+  }
+});
+// Static controls exist now (script runs after markup); dynamic re-renders are caught by the observer below.
+enhanceA11y(document);
+(function () {
+  var target = g('content') || document.body;
+  if (!window.MutationObserver) return;
+  var obs = new MutationObserver(function (muts) {
+    for (var i = 0; i < muts.length; i++) {
+      var added = muts[i].addedNodes;
+      for (var j = 0; j < added.length; j++) { if (added[j].nodeType === 1) enhanceA11y(added[j]); }
+    }
+  });
+  obs.observe(target, { childList: true, subtree: true });
+})();
 
 // ─── BADGES ───
 function updateBadges() {
   var mN = (state.moves || []).filter(function (m) { return !m.archivedAt; }).length;
   var mtN = (state.maintenance || []).filter(function (m) { return m.status !== 'resolved'; }).length;
   var gN = (state.guests || []).filter(function (g) { return g.status === 'in'; }).length;
-  var kN = (state.keys || []).filter(function (k) { return k.status === 'issued'; }).length;
+  var kN = (state.keys || []).filter(function (k) { return k.status === 'issued' && k.type !== 'resident'; }).length;
   var aN = (state.amenities || []).filter(function (a) { return a.date >= today(); }).length;
   var trN = (state.tours || []).filter(function (t) { return t.date === today(); }).length;
   var tdN = getCurrentTodos().filter(function (t) { return !t.done; }).length;
@@ -3240,6 +3460,9 @@ function renderDash() {
   var lbAllDash = (state.logbook||[]).concat((state.concierge||[]).map(function(c){ return Object.assign({},c,{status:c.status==='completed'?'resolved':c.status}); })).concat((state.security||[]).map(function(s){ return Object.assign({},s,{status:s.status==='monitoring'?'in-progress':s.status}); }));
   var openLogbook = lbAllDash.filter(function(e){ return e.status==='open'||e.status==='in-progress'; });
   var issuedK = (state.keys || []).filter(function (k) { return k.status === 'issued'; });
+  // Resident fobs are permanent possessions, not desk loans — exclude them from the actionable "Keys Out" count/widget.
+  var activeOut = issuedK.filter(function (k) { return k.type !== 'resident'; });
+  var overdueOut = activeOut.filter(function (k) { return k.type === 'one-time' && k.issuedAt && (Date.now() - k.issuedAt) >= 2 * 3600000; });
   var pendTd = getCurrentTodos().filter(function (t2) { return !t2.done; });
   var unclLAF = (state.laf || []).filter(function (i) { return !i.claimedAt; });
   var outs = active.filter(function (m) { return m.type === 'out'; });
@@ -3269,7 +3492,7 @@ function renderDash() {
   html += '<div class="stat-card stat-clickable" onclick="navToMoves(\'all\')"><div class="stat-num">' + weekM.length + '</div><div class="stat-lbl">Next 7 Days</div></div>';
   html += '<div class="stat-card stat-clickable ' + (openLogbook.length > 0 ? 'accent' : '') + '" onclick="navToSec(\'logbook\')"><div class="stat-num">' + openLogbook.length + '</div><div class="stat-lbl">Open Logbook</div></div>';
   html += '<div class="stat-card stat-clickable ' + (openMt.length > 0 ? 'red' : '') + '" onclick="navToSec(\'maintenance\')"><div class="stat-num">' + openMt.length + '</div><div class="stat-lbl">Open Maintenance</div></div>';
-  html += '<div class="stat-card stat-clickable ' + (issuedK.length > 0 ? 'accent' : '') + '" onclick="navToSec(\'keys\')"><div class="stat-num">' + issuedK.length + '</div><div class="stat-lbl">Keys Out</div></div>';
+  html += '<div class="stat-card stat-clickable ' + (overdueOut.length > 0 ? 'red' : '') + '" onclick="navToSec(\'keys\')"><div class="stat-num">' + activeOut.length + '</div><div class="stat-lbl">Keys Out</div></div>';
   html += '<div class="stat-card stat-clickable" onclick="navToSec(\'todos\')"><div class="stat-num">' + pendTd.length + '</div><div class="stat-lbl">Pending To-Dos</div></div>';
   html += '<div class="stat-card stat-clickable" onclick="navToSec(\'laf\')"><div class="stat-num">' + unclLAF.length + '</div><div class="stat-lbl">Lost &amp; Found</div></div>';
   html += '<div class="stat-card stat-clickable ' + (turnoverReady.length > 0 ? 'accent' : '') + '" onclick="navToMoves(\'turnover\')"><div class="stat-num">' + turnoverReady.length + '</div><div class="stat-lbl">&#128738; Ready to Turn</div></div>';
@@ -3305,7 +3528,7 @@ function renderDash() {
   }
   if (needsAppt.length) {
     html += '<div class="needs-appt-alert"><div class="na-title">&#128197; ' + needsAppt.length + ' Move-In' + (needsAppt.length > 1 ? 's' : '') + ' Need a Reservation</div>';
-    needsAppt.slice(0,4).forEach(function (m) { html += '<div class="tight-row"><strong>Unit ' + esc(m.unit) + '</strong> - ' + esc(m.resident) + ' - Lease starts ' + fmtShort(m.date) + ' <button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="openEditMove(\'' + m.id + '\')">Schedule</button></div>'; });
+    needsAppt.slice(0,4).forEach(function (m) { html += '<div class="tight-row"><span class="tr-main"><strong>Unit ' + esc(m.unit) + '</strong> - ' + esc(m.resident) + ' - Lease starts ' + fmtShort(m.date) + '</span> <button class="btn btn-xs btn-secondary" onclick="openEditMove(\'' + m.id + '\')">Schedule</button></div>'; });
     html += '</div>';
   }
   var wifiDue = getWifiRenewals();
@@ -3317,7 +3540,7 @@ function renderDash() {
       var expired = r.wifiExpiry < wt2;
       var daysLeft = Math.floor((new Date(r.wifiExpiry+'T00:00:00') - new Date(wt2+'T00:00:00')) / 86400000);
       var label = expired ? '<span style="color:var(--red);font-weight:600">EXPIRED ' + fmtShort(r.wifiExpiry) + '</span>' : '<span style="color:var(--amber)">Expires ' + fmtShort(r.wifiExpiry) + (daysLeft === 0 ? ' (today)' : ' (' + daysLeft + 'd)') + '</span>';
-      html += '<div class="tight-row"><strong>Unit ' + esc(r.unit) + '</strong> — ' + esc(r.leaseholder||r.residentName||'') + ' &nbsp;' + label + '<button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="navToSec(\'residents\');setTimeout(function(){openEditUnitRecord(\'' + r.id + '\')},150)">Renew</button></div>';
+      html += '<div class="tight-row"><span class="tr-main"><strong>Unit ' + esc(r.unit) + '</strong> — ' + esc(r.leaseholder||r.residentName||'') + ' &nbsp;' + label + '</span><button class="btn btn-xs btn-secondary" onclick="navToSec(\'residents\');setTimeout(function(){openEditUnitRecord(\'' + r.id + '\')},150)">Renew</button></div>';
     });
     html += '</div>';
   }
@@ -3328,7 +3551,7 @@ function renderDash() {
     rrDue.forEach(function(r) {
       var dLeft = rrDaysUntil(r);
       var label = dLeft < 0 ? '<span style="color:var(--red);font-weight:600">' + (-dLeft) + 'd overdue</span>' : '<span style="color:var(--amber)">Due today</span>';
-      html += '<div class="tight-row"><strong>' + esc(r.label) + '</strong> &nbsp;' + label + '<button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="promptCompleteRecurring(\'' + r.id + '\')">Complete</button></div>';
+      html += '<div class="tight-row"><span class="tr-main"><strong>' + esc(r.label) + '</strong> &nbsp;' + label + '</span><button class="btn btn-xs btn-secondary" onclick="promptCompleteRecurring(\'' + r.id + '\')">Complete</button></div>';
     });
     html += '</div>';
   }
@@ -3347,18 +3570,18 @@ function renderDash() {
   if (!openMt.length) html += '<div class="text-3 text-sm">No open issues</div>';
   else openMt.slice(0, 5).forEach(function (m) { var bc = m.priority === 'high' ? 'var(--red)' : m.priority === 'medium' ? 'var(--amber)' : '#B0AEA7'; html += '<div class="flex items-center gap-8" style="padding:4px 0;border-bottom:1px solid var(--border2)"><div style="width:7px;height:7px;border-radius:50%;background:' + bc + ';flex-shrink:0"></div><span class="text-sm" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Unit ' + esc(m.unit) + ': ' + esc(m.issue) + '</span><span class="pill pill-' + (m.status === 'in-progress' ? 'inprogress' : 'open') + '" style="font-size:10px">' + m.status + '</span></div>'; });
   html += '</div></div>';
-  var overdueK = issuedK.filter(function(k) { return k.type === 'one-time' && k.issuedAt && (Date.now() - k.issuedAt) >= 2 * 3600000; });
+  var fobCount = issuedK.length - activeOut.length;
+  var fobNote = fobCount > 0 ? '<div style="font-size:10px;color:var(--text3);padding-top:6px;text-align:center">+ ' + fobCount + ' resident fob' + (fobCount > 1 ? 's' : '') + ' held — see Key Tracker</div>' : '';
   html += '<div class="card"><div class="card-hdr"><span class="card-title">Keys Out</span>'
-    + (overdueK.length ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:10px;padding:2px 8px;margin-left:6px">⚠ ' + overdueK.length + ' overdue</span>' : '')
+    + (overdueOut.length ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:10px;padding:2px 8px;margin-left:6px">⚠ ' + overdueOut.length + ' overdue</span>' : '')
     + '</div><div class="card-body" style="padding:8px 14px">';
-  if (!issuedK.length) html += '<div class="text-3 text-sm">All keys returned</div>';
+  if (!activeOut.length) html += '<div class="text-3 text-sm">No temporary keys out</div>' + fobNote;
   else {
     var nowTs = Date.now();
-    issuedK.slice(0, 6).forEach(function(k) {
+    activeOut.slice(0, 6).forEach(function(k) {
       var isOD = k.type === 'one-time' && k.issuedAt && (nowTs - k.issuedAt) >= 2 * 3600000;
       var ms = k.issuedAt ? nowTs - k.issuedAt : 0;
-      var hrs = Math.floor(ms / 3600000), mins = Math.floor((ms % 3600000) / 60000);
-      var timeStr = k.issuedAt ? (hrs > 0 ? hrs + 'h ' + mins + 'm' : mins + 'm') : '';
+      var timeStr = k.issuedAt ? fmtDurOut(ms) : '';
       html += '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border2)">'
         + (isOD ? '<span style="color:var(--red);font-size:11px;flex-shrink:0">⚠</span>' : '<span style="color:var(--border);font-size:11px;flex-shrink:0">·</span>')
         + '<div style="flex:1;min-width:0">'
@@ -3371,7 +3594,8 @@ function renderDash() {
         + '<button onclick="dashReturnKey(\'' + k.id + '\')" style="flex-shrink:0;font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-family:inherit;transition:background 120ms ease-out,color 120ms ease-out,border-color 120ms ease-out;white-space:nowrap" onmouseover="this.style.background=\'var(--green-light)\';this.style.color=\'var(--green)\';this.style.borderColor=\'rgba(26,102,64,0.3)\'" onmouseout="this.style.background=\'var(--surface2)\';this.style.color=\'var(--text2)\';this.style.borderColor=\'var(--border)\'">✓ Return</button>'
         + '</div>';
     });
-    if (issuedK.length > 6) html += '<div style="font-size:11px;color:var(--text3);padding-top:5px;text-align:center;cursor:pointer" onclick="navToSec(\'keys\')">+' + (issuedK.length - 6) + ' more — view all →</div>';
+    if (activeOut.length > 6) html += '<div style="font-size:11px;color:var(--text3);padding-top:5px;text-align:center;cursor:pointer" onclick="navToSec(\'keys\')">+' + (activeOut.length - 6) + ' more — view all →</div>';
+    html += fobNote;
   }
   html += '</div></div>';
   html += '<div class="card"><div class="card-hdr"><span class="card-title">Shift To-Do</span><span class="card-count">' + pendTd.length + ' pending</span></div><div class="card-body" style="padding:8px 14px">';
@@ -3895,7 +4119,7 @@ function parseWelcomeLetter(text) {
   res.coNames = names.slice(1);
   return res;
 }
-function parseLetterAndPrefill() {
+async function parseLetterAndPrefill() {
   var ta = g('letter-paste'); var text = ta ? ta.value : '';
   var msg = g('letter-parse-msg');
   if (!text.trim()) { if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Paste the welcome letter first.'; } return; }
@@ -3908,7 +4132,7 @@ function parseLetterAndPrefill() {
   closeModal('modal-import-letter');
   if (existing.length) {
     var ex = existing[0];
-    if (confirm('There\'s already a move-in for Unit ' + p.unit + ' (' + (ex.resident || 'no name') + ', lease start ' + (ex.date || '—') + ').\n\nOK = update that one with the letter.\nCancel = create a separate new move-in.')) {
+    if (await confirmModal('There\'s already a move-in for Unit ' + p.unit + ' (' + (ex.resident || 'no name') + ', lease start ' + (ex.date || '—') + ').\n\nOK = update that one with the letter.\nCancel = create a separate new move-in.')) {
       updateMoveFromLetter(ex, p);
       return;
     }
@@ -4154,13 +4378,17 @@ function mvApptTbdChange() {
   if (ts) { ts.disabled = cb.checked; if (cb.checked) ts.value = ''; }
   var msgEl = g('mv-conflict-msg'); if (msgEl) msgEl.innerHTML = '';
 }
-function saveMove() {
+async function saveMove() {
   var unit = g('mv-unit').value.trim(), resident = g('mv-resident').value.trim();
   var isTbd = g('mv-date-tbd') && g('mv-date-tbd').checked;
   var date = isTbd ? 'TBD' : g('mv-date').value;
-  if (!unit || !resident || (!date && !isTbd)) { toast('Fill in unit, resident & lease start date'); return; }
+  if (!requireFields([
+    [g('mv-unit'), !!unit, 'Enter the unit number'],
+    [g('mv-resident'), !!resident, 'Enter the resident name'],
+    [g('mv-date'), !!(date || isTbd), 'Pick a lease start date, or check TBD']
+  ])) return;
   if (window._moveNameGuess) {
-    if (!confirm('The resident name "' + resident + '" was guessed from the email. Save it as-is?\n\n(Cancel to fix it first.)')) return;
+    if (!await confirmModal('The resident name "' + resident + '" was guessed from the email. Save it as-is?\n\n(Cancel to fix it first.)')) return;
     setMoveNameGuess(false);
   }
   var apptTbd = !!(g('mv-appt-tbd') && g('mv-appt-tbd').checked);
@@ -4173,7 +4401,7 @@ function saveMove() {
   if (apptDate && apptTime) {
     var conflicts = checkApptConflict(apptDate, apptTime, editingMoveId);
     if (conflicts) {
-      if (!confirm('Elevator/dock conflict with Unit ' + conflicts[0].unit + ' (' + conflicts[0].resident + '). Save anyway?')) return;
+      if (!await confirmModal('Elevator/dock conflict with Unit ' + conflicts[0].unit + ' (' + conflicts[0].resident + '). Save anyway?')) return;
     }
   }
   if (editingMoveId) {
@@ -4599,7 +4827,11 @@ function renderMoves() {
           + (coResNames ? '<div class="text-xs text-3">+ ' + coResNames + '</div>' : '')
           + lsBadge
           + (m.date === t && m.type === 'in' ? '<div class="text-xs" style="color:var(--accent)">Lease starts today</div>' : '') + '</td>';
-        rows += '<td class="mono text-sm">' + fmtShort(m.date) + '</td>';
+        var rowStuck = moveIsStuck(m, t);
+        var stuckDays = rowStuck && m.date ? Math.round((new Date(t + 'T12:00:00') - new Date(m.date + 'T12:00:00')) / 86400000) : 0;
+        rows += '<td class="mono text-sm">' + fmtShort(m.date)
+          + (stuckDays > 0 ? '<div style="margin-top:3px"><span class="pill" style="background:var(--red-light);color:var(--red);font-size:9px;font-weight:700">&#9888; ' + stuckDays + 'd overdue</span></div>' : '')
+          + '</td>';
         var stage = getMoveStage(m);
         var archBtn = (!m.archivedAt && !isStaffUser)
           ? (stage === 'complete'
@@ -4610,7 +4842,7 @@ function renderMoves() {
         rows += '<td>' + apptBadge + '</td>';
         var payTask = (m.tasks||[]).find(function(tk){ return tk.paymentTask; });
         var payMismatch = payTask && m.total && payTask.paymentReceived && String(payTask.paymentReceived).replace(/[$,\s]/g,'') !== String(m.total).replace(/[$,\s]/g,'');
-        rows += '<td class="mono text-sm">' + (m.total ? '$' + esc(m.total) : '-') + (payMismatch ? '<br><span style="font-size:9px;color:var(--red);font-weight:700">⚠ MISMATCH</span>' : '') + '</td>';
+        rows += '<td class="mono text-sm tar tabnum">' + (m.total ? '$' + esc(m.total) : '-') + (payMismatch ? '<br><span style="font-size:9px;color:var(--red);font-weight:700">⚠ MISMATCH</span>' : '') + '</td>';
         rows += '<td class="text-sm text-2 moves-note-cell" title="' + (m.notes ? esc(m.notes).replace(/"/g,'&quot;') : '') + '">' + (m.notes ? esc(m.notes) : '-') + '</td>';
         if (moveShowLogged) rows += '<td class="text-xs text-3">' + fmtByTag(m.addedBy, m.createdAt) + '</td>';
         rows += '<td><div class="flex gap-4" style="justify-content:flex-end;align-items:center">';
@@ -4707,7 +4939,7 @@ function toggleCL(id) {
     setTimeout(function () { var e = g('cl-' + id) || g('mc-' + id); if (e) e.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 50);
   }
 }
-function toggleTask(moveId, taskId, checked) {
+async function toggleTask(moveId, taskId, checked) {
   var m = (state.moves || []).find(function (x) { return x.id === moveId; }); if (!m) return;
   var t = (m.tasks || []).find(function (x) { return x.id === taskId; }); if (!t) return;
   var tasksBefore = JSON.parse(JSON.stringify(m.tasks));
@@ -4805,7 +5037,7 @@ function toggleTask(moveId, taskId, checked) {
   }
   // ── Connection 3: Move-out damage task → Maintenance ──
   if (checked && m.type === 'out' && t.text === 'Any damage noted and photographed') {
-    if (confirm('Log damage as a maintenance issue for Unit ' + m.unit + '?')) {
+    if (await confirmModal('Log damage as a maintenance issue for Unit ' + m.unit + '?')) {
       if (!state.maintenance) state.maintenance = [];
       state.maintenance.push({ id: uid(), unit: m.unit, resident: m.resident, type: 'Damage', priority: 'medium', status: 'open', notes: 'Damage noted during move-out — see move-out checklist and photos', log: [], createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' });
       scheduleSave(); renderMaint(); updateBadges(); renderDash();
@@ -4851,9 +5083,9 @@ function saveTask() {
   scheduleSave(); closeModal('modal-task'); renderMoves();
   g('task-text').value = ''; g('task-due').value = ''; toast('Task added');
 }
-function resetCL(moveId) {
+async function resetCL(moveId) {
   var id = moveId || openMoveId; if (!id) return;
-  if (!confirm('Reset all tasks for this move?')) return;
+  if (!await confirmModal('Reset all tasks for this move?')) return;
   var m = (state.moves || []).find(function (x) { return x.id === id; }); if (!m) return;
   var tasksBefore = cloneData(m.tasks || []);
   (m.tasks || []).forEach(function (t) { t.done = false; });
@@ -4968,8 +5200,8 @@ function unarchiveMove(id) {
   logActivity('moves', 'edit', 'Unarchived move — Unit ' + m.unit + ' (' + (m.type === 'in' ? 'Move In' : 'Move Out') + ') · ' + m.resident);
   scheduleSave(); renderMoves(); updateBadges(); renderDash(); toast('Restored to active moves');
 }
-function deleteMove(id) {
-  if (!confirm('Delete this move?')) return;
+async function deleteMove(id) {
+  if (!await confirmModal('Delete this move?')) return;
   var m = (state.moves || []).find(function(x){ return x.id === id; });
   if (m) pushUndo({ sec: 'moves', type: 'DELETE', id: id, data: Object.assign({}, m), label: 'delete move — Unit ' + m.unit });
   logActivity('moves', 'delete', 'Deleted move' + (m ? ' — Unit ' + m.unit + ' · ' + m.resident : ''));
@@ -5069,7 +5301,7 @@ function saveConcierge() {
 }
 function updateConciergeStatus(id, val) { var c = (state.concierge || []).find(function(x){ return x.id===id; }); if (c) { var _csb = { status: c.status }; logActivity('concierge','edit','Concierge status → '+val+' — Unit '+c.unit+' · '+c.type); c.status=val; pushUndo({ sec: 'concierge', type: 'EDIT', id: c.id, before: _csb, after: { status: val }, label: 'concierge status → ' + val }); scheduleSave(); renderConcierge(); updateBadges(); } }
 function updateConciergeNextAction(id, val) { var c = (state.concierge || []).find(function(x){ return x.id===id; }); if (c) { c.nextAction=val.trim(); scheduleSave(); } }
-function deleteConcierge(id) { if (!confirm('Delete this request?')) return; var cx=(state.concierge||[]).find(function(x){return x.id===id;}); if (cx) pushUndo({ sec: 'concierge', type: 'DELETE', id: id, data: Object.assign({}, cx), label: 'delete concierge — Unit ' + cx.unit }); logActivity('concierge','delete','Deleted concierge request'+(cx?' — Unit '+cx.unit+' · '+cx.type:'')); state.concierge = (state.concierge || []).filter(function(c){ return c.id!==id; }); scheduleSave(); renderConcierge(); updateBadges(); toast('Deleted'); }
+async function deleteConcierge(id) { if (!await confirmModal('Delete this request?')) return; var cx=(state.concierge||[]).find(function(x){return x.id===id;}); if (cx) pushUndo({ sec: 'concierge', type: 'DELETE', id: id, data: Object.assign({}, cx), label: 'delete concierge — Unit ' + cx.unit }); logActivity('concierge','delete','Deleted concierge request'+(cx?' — Unit '+cx.unit+' · '+cx.type:'')); state.concierge = (state.concierge || []).filter(function(c){ return c.id!==id; }); scheduleSave(); renderConcierge(); updateBadges(); toast('Deleted'); }
 function renderConcierge() {
   var list = (state.concierge || []).slice();
   if (conciergeFilter === 'open') list = list.filter(function(c){ return c.status==='open'; });
@@ -5123,9 +5355,9 @@ function renderConcierge() {
   setBadge('badge-concierge', open);
 }
 // ── Connection 5: Concierge → Maintenance escalation ──
-function escalateConciergeToMaint(id) {
+async function escalateConciergeToMaint(id) {
   var c = (state.concierge || []).find(function(x) { return x.id === id; }); if (!c) return;
-  if (!confirm('Create a maintenance issue from this concierge request?')) return;
+  if (!await confirmModal('Create a maintenance issue from this concierge request?')) return;
   var entry = { id: uid(), unit: c.unit || '', resident: c.resident || '', type: 'General', priority: 'medium', status: 'open', notes: 'Escalated from concierge request: ' + c.type + (c.notes ? ' — ' + c.notes : ''), log: [], createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' };
   if (!state.maintenance) state.maintenance = [];
   state.maintenance.push(entry);
@@ -5135,9 +5367,9 @@ function escalateConciergeToMaint(id) {
   scheduleSave(); renderMaint(); renderConcierge(); updateBadges(); renderDash();
   toast('Maintenance issue created from concierge request');
 }
-function escalateSecurityToMaint(id) {
+async function escalateSecurityToMaint(id) {
   var s = (state.security || []).find(function(x) { return x.id === id; }); if (!s) return;
-  if (!confirm('Create a maintenance issue from this security incident?')) return;
+  if (!await confirmModal('Create a maintenance issue from this security incident?')) return;
   var desc = s.notes ? s.notes : (s.type + ' at ' + s.location);
   var entry = { id: uid(), unit: s.unit || '', resident: '', type: 'General', priority: 'high', status: 'open', notes: 'Escalated from security incident: ' + s.type + ' — ' + s.location + (s.notes ? '\nDetails: ' + s.notes : '') + '\nIncident logged: ' + (s.date || '') + (s.time ? ' at ' + s.time : ''), log: [], createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' };
   if (!state.maintenance) state.maintenance = [];
@@ -5283,8 +5515,8 @@ function updateLogbookNextAction(id, val) {
   if (e) { e.nextAction = val.trim(); scheduleSave(); }
 }
 
-function deleteLogbook(id) {
-  if (!confirm('Delete this entry?')) return;
+async function deleteLogbook(id) {
+  if (!await confirmModal('Delete this entry?')) return;
   var ex = (state.logbook||[]).find(function(x){ return x.id===id; });
   if (ex) pushUndo({ sec:'logbook', type:'DELETE', id:id, data:Object.assign({},ex), label:'delete logbook — '+ex.type });
   logActivity('logbook','delete','Deleted logbook entry'+(ex?' — '+ex.type:''));
@@ -5511,7 +5743,7 @@ function renderMaint() {
   setBadge('badge-maint', open + inp);
 }
 function updateMaintStatus(id, val) { var m = (state.maintenance || []).find(function (x) { return x.id === id; }); if (m) { m.status = val; scheduleSave(); renderMaint(); updateBadges(); renderDash(); } }
-function deleteMaint(id) { if (!confirm('Delete?')) return; var mx = (state.maintenance||[]).find(function(x){return x.id===id;}); if (mx) pushUndo({ sec: 'maintenance', type: 'DELETE', id: id, data: Object.assign({}, mx), label: 'delete maintenance — Unit ' + mx.unit }); logActivity('maintenance', 'delete', 'Deleted maintenance issue' + (mx ? ' — Unit ' + mx.unit + ' · ' + mx.issue : '')); state.maintenance = (state.maintenance || []).filter(function (m) { return m.id !== id; }); scheduleSave(); renderMaint(); updateBadges(); renderDash(); toast('Deleted'); }
+async function deleteMaint(id) { if (!await confirmModal('Delete?')) return; var mx = (state.maintenance||[]).find(function(x){return x.id===id;}); if (mx) pushUndo({ sec: 'maintenance', type: 'DELETE', id: id, data: Object.assign({}, mx), label: 'delete maintenance — Unit ' + mx.unit }); logActivity('maintenance', 'delete', 'Deleted maintenance issue' + (mx ? ' — Unit ' + mx.unit + ' · ' + mx.issue : '')); state.maintenance = (state.maintenance || []).filter(function (m) { return m.id !== id; }); scheduleSave(); renderMaint(); updateBadges(); renderDash(); toast('Deleted'); }
 
 // ─── GUESTS ───
 var guestFilter = 'all';
@@ -5570,7 +5802,7 @@ function renderGuests() {
   tbody.innerHTML = html;
   setBadge('badge-guests', allG.filter(function (gst) { return gst.status === 'in'; }).length);
 }
-function updateGuestStatus(id, val) {
+async function updateGuestStatus(id, val) {
   var gst = (state.guests || []).find(function (x) { return x.id === id; }); if (!gst) return;
   var _gsb = { status: gst.status, checkOut: gst.checkOut };
   gst.status = val;
@@ -5581,7 +5813,7 @@ function updateGuestStatus(id, val) {
     if (gst.linkedKeyId) {
       var linkedKey = (state.keys || []).find(function(k) { return k.id === gst.linkedKeyId && k.status === 'issued'; });
       if (linkedKey) {
-        if (confirm('Mark guest key as returned?')) {
+        if (await confirmModal('Mark guest key as returned?')) {
           var _lkb = { status: linkedKey.status, returnedAt: linkedKey.returnedAt };
           linkedKey.status = 'returned'; linkedKey.returnedAt = Date.now();
           gsCmds.push({ sec: 'keys', type: 'EDIT', id: linkedKey.id, before: _lkb, after: { status: linkedKey.status, returnedAt: linkedKey.returnedAt }, label: 'guest key returned — Unit ' + gst.unit });
@@ -5597,7 +5829,7 @@ function updateGuestStatus(id, val) {
   logActivity('guests', 'edit', 'Guest status → ' + val + ' — ' + gst.name + ' · Unit ' + gst.unit);
   scheduleSave(); renderGuests(); updateBadges();
 }
-function deleteGuest(id) { if (!confirm('Remove?')) return; var gx = (state.guests||[]).find(function(x){return x.id===id;}); if (gx) pushUndo({ sec: 'guests', type: 'DELETE', id: id, data: Object.assign({}, gx), label: 'delete guest — ' + gx.name }); logActivity('guests', 'delete', 'Removed guest' + (gx ? ' — ' + gx.name + ' · Unit ' + gx.unit : '')); state.guests = (state.guests || []).filter(function (gst) { return gst.id !== id; }); scheduleSave(); renderGuests(); updateBadges(); toast('Removed'); }
+async function deleteGuest(id) { if (!await confirmModal('Remove?')) return; var gx = (state.guests||[]).find(function(x){return x.id===id;}); if (gx) pushUndo({ sec: 'guests', type: 'DELETE', id: id, data: Object.assign({}, gx), label: 'delete guest — ' + gx.name }); logActivity('guests', 'delete', 'Removed guest' + (gx ? ' — ' + gx.name + ' · Unit ' + gx.unit : '')); state.guests = (state.guests || []).filter(function (gst) { return gst.id !== id; }); scheduleSave(); renderGuests(); updateBadges(); toast('Removed'); }
 
 // ─── KEYS ───
 var keyFilter = 'drawer';
@@ -5609,8 +5841,10 @@ function setKeySort(s) {
 }
 function filterKeys(f, item) {
   keyFilter = f;
-  document.querySelectorAll('#section-keys .sub-tab').forEach(function (t) { t.classList.remove('active'); });
-  item.classList.add('active');
+  if (item) {
+    document.querySelectorAll('#section-keys .sub-tab').forEach(function (t) { t.classList.remove('active'); });
+    item.classList.add('active');
+  }
   var parkingView = g('parking-view'), keyCard = g('keys-log-card'), statRow = g('keys-stats'), otkSec = g('keys-otk-section'), drawerView = g('card-drawer-view'), sortBar = g('keys-sort-bar'), tpView = g('transponder-view');
   // hide all views first
   [parkingView, keyCard, drawerView, tpView].forEach(function(el) { if (el) el.style.display = 'none'; });
@@ -5638,13 +5872,13 @@ function filterKeys(f, item) {
     if (sortBar) sortBar.style.display = '';
     renderKeys();
   }
+  renderKeyDupeBanner();
 }
 
 function renderKeysSection() {
-  if (keyFilter === 'drawer') renderCardDrawer();
-  else if (keyFilter === 'parking') renderParking();
-  else if (keyFilter === 'transponders') renderTransponders();
-  else renderKeys();
+  // Route through filterKeys so the correct view is shown/hidden even on first load (fixes the empty Key Log table appearing above the Card Drawer).
+  var activeTab = document.querySelector('#section-keys .sub-tab.active');
+  filterKeys(keyFilter, activeTab);
 }
 
 // ─── CARD DRAWER ───────────────────────────────────────────────────────────────
@@ -5665,7 +5899,7 @@ function renderCardDrawer() {
     if (k) {
       var overdue = k.issuedAt && (now - k.issuedAt) >= 2 * 3600000;
       var ms = k.issuedAt ? now - k.issuedAt : 0, hrs = Math.floor(ms/3600000), mins = Math.floor((ms%3600000)/60000);
-      var timeStr = hrs > 0 ? hrs + 'h ' + mins + 'm' : mins + 'm';
+      var timeStr = fmtDurOut(ms);
       var bg = overdue ? 'rgba(192,53,53,0.08)' : 'rgba(181,112,32,0.07)';
       var bd = overdue ? '1.5px solid rgba(192,53,53,0.4)' : '1.5px solid rgba(181,112,32,0.35)';
       var nc = overdue ? 'var(--red)' : 'var(--amber)';
@@ -5723,8 +5957,7 @@ function dashReturnKey(id) {
   var k = (state.keys || []).find(function(x) { return x.id === id; }); if (!k) return;
   _krId = id; _krCondition = 'good';
   var ms = k.issuedAt ? Date.now() - k.issuedAt : 0;
-  var hrs = Math.floor(ms / 3600000), mins = Math.floor((ms % 3600000) / 60000);
-  var timeStr = k.issuedAt ? (hrs > 0 ? hrs + 'h ' + mins + 'm' : mins + 'm') : '';
+  var timeStr = k.issuedAt ? fmtDurOut(ms) : '';
   var isOD = k.type === 'one-time' && k.issuedAt && ms >= 2 * 3600000;
   var fobEl = g('kr-fob'), unitEl = g('kr-unit'), nameEl = g('kr-name'), timeEl = g('kr-time'), odRow = g('kr-overdue-row');
   if (fobEl) { fobEl.textContent = k.fob || '—'; fobEl.style.display = k.fob ? '' : 'none'; }
@@ -6073,7 +6306,7 @@ function renderKeys() {
     }
   });
   tbody.innerHTML = html;
-  setBadge('badge-keys', allK.filter(function (k) { return k.status === 'issued'; }).length);
+  setBadge('badge-keys', allK.filter(function (k) { return k.status === 'issued' && k.type !== 'resident'; }).length);
 }
 function updateKeyStatus(id, val) {
   var k = (state.keys || []).find(function (x) { return x.id === id; }); if (!k) return;
@@ -6111,7 +6344,72 @@ function logKeyReturn(id) {
   logActivity('keys', 'complete', 'Key returned — Unit ' + k.unit + ' · ' + k.name, 'Type: ' + k.type + (k.fob ? ' · Fob: ' + k.fob : '') + ' · Logged at ' + ts);
   scheduleSave(); renderKeys(); updateBadges(); renderDash(); toast('Key return logged');
 }
-function deleteKey(id) { if (!confirm('Remove?')) return; var kx=(state.keys||[]).find(function(x){return x.id===id;}); if (kx) pushUndo({ sec: 'keys', type: 'DELETE', id: id, data: Object.assign({}, kx), label: 'delete key — Unit ' + kx.unit }); logActivity('keys','delete','Removed key'+(kx?' — Unit '+kx.unit+' · '+kx.name:'')); state.keys = (state.keys || []).filter(function (k) { return k.id !== id; }); scheduleSave(); renderKeys(); updateBadges(); toast('Removed'); }
+async function deleteKey(id) { if (!await confirmModal('Remove?')) return; var kx=(state.keys||[]).find(function(x){return x.id===id;}); if (kx) pushUndo({ sec: 'keys', type: 'DELETE', id: id, data: Object.assign({}, kx), label: 'delete key — Unit ' + kx.unit }); logActivity('keys','delete','Removed key'+(kx?' — Unit '+kx.unit+' · '+kx.name:'')); state.keys = (state.keys || []).filter(function (k) { return k.id !== id; }); scheduleSave(); renderKeys(); updateBadges(); toast('Removed'); }
+
+// ── Duplicate key-record cleanup (preview-first, admin-only) ──
+// A true duplicate matches on unit + resident + type + KEY KIND + fob. keyKind is essential:
+// a resident's unit key and mailbox key share unit/name/type but are NOT duplicates.
+function keyDupeSig(k) { return [k.unit || '', (k.name || '').trim().toLowerCase(), k.type || '', k.keyKind || '', k.fob || ''].join('|'); }
+function findKeyDupeGroups() {
+  var g = {};
+  (state.keys || []).forEach(function (k) { if (k.status !== 'issued') return; var s = keyDupeSig(k); (g[s] = g[s] || []).push(k); });
+  return Object.keys(g).map(function (s) { return g[s]; }).filter(function (arr) { return arr.length > 1; });
+}
+function keyHasFeeData(k) { return !!(k.unreturnedFee || k.fee || k.feeAddedToLedger || k.unreturnedFeeAddedToLedger || k.feeWaived || k.unreturnedFeeWaived); }
+function renderKeyDupeBanner() {
+  var el = g('keys-dupe-banner'); if (!el) return;
+  var isAdmin = currentUser && currentUser.role === 'admin';
+  var groups = isAdmin ? findKeyDupeGroups() : [];
+  if (!groups.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  var extra = groups.reduce(function (a, gr) { return a + (gr.length - 1); }, 0);
+  el.style.display = '';
+  el.innerHTML = '<div class="tight-alert" style="display:flex;align-items:center;gap:10px">'
+    + '<div class="tr-main"><div class="ta-title">&#9888; ' + groups.length + ' set' + (groups.length > 1 ? 's' : '') + ' of duplicate key records (' + extra + ' extra)</div>'
+    + '<div style="font-size:12px;color:var(--text2)">Same unit, resident, type and key kind logged more than once. Review before removing.</div></div>'
+    + '<button class="btn btn-sm btn-secondary" style="flex-shrink:0" onclick="openKeyCleanup()">Review</button></div>';
+}
+var _keyCleanupGroups = [];
+function openKeyCleanup() {
+  if (!(currentUser && currentUser.role === 'admin')) { toast('Admin only'); return; }
+  _keyCleanupGroups = findKeyDupeGroups();
+  var body = g('key-cleanup-body'), runBtn = g('key-cleanup-run');
+  if (!_keyCleanupGroups.length) { body.innerHTML = '<div class="text-3 text-sm">No duplicate key records found.</div>'; if (runBtn) runBtn.style.display = 'none'; openModal('modal-key-cleanup'); return; }
+  if (runBtn) runBtn.style.display = '';
+  var html = '<div style="font-size:12.5px;color:var(--text2);margin-bottom:12px">Pick which record to <strong>keep</strong> in each set — the others are removed (undoable with &#8984;Z). A &#9888; marks a record with fee/charge data; keep that one unless you\'re certain.</div>';
+  _keyCleanupGroups.forEach(function (grp, gi) {
+    grp.sort(function (a, b) { return (a.issuedAt || 0) - (b.issuedAt || 0); });
+    var keepIdx = grp.findIndex(function (k) { return keyHasFeeData(k); });
+    if (keepIdx < 0) keepIdx = 0;
+    html += '<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px">'
+      + '<div class="font-600" style="font-size:13px;margin-bottom:6px">Unit ' + esc(grp[0].unit) + ' — ' + esc(grp[0].name || '') + ' &middot; ' + esc(grp[0].keyKind || grp[0].type || 'key') + '</div>';
+    grp.forEach(function (k, ki) {
+      var feeFlag = keyHasFeeData(k) ? ' <span style="color:var(--amber);font-weight:600">&#9888; has fee data</span>' : '';
+      var when = k.issuedAt ? new Date(k.issuedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'no date';
+      html += '<label style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12.5px;cursor:pointer"><input type="radio" name="keep-' + gi + '" value="' + ki + '" style="width:auto;accent-color:var(--accent)"' + (ki === keepIdx ? ' checked' : '') + '> Keep — issued ' + when + feeFlag + '</label>';
+    });
+    html += '</div>';
+  });
+  body.innerHTML = html;
+  openModal('modal-key-cleanup');
+}
+async function runKeyCleanup() {
+  if (!_keyCleanupGroups.length) { closeModal('modal-key-cleanup'); return; }
+  var toRemove = [];
+  _keyCleanupGroups.forEach(function (grp, gi) {
+    var sel = document.querySelector('input[name="keep-' + gi + '"]:checked');
+    var keepIdx = sel ? parseInt(sel.value, 10) : 0;
+    grp.forEach(function (k, ki) { if (ki !== keepIdx) toRemove.push(k); });
+  });
+  if (!toRemove.length) { closeModal('modal-key-cleanup'); return; }
+  if (!await confirmModal('Remove ' + toRemove.length + ' duplicate key record' + (toRemove.length > 1 ? 's' : '') + '? This can be undone with ⌘Z.')) return;
+  var ids = toRemove.map(function (k) { return k.id; });
+  toRemove.forEach(function (k) { pushUndo({ sec: 'keys', type: 'DELETE', id: k.id, data: Object.assign({}, k), label: 'dedupe key — Unit ' + k.unit }); });
+  logActivity('keys', 'delete', 'Removed ' + toRemove.length + ' duplicate key record(s): ' + toRemove.map(function (k) { return 'Unit ' + k.unit + ' ' + (k.name || ''); }).join(', '));
+  state.keys = (state.keys || []).filter(function (k) { return ids.indexOf(k.id) === -1; });
+  _keyCleanupGroups = [];
+  scheduleSave(); closeModal('modal-key-cleanup'); renderKeysSection(); updateBadges(); renderDash();
+  toast('Removed ' + toRemove.length + ' duplicate' + (toRemove.length > 1 ? 's' : ''));
+}
 function markFeeToLedger(id) {
   var k = (state.keys||[]).find(function(x){return x.id===id;}); if(!k) return;
   var amt = k.isReplacement ? (k.fee || 100) : 25;
@@ -6121,10 +6419,10 @@ function markFeeToLedger(id) {
   logActivity('keys', 'edit', 'Marked $' + amt + ' fee added to ledger — Unit ' + k.unit + ' · ' + k.name);
   scheduleSave(); renderKeys(); toast('Fee marked as added to ledger');
 }
-function waiveKeyFee(id) {
+async function waiveKeyFee(id) {
   var k = (state.keys||[]).find(function(x){return x.id===id;}); if(!k) return;
   var amt = k.isReplacement ? (k.fee || 100) : 25;
-  if (!confirm('Waive this $' + amt + ' fee?')) return;
+  if (!await confirmModal('Waive this $' + amt + ' fee?')) return;
   pushUndo({ sec: 'keys', type: 'EDIT', id: k.id, before: { feeWaived: false }, after: { feeWaived: true }, label: 'waive fee — Unit ' + k.unit });
   k.feeWaived = true; logActivity('keys', 'edit', 'Waived $' + amt + ' fee — Unit ' + k.unit + ' · ' + k.name); scheduleSave(); renderKeys(); toast('Fee waived');
 }
@@ -6165,9 +6463,9 @@ function markUnreturnedFeeToLedger(id) {
   logActivity('keys', 'edit', 'Marked $' + k.unreturnedFee + ' unreturned-key fee added to ledger — Unit ' + k.unit + ' · ' + k.name);
   scheduleSave(); renderKeys(); toast('Fee marked as added to ledger');
 }
-function waiveUnreturnedFee(id) {
+async function waiveUnreturnedFee(id) {
   var k = (state.keys||[]).find(function(x){return x.id===id;}); if(!k) return;
-  if (!confirm('Waive this $' + k.unreturnedFee + ' unreturned-key fee?')) return;
+  if (!await confirmModal('Waive this $' + k.unreturnedFee + ' unreturned-key fee?')) return;
   pushUndo({ sec: 'keys', type: 'EDIT', id: k.id, before: { unreturnedFeeWaived: false }, after: { unreturnedFeeWaived: true }, label: 'waive unreturned fee — Unit ' + k.unit });
   k.unreturnedFeeWaived = true;
   logActivity('keys', 'edit', 'Waived $' + k.unreturnedFee + ' unreturned-key fee — Unit ' + k.unit + ' · ' + k.name);
@@ -6280,18 +6578,18 @@ function saveParking() {
   }
 }
 function pkLabel(p) { return p.unit ? 'Unit ' + p.unit : (p.category || 'Resident') + ' — ' + p.resident; }
-function giveParkingNotice(id) {
+async function giveParkingNotice(id) {
   var p=(state.parking||[]).find(function(x){return x.id===id;}); if(!p) return;
-  if (!confirm('Mark 30-day cancellation notice submitted for ' + pkLabel(p) + '?')) return;
+  if (!await confirmModal('Mark 30-day cancellation notice submitted for ' + pkLabel(p) + '?')) return;
   var _pnb = cloneData(p);
   p.status='notice-given'; p.cancelNoticeDate=today();
   pushUndo({ sec: 'parking', type: 'EDIT', id: p.id, before: _pnb, after: cloneData(p), label: 'parking notice — ' + pkLabel(p) });
   logActivity('parking', 'edit', '30-day notice given — ' + pkLabel(p) + ' · ' + p.resident, 'Notice date: ' + today());
   scheduleSave(); renderParking(); toast('30-day notice recorded');
 }
-function markParkingReturned(id) {
+async function markParkingReturned(id) {
   var p=(state.parking||[]).find(function(x){return x.id===id;}); if(!p) return;
-  if (!confirm('Mark all parking credentials returned for ' + pkLabel(p) + '?')) return;
+  if (!await confirmModal('Mark all parking credentials returned for ' + pkLabel(p) + '?')) return;
   var _prb = cloneData(p);
   p.status='returned'; p.returnedAt=Date.now();
   var tpRetCmd = syncParkingToCredentials(p);
@@ -6301,10 +6599,10 @@ function markParkingReturned(id) {
   logActivity('parking', 'complete', 'Parking credentials returned — ' + pkLabel(p) + ' · ' + p.resident + (tpRetCmd ? ' · Credentials stock updated' : ''));
   scheduleSave(); renderParking(); renderTransponders(); toast('Marked as returned');
 }
-function deleteParking(id) {
+async function deleteParking(id) {
   var px=(state.parking||[]).find(function(x){return x.id===id;});
   var delHint = px && px.tpLogId ? ' The linked Credentials log entry stays as history — remove it separately in Credentials if this was a data-entry mistake.' : '';
-  if(!confirm('Remove this Parking record?' + delHint)) return;
+  if(!await confirmModal('Remove this Parking record?' + delHint)) return;
   if (px) { pushUndo({ sec: 'parking', type: 'DELETE', id: id, data: px, label: 'delete parking — ' + pkLabel(px) }); logActivity('parking','delete','Removed parking credential — '+pkLabel(px)+' · '+px.resident); }
   state.parking=(state.parking||[]).filter(function(x){return x.id!==id;}); scheduleSave(); renderParking(); toast('Removed');
 }
@@ -6629,18 +6927,18 @@ function saveTransponder() {
     scheduleSave(); closeModal('modal-transponder'); renderTransponders(); toast('Credentials logged — stock updated');
   }
 }
-function returnTransponder(id) {
+async function returnTransponder(id) {
   var e = tpData().log.find(function(x){ return x.id === id; }); if (!e) return;
   var q = tpQty(e);
-  if (!confirm('Mark ' + tpSetLabel(e, true) + ' returned' + (e.unit ? ' for Unit ' + e.unit : (e.recipient ? ' from ' + e.recipient : '')) + '? This adds the contents back to stock.')) return;
+  if (!await confirmModal('Mark ' + tpSetLabel(e, true) + ' returned' + (e.unit ? ' for Unit ' + e.unit : (e.recipient ? ' from ' + e.recipient : '')) + '? This adds the contents back to stock.')) return;
   var _b = { status: e.status, returnedAt: e.returnedAt };
   e.status = 'returned'; e.returnedAt = Date.now();
   pushUndo({ sec: 'transponders', type: 'EDIT', path: ['transponders', 'log'], id: e.id, before: _b, after: { status: 'returned', returnedAt: e.returnedAt }, label: 'transponder returned — ' + tpWho(e) });
   logActivity('transponders', 'complete', 'Transponder returned — ' + tpWho(e), 'Qty: ' + q + ' · In stock (calc): ' + tpCalcRemaining());
   scheduleSave(); renderTransponders(); toast('Marked returned — stock updated');
 }
-function deleteTransponder(id) {
-  if (!confirm('Remove this entry? The running balance will recalculate without it.')) return;
+async function deleteTransponder(id) {
+  if (!await confirmModal('Remove this entry? The running balance will recalculate without it.')) return;
   var d = tpData();
   var e = d.log.find(function(x){ return x.id === id; });
   if (e) { pushUndo({ sec: 'transponders', type: 'DELETE', path: ['transponders', 'log'], id: id, data: cloneData(e), label: 'delete transponder — ' + tpWho(e) }); logActivity('transponders', 'delete', 'Removed transponder entry — ' + tpWho(e)); }
@@ -7217,7 +7515,7 @@ function saveSecurity() {
     scheduleSave(); closeModal('modal-security'); renderSecurity(); updateBadges(); toast('Incident logged');
   }
 }
-function deleteSecurity(id) { if(!confirm('Delete this incident?')) return; var sx=(state.security||[]).find(function(x){return x.id===id;}); if (sx) pushUndo({ sec: 'security', type: 'DELETE', id: id, data: Object.assign({}, sx), label: 'delete incident — ' + sx.type }); logActivity('security','delete','Deleted security incident'+(sx?' — '+sx.type+' · '+sx.location:'')); state.security=(state.security||[]).filter(function(x){return x.id!==id;}); scheduleSave(); renderSecurity(); updateBadges(); toast('Deleted'); }
+async function deleteSecurity(id) { if(!await confirmModal('Delete this incident?')) return; var sx=(state.security||[]).find(function(x){return x.id===id;}); if (sx) pushUndo({ sec: 'security', type: 'DELETE', id: id, data: Object.assign({}, sx), label: 'delete incident — ' + sx.type }); logActivity('security','delete','Deleted security incident'+(sx?' — '+sx.type+' · '+sx.location:'')); state.security=(state.security||[]).filter(function(x){return x.id!==id;}); scheduleSave(); renderSecurity(); updateBadges(); toast('Deleted'); }
 function renderSecurity() {
   var t = today();
   var list = (state.security||[]).slice();
@@ -7299,7 +7597,7 @@ function resetAmenitySpaces() {
   state.amenitySpaces = DEFAULT_AMENITY_SPACES.slice(); scheduleSave(); renderAmenitySpaceSettings(); toast('Amenity spaces reset to defaults');
 }
 function setSpaceCheckboxes(spaceStr) { clearSpaceCheckboxes(); if(!spaceStr) return; var spaces=spaceStr.split(',').map(function(s){return s.trim();}); document.querySelectorAll('input[name="am-space-cb"]').forEach(function(cb){if(spaces.indexOf(cb.value)!==-1)cb.checked=true;}); }
-function saveAmenity() {
+async function saveAmenity() {
   var resident = g('am-resident').value.trim(), unit = g('am-unit').value.trim(), date = g('am-date').value;
   var space = getSelectedSpaces();
   if (!resident || !unit || !date) { toast('Fill in resident, unit & date'); return; }
@@ -7316,12 +7614,12 @@ function saveAmenity() {
     });
     if (editConflicts.length) {
       var ecNames = editConflicts.map(function(x){ return x.resident + ' (Unit ' + x.unit + ')' + (x.start ? ' ' + fmtTime(x.start) + (x.end ? '–' + fmtTime(x.end) : '') : ''); }).join(', ');
-      if (!confirm('⚠ Conflict: ' + space + ' is already booked on ' + fmtShort(date) + ' — ' + ecNames + '.\n\nSave anyway?')) return;
+      if (!await confirmModal('⚠ Conflict: ' + space + ' is already booked on ' + fmtShort(date) + ' — ' + ecNames + '.\n\nSave anyway?')) return;
     }
     var editMoveConflicts = checkMoveConflictForAmenity(space, date, editStart, editEnd);
     if (editMoveConflicts) {
       var emNames = editMoveConflicts.map(function(m){ return 'Unit ' + m.unit + ' (' + m.resident + ')' + (m.apptTime ? ' ' + fmtTime(m.apptTime) : ''); }).join(', ');
-      if (!confirm('⚠ Conflict: ' + space + ' already has a move reservation on ' + fmtShort(date) + ' — ' + emNames + '.\n\nSave anyway?')) return;
+      if (!await confirmModal('⚠ Conflict: ' + space + ' already has a move reservation on ' + fmtShort(date) + ' — ' + emNames + '.\n\nSave anyway?')) return;
     }
     var _ab = Object.assign({}, a);
     a.resident=resident; a.unit=unit; a.space=space; a.date=date; a.start=editStart; a.end=editEnd; a.type=g('am-type').value; a.fee=g('am-fee').value.trim(); a.notes=g('am-notes').value.trim();
@@ -7338,12 +7636,12 @@ function saveAmenity() {
   });
   if (conflicts.length) {
     var names = conflicts.map(function(x){ return x.resident + ' (Unit ' + x.unit + ')' + (x.start ? ' ' + fmtTime(x.start) + (x.end ? '–' + fmtTime(x.end) : '') : ''); }).join(', ');
-    if (!confirm('⚠ Conflict: ' + space + ' is already booked on ' + fmtShort(date) + ' — ' + names + '.\n\nAdd anyway?')) return;
+    if (!await confirmModal('⚠ Conflict: ' + space + ' is already booked on ' + fmtShort(date) + ' — ' + names + '.\n\nAdd anyway?')) return;
   }
   var newMoveConflicts = checkMoveConflictForAmenity(space, date, newStart, newEnd);
   if (newMoveConflicts) {
     var nmNames = newMoveConflicts.map(function(m){ return 'Unit ' + m.unit + ' (' + m.resident + ')' + (m.apptTime ? ' ' + fmtTime(m.apptTime) : ''); }).join(', ');
-    if (!confirm('⚠ Conflict: ' + space + ' already has a move reservation on ' + fmtShort(date) + ' — ' + nmNames + '.\n\nAdd anyway?')) return;
+    if (!await confirmModal('⚠ Conflict: ' + space + ' already has a move reservation on ' + fmtShort(date) + ' — ' + nmNames + '.\n\nAdd anyway?')) return;
   }
   var a = { id: uid(), resident: resident, unit: unit, space: space, date: date, start: newStart, end: newEnd, type: g('am-type').value, fee: g('am-fee').value.trim(), notes: g('am-notes').value.trim(), addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
   if (!state.amenities) state.amenities = [];
@@ -7405,7 +7703,7 @@ function renderAmenities() {
   tbody.innerHTML = html;
   setBadge('badge-amenities', (state.amenities || []).filter(function (a) { return a.date >= t; }).length);
 }
-function deleteAmenity(id) { if (!confirm('Remove?')) return; var ax=(state.amenities||[]).find(function(x){return x.id===id;}); if (ax) pushUndo({ sec: 'amenities', type: 'DELETE', id: id, data: Object.assign({}, ax), label: 'delete booking — Unit ' + ax.unit }); logActivity('amenities','delete','Removed amenity booking'+(ax?' — Unit '+ax.unit+' · '+ax.space+' · '+fmtShort(ax.date):'')); state.amenities = (state.amenities || []).filter(function (a) { return a.id !== id; }); scheduleSave(); renderAmenities(); updateBadges(); toast('Removed'); }
+async function deleteAmenity(id) { if (!await confirmModal('Remove?')) return; var ax=(state.amenities||[]).find(function(x){return x.id===id;}); if (ax) pushUndo({ sec: 'amenities', type: 'DELETE', id: id, data: Object.assign({}, ax), label: 'delete booking — Unit ' + ax.unit }); logActivity('amenities','delete','Removed amenity booking'+(ax?' — Unit '+ax.unit+' · '+ax.space+' · '+fmtShort(ax.date):'')); state.amenities = (state.amenities || []).filter(function (a) { return a.id !== id; }); scheduleSave(); renderAmenities(); updateBadges(); toast('Removed'); }
 
 // ─── TOURS ───
 var tourFilter = 'all';
@@ -7487,7 +7785,7 @@ function renderTours() {
   tbody.innerHTML = html;
   setBadge('badge-tours', allT.filter(function (tr) { return tr.date === t; }).length);
 }
-function deleteTour(id) { if (!confirm('Delete?')) return; var tx=(state.tours||[]).find(function(x){return x.id===id;}); if (tx) pushUndo({ sec: 'tours', type: 'DELETE', id: id, data: Object.assign({}, tx), label: 'delete tour — ' + tx.name }); logActivity('tours','delete','Deleted tour'+(tx?' — '+tx.name+' · '+fmtShort(tx.date):'')); state.tours = (state.tours || []).filter(function (tr) { return tr.id !== id; }); scheduleSave(); renderTours(); updateBadges(); toast('Deleted'); }
+async function deleteTour(id) { if (!await confirmModal('Delete?')) return; var tx=(state.tours||[]).find(function(x){return x.id===id;}); if (tx) pushUndo({ sec: 'tours', type: 'DELETE', id: id, data: Object.assign({}, tx), label: 'delete tour — ' + tx.name }); logActivity('tours','delete','Deleted tour'+(tx?' — '+tx.name+' · '+fmtShort(tx.date):'')); state.tours = (state.tours || []).filter(function (tr) { return tr.id !== id; }); scheduleSave(); renderTours(); updateBadges(); toast('Deleted'); }
 
 // ─── WALKTHROUGH ───
 function toggleWTFloor(hdr) { hdr.parentElement.classList.toggle('open'); }
@@ -7616,8 +7914,8 @@ function renderPatrolByType(type) {
   if (msBtn) msBtn.addEventListener('click', openManualScan);
   scans.forEach(function(s) {
     var btn = g('scan-del-' + s.id);
-    if (btn) btn.addEventListener('click', function() {
-      if (!confirm('Remove this scan entry?')) return;
+    if (btn) btn.addEventListener('click', async function() {
+      if (!await confirmModal('Remove this scan entry?')) return;
       pushUndo({ sec: 'walkthrough', type: 'DELETE', path: ['scans'], id: s.id, data: s, label: 'delete patrol scan — ' + (s.checkpointName || 'checkpoint') });
       logActivity('walkthrough', 'delete', 'Deleted patrol scan — ' + (s.checkpointName || 'Checkpoint'), 'Staff: ' + (s.staffName || 'Unknown') + ' · Time: ' + new Date(s.timestamp).toLocaleString());
       state.scans = (state.scans || []).filter(function(x) { return x.id !== s.id; });
@@ -7672,8 +7970,8 @@ function renderCheckpoints() {
     var editBtn = g('edit-cp-' + cp.id);
     if (editBtn) editBtn.addEventListener('click', function() { openEditCheckpoint(cp.id); });
     var delBtn = g('del-cp-' + cp.id);
-    if (delBtn) delBtn.addEventListener('click', function() {
-      if (!confirm('Delete "' + cp.name + '"? Scan history for this checkpoint will also be removed.')) return;
+    if (delBtn) delBtn.addEventListener('click', async function() {
+      if (!await confirmModal('Delete "' + cp.name + '"? Scan history for this checkpoint will also be removed.')) return;
       var removedScans = (state.scans || []).filter(function(s) { return s.checkpointId === cp.id; });
       pushBatchUndo('walkthrough', 'delete checkpoint — ' + cp.name, [
         { sec: 'walkthrough', type: 'DELETE', path: ['checkpoints'], id: cp.id, data: cloneData(cp), label: 'delete checkpoint — ' + cp.name },
@@ -8133,8 +8431,8 @@ function toggleWTItem(key, checked) {
     if (prog) prog.textContent = dc + '/' + floor.items.length;
   });
 }
-function resetWT() {
-  if (!confirm('Reset walkthrough?')) return;
+async function resetWT() {
+  if (!await confirmModal('Reset walkthrough?')) return;
   var before = cloneData(state.walkthrough || {});
   state.walkthrough = {};
   pushSetUndo('walkthrough', ['walkthrough'], before, {}, 'reset patrol checklist');
@@ -8224,8 +8522,8 @@ function addWTItem(fi) {
   toast('Item added');
 }
 
-function deleteWTItem(fi, ii) {
-  if (!confirm('Remove this checklist item?')) return;
+async function deleteWTItem(fi, ii) {
+  if (!await confirmModal('Remove this checklist item?')) return;
   if (!state.wtFloors) state.wtFloors = getWTFloors();
   var floor = state.wtFloors[fi]; if (!floor) return;
   var before = cloneData(state.wtFloors);
@@ -8261,10 +8559,10 @@ function renameWTFloor(fi) {
   scheduleSave(); renderWT(); toast('Floor renamed');
 }
 
-function deleteWTFloor(fi) {
+async function deleteWTFloor(fi) {
   if (!state.wtFloors) state.wtFloors = getWTFloors();
   var floor = state.wtFloors[fi]; if (!floor) return;
-  if (!confirm('Delete floor "' + floor.label + '" and all its items? Checkmark progress for this floor will be lost.')) return;
+  if (!await confirmModal('Delete floor "' + floor.label + '" and all its items? Checkmark progress for this floor will be lost.')) return;
   // Clean up walkthrough keys for this floor
   var wt = state.walkthrough || {};
   var floorsBefore = cloneData(state.wtFloors);
@@ -8299,8 +8597,8 @@ function resolveFlag(id) {
     scheduleSave(); renderWT(); toast('Resolved');
   }
 }
-function deleteFlag(id) {
-  if (!confirm('Remove?')) return;
+async function deleteFlag(id) {
+  if (!await confirmModal('Remove?')) return;
   var f = (state.flags || []).find(function (x) { return x.id === id; });
   if (f) {
     pushUndo({ sec: 'walkthrough', type: 'DELETE', path: ['flags'], id: f.id, data: f, label: 'delete patrol issue — ' + f.location });
@@ -8309,9 +8607,9 @@ function deleteFlag(id) {
   state.flags = (state.flags || []).filter(function (f) { return f.id !== id; });
   scheduleSave(); renderWT(); toast('Removed');
 }
-function escalateFlagToMaint(id) {
+async function escalateFlagToMaint(id) {
   var f = (state.flags || []).find(function(x) { return x.id === id; }); if (!f) return;
-  if (!confirm('Create a maintenance issue from this patrol flag?')) return;
+  if (!await confirmModal('Create a maintenance issue from this patrol flag?')) return;
   var entry = { id: uid(), unit: '', resident: '', type: 'General', priority: f.priority === 'high' ? 'high' : (f.priority === 'medium' ? 'medium' : 'low'), status: 'open', notes: 'Escalated from patrol flag: ' + f.location + (f.desc ? '\nDetails: ' + f.desc : ''), log: [], createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' };
   if (!state.maintenance) state.maintenance = [];
   var flagBefore = cloneData(f);
@@ -9000,10 +9298,10 @@ function deleteTodo(id) {
   setCurrentTodos(todos.filter(function (t) { return t.id !== id; }));
   scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Removed');
 }
-function clearDoneTodos() {
+async function clearDoneTodos() {
   var moved = getCurrentTodos().filter(function (t) { return t.done; });
   if (!moved.length) { toast('No completed to-dos to archive'); return; }
-  if (!confirm('Archive ' + moved.length + ' completed to-do(s)? They stay viewable under the Done tab.')) return;
+  if (!await confirmModal('Archive ' + moved.length + ' completed to-do(s)? They stay viewable under the Done tab.')) return;
   var listBefore = cloneData(getCurrentTodos());
   var archBefore = cloneData(getCurrentArchivedTodos());
   var now = Date.now();
@@ -9089,7 +9387,7 @@ var claimingLAFId = null;
 function claimLAF(id) { claimingLAFId = id; g('laf-claim-by').value = ''; g('laf-claim-unit').value = ''; openModal('modal-laf-claim'); setTimeout(function(){ var f=g('laf-claim-by'); if(f) f.focus(); }, 80); }
 function saveClaimLAF() { var item = (state.laf || []).find(function(x){ return x.id === claimingLAFId; }); if (!item) return; var by = g('laf-claim-by').value.trim(); if (!by) { toast('Enter who is claiming the item'); return; } var _clb = { claimedBy: item.claimedBy, claimedUnit: item.claimedUnit, claimedAt: item.claimedAt }; item.claimedBy = by; item.claimedUnit = g('laf-claim-unit').value.trim(); item.claimedAt = Date.now(); pushUndo({ sec: 'laf', type: 'EDIT', id: item.id, before: _clb, after: { claimedBy: item.claimedBy, claimedUnit: item.claimedUnit, claimedAt: item.claimedAt }, label: 'L&F claimed — ' + item.desc }); logActivity('laf','edit','L&F item claimed — '+item.desc+' · by '+by+(item.claimedUnit?' Unit '+item.claimedUnit:'')); claimingLAFId = null; scheduleSave(); closeModal('modal-laf-claim'); renderLAF(); updateBadges(); toast('Marked as claimed'); }
 function toggleLAFPassdown(id) { var item = (state.laf || []).find(function(x){ return x.id === id; }); if (!item) return; item.flaggedForPassdown = !item.flaggedForPassdown; scheduleSave(); renderLAF(); toast(item.flaggedForPassdown ? 'Flagged for passdown' : 'Removed from passdown'); }
-function deleteLAF(id) { if (!confirm('Remove?')) return; var lx=(state.laf||[]).find(function(x){return x.id===id;}); if (lx) pushUndo({ sec: 'laf', type: 'DELETE', id: id, data: Object.assign({}, lx), label: 'delete L&F — ' + lx.desc }); logActivity('laf','delete','Removed L&F item'+(lx?' — '+lx.desc:'')); state.laf = (state.laf || []).filter(function (i) { return i.id !== id; }); scheduleSave(); renderLAF(); updateBadges(); toast('Removed'); }
+async function deleteLAF(id) { if (!await confirmModal('Remove?')) return; var lx=(state.laf||[]).find(function(x){return x.id===id;}); if (lx) pushUndo({ sec: 'laf', type: 'DELETE', id: id, data: Object.assign({}, lx), label: 'delete L&F — ' + lx.desc }); logActivity('laf','delete','Removed L&F item'+(lx?' — '+lx.desc:'')); state.laf = (state.laf || []).filter(function (i) { return i.id !== id; }); scheduleSave(); renderLAF(); updateBadges(); toast('Removed'); }
 
 // ─── UNIT TRACKER ───
 var utFilter = 'all', utSearch = '', utFloor = 'all', utView = 'list', editingUnitRecordId = null;
@@ -9695,9 +9993,9 @@ function setSupplyQtyPrompt(id) {
 }
 
 
-function deleteSupply(id) {
+async function deleteSupply(id) {
   if (currentUser && currentUser.role !== 'admin') { toast('Admin access required'); return; }
-  if (!confirm('Remove this supply item?')) return;
+  if (!await confirmModal('Remove this supply item?')) return;
   var s = (state.supplies || []).find(function(x){ return x.id === id; });
   if (s) {
     var beforeDeletedDefaults = cloneData(state.deletedDefaultSupplies || []);
@@ -11060,9 +11358,27 @@ function renderPassdownHistory() {
   });
   histEl.innerHTML = html;
 }
-function copyPD(id) {
+function markPassdownSent(id) {
+  var found = null, up = state.userPassdowns || {};
+  Object.keys(up).forEach(function (uid) { (up[uid] || []).forEach(function (p) { if (p.id === id) found = p; }); });
+  (state.passdowns || []).forEach(function (p) { if (p.id === id) found = p; });
+  if (!found) return false;
+  found.status = 'sent';
+  if (!found.sentAt) found.sentAt = Date.now();
+  if (!found.recipients) found.recipients = getPassdownRecipientString();
+  scheduleSave(); renderPassdownHistory();
+  return true;
+}
+async function copyPD(id) {
   var all = getAllPassdowns(); var p = all.find(function(x){return x.id===id;}); if (!p) return;
-  navigator.clipboard.writeText(p.text).then(function(){toast('Copied');}).catch(function(){toast('Copy failed');});
+  try { await navigator.clipboard.writeText(p.text); toast('Copied'); } catch (e) { toast('Copy failed'); return; }
+  // Copying from history is how the team actually delivers a passdown — offer to reflect that in its status.
+  if (p.status !== 'sent') {
+    if (await confirmModal('Mark this passdown as sent? You just copied it to share.', { danger: false, okLabel: 'Mark sent', cancelLabel: 'Just copy' })) {
+      markPassdownSent(id);
+      toast('Marked as sent');
+    }
+  }
 }
 function editPD(id) {
   var all = getAllPassdowns(); var p = all.find(function(x){return x.id===id;}); if (!p) return;
@@ -11072,8 +11388,8 @@ function editPD(id) {
   pv.focus();
   toast('Loaded into preview — edit then Save');
 }
-function deletePD(id, authorId) {
-  if (!confirm('Delete passdown?')) return;
+async function deletePD(id, authorId) {
+  if (!await confirmModal('Delete passdown?')) return;
   if (authorId && state.userPassdowns && state.userPassdowns[authorId]) {
     state.userPassdowns[authorId] = state.userPassdowns[authorId].filter(function(p){return p.id!==id;});
   } else {
@@ -12085,8 +12401,8 @@ function renderTeam() {
     var eb = g('team-edit-' + entry.id);
     if (eb) eb.addEventListener('click', function () { openTeamEntryModal(entry); });
     var db = g('team-del-' + entry.id);
-    if (db) db.addEventListener('click', function () {
-      if (!confirm('Delete this entry?')) return;
+    if (db) db.addEventListener('click', async function () {
+      if (!await confirmModal('Delete this entry?')) return;
       state.teamlog = (state.teamlog || []).filter(function (e) { return e.id !== entry.id; });
       scheduleSave(); renderTeam();
     });
@@ -12363,7 +12679,7 @@ function openRecurringModal() {
     + '<div class="fg"><label>Linked supply item (optional)</label><select id="rr-supply">' + supOpts + '</select><div class="set-hint">If set, completing this reminder asks for the counted quantity and sets that item\'s stock directly — for things staff physically count (like Key Cards) rather than a plain to-do.</div></div>';
   var ov = g('modal-recurring');
   if (!ov) { ov = document.createElement('div'); ov.className = 'modal-ov'; ov.id = 'modal-recurring'; document.body.appendChild(ov); }
-  ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">' + (r ? 'Edit' : 'Add') + ' Recurring Reminder</span><button class="modal-close" onclick="closeModal(\'modal-recurring\')">&#x2715;</button></div>'
+  ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">' + (r ? 'Edit' : 'Add') + ' Recurring Reminder</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-recurring\')">&#x2715;</button></div>'
     + '<div class="modal-bdy">' + bdy + '</div>'
     + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-recurring\')">Cancel</button><button class="btn btn-primary" onclick="saveRecurring()">Save</button></div></div>';
   openModal('modal-recurring');
@@ -12386,8 +12702,8 @@ function saveRecurring() {
   scheduleSave(); closeModal('modal-recurring'); renderRecurringReminders(); renderDash();
   toast('Saved');
 }
-function deleteRecurring(id) {
-  if (!confirm('Delete this recurring reminder?')) return;
+async function deleteRecurring(id) {
+  if (!await confirmModal('Delete this recurring reminder?')) return;
   var list = rrData();
   var r = list.find(function(x) { return x.id === id; });
   state.recurringReminders = list.filter(function(x) { return x.id !== id; });
@@ -12536,7 +12852,7 @@ async function changePatrolPin() {
 async function removePatrolPin() {
   var cur = (g('pp-cur') ? g('pp-cur').value : '');
   if (!(await verifySectionPin(cur, state.patrolPin, PATROLPIN_SALT))) { toast('Current PIN is incorrect'); return; }
-  if (!confirm('Remove patrol PIN? Anyone scanning a QR code will be able to log a scan.')) return;
+  if (!await confirmModal('Remove patrol PIN? Anyone scanning a QR code will be able to log a scan.')) return;
   state.patrolPin = ''; scheduleSave(); renderPatrolPinSettings(); toast('Patrol PIN removed');
 }
 
@@ -12608,8 +12924,8 @@ function moveStaff(i, dir) {
   scheduleSave(); renderTeamStaff();
 }
 
-function removeStaff(i) {
-  if (!confirm('Remove this staff member?')) return;
+async function removeStaff(i) {
+  if (!await confirmModal('Remove this staff member?')) return;
   state.teamstaff.splice(i, 1);
   scheduleSave(); renderTeamStaff(); toast('Removed');
 }
@@ -12653,7 +12969,7 @@ async function changeTeamPin() {
 async function removeTeamPin() {
   var cur = (g('tp-current') ? g('tp-current').value : '');
   if (!(await verifySectionPin(cur, state.teampin, TEAMPIN_SALT))) { toast('Current PIN is incorrect'); return; }
-  if (!confirm('Remove Team Tracker PIN? Anyone will be able to log entries without a PIN.')) return;
+  if (!await confirmModal('Remove Team Tracker PIN? Anyone will be able to log entries without a PIN.')) return;
   state.teampin = ''; scheduleSave(); renderTeamPinSettings(); toast('Team Tracker PIN removed');
 }
 
@@ -12802,9 +13118,9 @@ function moveTask(type, idx, dir) {
   scheduleSave(); renderTaskList(type);
 }
 
-function resetTasksToDefaults(type) {
+async function resetTasksToDefaults(type) {
   var label = type === 'in' ? 'move-in' : 'move-out';
-  if (!confirm('Replace your current ' + label + ' task list with the updated defaults? This cannot be undone.')) return;
+  if (!await confirmModal('Replace your current ' + label + ' task list with the updated defaults? This cannot be undone.')) return;
   var defaults = type === 'in' ? DEFAULT_IN_TASKS : DEFAULT_OUT_TASKS;
   var copy = defaults.map(function(t){ return {text:t.text, cat:t.cat, hint:t.hint||null}; });
   if (type === 'in') state.customInTasks = copy;
@@ -13109,7 +13425,7 @@ function renderDisplaySettings() {
 function openChangePinModal() {
   var ov = g('modal-change-pin');
   if (!ov) { ov = document.createElement('div'); ov.className = 'modal-ov'; ov.id = 'modal-change-pin'; document.body.appendChild(ov); }
-  ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Change Your PIN</span><button class="modal-close" onclick="closeModal(\'modal-change-pin\')">&#x2715;</button></div>'
+  ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Change Your PIN</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-change-pin\')">&#x2715;</button></div>'
     + '<div class="modal-bdy">'
     + '<div class="fg"><label>Current PIN</label><input type="password" id="pin-current" placeholder="Enter your current PIN" maxlength="8" inputmode="numeric"></div>'
     + '<div class="fg"><label>New PIN (4-8 digits)</label><input type="password" id="pin-new" placeholder="4-8 digits" maxlength="8" inputmode="numeric"></div>'
@@ -13206,6 +13522,7 @@ async function submitPin() {
     var ds = g('section-dashboard'); if (ds) ds.classList.add('active');
     g('hdr-title').textContent = 'Dashboard';
     g('hdr-actions').innerHTML = '';
+    syncHdrMore();
     renderDash(); updateBadges();
     toast('Welcome, ' + currentUser.name + '!');
     applyUserDisplay();
@@ -13390,7 +13707,7 @@ function resetAccountPin(id) {
   var acct = (state.accounts||[]).find(function(a){return a.id===id;}); if (!acct) return;
   var ov = g('modal-reset-pin');
   if (!ov) { ov = document.createElement('div'); ov.className = 'modal-ov'; ov.id = 'modal-reset-pin'; document.body.appendChild(ov); }
-  ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Reset PIN — ' + esc(acct.name) + '</span><button class="modal-close" onclick="closeModal(\'modal-reset-pin\')">&#x2715;</button></div>'
+  ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Reset PIN — ' + esc(acct.name) + '</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-reset-pin\')">&#x2715;</button></div>'
     + '<div class="modal-bdy">'
     + '<div class="fg"><label>New PIN (4-8 digits)</label><input type="password" id="reset-pin-new" placeholder="Enter new PIN" maxlength="8" inputmode="numeric"></div>'
     + '<div class="fg"><label>Confirm New PIN</label><input type="password" id="reset-pin-confirm" placeholder="Re-enter new PIN" maxlength="8" inputmode="numeric"></div>'
@@ -13412,9 +13729,9 @@ async function submitResetPin(id) {
   sessionStorage.removeItem('pin_locked_until_' + acct.id);
   scheduleSave(); closeModal('modal-reset-pin'); toast('PIN reset for ' + acct.name);
 }
-function deleteAccount(id) {
+async function deleteAccount(id) {
   var acct = (state.accounts||[]).find(function(a){return a.id===id;}); if (!acct) return;
-  if (!confirm('Remove account for ' + acct.name + '? Their data will be kept.')) return;
+  if (!await confirmModal('Remove account for ' + acct.name + '? Their data will be kept.')) return;
   state.accounts = state.accounts.filter(function(a){return a.id!==id;});
   scheduleSave(); renderTeamAccounts(); toast('Account removed');
 }
@@ -13564,8 +13881,8 @@ function saveMaintLog(id, idx) {
   setTimeout(function(){var row=g('maint-log-'+id);if(row)row.classList.add('open');},0);
 }
 function cancelMaintLog(id, idx) { renderMaint(); setTimeout(function(){var row=g('maint-log-'+id);if(row)row.classList.add('open');},0); }
-function deleteMaintLog(id, idx) {
-  if (!confirm('Delete this log entry?')) return;
+async function deleteMaintLog(id, idx) {
+  if (!await confirmModal('Delete this log entry?')) return;
   var m = (state.maintenance||[]).find(function(x){return x.id===id;}); if (!m||!m.log) return;
   var before = cloneData(m.log);
   var old = m.log[idx];
@@ -13614,8 +13931,8 @@ function saveConciergeLog(id, idx) {
   setTimeout(function(){var row=g('concierge-log-'+id);if(row)row.classList.add('open');},0);
 }
 function cancelConciergeLog(id, idx) { renderConcierge(); setTimeout(function(){var row=g('concierge-log-'+id);if(row)row.classList.add('open');},0); }
-function deleteConciergeLog(id, idx) {
-  if (!confirm('Delete this log entry?')) return;
+async function deleteConciergeLog(id, idx) {
+  if (!await confirmModal('Delete this log entry?')) return;
   var c = (state.concierge||[]).find(function(x){return x.id===id;}); if (!c||!c.log) return;
   var before = cloneData(c.log);
   var old = c.log[idx];
@@ -14003,9 +14320,9 @@ function saveTemplate() {
   editingTemplateId = null;
 }
 
-function deleteTemplate(id) {
+async function deleteTemplate(id) {
   var t = (state.templates || []).find(function(x) { return x.id === id; }); if (!t) return;
-  if (!confirm('Delete "' + t.title + '"?')) return;
+  if (!await confirmModal('Delete "' + t.title + '"?')) return;
   state.templates = state.templates.filter(function(x) { return x.id !== id; });
   scheduleSave(); renderTemplates(); toast('Template deleted');
 }
