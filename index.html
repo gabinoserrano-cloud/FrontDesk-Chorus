@@ -668,7 +668,7 @@
   .td-bcard-meta{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
   .td-bcard-owner{font-size:11px;color:var(--text3);margin-top:5px}
   @media(max-width:650px){.td-board-cols{display:flex;overflow-x:auto;padding-bottom:4px;grid-template-columns:none}.td-board-col{flex:0 0 200px}}
-  /* Focus view — computed Eisenhower quadrants + today's 1-2-3 picks */
+  /* This Shift view — computed urgency quadrants + today's Top 3 */
   .focus-grid{display:grid;gap:8px;grid-template-columns:repeat(2,minmax(0,1fr))}
   .focus-quad{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:8px;min-height:70px}
   .focus-quad-hdr{display:flex;justify-content:space-between;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);padding:2px 2px 8px}
@@ -690,6 +690,19 @@
   .td-filter-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
   .td-filter-pill{font-size:11px;padding:3px 10px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;white-space:nowrap}
   .td-filter-pill.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .todo-capture-main{display:flex;gap:8px;align-items:center}
+  .todo-capture-main input{flex:1;min-width:0}
+  .todo-quick-options{display:none;gap:8px;align-items:center;flex-wrap:wrap;padding-top:10px;margin-top:10px;border-top:1px solid var(--border2)}
+  .todo-quick-options.open{display:flex}
+  .todo-workspace-tabs{margin-bottom:10px;overflow-x:auto;scrollbar-width:thin}
+  .todo-workspace-tabs .sub-tab{white-space:nowrap}
+  .todo-list-tools{display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+  .todo-list-tools.open{display:flex}
+  .todo-list-tools input{flex:1;min-width:180px}
+  .todo-followup-note{font-size:11px;color:var(--text2);margin-top:3px;line-height:1.4}
+  .todo-status-quick{font-size:10px;padding:2px 5px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text2);max-width:105px}
+  .todo-project-banner{padding:10px 12px;margin-bottom:10px;border:1px solid rgba(96,68,178,.22);border-radius:var(--radius);background:var(--purple-light);color:var(--purple);font-size:12px}
+  @media(max-width:650px){.todo-capture-main{flex-wrap:wrap}.todo-capture-main input{flex-basis:100%}.todo-capture-main .btn{flex:1;justify-content:center}.todo-list-tools>*{flex:1;min-width:140px}.todo-list-tools input{flex-basis:100%}}
   /* ─── Settings ─── */
   #section-settings{max-width:840px}
   .set-pane{display:none}
@@ -944,32 +957,33 @@
     <div class="section" id="section-todos">
       <div id="todos-user-switcher" style="display:none;margin-bottom:10px;padding:6px 10px;background:var(--accent-light);border:1px solid var(--border);border-radius:var(--radius);align-items:center;gap:6px"></div>
       <div class="card mb-12"><div class="card-body">
-        <div class="flex gap-8 items-center" style="flex-wrap:wrap">
-          <input type="text" id="todo-input" placeholder="Add a to-do..." style="flex:1;min-width:160px" onkeydown="if(event.key==='Enter')openAddTodoFromBar()">
-          <select id="todo-category-quick" style="width:150px"></select>
-          <input type="date" id="todo-date" style="width:140px">
-          <select id="todo-priority" style="width:110px"><option value="normal">Normal</option><option value="urgent">Urgent</option></select>
-          <button class="btn btn-primary" onclick="openAddTodoFromBar()">Add</button>
-          <button class="btn btn-ghost btn-sm" onclick="clearDoneTodos()">Clear done</button>
+        <div class="todo-capture-main">
+          <input type="text" id="todo-input" placeholder="What needs to be done?" onkeydown="if(event.key==='Enter')addTodo()">
+          <button class="btn btn-primary" onclick="addTodo()">Add</button>
+          <button class="btn btn-secondary" onclick="openAddTodoFromBar()">More details</button>
+          <button class="btn btn-ghost btn-sm" id="todo-quick-toggle" aria-expanded="false" onclick="toggleTodoQuickOptions()">Options</button>
+        </div>
+        <div class="todo-quick-options" id="todo-quick-options">
+          <select id="todo-category-quick" style="min-width:170px"></select>
+          <input type="date" id="todo-date" style="width:150px" aria-label="Due date">
+          <select id="todo-priority" style="width:120px" aria-label="Priority"><option value="normal">Normal priority</option><option value="urgent">Urgent</option></select>
         </div>
       </div></div>
-      <div class="sub-tabs" id="todos-tabs">
-        <div class="sub-tab td-cf active" onclick="setTodoCatFilter('all',this)">All</div>
-        <div class="sub-tab td-cf" onclick="setTodoCatFilter('resident',this)">Resident</div>
-        <div class="sub-tab td-cf" onclick="setTodoCatFilter('building',this)">Building, Physical &amp; Vendors</div>
-        <div class="sub-tab td-cf" onclick="setTodoCatFilter('leasing',this)">Leasing &amp; Management</div>
-        <div class="sub-tab td-cf" onclick="setTodoCatFilter('dashboard',this)">Dashboard &amp; Admin</div>
-        <div class="sub-tab td-cf" id="td-assigned-pill" style="display:none" onclick="setTodoAssignedView(this)">&#128100; Assigned by me</div>
-        <div class="sub-tab td-vt" id="td-vt-list" style="margin-left:auto" title="List view" onclick="setTodosView('list')">&#9776; List</div>
-        <div class="sub-tab td-vt" id="td-vt-board" title="Loop board — see everything by status" onclick="setTodosView('board')">&#9638; Board</div>
-        <div class="sub-tab td-vt" id="td-vt-focus" title="Focus — today's 1-2-3 picks + auto-sorted quadrants" onclick="setTodosView('focus')">&#9678; Focus</div>
+      <div class="sub-tabs todo-workspace-tabs" id="todos-tabs">
+        <div class="sub-tab todo-ws" data-workspace="shift" onclick="setTodoWorkspace('shift',this)">&#9678; This Shift</div>
+        <div class="sub-tab todo-ws" data-workspace="all" onclick="setTodoWorkspace('all',this)">&#9776; All Tasks</div>
+        <div class="sub-tab todo-ws" data-workspace="followup" onclick="setTodoWorkspace('followup',this)">&#8635; Follow-Ups</div>
+        <div class="sub-tab todo-ws" data-workspace="assigned" onclick="setTodoWorkspace('assigned',this)">&#128100; Assigned</div>
+        <div class="sub-tab todo-ws" data-workspace="done" onclick="setTodoWorkspace('done',this)">&#10003; Completed</div>
+        <div class="sub-tab todo-ws" id="td-projects-pill" data-workspace="projects" style="display:none" onclick="setTodoWorkspace('projects',this)">&#128188; Admin Projects</div>
       </div>
-      <div class="sub-tabs" id="todos-status-tabs">
-        <div class="sub-tab td-sf active" onclick="setTodoStatusFilter('all',this)">All</div>
-        <div class="sub-tab td-sf" onclick="setTodoStatusFilter('open',this)">Open</div>
-        <div class="sub-tab td-sf" onclick="setTodoStatusFilter('waiting',this)">Waiting On</div>
-        <div class="sub-tab td-sf" onclick="setTodoStatusFilter('blocked',this)">Blocked</div>
-        <div class="sub-tab td-sf" onclick="setTodoStatusFilter('done',this)">Done</div>
+      <div class="todo-list-tools" id="todo-list-tools">
+        <input type="search" id="todo-search" placeholder="Search tasks, units, notes, or owners…" oninput="setTodoSearch(this.value)">
+        <select id="todo-category-filter" aria-label="Filter by category" onchange="setTodoCategorySelect(this.value)"></select>
+        <select id="todo-status-filter" aria-label="Filter by status" onchange="setTodoStatusSelect(this.value)"></select>
+        <button class="btn btn-secondary btn-sm" id="td-vt-list" onclick="setTodosView('list')">&#9776; List</button>
+        <button class="btn btn-ghost btn-sm" id="td-vt-board" onclick="setTodosView('board')">&#9638; Board</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearDoneTodos()">Archive completed</button>
       </div>
       <div class="card" id="todos-list-card"><div class="card-hdr"><span class="card-title" id="todos-section-title">To-Do List</span><span class="card-count" id="todos-count">0 pending</span></div><div id="todos-list"></div></div>
       <div id="todos-board" style="display:none"></div>
@@ -1666,8 +1680,12 @@
       <div class="fg"><label>Linked Unit <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="td-unit" type="text" list="unit-options" placeholder="e.g. 835"></div>
     </div>
     <div class="fr">
-      <div class="fg"><label>Status</label><select id="td-status"></select></div>
-      <div class="fg"><label>Owner / Waiting On <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="td-owner" type="text" placeholder="Me, Paige, Marissa, Blueground..."></div>
+      <div class="fg"><label>Status</label><select id="td-status" onchange="todoStatusFieldsChange()"></select></div>
+      <div class="fg"><label id="td-owner-label">Owner <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="td-owner" type="text" placeholder="Me, Paige, Marissa, Blueground…"></div>
+    </div>
+    <div id="td-followup-fields" style="display:none;padding:10px 12px;margin-bottom:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2)">
+      <div class="fr"><div class="fg"><label>Follow-up / Review Date</label><input id="td-followup-date" type="date" data-no-autofill></div><div class="fg"><label>Last Contact <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="td-last-contact" type="text" placeholder="e.g. Emailed Paige Jul 18"></div></div>
+      <div class="fg" id="td-blocker-wrap" style="display:none"><label>What is blocking this task?</label><textarea id="td-blocker" rows="2" placeholder="Describe the dependency or decision needed"></textarea></div>
     </div>
     <div class="fr">
       <div class="fg"><label>Due Date</label><input id="td-date" type="date" data-no-autofill></div>
@@ -1677,6 +1695,7 @@
       <div class="fg"><label>Priority</label><select id="td-priority"><option value="normal">Normal</option><option value="urgent">Urgent</option></select></div>
       <div class="fg" id="td-assign-wrap" style="display:none"><label>Assign To</label><select id="td-assign"></select></div>
     </div>
+    <div class="fg" id="td-worktype-wrap" style="display:none"><label>Work Area</label><select id="td-worktype"><option value="task">Front Desk Task</option><option value="project">Admin Project</option></select><div class="set-hint">Projects stay out of the shift queue and live under Admin Projects.</div></div>
     <div class="fg"><label>Flag as stale after <span style="font-weight:400;color:var(--text3)">(days, optional — default 5)</span></label><input id="td-staledays" type="number" min="1" placeholder="5"></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-ghost btn-sm" id="modal-todo-delete-btn" style="color:var(--red);display:none" onclick="deleteTodoFromModal()">Delete</button><button class="btn btn-secondary" onclick="closeModal('modal-todo')">Cancel</button><button class="btn btn-primary" id="modal-todo-savebtn" onclick="saveTodoModal()">Save</button></div>
@@ -3559,7 +3578,7 @@ function updateBadges() {
   var kN = (state.keys || []).filter(function (k) { return k.status === 'issued' && k.type !== 'resident'; }).length;
   var aN = (state.amenities || []).filter(function (a) { return a.date >= today(); }).length;
   var trN = (state.tours || []).filter(function (t) { return t.date === today(); }).length;
-  var tdN = getCurrentTodos().filter(function (t) { return !t.done; }).length;
+  var tdN = getCurrentTodos().filter(function (t) { return !t.done && (t.workType || 'task') !== 'project'; }).length;
   var lN = (state.laf || []).filter(function (i) { return !i.claimedAt; }).length;
   var naN = (state.moves || []).filter(function (m) { return !m.archivedAt && !m.apptDate && !m.apptTbd && m.date >= today(); }).length;
   setBadge('badge-needs-appt', naN);
@@ -3597,7 +3616,7 @@ function renderDash() {
   // Resident fobs are permanent possessions, not desk loans — exclude them from the actionable "Keys Out" count/widget.
   var activeOut = issuedK.filter(function (k) { return k.type !== 'resident'; });
   var overdueOut = activeOut.filter(function (k) { return k.type === 'one-time' && k.issuedAt && (Date.now() - k.issuedAt) >= 2 * 3600000; });
-  var pendTd = getCurrentTodos().filter(function (t2) { return !t2.done; });
+  var pendTd = getCurrentTodos().filter(function (t2) { return !t2.done && (t2.workType || 'task') !== 'project'; });
   var unclLAF = (state.laf || []).filter(function (i) { return !i.claimedAt; });
   var outs = active.filter(function (m) { return m.type === 'out'; });
   var ins = active.filter(function (m) { return m.type === 'in'; });
@@ -8811,6 +8830,7 @@ function currentTodosPath() {
   var vid = (currentUser.role === 'admin' && todosViewingId) ? todosViewingId : currentUser.id;
   return ['userTodos', vid];
 }
+function todoReadOnlyView() { return !!(currentUser && currentUser.role === 'admin' && todosViewingId && todosViewingId !== currentUser.id); }
 function _archTodosKey() {
   if (!currentUser) return '_shared';
   return (currentUser.role === 'admin' && todosViewingId) ? todosViewingId : currentUser.id;
@@ -8826,11 +8846,12 @@ function addTodo() {
   var input = g('todo-input'), text = input.value.trim(); if (!text) { toast('Enter a to-do first'); return; }
   if (currentUser && currentUser.role === 'admin' && todosViewingId && todosViewingId !== currentUser.id) { toast('Switch to your own list to add tasks'); return; }
   var todos = getCurrentTodos();
-  var todo = { id: uid(), text: text, priority: g('todo-priority').value, dueDate: g('todo-date').value || null, done: false, createdAt: Date.now() };
+  var todo = { id: uid(), text: text, priority: g('todo-priority').value, dueDate: g('todo-date').value || null, category: (g('todo-category-quick') || {}).value || '', status: 'open', workType: 'task', done: false, createdAt: Date.now(), lastUpdated: Date.now() };
   todos.push(todo);
   pushUndo({ sec: 'todos', type: 'ADD', path: currentTodosPath(), id: todo.id, data: todo, label: 'add to-do — ' + text });
   logActivity('todos', 'create', 'Added to-do — ' + text, 'Owner: ' + _todoOwnerLabel() + (todo.dueDate ? ' · Due: ' + fmtShort(todo.dueDate) : '') + ' · Priority: ' + todo.priority);
-  input.value = ''; g('todo-date').value = ''; g('todo-priority').value = 'normal';
+  input.value = ''; g('todo-date').value = ''; g('todo-priority').value = 'normal'; if (g('todo-category-quick')) g('todo-category-quick').value = '';
+  if (todoWorkspace === 'projects') { todoWorkspace = 'shift'; try { localStorage.setItem('chorus-todo-workspace', todoWorkspace); } catch (e) {} }
   scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Added');
 }
 function openAddTodoFromBar() {
@@ -8861,12 +8882,18 @@ function todoCategoryLabel(key) { var c = TODO_CATEGORIES.find(function (x) { re
 function todoStatusLabel(key) { var s = TODO_STATUSES.find(function (x) { return x.key === key; }); return s ? s.label : 'Open'; }
 function todoStatus(t) { return t.status || (t.done ? 'done' : 'open'); }
 function todoStaleDays(t) { var ref = t.lastUpdated || t.createdAt || Date.now(); return Math.floor((Date.now() - ref) / 86400000); }
-function todoIsStale(t) { if (todoStatus(t) === 'done') return false; var threshold = t.staleDays || 5; return todoStaleDays(t) >= threshold; }
+function todoIsStale(t) {
+  var status = todoStatus(t); if (status === 'done') return false;
+  if ((status === 'waiting' || status === 'blocked') && t.followUpDate) return t.followUpDate <= today();
+  var threshold = t.staleDays || 5; return todoStaleDays(t) >= threshold;
+}
 function fillTodoCategorySelects() {
   var catOpts = TODO_CATEGORIES.map(function (c) { return '<option value="' + c.key + '">' + c.label + '</option>'; }).join('');
   var el1 = g('td-category'); if (el1 && !el1.dataset.filled) { el1.innerHTML = '<option value="">&mdash; General &mdash;</option>' + catOpts; el1.dataset.filled = '1'; }
   var el2 = g('todo-category-quick'); if (el2 && !el2.dataset.filled) { el2.innerHTML = '<option value="">Category&hellip;</option>' + catOpts; el2.dataset.filled = '1'; }
   var st = g('td-status'); if (st && !st.dataset.filled) { st.innerHTML = TODO_STATUSES.map(function (s) { return '<option value="' + s.key + '">' + s.label + '</option>'; }).join(''); st.dataset.filled = '1'; }
+  var cf = g('todo-category-filter'); if (cf && !cf.dataset.filled) { cf.innerHTML = '<option value="all">All categories</option>' + catOpts; cf.dataset.filled = '1'; }
+  var sf = g('todo-status-filter'); if (sf && !sf.dataset.filled) { sf.innerHTML = '<option value="all">All statuses</option>' + TODO_STATUSES.map(function (s) { return '<option value="' + s.key + '">' + s.label + '</option>'; }).join(''); sf.dataset.filled = '1'; }
 }
 function migrateTodosV1() {
   if (state.todosSchemaV1) return;
@@ -8886,96 +8913,79 @@ function migrateTodosV1() {
   state.todosSchemaV1 = true;
   scheduleSave();
 }
-// One-time seed from the July 2026 open-loop audit (shift notes + retrospectives + Gmail).
-// Lands in Gabino's personal list; retries on next load if his account isn't found yet.
-function seedLoopTrackerTodosV1() {
-  if (state.loopTodosSeedV1) return;
-  var acct = (state.accounts || []).find(function (a) { return /gabino/i.test(a.name || ''); });
-  if (!acct) return;
-  var now = Date.now();
-  function T(text, note, category, status, owner, linkedUnit, dueDate, priority) {
-    return { id: uid(), text: text, note: note || null, priority: priority || 'normal', dueDate: dueDate || null,
-      category: category, linkedUnit: linkedUnit || '', owner: owner || '', staleDays: null,
-      status: status, done: false, createdAt: now, lastUpdated: now, addedBy: 'Loop Audit Jul 2026' };
+function migrateTodosV2() {
+  if (state.todosSchemaV2) return;
+  function fix(list, archived) {
+    (list || []).forEach(function (t) {
+      if (!t) return;
+      if (!t.workType) t.workType = (!archived && t.addedBy === 'Loop Audit Jul 2026' && t.category === 'dashboard') ? 'project' : 'task';
+      if (t.followUpDate === undefined) t.followUpDate = null;
+      if (t.lastContactNote === undefined) t.lastContactNote = null;
+      if (t.blockerNote === undefined) t.blockerNote = null;
+    });
   }
-  var items = [
-    // Resident — waiting on someone
-    T('Unit 835 — confirm Blueground verified Elizabeth + approved Karmanya mail pickup', 'Blueground said 7/7 their internal team emailed "last Thursday" — no actual verification on record', 'resident', 'waiting', 'Blueground', '835'),
-    T('Unit 933 — Blueground guest parking: vehicle details still not sent', 'Jennifer Price, 7/30–10/5 · $595/mo to Blueground ledger · process sent 7/7', 'resident', 'waiting', 'Blueground', '933'),
-    T('Unit 727 — lease-end date dispute (Layaill Mustafa)', 'Escalated 7/6 · no reply traffic since · do not confirm a date at the desk', 'resident', 'waiting', 'Marissa', '727'),
-    T('Unit 1606 — ~$237 utility charge discrepancy (Paul Yap)', 'Escalated 7/6 · no reply traffic since', 'resident', 'waiting', 'Marissa', '1606'),
-    T('Unit 726 — concessions not yet applied to ledger (Ansh)', 'Escalated 7/6 · no reply traffic since', 'resident', 'waiting', 'Marissa', '726'),
-    T('Unit 239 — refrigerator repeat failure (Dania Duke)', 'Escalated to Carlos 7/6 w/ urgency · spoiled groceries · possible compensation convo → Faruk', 'resident', 'waiting', 'Carlos', '239'),
-    T('Unit 645 — confirm refund checks arrived + Roost amount corrected (Andrew Nguyen)', 'Silent since 6/23 · Ian owned it and has left · checks were to arrive at property', 'resident', 'waiting', 'Marissa', '645'),
-    // Building, Physical & Vendors
-    T('Reply to Piece of Cake Moving — close the partnership loop', 'Vendor followed up 6/29 + 7/6 after "passed to management" · answer either way', 'building', 'open', 'Me'),
-    T('Create missing/oversized package escalation protocol', 'Unit 2509 now 31 days on oversized wall — same pattern as 622 · 14-day auto-call idea from 5/10 never built', 'building', 'open', 'Me'),
-    T('Tighten key-return verification at shift handoff', 'Disputed returns logged for 521/2707 (6/30 PM passdown) · recurring since May', 'building', 'open', 'Me'),
-    T('Draft Blueground guest-info SOP (standing submission process)', 'Root cause of 835/933 gaps · Paige now requires CC on BG move-ins — formalize the rest', 'building', 'open', 'Me'),
-    // Leasing & Management
-    T('Arrange desk coverage for Mark’s vacation Jul 19–27', 'Committed to Ian 7/2 — Ian gone, nobody else tracking · coordinate w/ Kiran’s team (DataGovern)', 'leasing', 'open', 'Me', '', '2026-07-17', 'urgent'),
-    T('Review + send the United/Jonathan vehicle-list email (in Gmail drafts)', 'Asks for complete unfiltered 30 Otis list · draft reply on "Updated Vehicle List" thread', 'leasing', 'open', 'Me'),
-    T('Import welcome letters #1502 (7/31) + #1809 (7/18) into Moves', 'Arrived 7/8 · use 📧 Import Letter in Moves', 'leasing', 'open', 'Me'),
-    // Dashboard & Admin
-    T('Review Gusto hours for Jun 25 – Jul 8 pay period', '"Last chance" reminder 7/9 — 71h 27m on record', 'dashboard', 'open', 'Me', '', '2026-07-10', 'urgent'),
-    T('Cloudflare Access gate for the dashboard', 'Biggest open security gap — needs CF login + domain decision (chorusdesk.com?)', 'dashboard', 'open', 'Me'),
-    T('Upgrade PIN hashing SHA-256 → PBKDF2', 'Offline brute-force resistance for 4-digit PINs', 'dashboard', 'open', 'Me'),
-    T('Fix: supply adjustments don’t reverse on undo', 'Flagged 5/24, confirmed in 6/9 audit, then dropped', 'dashboard', 'open', 'Me'),
-    T('Decide: keep or remove Guest & Visitor section', 'RiseIO already owns guest logs — open since 5/12', 'dashboard', 'open', 'Me'),
-    T('Add 6 approved docs to official OneNote Property Bible', 'Emergency SOP, Escalation SOP, Disruptive SOP, Incident Report, Contact Sheet, Training Checklist', 'dashboard', 'open', 'Me'),
-    T('Laminate printed quick-reference cards', 'From 6/28 binder session', 'dashboard', 'open', 'Me'),
-    T('Build full Property Bible binder print set (24+ files)', 'Design locked 6/28 — template: Binder/binder-sample.html', 'dashboard', 'open', 'Me'),
-    T('Print-test Move-In/Move-Out Condition Form + find new reviewer', 'v1 ready since May — duplex bleed test on desk printer · CA Civil Code §1950.5 review was earmarked for Ian → needs Faruk or Paige', 'dashboard', 'open', 'Me')
-  ];
-  if (!state.userTodos) state.userTodos = {};
-  if (!state.userTodos[acct.id]) state.userTodos[acct.id] = [];
-  var listRef = state.userTodos[acct.id];
-  items.forEach(function (t) { listRef.push(t); });
-  state.loopTodosSeedV1 = true;
-  logActivity('todos', 'create', 'Seeded ' + items.length + ' to-dos from July 2026 open-loop audit', 'Categories: resident/building/leasing/dashboard · Owner: ' + acct.name);
+  fix(state.todos, false);
+  Object.keys(state.userTodos || {}).forEach(function (uidKey) { fix(state.userTodos[uidKey], false); });
+  Object.keys(state.archivedTodos || {}).forEach(function (uidKey) { fix(state.archivedTodos[uidKey], true); });
+  state.todosSchemaV2 = true;
   scheduleSave();
 }
 var todosView = 'list';
 try { todosView = localStorage.getItem('chorus-todos-view') || 'list'; } catch (e) {}
 function setTodosView(v) { todosView = v; try { localStorage.setItem('chorus-todos-view', v); } catch (e) {} renderTodos(); }
+var todoWorkspace = 'shift';
+try { todoWorkspace = localStorage.getItem('chorus-todo-workspace') || 'shift'; } catch (e) {}
+var todoSearch = '';
 var todoCatFilter = 'all';
-function setTodoCatFilter(f, el) {
-  todoCatFilter = f;
-  todoAssignedView = false;
-  document.querySelectorAll('#todos-tabs .td-cf').forEach(function (t) { t.classList.remove('active'); });
-  if (el) el.classList.add('active');
+var todoStatusFilter = 'all';
+function setTodoWorkspace(workspace, el) {
+  todoWorkspace = workspace || 'shift';
+  todoAssignedView = todoWorkspace === 'assigned';
+  if (todoWorkspace !== 'all') { todoCatFilter = 'all'; todoStatusFilter = 'all'; todoSearch = ''; }
+  try { localStorage.setItem('chorus-todo-workspace', todoWorkspace); } catch (e) {}
+  document.querySelectorAll('#todos-tabs .todo-ws').forEach(function(x){ x.classList.toggle('active', x.dataset.workspace === todoWorkspace); });
   renderTodos();
 }
-var todoStatusFilter = 'all';
+function toggleTodoQuickOptions() {
+  var box = g('todo-quick-options'), btn = g('todo-quick-toggle'); if (!box) return;
+  var open = box.classList.toggle('open'); if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+function setTodoSearch(value) { todoSearch = String(value || '').toLowerCase().trim(); renderTodos(); }
+function setTodoCategorySelect(value) { todoCatFilter = value || 'all'; renderTodos(); }
+function setTodoStatusSelect(value) { todoStatusFilter = value || 'all'; renderTodos(); }
+function setTodoCatFilter(f, el) {
+  todoCatFilter = f;
+  todoWorkspace = 'all'; todoAssignedView = false;
+  renderTodos();
+}
 function setTodoStatusFilter(f, el) {
   todoStatusFilter = f;
-  document.querySelectorAll('#todos-status-tabs .td-sf').forEach(function (t) { t.classList.remove('active'); });
-  if (el) el.classList.add('active');
-  if (todoAssignedView) {
-    // leaving the assigned view via a status tab: reset category pills to All
-    todoAssignedView = false;
-    todoCatFilter = 'all';
-    document.querySelectorAll('#todos-tabs .td-cf').forEach(function (x) { x.classList.remove('active'); });
-    var first = document.querySelector('#todos-tabs .td-cf');
-    if (first) first.classList.add('active');
-  }
+  todoWorkspace = 'all'; todoAssignedView = false;
   renderTodos();
 }
 function todoMatchesFilters(t) {
   if (todoCatFilter !== 'all' && (t.category || '') !== todoCatFilter) return false;
   if (todoStatusFilter !== 'all' && todoStatus(t) !== todoStatusFilter) return false;
+  if (todoSearch) {
+    var hay = [t.text,t.note,t.owner,t.linkedUnit,t.lastContactNote,t.blockerNote,t.category].filter(Boolean).join(' ').toLowerCase();
+    if (hay.indexOf(todoSearch) === -1) return false;
+  }
   return true;
 }
 function todoCatChip(t) { if (!t.category) return ''; return '<span class="pill pill-cat-' + t.category + '">' + todoCategoryLabel(t.category) + '</span>'; }
 function todoStatusChip(t) { var s = todoStatus(t); return '<span class="pill pill-status-' + s + '">' + todoStatusLabel(s) + '</span>'; }
-function todoStaleChip(t) { if (!todoIsStale(t)) return ''; return '<span class="stale-badge">&#9888; Stale &mdash; ' + todoStaleDays(t) + 'd</span>'; }
+function todoStaleChip(t) { if (!todoIsStale(t) || ((todoStatus(t) === 'waiting' || todoStatus(t) === 'blocked') && t.followUpDate)) return ''; return '<span class="stale-badge">&#9888; Stale &mdash; ' + todoStaleDays(t) + 'd</span>'; }
 function todoOwnerChip(t) { if (!t.owner) return ''; return '<span class="pill" style="background:var(--surface2);color:var(--text2)">&#128100; ' + esc(t.owner) + '</span>'; }
 function todoUnitChip(t) { if (!t.linkedUnit) return ''; return '<span class="pill" style="background:var(--surface2);color:var(--text2)">Unit ' + esc(t.linkedUnit) + '</span>'; }
+function todoFollowUpChip(t) { if (!t.followUpDate) return ''; var due = t.followUpDate <= today(); return '<span class="pill" style="background:' + (due ? 'var(--red-light)' : 'var(--amber-light)') + ';color:' + (due ? 'var(--red)' : 'var(--amber)') + '">Follow up ' + fmtShort(t.followUpDate) + '</span>'; }
+function todoStatusQuickSelect(t) {
+  var opts = TODO_STATUSES.map(function(s){ return '<option value="' + s.key + '"' + (todoStatus(t) === s.key ? ' selected' : '') + '>' + s.label + '</option>'; }).join('');
+  return '<select class="todo-status-quick" aria-label="Change status for ' + esc(t.text) + '" onclick="event.stopPropagation()" onchange="event.stopPropagation();setTodoStatusQuick(\'' + t.id + '\',this.value)">' + opts + '</select>';
+}
 function todoPickChip(t) {
   if (t.done) return '';
-  var tier = focusPickTier(t); if (!tier) return '';
-  var lbl = { big: 'Big', med: 'Medium', small: 'Small' }[tier] || tier;
-  return '<span class="pill" style="background:var(--amber-light);color:var(--amber)">&#9733; Today &middot; ' + lbl + '</span>';
+  if (!focusPickTier(t)) return '';
+  return '<span class="pill" style="background:var(--amber-light);color:var(--amber)">&#9733; Top 3 today</span>';
 }
 function todoTouch(t) { t.lastUpdated = Date.now(); }
 // ─── Task assignment: admin delegates, assignee accepts or flags, silence goes stale ───
@@ -9046,10 +9056,7 @@ function takeBackAssignedTodo(userId, id) {
 }
 var todoAssignedView = false;
 function setTodoAssignedView(el) {
-  todoAssignedView = true;
-  document.querySelectorAll('#todos-tabs .td-cf').forEach(function (x) { x.classList.remove('active'); });
-  if (el) el.classList.add('active');
-  renderTodos();
+  setTodoWorkspace('assigned', el);
 }
 function getAssignedByMe() {
   if (!currentUser) return [];
@@ -9092,6 +9099,36 @@ function renderAssignedByMe(listEl, cntEl) {
     if (!t.done) html += '<button class="btn btn-ghost btn-xs" onclick="takeBackAssignedTodo(\'' + r.acct.id + '\',\'' + t.id + '\')" title="Take back to my list">&#8617; Take back</button>';
     html += '</div>';
   });
+  listEl.innerHTML = html;
+}
+function renderAssignmentsWorkspace(listEl, cntEl) {
+  var readOnly = todoReadOnlyView();
+  var incoming = getCurrentTodos().filter(function(t){ return !!t.assignedBy; });
+  var outgoing = !readOnly && currentUser && currentUser.role === 'admin' ? getAssignedByMe() : [];
+  var openCount = incoming.filter(function(t){return !t.done;}).length + outgoing.filter(function(r){return !r.t.done;}).length;
+  if (cntEl) cntEl.textContent = openCount + ' open';
+  if (!incoming.length && !outgoing.length) { listEl.innerHTML = '<div class="text-3 text-sm" style="padding:18px 16px">No assigned tasks yet.</div>'; return; }
+  var html = '';
+  if (incoming.length) {
+    html += '<div style="padding:10px 14px 6px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">' + (readOnly ? 'Assigned to this team member' : 'Assigned to me') + '</div>';
+    incoming.sort(function(a,b){ return (a.done-b.done) || String(a.dueDate||'9999').localeCompare(String(b.dueDate||'9999')); });
+    incoming.forEach(function(t){
+      html += '<div class="todo-item ' + (t.done?'done':'') + '"><input type="checkbox" ' + (t.done?'checked':'') + (readOnly?' disabled':'') + ' onchange="toggleTodo(\'' + t.id + '\',this.checked)">'
+        + '<div style="flex:1;min-width:0"><div class="todo-text ' + (t.done?'strk':'') + '">' + esc(t.text) + '</div>'
+        + '<div class="todo-meta">' + todoFromChip(t) + todoAckChip(t) + todoFollowUpChip(t) + todoUnitChip(t) + (t.dueDate?'<span class="todo-due">Due: '+fmtShort(t.dueDate)+'</span>':'') + '</div></div>'
+        + (!readOnly && !t.ack && !t.done ? '<button class="btn btn-green btn-xs" onclick="ackAssignedTodo(\''+t.id+'\')">Accept</button><button class="btn btn-ghost btn-xs" style="color:var(--amber)" onclick="openFlagTodo(\''+t.id+'\')">Flag</button>' : '')
+        + (!readOnly ? '<button class="btn btn-ghost btn-xs" onclick="openEditTodo(\''+t.id+'\')">Edit</button>' : '') + '</div>';
+    });
+  }
+  if (outgoing.length) {
+    html += '<div style="padding:10px 14px 6px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-top:1px solid var(--border);margin-top:4px">Assigned by me</div>';
+    outgoing.forEach(function(r){ var t=r.t;
+      html += '<div class="todo-item ' + (t.done?'done':'') + '"><div style="flex:1;min-width:0"><div class="todo-text ' + (t.done?'strk':'') + '">' + esc(t.text) + '</div>'
+        + '<div class="todo-meta"><span class="pill" style="background:var(--accent-light);color:var(--accent)">To ' + esc(r.acct.name) + '</span>' + todoAckChip(t) + todoFollowUpChip(t) + (t.dueDate?'<span class="todo-due">Due: '+fmtShort(t.dueDate)+'</span>':'') + '</div>'
+        + (t.ack&&t.ack.status==='flagged'&&t.ack.note?'<div class="todo-followup-note" style="color:var(--red)">'+esc(t.ack.note)+'</div>':'') + '</div>'
+        + (!t.done?'<button class="btn btn-ghost btn-xs" onclick="takeBackAssignedTodo(\''+r.acct.id+'\',\''+t.id+'\')">Take back</button>':'') + '</div>';
+    });
+  }
   listEl.innerHTML = html;
 }
 function checkAssignedTodosOnLogin() {
@@ -9150,21 +9187,24 @@ function renderTodos() {
     viewingName = va ? va.name + '\'s ' : '';
   }
   var titleEl = g('todos-section-title');
-  if (titleEl) titleEl.textContent = viewingName + 'To-Do List';
-  var ap = g('td-assigned-pill');
-  if (ap) ap.style.display = (currentUser && currentUser.role === 'admin') ? '' : 'none';
-  // Board \u21c4 list view switching (assigned view always renders in the list card)
-  var isBoardView = todosView === 'board' && !todoAssignedView;
-  var isFocusView = todosView === 'focus' && !todoAssignedView;
-  var vtL = g('td-vt-list'), vtB = g('td-vt-board'), vtF = g('td-vt-focus');
-  if (vtL) vtL.classList.toggle('active', !isBoardView && !isFocusView);
-  if (vtB) vtB.classList.toggle('active', isBoardView);
-  if (vtF) vtF.classList.toggle('active', isFocusView);
-  var listCard = g('todos-list-card'), boardWrap = g('todos-board'), focusWrap = g('todos-focus'), statusTabs = g('todos-status-tabs');
+  var projectTab = g('td-projects-pill'); if (projectTab) projectTab.style.display = (currentUser && currentUser.role === 'admin' && !isViewingOther) ? '' : 'none';
+  if (todoWorkspace === 'projects' && (!currentUser || currentUser.role !== 'admin' || isViewingOther)) todoWorkspace = 'shift';
+  document.querySelectorAll('#todos-tabs .todo-ws').forEach(function(x){ x.classList.toggle('active', x.dataset.workspace === todoWorkspace); });
+  var titleMap = { shift:'This Shift', all:'All Tasks', followup:'Waiting & Blocked Follow-Ups', assigned:'Assignments', done:'Completed Tasks', projects:'Admin Projects' };
+  if (titleEl) titleEl.textContent = viewingName + (titleMap[todoWorkspace] || 'Tasks');
+  var isBoardView = todoWorkspace === 'all' && todosView === 'board';
+  var isFocusView = todoWorkspace === 'shift';
+  var vtL = g('td-vt-list'), vtB = g('td-vt-board');
+  if (vtL) vtL.className = 'btn ' + (!isBoardView ? 'btn-secondary' : 'btn-ghost') + ' btn-sm';
+  if (vtB) vtB.className = 'btn ' + (isBoardView ? 'btn-secondary' : 'btn-ghost') + ' btn-sm';
+  var listTools = g('todo-list-tools'); if (listTools) listTools.classList.toggle('open', todoWorkspace === 'all');
+  var searchEl = g('todo-search'); if (searchEl && searchEl.value !== todoSearch) searchEl.value = todoSearch;
+  var catEl = g('todo-category-filter'); if (catEl) catEl.value = todoCatFilter;
+  var statEl = g('todo-status-filter'); if (statEl) statEl.value = todoStatusFilter;
+  var listCard = g('todos-list-card'), boardWrap = g('todos-board'), focusWrap = g('todos-focus');
   if (listCard) listCard.style.display = (isBoardView || isFocusView) ? 'none' : '';
   if (boardWrap) boardWrap.style.display = isBoardView ? '' : 'none';
   if (focusWrap) focusWrap.style.display = isFocusView ? '' : 'none';
-  if (statusTabs) statusTabs.style.display = (isBoardView || isFocusView || todoAssignedView) ? 'none' : '';
   var todos = getCurrentTodos();
   var sorted = todos.slice().sort(function (a, b) {
     if (a.done !== b.done) return a.done ? 1 : -1;
@@ -9174,7 +9214,7 @@ function renderTodos() {
     if (a.dueDate && !b.dueDate) return -1; if (!a.dueDate && b.dueDate) return 1;
     return b.createdAt - a.createdAt;
   });
-  var pending = sorted.filter(function (t) { return !t.done; }).length;
+  var pending = sorted.filter(function (t) { return !t.done && (t.workType || 'task') !== 'project'; }).length;
   // Collect move checklist tasks that have a due date and aren't done
   var clTasks = [];
   (state.moves || []).filter(function (m) { return !m.archivedAt; }).forEach(function (m) {
@@ -9190,33 +9230,48 @@ function renderTodos() {
   });
   var totalPending = pending + clTasks.length;
   setBadge('badge-todos', totalPending); setMBadge('mb-todos', totalPending);
-  if (todoAssignedView) { var alEl = g('todos-list'); if (alEl) renderAssignedByMe(alEl, g('todos-count')); return; }
-  if (isBoardView) { renderTodosBoard(sorted); return; }
-  if (isFocusView) { renderTodosFocus(sorted); return; }
-  var filtered = sorted.filter(todoMatchesFilters);
-  var showCL = todoCatFilter === 'all' && (todoStatusFilter === 'all' || todoStatusFilter === 'open');
+  if (todoWorkspace === 'assigned') { var alEl = g('todos-list'); if (alEl) renderAssignmentsWorkspace(alEl, g('todos-count')); return; }
+  var taskRows = sorted.filter(function(t){ return (t.workType || 'task') !== 'project'; });
+  if (isBoardView) { renderTodosBoard(taskRows); return; }
+  if (isFocusView) { renderTodosFocus(taskRows); return; }
+  var filtered;
+  if (todoWorkspace === 'followup') filtered = taskRows.filter(function(t){ return !t.done && (todoStatus(t) === 'waiting' || todoStatus(t) === 'blocked'); });
+  else if (todoWorkspace === 'projects') filtered = sorted.filter(function(t){ return (t.workType || 'task') === 'project'; });
+  else if (todoWorkspace === 'done') filtered = taskRows.filter(function(t){ return t.done; });
+  else filtered = taskRows.filter(todoMatchesFilters);
+  var showCL = todoWorkspace === 'all' && todoCatFilter === 'all' && (todoStatusFilter === 'all' || todoStatusFilter === 'open') && !todoSearch;
   var cnt = g('todos-count');
-  if (cnt) cnt.textContent = (todoCatFilter !== 'all' || todoStatusFilter !== 'all') ? (filtered.length + (showCL ? clTasks.length : 0) + ' shown') : (totalPending + ' pending');
+  if (cnt) cnt.textContent = todoWorkspace === 'projects' ? filtered.filter(function(t){return !t.done;}).length + ' active' : todoWorkspace === 'followup' ? filtered.length + ' to follow up' : (filtered.length + (showCL ? clTasks.length : 0) + ' shown');
   var list = g('todos-list'); if (!list) return;
-  if (todoStatusFilter === 'done') { renderTodosDoneHistory(filtered, list, cnt); return; }
-  if (!filtered.length && !(showCL && clTasks.length)) { list.innerHTML = '<div class="text-3 text-sm" style="padding:18px 16px">No to-dos match.</div>'; return; }
-  var html = '';
+  if (todoWorkspace === 'done') { renderTodosDoneHistory(filtered, list, cnt); return; }
+  if (!filtered.length && !(showCL && clTasks.length)) {
+    var emptyCopy = todoWorkspace === 'followup' ? 'No follow-ups are waiting on you.'
+      : todoWorkspace === 'projects' ? 'No admin projects yet. Use More details to add one.'
+      : todoWorkspace === 'shift' ? 'Your shift queue is clear.' : 'No to-dos match.';
+    list.innerHTML = '<div class="text-3 text-sm" style="padding:18px 16px">' + emptyCopy + '</div>'; return;
+  }
+  var html = todoWorkspace === 'projects' ? '<div class="todo-project-banner"><strong>Admin Projects</strong> stay out of the shift queue. Use this area for dashboard, documentation, security, and longer-term improvement work.</div>' : '';
   filtered.forEach(function (t) {
     var urgIcon = (t.priority === 'urgent' && !t.done) ? '<span style="color:var(--red)">! </span>' : '';
     var due = t.dueDate ? '<span class="todo-due">Due: ' + fmtShort(t.dueDate) + '</span>' : '';
     html += '<div class="todo-item ' + (t.done ? 'done' : '') + '">';
-    html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTodo(\'' + t.id + '\',this.checked)">';
+    html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + (isViewingOther ? ' disabled' : '') + ' onchange="toggleTodo(\'' + t.id + '\',this.checked)">';
     html += '<div style="flex:1;min-width:0">';
     html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + urgIcon + esc(t.text) + '</div>';
     if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + esc(t.note) + '</div>';
-    html += '<div class="todo-meta">' + todoPickChip(t) + due + todoShiftChip(t) + todoCatChip(t) + (t.done ? '' : todoStatusChip(t)) + todoFromChip(t) + todoAckChip(t) + todoUnitChip(t) + todoOwnerChip(t) + todoStaleChip(t) + '<span class="text-xs text-3">' + new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span></div>';
+    if (t.lastContactNote) html += '<div class="todo-followup-note"><strong>Last contact:</strong> ' + esc(t.lastContactNote) + '</div>';
+    if (t.blockerNote) html += '<div class="todo-followup-note"><strong>Blocked by:</strong> ' + esc(t.blockerNote) + '</div>';
+    html += '<div class="todo-meta">' + todoPickChip(t) + due + todoFollowUpChip(t) + todoShiftChip(t) + todoCatChip(t) + (t.done ? '' : todoStatusChip(t)) + todoFromChip(t) + todoAckChip(t) + todoUnitChip(t) + todoOwnerChip(t) + todoStaleChip(t) + '<span class="text-xs text-3">' + new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span></div>';
     html += '</div>';
     if (t.assignedBy && !t.ack && !t.done && !isViewingOther) {
       html += '<button class="btn btn-ghost btn-xs" style="color:var(--green)" onclick="ackAssignedTodo(\'' + t.id + '\')" title="Accept this task">&#10003;</button>';
       html += '<button class="btn btn-ghost btn-xs" style="color:var(--amber)" onclick="openFlagTodo(\'' + t.id + '\')" title="Flag a problem">&#9888;</button>';
     }
-    html += '<button class="btn btn-ghost btn-xs" onclick="openEditTodo(\'' + t.id + '\')" title="Edit">&#9998;</button>';
-    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteTodo(\'' + t.id + '\')">&#x2715;</button>';
+    if (!isViewingOther && !t.done) html += todoStatusQuickSelect(t);
+    if (!isViewingOther) {
+      html += '<button class="btn btn-ghost btn-xs" onclick="openEditTodo(\'' + t.id + '\')" title="Edit">&#9998;</button>';
+      html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteTodo(\'' + t.id + '\')">&#x2715;</button>';
+    }
     html += '</div>';
   });
   if (showCL && clTasks.length) {
@@ -9232,7 +9287,6 @@ function renderTodos() {
       html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + esc(t.text) + '</div>';
       html += '<div class="todo-meta">' + due + '<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:4px;padding:1px 5px">'
         + 'Unit ' + esc(m.unit) + ' \u00b7 ' + esc(m.resident.split(' ')[0]) + '</span></div>';
-      html += '</div>';
       html += '<button class="btn btn-ghost btn-xs" onclick="openEditMove(\'' + m.id + '\')" title="Open move">&#8599;</button>';
       html += '</div>';
     });
@@ -9241,7 +9295,8 @@ function renderTodos() {
 }
 // Done tab = completion history: current done items + archived ones, grouped by day.
 function renderTodosDoneHistory(currentDone, listEl, cntEl) {
-  var arch = getCurrentArchivedTodos().filter(function (t) { return todoCatFilter === 'all' || (t.category || '') === todoCatFilter; });
+  var readOnly = todoReadOnlyView();
+  var arch = getCurrentArchivedTodos().filter(function (t) { return (t.workType || 'task') !== 'project' && (todoCatFilter === 'all' || (t.category || '') === todoCatFilter); });
   var rows = currentDone.map(function (t) { return { t: t, archived: false, ts: t.completedAt || t.lastUpdated || t.createdAt || 0 }; })
     .concat(arch.map(function (t) { return { t: t, archived: true, ts: t.completedAt || t.archivedAt || t.lastUpdated || 0 }; }));
   if (cntEl) cntEl.textContent = rows.length + ' completed';
@@ -9260,7 +9315,7 @@ function renderTodosDoneHistory(currentDone, listEl, cntEl) {
     if (r.archived) {
       html += '<span style="width:16px;text-align:center;color:var(--green);flex-shrink:0">&#10003;</span>';
     } else {
-      html += '<input type="checkbox" checked onchange="toggleTodo(\'' + t.id + '\',this.checked)">';
+      html += '<input type="checkbox" checked' + (readOnly ? ' disabled' : '') + ' onchange="toggleTodo(\'' + t.id + '\',this.checked)">';
     }
     html += '<div style="flex:1;min-width:0">';
     html += '<div class="todo-text strk">' + esc(t.text) + '</div>';
@@ -9269,9 +9324,9 @@ function renderTodosDoneHistory(currentDone, listEl, cntEl) {
       + '<span class="text-xs text-3">' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + '</span>'
       + (r.archived ? '<span class="text-xs text-3">archived</span>' : '') + '</div>';
     html += '</div>';
-    if (r.archived) {
+    if (r.archived && !readOnly) {
       html += '<button class="btn btn-ghost btn-xs" onclick="restoreArchivedTodo(\'' + t.id + '\')" title="Restore to Open">&#8617; Restore</button>';
-    } else {
+    } else if (!r.archived && !readOnly) {
       html += '<button class="btn btn-ghost btn-xs" onclick="openEditTodo(\'' + t.id + '\')" title="Edit">&#9998;</button>';
       html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteTodo(\'' + t.id + '\')">&#x2715;</button>';
     }
@@ -9281,7 +9336,8 @@ function renderTodosDoneHistory(currentDone, listEl, cntEl) {
 }
 function renderTodosBoard(sorted) {
   var el = g('todos-board'); if (!el) return;
-  var filtered = sorted.filter(function (t) { return todoCatFilter === 'all' || (t.category || '') === todoCatFilter; });
+  var readOnly = todoReadOnlyView();
+  var filtered = sorted.filter(todoMatchesFilters);
   if (!filtered.length) { el.innerHTML = '<div class="text-3 text-sm" style="text-align:center;padding:24px">No to-dos' + (todoCatFilter !== 'all' ? ' in this category' : '') + '.</div>'; return; }
   var html = '<div class="td-board-cols">';
   TODO_STATUSES.forEach(function (st) {
@@ -9296,11 +9352,13 @@ function renderTodosBoard(sorted) {
     html += '<div class="td-board-col"><div class="td-board-col-hdr"><span>' + st.label + '</span><span>' + (col.length || '') + '</span></div>';
     col.forEach(function (t) {
       var stale = todoIsStale(t);
-      html += '<div class="td-bcard' + (stale ? ' stale' : '') + '" onclick="openEditTodo(\'' + t.id + '\')">';
+      html += '<div class="td-bcard' + (stale ? ' stale' : '') + '"' + (readOnly ? '' : ' onclick="openEditTodo(\'' + t.id + '\')"') + '>';
       html += '<div class="td-bcard-text">' + (t.priority === 'urgent' && !t.done ? '<span style="color:var(--red)">! </span>' : '') + esc(t.text) + '</div>';
       if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:3px">' + esc(t.note) + '</div>';
-      html += '<div class="td-bcard-meta">' + todoPickChip(t) + todoCatChip(t) + todoFromChip(t) + todoAckChip(t) + todoUnitChip(t) + (t.dueDate ? '<span class="pill" style="background:var(--surface2);color:var(--text2)">Due ' + fmtShort(t.dueDate) + '</span>' : '') + todoShiftChip(t) + todoStaleChip(t) + '</div>';
+      html += '<div class="td-bcard-meta">' + todoPickChip(t) + todoCatChip(t) + todoFromChip(t) + todoAckChip(t) + todoUnitChip(t) + (t.dueDate ? '<span class="pill" style="background:var(--surface2);color:var(--text2)">Due ' + fmtShort(t.dueDate) + '</span>' : '') + todoFollowUpChip(t) + todoShiftChip(t) + todoStaleChip(t) + '</div>';
       if (t.owner) html += '<div class="td-bcard-owner">&#128100; ' + esc(t.owner) + '</div>';
+      if (t.lastContactNote) html += '<div class="todo-followup-note"><strong>Last contact:</strong> ' + esc(t.lastContactNote) + '</div>';
+      html += readOnly ? '<div class="td-bcard-meta">' + todoStatusChip(t) + '</div>' : '<div style="margin-top:7px" onclick="event.stopPropagation()">' + todoStatusQuickSelect(t) + '</div>';
       html += '</div>';
     });
     html += '</div>';
@@ -9308,12 +9366,12 @@ function renderTodosBoard(sorted) {
   html += '</div>';
   el.innerHTML = html;
 }
-// ─── Focus view: computed Eisenhower quadrants + today's 1-2-3 picks ───
+// ─── This Shift view: computed urgency quadrants + a simple Top 3 ───
 // Quadrants are derived from fields to-dos already carry (priority, dueDate,
 // status, staleness, TODAY moves) — nothing new to maintain. Picks are stored
 // per account keyed like archived to-dos, stamped with today's date, so they
-// reset themselves each shift. The 1-2-3 strip doubles as the WIP cap.
-var FOCUS_TIERS = [{ key: 'big', label: '1 Big', cap: 1 }, { key: 'med', label: '2 Medium', cap: 2 }, { key: 'small', label: '3 Small', cap: 3 }];
+// reset themselves each shift. The Top 3 strip doubles as the WIP cap.
+var FOCUS_LIMIT = 3;
 var FOCUS_QUADS = [
   { key: 'now', label: 'Do now', color: 'var(--red)', hint: 'urgent / due or overdue / TODAY move / stale flare' },
   { key: 'scheduled', label: 'Scheduled', color: 'var(--accent)', hint: 'future due date — moves to Do now on its own' },
@@ -9324,8 +9382,8 @@ function getFocusPicks() {
   if (!state.focusPicks) state.focusPicks = {};
   var k = _archTodosKey();
   var p = state.focusPicks[k];
-  if (!p || p.date !== today()) { p = { date: today(), big: [], med: [], small: [] }; state.focusPicks[k] = p; }
-  FOCUS_TIERS.forEach(function (tr) { if (!Array.isArray(p[tr.key])) p[tr.key] = []; });
+  if (!p || p.date !== today()) { p = { date: today(), top: [] }; state.focusPicks[k] = p; }
+  if (!Array.isArray(p.top)) { p.top = ([].concat(p.big||[],p.med||[],p.small||[])).slice(0,FOCUS_LIMIT); scheduleSave(); }
   return p;
 }
 function focusTodayMoveUnits() {
@@ -9361,32 +9419,28 @@ function focusRankCompare(a, b) {
 }
 function focusPickTier(t) {
   var p = getFocusPicks();
-  for (var i = 0; i < FOCUS_TIERS.length; i++) if (p[FOCUS_TIERS[i].key].indexOf(t.id) !== -1) return FOCUS_TIERS[i].key;
-  return null;
+  return p.top.indexOf(t.id) !== -1 ? 'top' : null;
 }
 function toggleFocusPick(id) {
-  var p = getFocusPicks(), had = false;
-  FOCUS_TIERS.forEach(function (tr) { var i = p[tr.key].indexOf(id); if (i !== -1) { p[tr.key].splice(i, 1); had = true; } });
-  if (!had) {
-    var open = FOCUS_TIERS.find(function (tr) { return p[tr.key].length < tr.cap; });
-    if (!open) { toast('All 6 slots are full — finish or unpick something first'); return; }
-    p[open.key].push(id);
-  }
+  if (todoReadOnlyView()) { toast('Switch to your own list to change priorities'); return; }
+  var p = getFocusPicks(), i = p.top.indexOf(id);
+  if (i !== -1) p.top.splice(i,1);
+  else { if (p.top.length >= FOCUS_LIMIT) { toast('Your Top 3 is full — finish or unpick something first'); return; } p.top.push(id); }
   scheduleSave(); renderTodos();
 }
 function acceptFocusSuggestion() {
+  if (todoReadOnlyView()) { toast('Switch to your own list to change priorities'); return; }
   var units = focusTodayMoveUnits();
   var q1 = getCurrentTodos().filter(function (t) { return todoFocusQuadrant(t, units) === 'now' && !focusPickTier(t); });
   q1.sort(focusRankCompare);
   var p = getFocusPicks(), took = 0;
-  FOCUS_TIERS.forEach(function (tr) {
-    while (p[tr.key].length < tr.cap && q1.length) { p[tr.key].push(q1.shift().id); took++; }
-  });
+  while (p.top.length < FOCUS_LIMIT && q1.length) { p.top.push(q1.shift().id); took++; }
   if (!took) { toast('Nothing in Do now to suggest'); return; }
-  scheduleSave(); renderTodos(); toast("Today's 1-2-3 set — work top-down, big first");
+  scheduleSave(); renderTodos(); toast("Today's Top 3 is ready");
 }
 function renderTodosFocus(sorted) {
   var el = g('todos-focus'); if (!el) return;
+  var readOnly = todoReadOnlyView();
   var todos = getCurrentTodos(), units = focusTodayMoveUnits();
   var quads = { now: [], scheduled: [], waiting: [], someday: [] };
   sorted.forEach(function (t) { var q = todoFocusQuadrant(t, units); if (q) quads[q].push(t); });
@@ -9394,31 +9448,20 @@ function renderTodosFocus(sorted) {
   quads.scheduled.sort(function (a, b) { return String(a.dueDate || '9999').localeCompare(String(b.dueDate || '9999')); });
   var p = getFocusPicks();
   // completed/deleted picks free their slot automatically
-  FOCUS_TIERS.forEach(function (tr) {
-    p[tr.key] = p[tr.key].filter(function (id) {
-      var t = todos.find(function (x) { return x.id === id; }); return t && !t.done;
-    });
-  });
-  var picked = p.big.length + p.med.length + p.small.length;
-  var html = '<div class="card mb-12"><div class="card-hdr"><span class="card-title">Today\'s 1-2-3 &mdash; ' + fmtShort(today()) + '</span>'
-    + '<span class="card-count">' + picked + ' of 6 picked &middot; work top-down</span>'
-    + (picked < 6 && quads.now.length ? '<button class="btn btn-secondary btn-sm ml-auto" onclick="acceptFocusSuggestion()">&#9733; Suggest from Do now</button>' : '')
+  p.top = p.top.filter(function (id) { var t = todos.find(function (x) { return x.id === id; }); return t && !t.done; });
+  var picked = p.top.length;
+  var html = '<div class="card mb-12"><div class="card-hdr"><span class="card-title">Today\'s Top 3 &mdash; ' + fmtShort(today()) + '</span>'
+    + '<span class="card-count">' + picked + ' of 3 picked</span>'
+    + (!readOnly && picked < FOCUS_LIMIT && quads.now.length ? '<button class="btn btn-secondary btn-sm ml-auto" onclick="acceptFocusSuggestion()">&#9733; Suggest priorities</button>' : '')
     + '</div><div class="card-body"><div class="focus-strip">';
-  FOCUS_TIERS.forEach(function (tr) {
-    html += '<div><div class="focus-tier-tag">' + tr.label + ' &middot; ' + p[tr.key].length + '/' + tr.cap + '</div>';
-    p[tr.key].forEach(function (id) {
-      var t = todos.find(function (x) { return x.id === id; }); if (!t) return;
-      html += '<div class="focus-slot" style="margin-bottom:6px;display:flex;gap:8px;align-items:flex-start">'
-        + '<input type="checkbox" title="Mark done" onchange="toggleTodo(\'' + t.id + '\',this.checked)">'
-        + '<div style="flex:1;min-width:0;cursor:pointer" onclick="openEditTodo(\'' + t.id + '\')">'
-        + '<div style="font-size:13px;font-weight:600;line-height:1.35">' + (t.priority === 'urgent' ? '<span style="color:var(--red)">! </span>' : '') + esc(t.text) + '</div>'
-        + (t.dueDate ? '<div style="font-size:11px;color:var(--text3);margin-top:2px">Due ' + fmtShort(t.dueDate) + '</div>' : '')
-        + '</div>'
-        + '<button class="btn btn-ghost btn-xs" title="Unpick" onclick="toggleFocusPick(\'' + t.id + '\')">&#x2715;</button></div>';
-    });
-    for (var i = p[tr.key].length; i < tr.cap; i++) html += '<div class="focus-slot empty" style="margin-bottom:6px">&#9734; tap &#9734; on any task below</div>';
-    html += '</div>';
-  });
+  for (var slot=0; slot<FOCUS_LIMIT; slot++) {
+    var id = p.top[slot], t = id ? todos.find(function(x){return x.id===id;}) : null;
+    if (t) html += '<div><div class="focus-tier-tag">Priority ' + (slot+1) + '</div><div class="focus-slot" style="margin-bottom:6px;display:flex;gap:8px;align-items:flex-start">'
+      + '<input type="checkbox" title="Mark done"' + (readOnly ? ' disabled' : '') + ' onchange="toggleTodo(\'' + t.id + '\',this.checked)"><div style="flex:1;min-width:0;cursor:pointer" onclick="openEditTodo(\'' + t.id + '\')">'
+      + '<div style="font-size:13px;font-weight:600;line-height:1.35">' + (t.priority==='urgent'?'<span style="color:var(--red)">! </span>':'') + esc(t.text) + '</div>'
+      + (t.dueDate?'<div style="font-size:11px;color:var(--text3);margin-top:2px">Due '+fmtShort(t.dueDate)+'</div>':'') + '</div>' + (readOnly ? '' : '<button class="btn btn-ghost btn-xs" title="Unpick" onclick="toggleFocusPick(\''+t.id+'\')">&#x2715;</button>') + '</div></div>';
+    else html += '<div><div class="focus-tier-tag">Priority ' + (slot+1) + '</div><div class="focus-slot empty" style="margin-bottom:6px">&#9734; Pick a task below</div></div>';
+  }
   html += '</div></div></div><div class="focus-grid">';
   FOCUS_QUADS.forEach(function (qd) {
     var list = quads[qd.key];
@@ -9432,10 +9475,11 @@ function renderTodosFocus(sorted) {
         + '<div class="td-bcard-text">' + (t.priority === 'urgent' ? '<span style="color:var(--red)">! </span>' : '') + esc(t.text) + '</div>'
         + '<div class="td-bcard-meta">'
         + (t.dueDate ? '<span class="pill" style="background:var(--surface2);color:var(--text2)">Due ' + fmtShort(t.dueDate) + '</span>' : '')
-        + (flare ? '<span class="pill" style="background:var(--amber-light);color:var(--amber)">&#9888; flared from Waiting &mdash; ' + todoStaleDays(t) + 'd</span>' : todoStaleChip(t))
+        + (flare ? '<span class="pill" style="background:var(--amber-light);color:var(--amber)">&#9888; follow-up due</span>' : todoStaleChip(t))
+        + todoFollowUpChip(t)
         + todoUnitChip(t) + todoOwnerChip(t) + todoCatChip(t)
         + '</div></div>'
-        + '<button class="btn btn-ghost btn-xs" title="' + (tier ? 'Unpick' : 'Pick for today') + '"' + (tier ? ' style="color:var(--amber)"' : '') + ' onclick="toggleFocusPick(\'' + t.id + '\')">' + (tier ? '&#9733;' : '&#9734;') + '</button>'
+        + (readOnly ? '' : '<button class="btn btn-ghost btn-xs" title="' + (tier ? 'Unpick' : 'Pick for today') + '"' + (tier ? ' style="color:var(--amber)"' : '') + ' onclick="toggleFocusPick(\'' + t.id + '\')">' + (tier ? '&#9733;' : '&#9734;') + '</button>')
         + '</div>';
     });
     html += '</div>';
@@ -9444,6 +9488,7 @@ function renderTodosFocus(sorted) {
   el.innerHTML = html;
 }
 function toggleTodo(id, checked) {
+  if (todoReadOnlyView()) { toast('This team member\'s list is read-only'); return; }
   var todos = getCurrentTodos();
   var t = todos.find(function (x) { return x.id === id; });
   if (t) {
@@ -9458,7 +9503,25 @@ function toggleTodo(id, checked) {
     scheduleSave(); renderTodos(); updateBadges(); renderDash();
   }
 }
+function setTodoStatusQuick(id, status) {
+  if (todoReadOnlyView()) { toast('This team member\'s list is read-only'); return; }
+  var t = getCurrentTodos().find(function(x){ return x.id === id; }); if (!t || status === todoStatus(t)) return;
+  if (status === 'waiting' || status === 'blocked') {
+    openEditTodo(id);
+    g('td-status').value = status;
+    todoStatusFieldsChange();
+    setTimeout(function(){ var target = status === 'waiting' ? g('td-owner') : g('td-blocker'); if (target) target.focus(); }, 60);
+    return;
+  }
+  if (status === 'done') { toggleTodo(id, true); return; }
+  var before = cloneData(t);
+  t.status = status; t.done = false; t.completedAt = null; todoTouch(t);
+  pushUndo({ sec:'todos', type:'EDIT', path:currentTodosPath(), id:t.id, before:before, after:cloneData(t), label:'change to-do status — ' + t.text });
+  logActivity('todos','edit','Changed to-do status — ' + t.text,'Status: ' + todoStatusLabel(status));
+  scheduleSave(); renderTodos(); updateBadges(); renderDash();
+}
 function deleteTodo(id) {
+  if (todoReadOnlyView()) { toast('This team member\'s list is read-only'); return; }
   var todos = getCurrentTodos();
   var t = todos.find(function (x) { return x.id === id; });
   if (t) {
@@ -9469,13 +9532,14 @@ function deleteTodo(id) {
   scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Removed');
 }
 async function clearDoneTodos() {
-  var moved = getCurrentTodos().filter(function (t) { return t.done; });
+  if (todoReadOnlyView()) { toast('This team member\'s list is read-only'); return; }
+  var moved = getCurrentTodos().filter(function (t) { return t.done && (t.workType || 'task') !== 'project'; });
   if (!moved.length) { toast('No completed to-dos to archive'); return; }
   if (!await confirmModal('Archive ' + moved.length + ' completed to-do(s)? They stay viewable under the Done tab.')) return;
   var listBefore = cloneData(getCurrentTodos());
   var archBefore = cloneData(getCurrentArchivedTodos());
   var now = Date.now();
-  var keep = getCurrentTodos().filter(function (t) { return !t.done; });
+  var keep = getCurrentTodos().filter(function (t) { return !t.done || (t.workType || 'task') === 'project'; });
   var arch = getCurrentArchivedTodos();
   moved.forEach(function (t) { var c = cloneData(t); c.archivedAt = now; arch.push(c); });
   setCurrentTodos(keep);
@@ -9487,6 +9551,7 @@ async function clearDoneTodos() {
   scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Archived ' + moved.length + ' — see Done tab');
 }
 function restoreArchivedTodo(id) {
+  if (todoReadOnlyView()) { toast('This team member\'s list is read-only'); return; }
   var arch = getCurrentArchivedTodos();
   var t = arch.find(function (x) { return x.id === id; });
   if (!t) return;
@@ -11738,6 +11803,8 @@ function openAddTodoModal(dateStr, textStr, priorityStr, categoryStr) {
   g('td-date').value = dateStr || ''; g('td-priority').value = priorityStr || 'normal';
   g('td-category').value = categoryStr || ''; g('td-unit').value = '';
   g('td-status').value = 'open'; g('td-owner').value = ''; g('td-staledays').value = '';
+  g('td-followup-date').value = ''; g('td-last-contact').value = ''; g('td-blocker').value = '';
+  var wt = g('td-worktype'); if (wt) wt.value = 'task';
   var sh = g('td-shift'); if (sh) sh.value = '';
   var aw = g('td-assign-wrap'), as = g('td-assign');
   if (aw && as) {
@@ -11750,10 +11817,13 @@ function openAddTodoModal(dateStr, textStr, priorityStr, categoryStr) {
       aw.style.display = 'none';
     }
   }
+  var workWrap = g('td-worktype-wrap'); if (workWrap) workWrap.style.display = (currentUser && currentUser.role === 'admin') ? '' : 'none';
+  todoStatusFieldsChange();
   openModal('modal-todo');
   if (textStr) { setTimeout(function(){ var n=g('td-note'); if(n) n.focus(); }, 80); }
 }
 function openEditTodo(id) {
+  if (todoReadOnlyView()) { toast('This team member\'s list is read-only'); return; }
   var t = getCurrentTodos().find(function (x) { return x.id === id; }); if (!t) return;
   editingTodoId = id;
   fillTodoCategorySelects();
@@ -11764,10 +11834,22 @@ function openEditTodo(id) {
   g('td-category').value = t.category || ''; g('td-unit').value = t.linkedUnit || '';
   g('td-status').value = todoStatus(t); g('td-owner').value = t.owner || '';
   g('td-staledays').value = t.staleDays || '';
+  g('td-followup-date').value = t.followUpDate || ''; g('td-last-contact').value = t.lastContactNote || ''; g('td-blocker').value = t.blockerNote || '';
+  var wt = g('td-worktype'); if (wt) wt.value = t.workType || 'task';
   var sh = g('td-shift'); if (sh) sh.value = t.dueShift || '';
   var aw = g('td-assign-wrap'); if (aw) aw.style.display = 'none'; // no reassignment on edit — take back + reassign instead
+  var workWrap = g('td-worktype-wrap'); if (workWrap) workWrap.style.display = (currentUser && currentUser.role === 'admin') ? '' : 'none';
   var delBtnE = g('modal-todo-delete-btn'); if (delBtnE) delBtnE.style.display = '';
+  todoStatusFieldsChange();
   openModal('modal-todo');
+}
+function todoStatusFieldsChange() {
+  var status = (g('td-status') || {}).value || 'open';
+  var follow = g('td-followup-fields'), blocker = g('td-blocker-wrap'), ownerLabel = g('td-owner-label');
+  var needsFollow = status === 'waiting' || status === 'blocked';
+  if (follow) follow.style.display = needsFollow ? '' : 'none';
+  if (blocker) blocker.style.display = status === 'blocked' ? '' : 'none';
+  if (ownerLabel) ownerLabel.innerHTML = status === 'waiting' ? 'Waiting On <span style="font-weight:400;color:var(--text3)">(required)</span>' : status === 'blocked' ? 'Dependency Owner <span style="font-weight:400;color:var(--text3)">(optional)</span>' : 'Owner <span style="font-weight:400;color:var(--text3)">(optional)</span>';
 }
 function deleteTodoFromModal() {
   if (!editingTodoId) return;
@@ -11785,6 +11867,14 @@ function saveTodoModal() {
   var linkedUnit = g('td-unit').value.trim() || '';
   var owner = g('td-owner').value.trim() || '';
   var status = g('td-status').value || 'open';
+  var followUpDate = g('td-followup-date').value || null;
+  var lastContactNote = g('td-last-contact').value.trim() || null;
+  var blockerNote = g('td-blocker').value.trim() || null;
+  var workType = (currentUser && currentUser.role === 'admin' && g('td-worktype')) ? g('td-worktype').value : 'task';
+  if (status === 'waiting' && !requireFields([[g('td-owner'),!!owner,'Enter who you are waiting on'],[g('td-followup-date'),!!followUpDate,'Choose a follow-up date']])) return;
+  if (status === 'blocked' && !requireFields([[g('td-blocker'),!!blockerNote,'Describe what is blocking this task']])) return;
+  if (status !== 'waiting' && status !== 'blocked') { followUpDate = null; lastContactNote = null; blockerNote = null; }
+  else if (status === 'waiting') blockerNote = null;
   var staleDays = g('td-staledays').value ? parseInt(g('td-staledays').value, 10) : null;
   var assignedName = null;
   if (editingTodoId) {
@@ -11792,17 +11882,18 @@ function saveTodoModal() {
     if (t) {
       var before = cloneData(t);
       t.text = text; t.note = note; t.dueDate = dueDate; t.dueShift = dueShift; t.priority = priority;
-      t.category = category; t.linkedUnit = linkedUnit; t.owner = owner; t.staleDays = staleDays;
+      t.category = category; t.linkedUnit = linkedUnit; t.owner = owner; t.staleDays = staleDays; t.followUpDate = followUpDate; t.lastContactNote = lastContactNote; t.blockerNote = blockerNote; t.workType = workType;
       t.status = status; t.done = (status === 'done'); t.completedAt = (status === 'done') ? (t.completedAt || Date.now()) : null;
       todoTouch(t);
       pushUndo({ sec: 'todos', type: 'EDIT', path: currentTodosPath(), id: t.id, before: before, after: cloneData(t), label: 'edit to-do — ' + text });
-      var afterDiff = { text: t.text, note: t.note, dueDate: t.dueDate, priority: t.priority, category: t.category, status: t.status, owner: t.owner, linkedUnit: t.linkedUnit };
-      logActivity('todos', 'edit', 'Updated to-do — ' + text, activityFields(before, afterDiff, { text: 'Task', note: 'Note', dueDate: 'Due date', priority: 'Priority', category: 'Category', status: 'Status', owner: 'Owner', linkedUnit: 'Unit' }));
+      var afterDiff = { text: t.text, note: t.note, dueDate: t.dueDate, priority: t.priority, category: t.category, status: t.status, owner: t.owner, linkedUnit: t.linkedUnit, followUpDate: t.followUpDate, lastContactNote: t.lastContactNote, blockerNote: t.blockerNote, workType: t.workType };
+      logActivity('todos', 'edit', 'Updated to-do — ' + text, activityFields(before, afterDiff, { text: 'Task', note: 'Note', dueDate: 'Due date', priority: 'Priority', category: 'Category', status: 'Status', owner: 'Owner', linkedUnit: 'Unit', followUpDate: 'Follow-up date', lastContactNote: 'Last contact', blockerNote: 'Blocker', workType: 'Work type' }));
     }
   } else {
-    var todo = { id: uid(), text: text, note: note, priority: priority, dueDate: dueDate, dueShift: dueShift, category: category, linkedUnit: linkedUnit, owner: owner, staleDays: staleDays, status: status, done: (status === 'done'), createdAt: Date.now(), lastUpdated: Date.now() };
+    var todo = { id: uid(), text: text, note: note, priority: priority, dueDate: dueDate, dueShift: dueShift, category: category, linkedUnit: linkedUnit, owner: owner, staleDays: staleDays, followUpDate: followUpDate, lastContactNote: lastContactNote, blockerNote: blockerNote, workType: workType, status: status, done: (status === 'done'), createdAt: Date.now(), lastUpdated: Date.now() };
     var aw = g('td-assign-wrap'), as = g('td-assign');
     var assigneeId = (aw && as && aw.style.display !== 'none') ? as.value : '';
+    if (assigneeId && workType === 'project') { toast('Admin Projects stay on your list. Choose Front Desk Task before assigning.'); return; }
     if (assigneeId && currentUser && currentUser.role === 'admin' && assigneeId !== currentUser.id) {
       var acct = (state.accounts || []).find(function (a) { return a.id === assigneeId; });
       if (!state.userTodos) state.userTodos = {};
@@ -12434,8 +12525,8 @@ var GUIDE_DATA = [
   { id:'g-passdown', icon:'📋', title:'Daily Passdown', keywords:'passdown shift generate preview save copy history build draft am pm overnight lead staff next step move key amenity concierge edit exclude override',
     html:'<h4>Overview</h4><p>The Daily Passdown section lets you build, preview, and save shift handoff notes. The left column is the <strong>Build</strong> panel; the right column is <strong>Passdown History</strong>.</p><h4>Selecting a Shift</h4><p>Choose AM, PM, or Overnight from the Shift dropdown. This filters auto-populated items to only show entries relevant to that shift\'s time window.</p><h4>Auto-Populated Blocks</h4><p>These pull live data automatically — no manual entry needed:</p><ul><li>🗝 <strong>One-Time Keys Still Out</strong> — any keys currently in "issued" status</li><li>🗝 <strong>Outstanding Key Returns</strong> — move-outs whose lease has ended and key collection task is still unchecked</li><li>🚛 <strong>Move-Ins</strong> — today\'s move-ins for this shift (admins also see upcoming days)</li><li>📦 <strong>Move-Outs</strong> — today\'s move-outs for this shift (admins also see upcoming)</li><li>🎉 <strong>Amenity Bookings</strong> — today\'s bookings during the selected shift window</li><li>📓 <strong>Open Logbook Entries</strong> — all open and in-progress logbook entries regardless of shift</li><li>📦 <strong>L&amp;F Follow Up</strong> — lost &amp; found items manually flagged for passdown</li><li>💳 <strong>Charges to Add to Ledger</strong> — replacement key cards ($100) and unreturned one-time keys ($25) with outstanding fees</li></ul><p>Completed moves (appointment passed + all main tasks done) show a green <strong>✓ Completed</strong> badge automatically.</p><h4>Editing Next Steps in the Draft</h4><p>Every auto-block item has an editable <strong>Next step…</strong> field below it. The field is pre-filled with a smart default. Click it and type to override — your custom text carries into the generated passdown when you click Generate. Leave it as-is to use the default.</p><h4>Excluding Items</h4><p>Click the <strong>–</strong> button on any item to exclude it from the passdown. The item grays out with a strikethrough. Click <strong>＋</strong> to re-include it. Exclusions persist while the draft is active.</p><h4>Look Ahead <span style="font-size:10px;font-weight:400;color:var(--text3)">(admin only)</span></h4><p>Set to "Today + Tomorrow" or "Today + 2 days" to pull upcoming moves and amenities into the passdown for advance notice.</p><h4>Free-Entry Sections</h4><p>These sections are for items you add manually:</p><ul><li><strong>Admin users:</strong> 🔑 Keys / Access, 🅿️ Parking, 👤 Resident Matters, 📢 Policy Reminders</li><li><strong>Staff users:</strong> 📝 Shift Notes</li></ul><p>Click <strong>+ Add Item</strong> in any section, fill in the form (unit, resident, description, next step), and save. Items appear as cards and can be removed with ×.</p><h4>Generating</h4><p>Click <strong>Generate</strong> to build the formatted passdown text in the Preview area. The preview is a fully editable textarea — type freely to add context, adjust wording, or remove anything before saving.</p><h4>Saving &amp; Sending</h4><ul><li><strong>Save Draft</strong> — saves the passdown to History as a draft, attributed to your account</li><li><strong>Review &amp; Send</strong> — runs quality checks, saves the passdown as sent, and opens Gmail with default recipients</li><li><strong>Copy</strong> — copies the text to your clipboard for pasting elsewhere</li><li><strong>Clear draft</strong> — resets all build blocks and clears the preview</li></ul><h4>Passdown History</h4><p>Passdowns appear on the right with Draft/Sent and read-count badges. Admins see all staff passdowns; staff see the last 48 hours. Each entry can be expanded, copied, edited (loads it back into the preview for revision), or deleted (author or admin only).</p><div class="guide-tip">💡 Clicking <strong>Passdown</strong> from the Move Ins / Outs section jumps here with today\'s moves already loaded.</div>' },
 
-  { id:'g-todos', icon:'✅', title:'To-Do List', keywords:'todo to do task personal list pending done completed admin view all team switch user',
-    html:'<h4>Personal To-Dos</h4><p>Each logged-in user has their own private to-do list. Other staff cannot see your items — only admins can view all lists.</p><h4>Adding an Item</h4><p>Click <strong>+ Add To-Do</strong>, type the task, and save. The badge on the nav item shows your pending count.</p><h4>Completing Items</h4><p>Check the checkbox next to any item to mark it done. Click <strong>Clear Completed</strong> to remove all done items at once.</p><h4>Admin: View All <span style="font-size:10px;font-weight:400;color:var(--text3)">(admin only)</span></h4><p>A user-switcher dropdown appears at the top of the To-Do List for admins. Switch to any team member to view (but not edit) their list — useful for shift coverage and handoffs.</p>' },
+  { id:'g-todos', icon:'✅', title:'To-Do List', keywords:'todo to do task personal list shift top three waiting follow up assigned completed admin project board search',
+    html:'<h4>Capture First</h4><p>Type a task in the capture bar and press Enter. Open <strong>Options</strong> for a category, due date, or priority, or choose <strong>More details</strong> for notes, status, ownership, follow-up information, assignment, or an admin project.</p><h4>Workspaces</h4><ul><li><strong>This Shift</strong> — urgency-based Do now, Scheduled, Waiting, and Someday groups plus a strict Top 3</li><li><strong>All Tasks</strong> — searchable list or status board with category and status filters</li><li><strong>Follow-Ups</strong> — Waiting and Blocked tasks with an owner, follow-up date, last contact, and blocker details</li><li><strong>Assigned</strong> — work assigned to you and, for admins, delegated work</li><li><strong>Completed</strong> — completion history, including archived tasks</li><li><strong>Admin Projects</strong> — longer dashboard, documentation, security, and improvement work kept out of the shift queue</li></ul><h4>Changing Status</h4><p>Use the status menu on any list or board card. Waiting requires an owner and follow-up date; Blocked requires a blocker note. Completing a task frees its Top 3 slot automatically.</p><h4>Privacy &amp; Oversight</h4><p>Each user has a personal list. Admins can switch to another team member for coverage and review.</p>' },
 
   { id:'g-team', icon:'👥', title:'Team Tracker', keywords:'team tracker staff log activity pin lead admin only note shift roster',
     admin:true,
@@ -13675,13 +13766,13 @@ function hideLogin() {
   startSessionTimer();
   if (typeof npLoad === 'function') npLoad();
   if (currentUser) logActivity('session', 'login', currentUser.name + ' logged in');
-  // Daily focus nudge: no 1-2-3 picked yet today and Do-now items are waiting
+  // Daily focus nudge: no Top 3 picked yet today and Do-now items are waiting
   try {
     var fp = getFocusPicks();
-    if (!(fp.big.length + fp.med.length + fp.small.length)) {
+    if (!fp.top.length) {
       var fu = focusTodayMoveUnits();
       var fn = getCurrentTodos().filter(function (t) { return todoFocusQuadrant(t, fu) === 'now'; }).length;
-      if (fn) toast('★ ' + fn + ' item' + (fn > 1 ? 's' : '') + ' in Do now — pick your 1-2-3 (To-Dos › Focus)');
+      if (fn) toast('★ ' + fn + ' item' + (fn > 1 ? 's' : '') + ' in Do now — choose today\'s Top 3 (To-Dos › This Shift)');
     }
   } catch (e) {}
 }
@@ -14188,7 +14279,7 @@ async function init() {
   migrateTaskAutomationIdsV1();
   migrateMovePhaseCats();
   migrateTodosV1();
-  seedLoopTrackerTodosV1();
+  migrateTodosV2();
   await mergeTodoInbox();
   seedDefaultTemplates();
   seedUnitRecords();
