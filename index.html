@@ -12744,6 +12744,31 @@ function maybeGenerateRoutineTodos() {
   migrateRoutinesV1();
   if (generateRoutineTodos()) updateBadges();
 }
+// One-time seed of the standing front-desk routines. Skips any label that already
+// exists, and won't claim the flag until there's an account to assign them to.
+function seedRoutinesV2() {
+  if (state.routinesSeedV2) return;
+  var owner = rrDefaultOwnerId();
+  if (!owner) return;
+  var list = rrData();
+  function add(label, schedule, dueShift) {
+    if (list.some(function (r) { return r.label === label; })) return;
+    var r = {
+      id: uid(), label: label, schedule: schedule, intervalDays: schedule.n || 0,
+      requireValue: false, valueLabel: '', targetSupplyName: '', dueShift: dueShift || '',
+      assignToId: owner, autoTodo: true, lastCompletedAt: null, lastCompletedBy: '',
+      lastGeneratedFor: '', dueDate: null, createdAt: Date.now()
+    };
+    r.dueDate = rrNextDue(r, _isoAddDays(today(), -1));
+    list.push(r);
+  }
+  add('Update moves on the dashboard', { type: 'daily' }, 'am');
+  add('Inventory check — front desk supplies', { type: 'weekly', days: [1] }, '');
+  add('Storage space audit', { type: 'monthly', day: 1 }, '');
+  add('System audit — data check', { type: 'monthly', day: 15 }, '');
+  state.routinesSeedV2 = true;
+  scheduleSave();
+}
 // Completing a routine's to-do rolls the schedule forward.
 function completeRoutineFromTodo(td) {
   var r = rrData().find(function (x) { return x.id === td.routineId; });
@@ -13931,6 +13956,7 @@ async function init() {
   checkUnreturnedKeyFees();
   seedRecurringRemindersV1();
   migrateRoutinesV1();
+  seedRoutinesV2();
   migrateTaskUpdatesV2();
   migrateTaskUpdatesV3();
   migrateMovePhaseCats();
