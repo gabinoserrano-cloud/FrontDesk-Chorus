@@ -21,11 +21,15 @@
     --ease-in-out:cubic-bezier(0.77,0,0.175,1);
   }
   body.dark-mode{--bg:#0F1923;--surface:#162130;--surface2:#1C2A3A;--border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.05);--text:#E2EAF0;--text2:#8FA8BC;--text3:#6E8EA2;--green-light:rgba(26,102,64,0.18);--red-light:rgba(192,53,53,0.15);--amber-light:rgba(181,112,32,0.15);--purple-light:rgba(96,68,178,0.15);--accent-light:rgba(26,92,62,0.18);--shadow:0 1px 4px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);--shadow-md:0 4px 24px rgba(0,0,0,.5),0 2px 4px rgba(0,0,0,.4)}
-  body.text-sm #content{zoom:0.9}body.text-sm .modal-ov .modal{zoom:0.9}
-  body.text-lg #content{zoom:1.14}body.text-lg .modal-ov .modal{zoom:1.14}
+  body.text-sm{font-size:12.5px}
+  body.text-lg{font-size:16px}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%}
   body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;display:flex;height:100vh;height:100dvh;overflow:hidden}
+  .skip-link{position:fixed;left:12px;top:8px;z-index:10000;background:var(--surface);color:var(--text);border:2px solid var(--accent);border-radius:6px;padding:8px 12px;transform:translateY(-150%);transition:transform 120ms ease-out}
+  .skip-link:focus{transform:translateY(0)}
+  .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+  :focus-visible{outline:3px solid rgba(26,92,62,.42);outline-offset:2px}
 
   /* SIDEBAR */
   #sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:#0D1B2A;border-right:0.5px solid rgba(255,255,255,0.09);display:flex;flex-direction:column;height:100vh;height:100dvh;overflow-y:auto;overflow-x:hidden;z-index:200;transition:width 220ms ease-out,min-width 220ms ease-out,transform 220ms var(--ease-out);flex-shrink:0}
@@ -88,7 +92,7 @@
     #hdr-actions.open{display:flex}
     #hdr-actions .btn{width:100%;justify-content:flex-start;padding:10px 12px;font-size:13.5px}
   }
-  #content{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch;max-width:1280px}
+  #content{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch;max-width:1280px;width:100%;min-width:0}
   @media(max-width:700px){#content{padding:12px;padding-bottom:80px}}
   .section{display:none}.section.active{display:block}
 
@@ -220,7 +224,7 @@
   .modal-ov{display:none;position:fixed;inset:0;background:rgba(26,25,22,.5);z-index:1000;align-items:flex-end;justify-content:center;padding:0}
   @media(min-width:600px){.modal-ov{align-items:center;padding:20px}}
   .modal-ov.open{display:flex}
-  .modal{background:var(--surface);border-radius:14px 14px 0 0;width:100%;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-md);animation:slideUp 220ms var(--ease-out)}
+  .modal{background:var(--surface);border-radius:14px 14px 0 0;width:100%;max-height:92vh;overflow-y:auto;overflow-x:hidden;box-shadow:var(--shadow-md);animation:slideUp 220ms var(--ease-out)}
   @media(min-width:600px){.modal{border-radius:10px;max-width:480px;animation:scaleIn 200ms var(--ease-out)}}
   @keyframes slideUp{from{opacity:0;transform:translateY(12px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}
   @keyframes scaleIn{from{opacity:0;transform:scale(0.97)}to{opacity:1;transform:scale(1)}}
@@ -237,8 +241,9 @@
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
   /* DASH */
-  .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
-  .dash-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+  .dash-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-bottom:14px;min-width:0}
+  .dash-grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px;min-width:0}
+  .dash-grid>*,.dash-grid3>*{min-width:0;max-width:100%}
   @media(max-width:900px){.dash-grid3{grid-template-columns:1fr 1fr}}
   @media(max-width:600px){.dash-grid{grid-template-columns:1fr}.dash-grid3{grid-template-columns:1fr}}
   .tight-alert{background:#FFF8E6;border:1px solid #F5D39A;border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;font-size:12.5px}
@@ -252,7 +257,7 @@
   .search-wrap input{padding-left:34px}
   .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none}
   #dash-results{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);z-index:200;display:none}
-  .sr-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border2)}.sr-item:hover{background:var(--bg)}.sr-item:last-child{border-bottom:none}
+  .sr-item{display:block;width:100%;padding:10px 14px;cursor:pointer;border:0;border-bottom:1px solid var(--border2);background:var(--surface);color:var(--text);font:inherit;text-align:left}.sr-item:hover,.sr-item:focus-visible{background:var(--bg)}.sr-item:last-child{border-bottom:none}
 
   /* MOVES INLINE CHECKLIST */
   .move-row{cursor:pointer}.move-row td{transition:background .1s}.move-row.sel>td{background:var(--accent-light)!important}
@@ -703,7 +708,15 @@
   .pay-amt{font-size:11px;padding:2px 5px;border:1px solid var(--border2);border-radius:4px;background:var(--surface);color:var(--text);width:72px;text-align:right}
   .pay-mismatch{color:var(--red);font-size:10px;font-weight:700}
 
-  @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.stat-clickable:hover,.unit-dot:hover{transform:none!important}#dash-bg-canvas{display:none!important}}
+  @media(max-width:420px){
+    #content{padding:10px;padding-bottom:78px}
+    .dash-grid,.dash-grid3{grid-template-columns:minmax(0,1fr);gap:10px}
+    .card,.dash-greeting-wrap,.tight-alert{max-width:100%;overflow-wrap:anywhere}
+    .card-hdr{flex-wrap:wrap;gap:6px}
+    .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .modal-bdy,.modal-hdr,.modal-ftr{padding-left:14px;padding-right:14px}
+  }
 
   /* ===== DASHBOARD 3D / VISUAL FEATURES ===== */
   .dash-greeting-wrap{position:relative;margin-bottom:14px;overflow:hidden;border-radius:8px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow)}
@@ -749,6 +762,7 @@
 </style>
 </head>
 <body>
+<a class="skip-link" href="#content">Skip to main content</a>
 <div id="sb-ov" onclick="closeMobSidebar()"></div>
 
 <div id="sidebar-wrap">
@@ -812,10 +826,10 @@
 <button id="collapse-btn" onclick="toggleSidebar()" aria-label="Collapse sidebar">&#8249;</button>
 </div><!-- /sidebar-wrap -->
 
-<div id="main">
+<div id="main" role="main" aria-labelledby="hdr-title">
   <div id="header">
     <button id="mob-menu" onclick="openMobSidebar()" aria-label="Open menu">&#9776;</button>
-    <div class="hdr-title" id="hdr-title">Dashboard</div>
+    <div class="hdr-title" id="hdr-title" role="heading" aria-level="1">Dashboard</div>
     <div style="display:flex;gap:4px;margin-left:auto;margin-right:8px">
       <button id="btn-undo" onclick="applyUndo()" title="Undo (⌘Z)" class="btn btn-ghost btn-sm" disabled style="opacity:0.35;font-size:15px;padding:3px 8px;line-height:1">↩</button>
       <button id="btn-redo" onclick="applyRedo()" title="Redo (⌘⇧Z)" class="btn btn-ghost btn-sm" disabled style="opacity:0.35;font-size:15px;padding:3px 8px;line-height:1">↪</button>
@@ -823,9 +837,9 @@
     <button id="hdr-more" class="btn btn-ghost btn-sm" onclick="toggleHdrActions(event)" aria-label="More actions" aria-expanded="false" style="font-size:17px;padding:3px 10px;line-height:1">&#8943;</button>
     <div class="hdr-actions" id="hdr-actions"></div>
   </div>
-  <div id="content">
+  <div id="content" tabindex="-1">
     <div class="section active" id="section-dashboard">
-      <div class="search-wrap"><span class="search-icon">&#128269;</span><input type="text" placeholder="Search residents, units, keys..." oninput="dashSearch(this.value)" onkeydown="if(event.key==='Enter'){var f=document.querySelector('#dash-results .sr-item');if(f)f.click();}" id="dash-search-input"><div id="dash-results"></div></div>
+      <div class="search-wrap"><span class="search-icon" aria-hidden="true">&#128269;</span><label class="sr-only" for="dash-search-input">Search dashboard records</label><input type="search" placeholder="Search residents, units, keys… (⌘K)" oninput="dashSearch(this.value)" onkeydown="if(event.key==='Enter'){var f=document.querySelector('#dash-results .sr-item');if(f)f.click();}" id="dash-search-input" autocomplete="off" aria-controls="dash-results" aria-expanded="false"><div id="dash-results" role="listbox" aria-label="Search results"></div></div>
       <div id="dash-body"></div>
     </div>
     <div class="section" id="section-moves">
@@ -1050,7 +1064,7 @@
                 <button class="btn btn-primary" onclick="checkPassdownReady()">Generate</button>
                 <button class="btn btn-secondary" onclick="savePassdown()">Save Draft</button>
                 <button class="btn btn-ghost" onclick="copyPassdown()">Copy</button>
-                <button class="btn btn-secondary" onclick="copyMarkSent()">&#10003; Copy &amp; mark sent</button>
+                <button class="btn btn-secondary" onclick="copyMarkSent()">&#10003; Copy &amp; prepare to send</button>
                 <button class="btn btn-secondary" onclick="reviewBeforeSend()">&#9993; Review &amp; Send</button>
                 <button class="btn btn-ghost" style="margin-left:auto;color:var(--text3);font-size:12px" onclick="pdClearDraft()">Clear draft</button>
               </div>
@@ -1068,10 +1082,13 @@
           <div style="background:var(--accent-light);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--accent)">
             <strong>How it works:</strong> Paste your screenshot into a Claude chat (claude.ai), ask it to extract the data as JSON, then paste the result below. Takes about 30 seconds.
           </div>
+          <div style="background:var(--amber-light);border:1px solid rgba(181,112,32,.28);border-radius:var(--radius);padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.55">
+            <strong style="color:var(--amber)">Privacy check:</strong> Crop screenshots to the minimum needed and remove phone numbers, email addresses, access codes, credentials, and unrelated resident details. Use only an account approved for work data.
+          </div>
           <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.8">
             <strong style="color:var(--text)">Step 1</strong> &mdash; Take a screenshot of your EliseAI calendar, move list, or Excel sheet.<br>
-            <strong style="color:var(--text)">Step 2</strong> &mdash; Paste it into <a href="https://claude.ai" target="_blank" style="color:var(--accent)">claude.ai</a> and send this message:<br>
-            <div id="prompt-copy-area" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin:8px 0;font-family:'DM Mono',monospace;font-size:11.5px;line-height:1.7;white-space:pre-wrap" id="claude-prompt-display"></div>
+            <strong style="color:var(--text)">Step 2</strong> &mdash; Paste it into <a href="https://claude.ai" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">claude.ai</a> and send this message:<br>
+            <div id="claude-prompt-display" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin:8px 0;font-family:'DM Mono',monospace;font-size:11.5px;line-height:1.7;white-space:pre-wrap"></div>
             <button class="btn btn-secondary btn-sm" onclick="copyClaudePrompt()" style="margin-top:4px">&#128203; Copy prompt</button><br>
             <strong style="color:var(--text)">Step 3</strong> &mdash; Paste Claude's JSON response in the box below and click Import.
           </div>
@@ -1086,10 +1103,10 @@
           </div>
           <div class="fg">
             <label>Paste Claude's JSON response here</label>
-            <textarea id="img-import-json" rows="6" placeholder="Paste the JSON array Claude gives you here..."></textarea>
+            <textarea id="img-import-json" rows="6" placeholder="Paste the JSON array Claude gives you here…" oninput="resetJsonImportPreview()"></textarea>
           </div>
           <div style="margin-top:10px">
-            <button class="btn btn-primary" onclick="importFromPastedJSON()">&#8679; Import JSON</button>
+            <button class="btn btn-primary" id="img-import-btn" onclick="importFromPastedJSON()">&#8679; Review JSON</button>
           </div>
           <div id="img-import-status" style="margin-top:12px;font-size:13px;color:var(--text2);display:none"></div>
           <div id="img-import-preview" style="margin-top:12px;display:none"></div>
@@ -2347,17 +2364,17 @@ function saveSessionTimeout() {
 
 var DEFAULT_IN_TASKS = [
   // Pre-Move-In
-  { text: 'Send Welcome Letter', cat: 'Pre Move-In' },
+  { text: 'Send Welcome Letter', cat: 'Pre Move-In', automationId: 'welcome-letter' },
   { text: 'Send Invite Link to RiseIO', cat: 'Pre Move-In' },
   { text: 'Create RiseIO Profile', cat: 'Pre Move-In' },
   { text: 'Pre-Move Follow-Up Call', cat: 'Pre Move-In' },
   { text: 'Send WiFi Activation Link', cat: 'Pre Move-In' },
   // Keys & Credentials (prepare before move-in day)
-  { text: 'Prepare Unit Key(s)', cat: 'Keys & Access', hint: '# of keys: ___ (e.g. 2 unit keys)' },
-  { text: 'Prepare Unit Mail Key(s)', cat: 'Keys & Access', hint: '# of mail keys: ___ (e.g. 1 mail key)' },
-  { text: 'Parking: Vehicle info & transponder issued', cat: 'Parking', hint: 'Vehicle type & color: ___ | Transponder #: ___' },
-  { text: 'Parking: Key tag issued', cat: 'Parking', hint: 'Key tag #: ___' },
-  { text: 'Parking: Xpress sticker issued', cat: 'Parking', hint: 'Xpress sticker #: ___' },
+  { text: 'Prepare Unit Key(s)', cat: 'Keys & Access', hint: '# of keys: ___ (e.g. 2 unit keys)', automationId: 'unit-key-issued' },
+  { text: 'Prepare Unit Mail Key(s)', cat: 'Keys & Access', hint: '# of mail keys: ___ (e.g. 1 mail key)', automationId: 'mail-key-issued' },
+  { text: 'Parking: Vehicle info & transponder issued', cat: 'Parking', hint: 'Vehicle type & color: ___ | Transponder #: ___', automationId: 'park-transponder-issued' },
+  { text: 'Parking: Key tag issued', cat: 'Parking', hint: 'Key tag #: ___', automationId: 'park-keytag-issued' },
+  { text: 'Parking: Xpress sticker issued', cat: 'Parking', hint: 'Xpress sticker #: ___', automationId: 'park-sticker-issued' },
   // Move-In Day
   { text: 'Confirm move-in date and time window', cat: 'Pre Move-In' },
   { text: 'Reserve service elevator', cat: 'Elevator' },
@@ -2379,12 +2396,12 @@ var DEFAULT_OUT_TASKS = [
   { text: 'Confirm move-out date and time window', cat: 'Pre Move-Out' },
   { text: 'Reserve service elevator', cat: 'Elevator' },
   { text: 'Unit inspection completed and documented', cat: 'Move Out' },
-  { text: 'Any damage noted and photographed', cat: 'Move Out' },
-  { text: 'Collect & Verify All Unit Keys', cat: 'Keys & Access' },
-  { text: 'Collect & Verify All Unit Mail Keys', cat: 'Keys & Access' },
-  { text: 'Parking: Transponder returned', cat: 'Parking', hint: 'If not returned or returned damaged, note here (e.g. adhered to windshield / cracked)' },
-  { text: 'Parking: Key tag returned', cat: 'Parking' },
-  { text: 'Parking: Xpress sticker returned', cat: 'Parking' },
+  { text: 'Any damage noted and photographed', cat: 'Move Out', automationId: 'damage-review' },
+  { text: 'Collect & Verify All Unit Keys', cat: 'Keys & Access', automationId: 'collect-unit-keys' },
+  { text: 'Collect & Verify All Unit Mail Keys', cat: 'Keys & Access', automationId: 'collect-mail-keys' },
+  { text: 'Parking: Transponder returned', cat: 'Parking', hint: 'If not returned or returned damaged, note here (e.g. adhered to windshield / cracked)', automationId: 'park-transponder-returned' },
+  { text: 'Parking: Key tag returned', cat: 'Parking', automationId: 'park-keytag-returned' },
+  { text: 'Parking: Xpress sticker returned', cat: 'Parking', automationId: 'park-sticker-returned' },
   { text: 'Mobile key deactivated (Lenel)', cat: 'Wrap-Up' },
   { text: 'Parking spot vacated', cat: 'Move Out' },
   { text: 'Mail forwarding reminder given', cat: 'Move Out' },
@@ -2424,14 +2441,21 @@ var DEFAULT_SUPPLIES = [
   { name: 'One-Time Cards – Active Issued', cat: 'Key Cards & Access', unit: 'cards', lowAt: null },
   { name: 'Self-Guided Tour Keys – Active', cat: 'Key Cards & Access', unit: 'keys', lowAt: null }
 ];
-// Task text → supply adjustment when checked/unchecked on move checklist
+// Stable automation identities survive task renaming. The text map migrates older saved data.
+var TASK_AUTOMATION_BY_TEXT = {
+  'Send Welcome Letter':'welcome-letter', 'Prepare Unit Key(s)':'unit-key-issued', 'Prepare Unit Mail Key(s)':'mail-key-issued',
+  'Parking: Vehicle info & transponder issued':'park-transponder-issued', 'Parking: Key tag issued':'park-keytag-issued', 'Parking: Xpress sticker issued':'park-sticker-issued',
+  'Any damage noted and photographed':'damage-review', 'Collect & Verify All Unit Keys':'collect-unit-keys', 'Collect & Verify All Unit Mail Keys':'collect-mail-keys',
+  'Parking: Transponder returned':'park-transponder-returned', 'Parking: Key tag returned':'park-keytag-returned', 'Parking: Xpress sticker returned':'park-sticker-returned'
+};
+function getTaskAutomationId(task) { return task ? (task.automationId || TASK_AUTOMATION_BY_TEXT[task.text] || '') : ''; }
 var TASK_SUPPLY_MAP = {
-  'Parking: Vehicle info & transponder issued': { supName: 'Transponders',        delta: -1 },
-  'Parking: Key tag issued':                   { supName: 'Key Tags',             delta: -1 },
-  'Parking: Xpress sticker issued':             { supName: 'Xpress Stickers',       delta: -1 },
-  'Parking: Transponder returned':             { supName: 'Transponders',         delta: +1 },
-  'Parking: Key tag returned':                 { supName: 'Key Tags',             delta: +1 },
-  'Parking: Xpress sticker returned':           { supName: 'Xpress Stickers',       delta: +1 }
+  'park-transponder-issued': { supName: 'Transponders', delta: -1 },
+  'park-keytag-issued': { supName: 'Key Tags', delta: -1 },
+  'park-sticker-issued': { supName: 'Xpress Stickers', delta: -1 },
+  'park-transponder-returned': { supName: 'Transponders', delta: +1 },
+  'park-keytag-returned': { supName: 'Key Tags', delta: +1 },
+  'park-sticker-returned': { supName: 'Xpress Stickers', delta: +1 }
 };
 var WT_FLOORS = [
   { label: 'Lobby & Exterior', items: ['Main entrance clean & clear', 'Door signage OK', 'Lobby furniture arranged', 'Elevator lobby clean', 'Mail room organized', 'Package area clean', 'Bike storage OK', 'Trash/recycling rooms clear', 'Lighting OK'] },
@@ -3066,7 +3090,7 @@ function openMobSidebar() { g('sidebar').classList.add('mob-open'); g('sb-ov').s
 function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov').style.display = 'none'; }
 
 // ─── NAV ───
-var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Unit Tracker', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', parking: 'Parking Credentials', transponders: 'Transponders', security: 'Security Incidents', session: 'Login / Session', logbook: 'Logbook', supplies: 'Supplies & Inventory' };
+var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Unit Tracker', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', team: 'Team Tracker', parking: 'Parking Credentials', transponders: 'Transponders', security: 'Incident Log', session: 'Login / Session', logbook: 'Logbook', supplies: 'Supplies' };
 var patrolFilter = 'amenity';
 var SEC_ACTIONS = {
   moves: '<button class="btn btn-secondary btn-sm" onclick="openLetterImport()">&#128231; Import Letter</button> <button class="btn btn-secondary btn-sm" onclick="openReconcile()">&#128269; Reconcile</button> <button class="btn btn-secondary btn-sm" onclick="printMovesReport()">&#128424; Print Report</button> <button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
@@ -3084,7 +3108,7 @@ var SEC_ACTIONS = {
   templates: '<button class="btn btn-primary btn-sm" onclick="openAddTemplate()">+ Add Template</button>'
 };
 var curSec = 'dashboard';
-var SEC_HELP = { passdown: 'g-passdown', logbook: 'g-logbook', moves: 'g-moves', keys: 'g-keys' };
+var SEC_HELP = { dashboard:'g-dashboard', moves:'g-moves', maintenance:'g-maint', guests:'g-guests', keys:'g-keys', amenities:'g-amenities', tours:'g-tours', walkthrough:'g-patrol', todos:'g-todos', laf:'g-laf', passdown:'g-passdown', calendar:'g-calendar', settings:'g-settings', import:'g-import', residents:'g-residents', team:'g-team', logbook:'g-logbook', supplies:'g-supplies' };
 var STAFF_NO_ADD = ['moves', 'templates'];
 function getSecActions(sec) {
   var isStaff = currentUser && currentUser.role === 'staff';
@@ -3094,7 +3118,7 @@ function getSecActions(sec) {
 }
 function helpBtn(sec) {
   if (!SEC_HELP[sec]) return '';
-  return '<button class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:13px;color:var(--text3)" title="How to use this section" onclick="showSectionHelp(\'' + SEC_HELP[sec] + '\')">?</button>';
+  return '<button type="button" class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:13px;color:var(--text3)" title="How to use this section" aria-label="How to use ' + esc(SEC_TITLES[sec] || sec) + '" onclick="showSectionHelp(\'' + SEC_HELP[sec] + '\')">?</button>';
 }
 // Header overflow menu (mobile): the ⋯ button only matters when the section has actions.
 function syncHdrMore() {
@@ -3125,6 +3149,8 @@ function nav(item) {
     var dash = document.querySelector('.nav-item[data-sec="dashboard"]');
     if (dash) nav(dash); return;
   }
+  var previousSec = curSec;
+  stopDashVisualEffects();
   document.querySelectorAll('.nav-item').forEach(function (n) { n.classList.remove('active'); });
   item.classList.add('active');
   document.querySelectorAll('.section').forEach(function (s) { s.classList.remove('active'); });
@@ -3132,11 +3158,13 @@ function nav(item) {
   g('hdr-title').textContent = SEC_TITLES[sec] || sec;
   g('hdr-actions').innerHTML = getSecActions(sec);
   syncHdrMore();
-  curSec = sec; renderSection(sec); closeMobSidebar();
+  curSec = sec; renderSection(sec); releaseSectionDom(previousSec, sec); closeMobSidebar();
 }
 function mobNav(item) {
   var sec = item.dataset.sec;
   if (currentUser && currentUser.role === 'staff' && (STAFF_HIDDEN.indexOf(sec) !== -1 || (state.staffHiddenSections||[]).indexOf(sec) !== -1)) return;
+  var previousSec = curSec;
+  stopDashVisualEffects();
   document.querySelectorAll('.mn-item').forEach(function (n) { n.classList.remove('active'); });
   item.classList.add('active');
   var si = document.querySelector('.nav-item[data-sec="' + sec + '"]');
@@ -3146,13 +3174,28 @@ function mobNav(item) {
   g('hdr-title').textContent = SEC_TITLES[sec] || sec;
   g('hdr-actions').innerHTML = getSecActions(sec);
   syncHdrMore();
-  curSec = sec; renderSection(sec);
+  curSec = sec; renderSection(sec); releaseSectionDom(previousSec, sec);
 }
 function renderSection(sec) {
   var map = { dashboard: renderDash, moves: renderMoves, maintenance: renderMaint, guests: renderGuests, keys: renderKeysSection, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, templates: renderTemplates, guide: renderGuide, security: renderSecurity, supplies: renderSupplies, activity: renderActivityLog, parking: renderParking, logbook: renderLogbook };
   if (map[sec]) map[sec]();
 }
 function renderAll() { renderSection(curSec); updateBadges(); }
+// Heavy section results are reproducible from state. Releasing them after navigation keeps
+// long signed-in sessions from retaining thousands of hidden rows and cards.
+var SECTION_VOLATILE = {
+  dashboard:['dash-body','dash-results'],
+  moves:['moves-stats','moves-board','moves-tbody','moves-cards','tight-body'],
+  maintenance:['maint-stats','maint-tbody'], guests:['guests-stats','guests-tbody'],
+  keys:['keys-stats','keys-tbody','keys-otk-cards','parking-tbody','tp-tbody','tp-history-tbody'],
+  amenities:['amenities-tbody'], tours:['tours-stats','tours-tbody'],
+  walkthrough:['patrol-body'], todos:['todo-list','todo-board'], laf:['laf-tbody'],
+  team:['team-body'], activity:['activity-tbody'], logbook:['logbook-body'], supplies:['supplies-body']
+};
+function releaseSectionDom(previousSec, nextSec) {
+  if (!previousSec || previousSec === nextSec) return;
+  (SECTION_VOLATILE[previousSec] || []).forEach(function(id) { var el = g(id); if (el) el.replaceChildren(); });
+}
 
 // ─── TEST DATA ───
 async function loadTestData() {
@@ -3286,16 +3329,23 @@ function confirmModal(message, opts) {
     cancelBtn.textContent = opts.cancelLabel || 'Cancel';
     okBtn.className = 'btn ' + (opts.danger === false ? 'btn-primary' : 'btn-danger');
     var prevFocus = document.activeElement;
+    var hadOpenModal = _modalStack && _modalStack.length > 0;
+    setPageModalState(true);
     function done(val) {
       ov.classList.remove('open');
       okBtn.onclick = null; cancelBtn.onclick = null; ov.onclick = null;
       document.removeEventListener('keydown', onKey, true);
+      if (!hadOpenModal) setPageModalState(false);
       if (prevFocus && prevFocus.focus) { try { prevFocus.focus({ preventScroll: true }); } catch (e) {} }
       resolve(val);
     }
     function onKey(e) {
       if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); done(false); }
       else if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); done(true); }
+      else if (e.key === 'Tab') {
+        if (e.shiftKey && document.activeElement === cancelBtn) { e.preventDefault(); okBtn.focus(); }
+        else if (!e.shiftKey && document.activeElement === okBtn) { e.preventDefault(); cancelBtn.focus(); }
+      }
     }
     okBtn.onclick = function () { done(true); };
     cancelBtn.onclick = function () { done(false); };
@@ -3309,11 +3359,14 @@ var _modalStack = [];
 var _modalReturnFocus = null;
 function openModal(id) {
   var ov = g(id);
+  if (!ov) return;
+  prepareModalA11y(ov);
   ov.classList.add('open');
   ov.dataset.dirty = '';
   if (!_modalStack.length) _modalReturnFocus = document.activeElement;
   var si = _modalStack.indexOf(id); if (si !== -1) _modalStack.splice(si, 1);
   _modalStack.push(id);
+  setPageModalState(true);
   refreshUnitDatalist();
   ov.querySelectorAll('input[type=date]').forEach(function (f) { if (!f.value && !f.hasAttribute('data-no-autofill')) f.value = today(); });
   // Move focus into the modal so keyboard users land inside it, not stranded on the page behind.
@@ -3326,11 +3379,15 @@ function openModal(id) {
 }
 function closeModal(id) {
   var ov = g(id);
+  if (!ov) return;
   ov.classList.remove('open');
   var si = _modalStack.indexOf(id); if (si !== -1) _modalStack.splice(si, 1);
-  if (!_modalStack.length && _modalReturnFocus && _modalReturnFocus.focus) {
-    try { _modalReturnFocus.focus({ preventScroll: true }); } catch (e) {}
-    _modalReturnFocus = null;
+  if (!_modalStack.length) {
+    setPageModalState(false);
+    if (_modalReturnFocus && _modalReturnFocus.focus) {
+      try { _modalReturnFocus.focus({ preventScroll: true }); } catch (e) {}
+      _modalReturnFocus = null;
+    }
   }
   if (curSec === 'passdown' && ['modal-maint','modal-logbook','modal-key','modal-amenity'].indexOf(id) !== -1) {
     setTimeout(function(){ renderPdAutoBlocks(currentUser && currentUser.role === 'admin'); }, 150);
@@ -3363,8 +3420,10 @@ function fieldError(el, msg) {
   el.classList.add('field-invalid');
   var host = (el.closest && el.closest('.fg')) || el.parentNode;
   var n = host.querySelector(':scope > .field-err');
-  if (!n) { n = document.createElement('div'); n.className = 'field-err'; host.appendChild(n); }
+  if (!n) { n = document.createElement('div'); n.className = 'field-err'; n.id = (el.id || 'field') + '-error'; n.setAttribute('role','alert'); host.appendChild(n); }
   n.textContent = msg;
+  el.setAttribute('aria-invalid', 'true');
+  el.setAttribute('aria-describedby', n.id);
 }
 function clearErr(el) {
   if (!el) return;
@@ -3372,6 +3431,8 @@ function clearErr(el) {
   var host = (el.closest && el.closest('.fg')) || el.parentNode;
   var n = host && host.querySelector(':scope > .field-err');
   if (n) n.remove();
+  el.removeAttribute('aria-invalid');
+  if (el.getAttribute('aria-describedby') && /-error$/.test(el.getAttribute('aria-describedby'))) el.removeAttribute('aria-describedby');
 }
 // specs: [[el, isValid, message], ...] — returns true if all valid, else marks all and focuses the first invalid.
 function requireFields(specs) {
@@ -3400,19 +3461,61 @@ document.addEventListener('keydown', function (e) {
   if (fallback) attemptCloseModalOv(fallback);
 });
 
-// ── Keyboard accessibility (A-1): make div-based controls focusable + operable ──
-var A11Y_INTERACTIVE = '.nav-item,.sub-tab,.mn-item,.stat-clickable';
+// ── Keyboard and form accessibility ──
+var A11Y_INTERACTIVE = '.nav-item,.sub-tab,.mn-item,.stat-clickable,.phi-hdr,.th-sort,.move-row,.mc-hdr,.wt-floor-hdr,.unit-dot';
+var _a11yFieldSeq = 0, _a11yTitleSeq = 0;
+function prepareModalA11y(root) {
+  var overlays = [];
+  if (root && root.classList && root.classList.contains('modal-ov')) overlays.push(root);
+  (root || document).querySelectorAll('.modal-ov').forEach(function(ov){ overlays.push(ov); });
+  overlays.forEach(function(ov) {
+    ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true');
+    var title = ov.querySelector('.modal-title');
+    if (title) { if (!title.id) title.id = 'modal-title-' + (++_a11yTitleSeq); ov.setAttribute('aria-labelledby', title.id); }
+    else if (!ov.hasAttribute('aria-label')) ov.setAttribute('aria-label','Dialog');
+  });
+}
+function enhanceFormA11y(root) {
+  var scope = root || document;
+  scope.querySelectorAll('button:not([type])').forEach(function(btn){ btn.type = 'button'; });
+  scope.querySelectorAll('input:not([type])').forEach(function(inp){ inp.type = 'text'; });
+  scope.querySelectorAll('input:not([type=hidden]),select,textarea').forEach(function(el) {
+    if (!el.id) el.id = 'field-' + (++_a11yFieldSeq);
+    var host = el.closest && el.closest('.fg');
+    var label = host && host.querySelector('label');
+    if (label && !label.htmlFor && !label.contains(el)) label.htmlFor = el.id;
+    if (!el.getAttribute('aria-label') && !el.getAttribute('aria-labelledby') && (!label || (!label.htmlFor && !label.contains(el)))) {
+      var text = el.getAttribute('placeholder') || el.getAttribute('title') || el.getAttribute('name');
+      var enclosing = el.closest && el.closest('label');
+      if (!text && enclosing) text = enclosing.textContent.trim();
+      if (text) el.setAttribute('aria-label', text.replace(/[.…]+$/,''));
+    }
+  });
+}
+function setPageModalState(open) {
+  ['sidebar-wrap','main','mob-nav','notepad-panel','notepad-tab'].forEach(function(id) {
+    var el = g(id); if (!el) return;
+    if (open) { el.setAttribute('inert',''); el.setAttribute('aria-hidden','true'); }
+    else { el.removeAttribute('inert'); el.removeAttribute('aria-hidden'); }
+  });
+}
 function enhanceA11y(root) {
-  (root || document).querySelectorAll(A11Y_INTERACTIVE).forEach(function (el) {
+  var scope = root || document;
+  scope.querySelectorAll(A11Y_INTERACTIVE + ',[onclick]').forEach(function (el) {
+    if (/^(BUTTON|A|INPUT|SELECT|TEXTAREA|OPTION|LABEL)$/.test(el.tagName)) return;
+    var handler = (el.getAttribute('onclick') || '').replace(/\s+/g,'');
+    if (handler === 'event.stopPropagation()' || handler === 'event.stopPropagation();') return;
     if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
     if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+    el.setAttribute('data-a11y-clickable','1');
   });
+  enhanceFormA11y(scope); prepareModalA11y(scope);
 }
 // Enter/Space activate a focused div-control, matching native button behavior.
 document.addEventListener('keydown', function (e) {
   if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
   var el = document.activeElement;
-  if (el && el.matches && el.matches(A11Y_INTERACTIVE) && el.tagName !== 'BUTTON' && el.tagName !== 'A' && el.tagName !== 'INPUT' && el.tagName !== 'SELECT' && el.tagName !== 'TEXTAREA') {
+  if (el && el.matches && el.matches('[data-a11y-clickable="1"]')) {
     e.preventDefault();
     el.click();
   }
@@ -3420,7 +3523,7 @@ document.addEventListener('keydown', function (e) {
 // Static controls exist now (script runs after markup); dynamic re-renders are caught by the observer below.
 enhanceA11y(document);
 (function () {
-  var target = g('content') || document.body;
+  var target = document.body;
   if (!window.MutationObserver) return;
   var obs = new MutationObserver(function (muts) {
     for (var i = 0; i < muts.length; i++) {
@@ -3430,6 +3533,23 @@ enhanceA11y(document);
   });
   obs.observe(target, { childList: true, subtree: true });
 })();
+
+// Keep focus inside the top dialog and make Enter consistently activate its one clear primary action.
+document.addEventListener('keydown', function(e) {
+  if (!_modalStack.length) return;
+  var ov = g(_modalStack[_modalStack.length - 1]);
+  if (!ov || !ov.classList.contains('open')) return;
+  if (e.key === 'Tab') {
+    var focusable = Array.from(ov.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter(function(el){ return el.offsetParent !== null; });
+    if (!focusable.length) { e.preventDefault(); ov.focus(); return; }
+    var first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  } else if (e.key === 'Enter' && /^(INPUT)$/.test(e.target.tagName) && !/^(checkbox|radio|button|submit|file)$/.test(e.target.type)) {
+    var primaries = Array.from(ov.querySelectorAll('.modal-ftr .btn-primary:not([disabled])')).filter(function(el){ return el.offsetParent !== null; });
+    if (primaries.length === 1) { e.preventDefault(); primaries[0].click(); }
+  }
+}, true);
 
 // ─── BADGES ───
 function updateBadges() {
@@ -3460,6 +3580,7 @@ function setMBadge(id, n) { var e = g(id); if (!e) return; e.textContent = n; e.
 // ─── DASHBOARD ───
 // ===== [DASHBOARD] ===========================================================
 function renderDash() {
+  if (curSec !== 'dashboard') { stopDashVisualEffects(); var hiddenDash = g('dash-body'); if (hiddenDash) hiddenDash.replaceChildren(); return; }
   var t = today(), moves = state.moves || [];
   var active = moves.filter(function (m) { return !m.archivedAt; });
   // Today = moves with appt today, OR lease start today with no appt yet
@@ -3644,12 +3765,11 @@ function renderDash() {
   html += '</div></div>';
 
   g('dash-body').innerHTML = html;
-  // focus shift log input if dashboard is visible
-  setTimeout(function(){ var el = g('shift-log-input'); if (el && curSec === 'dashboard') el.focus(); }, 80);
   initStatCardTilt();
   initDashBgCanvas();
 }
 function initStatCardTilt() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || window.matchMedia('(pointer: coarse)').matches) return;
   document.querySelectorAll('#dash-body .stat-card.stat-clickable').forEach(function(card) {
     card.addEventListener('mousemove', function(e) {
       var rect = card.getBoundingClientRect();
@@ -3668,10 +3788,13 @@ function initStatCardTilt() {
   });
 }
 var _dashBgAnimId = null;
-function initDashBgCanvas() {
+function stopDashVisualEffects() {
   if (_dashBgAnimId) { cancelAnimationFrame(_dashBgAnimId); _dashBgAnimId = null; }
+}
+function initDashBgCanvas() {
+  stopDashVisualEffects();
   var canvas = document.getElementById('dash-bg-canvas');
-  if (!canvas) return;
+  if (!canvas || curSec !== 'dashboard' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   var wrap = canvas.parentElement;
   canvas.width = wrap.offsetWidth;
   canvas.height = wrap.offsetHeight;
@@ -3688,6 +3811,7 @@ function initDashBgCanvas() {
     });
   }
   function draw() {
+    if (curSec !== 'dashboard' || !canvas.isConnected || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { stopDashVisualEffects(); return; }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     particles.forEach(function(p) {
       ctx.beginPath();
@@ -3706,20 +3830,36 @@ function initDashBgCanvas() {
 }
 function dashSearch(q) {
   var res = g('dash-results');
-  if (!q.trim()) { res.style.display = 'none'; return; }
+  var input = g('dash-search-input');
+  if (!q.trim()) { res.style.display = 'none'; if (input) input.setAttribute('aria-expanded','false'); return; }
   var ql = q.toLowerCase(), results = [];
-  (state.moves || []).filter(function (m) { return (m.resident || '').toLowerCase().includes(ql) || (m.unit || '').toLowerCase().includes(ql); }).forEach(function (m) { results.push({ label: m.resident + ' — Unit ' + m.unit, sub: (m.type === 'in' ? 'Move In' : 'Move Out') + ' · ' + fmtShort(m.date), sec: 'moves' }); });
-  (state.guests || []).filter(function (gst) { return (gst.name || '').toLowerCase().includes(ql) || (gst.unit || '').toLowerCase().includes(ql); }).forEach(function (gst) { results.push({ label: gst.name + ' (Guest)', sub: 'Unit ' + gst.unit + ' · ' + gst.status, sec: 'guests' }); });
-  (state.unitRecords || []).filter(function (r) { return (r.leaseholder || '').toLowerCase().includes(ql) || (r.unit || '').toLowerCase().includes(ql); }).forEach(function (r) { results.push({ label: (r.leaseholder || 'Unit') + ' — Unit ' + r.unit, sub: 'Unit Tracker', sec: 'residents' }); });
-  (state.keys || []).filter(function (k) { return (k.name || '').toLowerCase().includes(ql) || (k.unit || '').toLowerCase().includes(ql) || (k.fob || '').toLowerCase().includes(ql); }).forEach(function (k) { results.push({ label: k.name + ' — Unit ' + k.unit, sub: 'Key Tracker · ' + k.type + ' · ' + k.status, sec: 'keys' }); });
-  (state.maintenance || []).filter(function (m) { return (m.unit || '').toLowerCase().includes(ql) || (m.issue || '').toLowerCase().includes(ql); }).forEach(function (m) { results.push({ label: m.issue + ' — Unit ' + m.unit, sub: 'Maintenance · ' + m.status, sec: 'maintenance' }); });
-  (state.concierge || []).filter(function (c) { return (c.resident || '').toLowerCase().includes(ql) || (c.unit || '').toLowerCase().includes(ql); }).forEach(function (c) { results.push({ label: c.resident + ' — Unit ' + c.unit, sub: 'Concierge · ' + c.type + ' · ' + c.status, sec: 'concierge' }); });
-  if (!results.length) { res.innerHTML = '<div class="sr-item text-3">No results</div>'; res.style.display = ''; return; }
+  (state.moves || []).filter(function (m) { return (m.resident || '').toLowerCase().includes(ql) || (m.unit || '').toLowerCase().includes(ql); }).forEach(function (m) { results.push({ id:m.id, kind:'move', label: m.resident + ' — Unit ' + m.unit, sub: (m.type === 'in' ? 'Move In' : 'Move Out') + ' · ' + fmtShort(m.date), sec: 'moves' }); });
+  (state.guests || []).filter(function (gst) { return (gst.name || '').toLowerCase().includes(ql) || (gst.unit || '').toLowerCase().includes(ql); }).forEach(function (gst) { results.push({ id:gst.id, kind:'guest', label: gst.name + ' (Guest)', sub: 'Unit ' + gst.unit + ' · ' + gst.status, sec: 'guests' }); });
+  (state.unitRecords || []).filter(function (r) { return (r.leaseholder || '').toLowerCase().includes(ql) || (r.unit || '').toLowerCase().includes(ql); }).forEach(function (r) { results.push({ id:r.id, kind:'unit', label: (r.leaseholder || 'Unit') + ' — Unit ' + r.unit, sub: 'Unit Tracker', sec: 'residents' }); });
+  (state.keys || []).filter(function (k) { return (k.name || '').toLowerCase().includes(ql) || (k.unit || '').toLowerCase().includes(ql) || (k.fob || '').toLowerCase().includes(ql); }).forEach(function (k) { results.push({ id:k.id, kind:'key', label: k.name + ' — Unit ' + k.unit, sub: 'Key Tracker · ' + k.type + ' · ' + k.status, sec: 'keys' }); });
+  (state.maintenance || []).filter(function (m) { return (m.unit || '').toLowerCase().includes(ql) || (m.issue || '').toLowerCase().includes(ql); }).forEach(function (m) { results.push({ id:m.id, kind:'maintenance', label: m.issue + ' — Unit ' + m.unit, sub: 'Maintenance · ' + m.status, sec: 'maintenance' }); });
+  (state.concierge || []).filter(function (c) { return (c.resident || '').toLowerCase().includes(ql) || (c.unit || '').toLowerCase().includes(ql); }).forEach(function (c) { results.push({ id:c.id, kind:'concierge', label: c.resident + ' — Unit ' + c.unit, sub: 'Logbook · ' + c.type + ' · ' + c.status, sec: 'logbook' }); });
+  if (!results.length) { res.innerHTML = '<div class="sr-item text-3" role="status">No matching records</div>'; res.style.display = ''; if (input) input.setAttribute('aria-expanded','true'); return; }
   var html = '';
-  results.slice(0, 8).forEach(function (r) { html += '<div class="sr-item" onclick="navToSearch(\'' + r.sec + '\')"><div class="text-sm font-600">' + esc(r.label) + '</div><div class="text-xs text-3">' + esc(r.sub) + '</div></div>'; });
-  res.innerHTML = html; res.style.display = '';
+  results.slice(0, 8).forEach(function (r) { html += '<button type="button" class="sr-item" role="option" data-search-sec="' + esc(r.sec) + '" data-search-id="' + esc(r.id) + '" data-search-kind="' + esc(r.kind) + '"><div class="text-sm font-600">' + esc(r.label) + '</div><div class="text-xs text-3">' + esc(r.sub) + '</div></button>'; });
+  res.innerHTML = html; res.style.display = ''; if (input) input.setAttribute('aria-expanded','true');
 }
-function navToSearch(sec) { g('dash-results').style.display = 'none'; g('dash-search-input').value = ''; var item = document.querySelector('.nav-item[data-sec="' + sec + '"]'); if (item) nav(item); }
+function navToSearch(sec, id, kind) {
+  g('dash-results').style.display = 'none'; g('dash-search-input').value = ''; g('dash-search-input').setAttribute('aria-expanded','false');
+  var item = document.querySelector('.nav-item[data-sec="' + sec + '"]'); if (item) nav(item);
+  var editors = { move:openEditMove, guest:openEditGuest, unit:openEditUnitRecord, key:openEditKey, maintenance:openEditMaint, concierge:openEditConcierge };
+  if (id && editors[kind]) setTimeout(function(){ editors[kind](id); }, 60);
+}
+document.addEventListener('click', function(e) {
+  var hit = e.target.closest && e.target.closest('[data-search-sec]');
+  if (hit) navToSearch(hit.dataset.searchSec, hit.dataset.searchId, hit.dataset.searchKind);
+});
+document.addEventListener('keydown', function(e) {
+  if (!currentUser || !(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'k') return;
+  e.preventDefault();
+  var item = document.querySelector('.nav-item[data-sec="dashboard"]'); if (item && curSec !== 'dashboard') nav(item);
+  setTimeout(function(){ var input = g('dash-search-input'); if (input) { input.focus(); input.select(); } }, 50);
+});
 // ===== [MOVE-INS / MOVE-OUTS] ================================================
 function navToMoves(filter) {
   var item = document.querySelector('.nav-item[data-sec="moves"]');
@@ -4433,7 +4573,7 @@ async function saveMove() {
   // New move
   var customIn = state.customInTasks || DEFAULT_IN_TASKS;
   var customOut = state.customOutTasks || DEFAULT_OUT_TASKS;
-  var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null, paymentTask: t.paymentTask || false }; });
+  var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null, paymentTask: t.paymentTask || false, automationId: getTaskAutomationId(t) || null }; });
   var leaseStatus = (moveType === 'in' && g('mv-lease-status')) ? g('mv-lease-status').value : '';
   var m = { id: uid(), unit: unit, resident: resident, date: date, type: moveType, total: total, notes: notes, apptDate: apptDate, apptTime: apptTime, apptTbd: apptTbd, leaseStatus: leaseStatus, tasks: tasks, archivedAt: null, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : 'Front Desk' };
   if (!state.moves) state.moves = [];
@@ -4536,10 +4676,11 @@ function buildCL(m, filterCat) {
     }
     html += '<div class="cl-item' + (isParkingTask ? ' cl-item-parking' : '') + '" onclick="event.stopPropagation()">';
     html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTask(\'' + m.id + '\',\'' + t.id + '\',this.checked)">';
+    if (getTaskAutomationId(t)) html += '<span title="Connected task: renaming it will not break its workflow" aria-label="Connected task" style="font-size:10px;color:var(--accent);flex-shrink:0">&#128279;</span>';
     // Editable task text
     html += '<input type="text" class="cl-text-input ' + (t.done ? 'done' : '') + '" value="' + (t.text || t.label || '').replace(/"/g, '&quot;') + '" onblur="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'text\',this.value)" onclick="event.stopPropagation()">';
     // Quantity field (only for key tasks)
-    var isKeyQtyTask = (t.text === 'Prepare Unit Key(s)' || t.text === 'Prepare Unit Mail Key(s)');
+    var isKeyQtyTask = (getTaskAutomationId(t) === 'unit-key-issued' || getTaskAutomationId(t) === 'mail-key-issued');
     if (isKeyQtyTask) {
       html += '<span style="font-size:11px;color:var(--text3);flex-shrink:0;margin:0 2px" title="Number of keys to prepare">&#215;</span>';
       html += '<input type="text" value="' + (t.qty||'').replace(/"/g,'&quot;') + '" placeholder="# keys" title="Number of keys (1 per leaseholder)" style="width:52px;font-size:12px;text-align:center;border:1px solid var(--border2);border-radius:4px;padding:2px 4px;background:var(--surface);color:var(--text);flex-shrink:0;opacity:' + (t.qty ? '1' : '0.4') + '" onclick="event.stopPropagation()" onfocus="this.style.opacity=\'1\'" onblur="this.style.opacity=this.value?\'1\':\'0.4\';updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'qty\',this.value)">';
@@ -4627,6 +4768,8 @@ function buildCL(m, filterCat) {
 function updateTaskField(moveId, taskId, field, value) {
   var m = (state.moves || []).find(function (x) { return x.id === moveId; }); if (!m) return;
   var t = (m.tasks || []).find(function (x) { return x.id === taskId; }); if (!t) return;
+  var automationId = getTaskAutomationId(t);
+  if (automationId && !t.automationId) t.automationId = automationId;
   var trimmed = typeof value === 'string' ? value.trim() : value;
   if (field === 'text' && !trimmed) return; // don't save empty text
   t[field] = trimmed || null;
@@ -4966,7 +5109,7 @@ async function toggleTask(moveId, taskId, checked) {
   var cmds = [{ sec: 'moves', type: 'EDIT', id: m.id, before: { tasks: tasksBefore }, after: { tasks: tasksAfter }, label: taskLabel }];
   logActivity('moves', checked ? 'complete' : 'reopen', (checked ? 'Completed' : 'Reopened') + ' move task — Unit ' + m.unit + ' · ' + (t.text || 'task'), 'Resident: ' + (m.resident || '-') + (checked && t.completedBy ? ' · Completed by: ' + t.completedBy : ''));
   // ── Welcome letter trigger → stage + welcome call To-Do ──
-  if (checked && m.type === 'in' && t.text === 'Send Welcome Letter' && !m.welcomeLetterSent) {
+  if (checked && m.type === 'in' && automationId === 'welcome-letter' && !m.welcomeLetterSent) {
     m.welcomeLetterSent = true;
     var wcDue = '';
     try { var wcD = new Date(); wcD.setDate(wcD.getDate() + 2); wcDue = localDateStr(wcD); } catch(e) {}
@@ -4975,7 +5118,7 @@ async function toggleTask(moveId, taskId, checked) {
     toast('Welcome letter logged — welcome call to-do created (due in 2 days)');
   }
   // ── Supply integration ──
-  var supLink = TASK_SUPPLY_MAP[t.text];
+  var supLink = TASK_SUPPLY_MAP[automationId];
   if (supLink) {
     var direction = checked ? supLink.delta : -supLink.delta;
     var action = direction < 0 ? 'Issued' : 'Returned';
@@ -4986,23 +5129,23 @@ async function toggleTask(moveId, taskId, checked) {
   }
   // ── Connection 1: Move-in key tasks → Key Tracker ──
   if (checked && m.type === 'in') {
-    var isResidentKey = t.text === 'Prepare Unit Key(s)';
-    var isMailKey = t.text === 'Prepare Unit Mail Key(s)';
+    var isResidentKey = automationId === 'unit-key-issued';
+    var isMailKey = automationId === 'mail-key-issued';
     if (isResidentKey || isMailKey) {
       if (!state.keys) state.keys = [];
       // Dedupe guard: if this checklist task already created key entries, don't create them again on re-check.
-      var alreadyMade = state.keys.some(function(k) { return k.srcMoveId === m.id && k.srcTaskText === t.text; });
+      var alreadyMade = state.keys.some(function(k) { return k.srcMoveId === m.id && (k.srcAutomationId === automationId || (!k.srcAutomationId && k.srcTaskText === t.text)); });
       if (alreadyMade) {
         toast('Keys for this task are already in the Key Tracker');
       } else {
         var keyNote = isMailKey ? 'Mail key — created from move-in checklist' : 'Created from move-in checklist';
         var keyKindTag = isMailKey ? 'mail' : 'unit';
-        var mainKeyEntry = { id: uid(), unit: m.unit, name: m.resident, type: 'resident', keyKind: keyKindTag, fob: '', status: 'issued', notes: keyNote, addedBy: currentUser ? currentUser.name : '', srcMoveId: m.id, srcTaskText: t.text, issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null };
+        var mainKeyEntry = { id: uid(), unit: m.unit, name: m.resident, type: 'resident', keyKind: keyKindTag, fob: '', status: 'issued', notes: keyNote, addedBy: currentUser ? currentUser.name : '', srcMoveId: m.id, srcTaskText: t.text, srcAutomationId: automationId, issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null };
         state.keys.push(mainKeyEntry);
         cmds.push({ sec: 'keys', type: 'ADD', id: mainKeyEntry.id, data: cloneData(mainKeyEntry), label: 'key created — Unit ' + m.unit });
         if (m.coResidents && m.coResidents.length) {
           m.coResidents.forEach(function(cr) {
-            var coKeyEntry = { id: uid(), unit: m.unit, name: cr.name, type: 'resident', keyKind: keyKindTag, fob: '', status: 'issued', notes: keyNote + ' (co-resident)', addedBy: currentUser ? currentUser.name : '', srcMoveId: m.id, srcTaskText: t.text, issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null };
+            var coKeyEntry = { id: uid(), unit: m.unit, name: cr.name, type: 'resident', keyKind: keyKindTag, fob: '', status: 'issued', notes: keyNote + ' (co-resident)', addedBy: currentUser ? currentUser.name : '', srcMoveId: m.id, srcTaskText: t.text, srcAutomationId: automationId, issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null };
             state.keys.push(coKeyEntry);
             cmds.push({ sec: 'keys', type: 'ADD', id: coKeyEntry.id, data: cloneData(coKeyEntry), label: 'key created — Unit ' + m.unit + ' (co-resident)' });
           });
@@ -5013,7 +5156,7 @@ async function toggleTask(moveId, taskId, checked) {
     }
   }
   // ── Connection 1: Move-out collect keys task → mark keys returned ──
-  if (m.type === 'out' && t.text === 'Collect & Verify All Unit Keys') {
+  if (m.type === 'out' && automationId === 'collect-unit-keys') {
     if (checked) {
       var issuedKeys = (state.keys || []).filter(function(k) { return k.unit === m.unit && k.status === 'issued'; });
       if (issuedKeys.length) {
@@ -5030,7 +5173,7 @@ async function toggleTask(moveId, taskId, checked) {
   }
   pushBatchUndo('moves', taskLabel, cmds);
   // ── Connection 2: Move-out parking tasks → mark parking credential returned ──
-  if (m.type === 'out' && checked && ['Parking: Transponder returned', 'Parking: Key tag returned', 'Parking: Xpress sticker returned'].indexOf(t.text) !== -1) {
+  if (m.type === 'out' && checked && ['park-transponder-returned','park-keytag-returned','park-sticker-returned'].indexOf(automationId) !== -1) {
     var parkTasks = (m.tasks || []).filter(function(tk) { return tk.cat === 'Parking'; });
     var allParkDone = parkTasks.length > 0 && parkTasks.every(function(tk) { return tk.done; });
     if (allParkDone) {
@@ -5049,7 +5192,7 @@ async function toggleTask(moveId, taskId, checked) {
     }
   }
   // ── Connection 3: Move-out damage task → Maintenance ──
-  if (checked && m.type === 'out' && t.text === 'Any damage noted and photographed') {
+  if (checked && m.type === 'out' && automationId === 'damage-review') {
     if (await confirmModal('Log damage as a maintenance issue for Unit ' + m.unit + '?')) {
       if (!state.maintenance) state.maintenance = [];
       state.maintenance.push({ id: uid(), unit: m.unit, resident: m.resident, type: 'Damage', priority: 'medium', status: 'open', notes: 'Damage noted during move-out — see move-out checklist and photos', log: [], createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' });
@@ -5690,7 +5833,7 @@ var maintFilter = 'all';
 function filterMaint(f, item) { maintFilter = f; document.querySelectorAll('#section-maintenance .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderMaint(); }
 function saveMaint() {
   var unit = g('mt-unit').value.trim(), issue = g('mt-issue').value.trim();
-  if (!unit || !issue) { toast('Fill in unit and issue type'); return; }
+  if (!requireFields([[g('mt-unit'),!!unit,'Enter the unit or location'],[g('mt-issue'),!!issue,'Describe the issue']])) return;
   if (editingMaintId) {
     var m = (state.maintenance||[]).find(function(x){return x.id===editingMaintId;}); if(!m) return;
     var _mb = Object.assign({}, m);
@@ -5763,7 +5906,7 @@ var guestFilter = 'all';
 function filterGuests(f, item) { guestFilter = f; document.querySelectorAll('#section-guests .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderGuests(); }
 function saveGuest() {
   var name = g('gs-name').value.trim(), unit = g('gs-unit').value.trim();
-  if (!name || !unit) { toast('Fill in guest name and unit'); return; }
+  if (!requireFields([[g('gs-name'),!!name,'Enter the guest name'],[g('gs-unit'),!!unit,'Enter the host unit']])) return;
   if (editingGuestId) {
     var gst = (state.guests||[]).find(function(x){return x.id===editingGuestId;}); if(!gst) return;
     var _gb = Object.assign({}, gst);
@@ -6034,7 +6177,7 @@ function updateReplacementFeeLabel() {
 }
 function saveKey() {
   var unit = g('ky-unit').value.trim(), name = g('ky-name').value.trim();
-  if (!unit || !name) { toast('Fill in unit and resident name'); return; }
+  if (!requireFields([[g('ky-unit'),!!unit,'Enter the unit'],[g('ky-name'),!!name,'Enter the resident or recipient name']])) return;
   var type = g('ky-type').value;
   var issuedToEl = document.querySelector('input[name="ky-issued-to"]:checked');
   var issuedTo = (type === 'one-time' && issuedToEl) ? issuedToEl.value : 'guest';
@@ -7613,7 +7756,7 @@ function setSpaceCheckboxes(spaceStr) { clearSpaceCheckboxes(); if(!spaceStr) re
 async function saveAmenity() {
   var resident = g('am-resident').value.trim(), unit = g('am-unit').value.trim(), date = g('am-date').value;
   var space = getSelectedSpaces();
-  if (!resident || !unit || !date) { toast('Fill in resident, unit & date'); return; }
+  if (!requireFields([[g('am-resident'),!!resident,'Enter the resident name'],[g('am-unit'),!!unit,'Enter the unit'],[g('am-date'),!!date,'Choose a booking date']])) return;
   if (!space) { toast('Select at least one amenity space'); return; }
   if (editingAmenityId) {
     var a = (state.amenities||[]).find(function(x){return x.id===editingAmenityId;}); if(!a) return;
@@ -7764,7 +7907,7 @@ function showTourUnitInfo() {
 }
 function saveTour() {
   var name = g('tr-name').value.trim(), date = g('tr-date').value;
-  if (!name || !date) { toast('Fill in prospect name and date'); return; }
+  if (!requireFields([[g('tr-name'),!!name,'Enter the prospect name'],[g('tr-date'),!!date,'Choose a tour date']])) return;
   if (editingTourId) {
     var tr = (state.tours||[]).find(function(x){return x.id===editingTourId;}); if(!tr) return;
     var _tb = Object.assign({}, tr);
@@ -8109,7 +8252,7 @@ function openEditCheckpoint(cpId) {
 
 function logScan(checkpointId, staffName, manual) {
   var cp = (state.checkpoints || []).find(function(c) { return c.id === checkpointId; });
-  if (!cp) { toast('Checkpoint not found'); return; }
+  if (!cp) { toast('Checkpoint not found'); return false; }
   if (!state.scans) state.scans = [];
   var scan = { id: uid(), checkpointId: checkpointId, checkpointName: cp.name, staffName: staffName, timestamp: Date.now(), manual: !!manual };
   state.scans.push(scan);
@@ -8118,6 +8261,7 @@ function logScan(checkpointId, staffName, manual) {
   localStorage.setItem('chorus-patrol-name', staffName);
   scheduleSave(); renderDash();
   if ((patrolFilter === 'amenity' || patrolFilter === 'stairway') && g('patrol-body')) renderWT();
+  return true;
 }
 
 function openManualScan() {
@@ -8244,16 +8388,17 @@ function openQRPrintSelector() {
 function showScanOverlay(checkpointId) {
   var overlay = g('scan-overlay'); if (!overlay) return;
   var cp = (state.checkpoints || []).find(function(c) { return c.id === checkpointId; });
-  var cpName = cp ? cp.name : 'Checkpoint';
-  var cpLoc = cp ? (cp.location || '') : '';
+  if (!cp) { showScanError('This checkpoint is unavailable. The QR code may be out of date; ask a manager to replace it.'); return; }
+  var cpName = cp.name;
+  var cpLoc = cp.location || '';
 
   // Require patrol PIN before logging a scan (separate from Team Tracker PIN)
   var pin = state.patrolPin || '';
   if (pin && !window._patrolPinVerified) {
     overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
       + '<div style="font-size:28px;margin-bottom:10px">&#128274;</div>'
-      + '<div style="font-size:20px;font-weight:600;margin-bottom:4px">' + cpName + '</div>'
-      + (cpLoc ? '<div style="font-size:13px;color:var(--text2);margin-bottom:16px">' + cpLoc + '</div>' : '<div style="margin-bottom:16px"></div>')
+      + '<div style="font-size:20px;font-weight:600;margin-bottom:4px">' + esc(cpName) + '</div>'
+      + (cpLoc ? '<div style="font-size:13px;color:var(--text2);margin-bottom:16px">' + esc(cpLoc) + '</div>' : '<div style="margin-bottom:16px"></div>')
       + '<div style="font-size:13px;color:var(--text2);margin-bottom:12px">Enter staff PIN to log this patrol checkpoint.</div>'
       + '<input type="password" id="patrol-pin-inp" maxlength="8" inputmode="numeric" placeholder="PIN" style="width:100%;font-size:16px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);text-align:center;margin-bottom:12px">'
       + '<button id="patrol-pin-btn" class="btn btn-primary" style="width:100%;justify-content:center;font-size:15px;padding:12px 0">Continue</button>'
@@ -8287,13 +8432,13 @@ function showScanOverlay(checkpointId) {
   var remembered = localStorage.getItem('chorus-patrol-name') || '';
   var hdr = '<div style="font-size:22px;margin-bottom:10px">&#128737;</div>'
     + '<div style="font-size:10px;letter-spacing:1px;color:var(--text3);text-transform:uppercase;margin-bottom:6px">' + getPropertyConfig().name + ' \u2014 Staff Check-in</div>'
-    + '<div style="font-size:20px;font-weight:600;margin-bottom:3px">' + cpName + '</div>'
-    + (cpLoc ? '<div style="font-size:13px;color:var(--text2);margin-bottom:18px">' + cpLoc + '</div>' : '<div style="margin-bottom:18px"></div>');
+    + '<div style="font-size:20px;font-weight:600;margin-bottom:3px">' + esc(cpName) + '</div>'
+    + (cpLoc ? '<div style="font-size:13px;color:var(--text2);margin-bottom:18px">' + esc(cpLoc) + '</div>' : '<div style="margin-bottom:18px"></div>');
   var content = '';
   if (remembered && (staff.length === 0 || staff.indexOf(remembered) !== -1)) {
     content = hdr
       + '<div style="background:var(--accent-light);border-radius:var(--radius);padding:12px 16px;margin-bottom:18px;font-size:14px;color:var(--accent)">'
-      + 'Logging as <strong>' + remembered + '</strong>'
+      + 'Logging as <strong>' + esc(remembered) + '</strong>'
       + '<br><span id="not-you-lnk" style="font-size:12px;color:var(--text3);text-decoration:underline;cursor:pointer">Not you?</span>'
       + '</div>'
       + '<button id="confirm-scan-btn" class="btn btn-primary" style="width:100%;justify-content:center;font-size:16px;padding:14px 0">Confirm Check-in</button>'
@@ -8302,7 +8447,7 @@ function showScanOverlay(checkpointId) {
     var listHtml = '';
     if (staff.length) {
       staff.forEach(function(s) {
-        listHtml += '<button class="btn btn-secondary staff-pick-btn" data-name="' + s + '" style="width:100%;justify-content:center;margin-bottom:8px;font-size:15px">' + s + '</button>';
+        listHtml += '<button class="btn btn-secondary staff-pick-btn" data-name="' + esc(s) + '" style="width:100%;justify-content:center;margin-bottom:8px;font-size:15px">' + esc(s) + '</button>';
       });
     } else {
       listHtml = '<input type="text" id="staff-name-free" placeholder="Your name..." style="width:100%;font-size:15px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);text-align:center;margin-bottom:10px">'
@@ -8360,7 +8505,7 @@ function showScanSuccess(cpName) {
   overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
     + '<div style="font-size:60px;color:var(--green);margin-bottom:16px">&#10003;</div>'
     + '<div style="font-size:22px;font-weight:600;color:var(--green);margin-bottom:8px">Checked in!</div>'
-    + '<div style="font-size:15px;color:var(--text2)">' + cpName + '</div>'
+    + '<div style="font-size:15px;color:var(--text2)">' + esc(cpName) + '</div>'
     + closeMsg
     + '</div>';
   if (window._openedViaScan) {
@@ -8375,12 +8520,21 @@ function showScanSuccess(cpName) {
   }
 }
 
+function showScanError(message) {
+  var overlay = g('scan-overlay'); if (!overlay) return;
+  overlay.innerHTML = '<div role="alert" style="text-align:center;max-width:360px;width:100%;padding:0 20px">'
+    + '<div style="font-size:52px;color:var(--red);margin-bottom:14px">&#9888;</div>'
+    + '<div style="font-size:22px;font-weight:600;color:var(--red);margin-bottom:8px">Check-in not recorded</div>'
+    + '<div style="font-size:14px;color:var(--text2);line-height:1.55">' + esc(message) + '</div></div>';
+  overlay.style.display = 'flex';
+}
+
 function showScanPinPrompt(checkpointId, staffName, cpName) {
   var overlay = g('scan-overlay'); if (!overlay) return;
   var acct = (state.accounts || []).find(function(a) { return a.name === staffName; });
   overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
-    + '<div style="font-size:22px;font-weight:600;margin-bottom:4px">' + cpName + '</div>'
-    + '<div style="font-size:13px;color:var(--accent);font-weight:500;margin-bottom:16px">Logging as <strong>' + staffName + '</strong></div>'
+    + '<div style="font-size:22px;font-weight:600;margin-bottom:4px">' + esc(cpName) + '</div>'
+    + '<div style="font-size:13px;color:var(--accent);font-weight:500;margin-bottom:16px">Logging as <strong>' + esc(staffName) + '</strong></div>'
     + '<div style="font-size:13px;color:var(--text2);margin-bottom:12px">Enter your PIN to confirm check-in.</div>'
     + '<input type="password" id="scan-acct-pin" maxlength="8" inputmode="numeric" placeholder="PIN" style="width:100%;font-size:16px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);text-align:center;margin-bottom:12px">'
     + '<button id="scan-acct-pin-btn" class="btn btn-primary" style="width:100%;justify-content:center;font-size:15px;padding:12px 0">Confirm Check-in</button>'
@@ -8392,17 +8546,18 @@ function showScanPinPrompt(checkpointId, staffName, cpName) {
   var backLnk = g('scan-back-lnk');
   async function tryAcctPin() {
     var entered = inp ? inp.value : '';
+    function finishScan() { if (logScan(checkpointId, staffName, false)) showScanSuccess(cpName); else showScanError('The checkpoint could not be found, so no patrol entry was saved.'); }
     if (acct) {
-      if ((await hashPin(entered, acct.id)) === acct.pin) { logScan(checkpointId, staffName, false); showScanSuccess(cpName); }
+      if ((await hashPin(entered, acct.id)) === acct.pin) { finishScan(); }
       else { toast('Incorrect PIN'); if (inp) { inp.value = ''; inp.focus(); } }
     } else {
       // No account found — require patrol PIN if set, else allow
       var pp = state.patrolPin || '';
       if (pp) {
-        if (await verifySectionPin(entered, pp, PATROLPIN_SALT)) { logScan(checkpointId, staffName, false); showScanSuccess(cpName); }
+        if (await verifySectionPin(entered, pp, PATROLPIN_SALT)) { finishScan(); }
         else { toast('Incorrect PIN'); if (inp) { inp.value = ''; inp.focus(); } }
       } else {
-        logScan(checkpointId, staffName, false); showScanSuccess(cpName);
+        finishScan();
       }
     }
   }
@@ -9356,7 +9511,7 @@ var lafFilter = 'all', lafSearch = '';
 function filterLAF(f, item) { lafFilter = f; document.querySelectorAll('#section-laf .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderLAF(); }
 function searchLAF(val) { lafSearch = val.toLowerCase().trim(); renderLAF(); }
 function saveLAF() {
-  var desc = g('lf-desc').value.trim(); if (!desc) { toast('Enter item description'); return; }
+  var desc = g('lf-desc').value.trim(); if (!requireFields([[g('lf-desc'),!!desc,'Describe the item']])) return;
   if (editingLAFId) {
     var item = (state.laf||[]).find(function(x){return x.id===editingLAFId;}); if(!item) return;
     var _lb = Object.assign({}, item);
@@ -9400,7 +9555,7 @@ function renderLAF() {
 }
 var claimingLAFId = null;
 function claimLAF(id) { claimingLAFId = id; g('laf-claim-by').value = ''; g('laf-claim-unit').value = ''; openModal('modal-laf-claim'); setTimeout(function(){ var f=g('laf-claim-by'); if(f) f.focus(); }, 80); }
-function saveClaimLAF() { var item = (state.laf || []).find(function(x){ return x.id === claimingLAFId; }); if (!item) return; var by = g('laf-claim-by').value.trim(); if (!by) { toast('Enter who is claiming the item'); return; } var _clb = { claimedBy: item.claimedBy, claimedUnit: item.claimedUnit, claimedAt: item.claimedAt }; item.claimedBy = by; item.claimedUnit = g('laf-claim-unit').value.trim(); item.claimedAt = Date.now(); pushUndo({ sec: 'laf', type: 'EDIT', id: item.id, before: _clb, after: { claimedBy: item.claimedBy, claimedUnit: item.claimedUnit, claimedAt: item.claimedAt }, label: 'L&F claimed — ' + item.desc }); logActivity('laf','edit','L&F item claimed — '+item.desc+' · by '+by+(item.claimedUnit?' Unit '+item.claimedUnit:'')); claimingLAFId = null; scheduleSave(); closeModal('modal-laf-claim'); renderLAF(); updateBadges(); toast('Marked as claimed'); }
+function saveClaimLAF() { var item = (state.laf || []).find(function(x){ return x.id === claimingLAFId; }); if (!item) return; var by = g('laf-claim-by').value.trim(); if (!requireFields([[g('laf-claim-by'),!!by,'Enter who is claiming the item']])) return; var _clb = { claimedBy: item.claimedBy, claimedUnit: item.claimedUnit, claimedAt: item.claimedAt }; item.claimedBy = by; item.claimedUnit = g('laf-claim-unit').value.trim(); item.claimedAt = Date.now(); pushUndo({ sec: 'laf', type: 'EDIT', id: item.id, before: _clb, after: { claimedBy: item.claimedBy, claimedUnit: item.claimedUnit, claimedAt: item.claimedAt }, label: 'L&F claimed — ' + item.desc }); logActivity('laf','edit','L&F item claimed — '+item.desc+' · by '+by+(item.claimedUnit?' Unit '+item.claimedUnit:'')); claimingLAFId = null; scheduleSave(); closeModal('modal-laf-claim'); renderLAF(); updateBadges(); toast('Marked as claimed'); }
 function toggleLAFPassdown(id) { var item = (state.laf || []).find(function(x){ return x.id === id; }); if (!item) return; item.flaggedForPassdown = !item.flaggedForPassdown; scheduleSave(); renderLAF(); toast(item.flaggedForPassdown ? 'Flagged for passdown' : 'Removed from passdown'); }
 async function deleteLAF(id) { if (!await confirmModal('Remove?')) return; var lx=(state.laf||[]).find(function(x){return x.id===id;}); if (lx) pushUndo({ sec: 'laf', type: 'DELETE', id: id, data: Object.assign({}, lx), label: 'delete L&F — ' + lx.desc }); logActivity('laf','delete','Removed L&F item'+(lx?' — '+lx.desc:'')); state.laf = (state.laf || []).filter(function (i) { return i.id !== id; }); scheduleSave(); renderLAF(); updateBadges(); toast('Removed'); }
 
@@ -11133,7 +11288,8 @@ function savePassdownRecord(status) {
     createdAt: nowTs,
     status: status || 'draft',
     sentAt: status === 'sent' ? nowTs : null,
-    recipients: status === 'sent' ? getPassdownRecipientString() : '',
+    deliveryStartedAt: (status === 'ready' || status === 'gmail-opened') ? nowTs : null,
+    recipients: status === 'draft' ? '' : getPassdownRecipientString(),
     acknowledgedBy: {}
   };
   state.userPassdowns[uid2].unshift(rec);
@@ -11180,26 +11336,25 @@ function copyMarkSent() {
   if (!pdGuardStaffFreeItems()) return;
   var shift = g('pd-shift') ? g('pd-shift').value.toUpperCase() : 'AM';
   pdCopyToClipboard(preview).then(function () {
-    logActivity('passdown', 'sent', 'Copied & marked ' + shift + ' passdown sent');
-    savePassdownRecord('sent');
-    clearShiftLog();
-    renderDash();
-    toast('Copied — marked as sent');
-  }).catch(function () { toast('Copy failed — not marked sent'); });
+    logActivity('passdown', 'prepared', 'Copied ' + shift + ' passdown for delivery');
+    savePassdownRecord('ready');
+    toast('Copied — confirm “Sent” after you deliver it');
+  }).catch(function () { toast('Copy failed — delivery status unchanged'); });
 }
 function sendPassdownGmail() {
   var shiftEl = g('pd-shift'); var shift = shiftEl ? shiftEl.value.toUpperCase() : 'AM';
   var preview = g('pd-preview').value;
   if (!preview || !preview.trim()) { toast('Generate the passdown first, then send'); return; }
-  logActivity('passdown', 'sent', 'Sent ' + shift + ' passdown via Gmail');
-  var sentRecord = savePassdownRecord('sent');
-  clearShiftLog(); renderDash();
   var d = new Date(); var dateStr = (d.getMonth()+1)+'.'+d.getDate()+'.'+d.getFullYear();
   var to = encodeURIComponent(getPassdownRecipientString());
   var subject = encodeURIComponent(dateStr + ' ' + shift + ' Front Desk Passdown');
   var body = encodeURIComponent(preview);
-  window.open('https://mail.google.com/mail/?view=cm&to=' + to + '&su=' + subject + '&body=' + body, '_blank');
-  toast(sentRecord ? 'Saved as sent — Gmail opened' : 'Gmail opened');
+  var compose = window.open('https://mail.google.com/mail/?view=cm&to=' + to + '&su=' + subject + '&body=' + body, '_blank');
+  if (!compose) { toast('Gmail was blocked — allow pop-ups and try again'); return; }
+  try { compose.opener = null; } catch (e) {}
+  logActivity('passdown', 'compose', 'Opened ' + shift + ' passdown in Gmail');
+  savePassdownRecord('gmail-opened');
+  toast('Gmail opened — confirm “Sent” here after sending');
 }
 
 function reviewBeforeSend() {
@@ -11354,42 +11509,53 @@ function renderPassdownHistory() {
   var html = '';
   pds.forEach(function (p) {
     var canDelete = isAdmin || (currentUser && p.authorId === currentUser.id);
-    var authorBadge = p.authorName ? '<span class="by-tag" style="margin-left:6px">by ' + p.authorName + '</span>' : '';
+    var authorBadge = p.authorName ? '<span class="by-tag" style="margin-left:6px">by ' + esc(p.authorName) + '</span>' : '';
     var statusBadge = p.status === 'sent'
       ? '<span class="by-tag" style="margin-left:6px;background:rgba(34,197,94,0.12);color:#166534">Sent</span>'
-      : '<span class="by-tag" style="margin-left:6px;background:rgba(100,116,139,0.10);color:#475569">Draft</span>';
+      : p.status === 'gmail-opened'
+        ? '<span class="by-tag" style="margin-left:6px;background:var(--amber-light);color:var(--amber)">Gmail opened</span>'
+        : p.status === 'ready'
+          ? '<span class="by-tag" style="margin-left:6px;background:var(--amber-light);color:var(--amber)">Ready to send</span>'
+          : '<span class="by-tag" style="margin-left:6px;background:rgba(100,116,139,0.10);color:#475569">Draft</span>';
     var ackObj = p.acknowledgedBy || {};
     var ackCount = Object.keys(ackObj).length;
     var ackBadge = p.status === 'sent'
       ? '<span class="by-tag" style="margin-left:6px;background:rgba(59,130,246,0.08);color:#1e40af">Read ' + ackCount + '</span>'
       : '';
     html += '<div class="phi"><div class="phi-hdr" onclick="this.parentElement.classList.toggle(\'open\')">'
-      + '<span class="font-600">' + fmtShort(p.date) + ' - ' + p.shift + '</span>' + authorBadge + statusBadge + ackBadge
+      + '<span class="font-600">' + fmtShort(p.date) + ' - ' + esc(p.shift) + '</span>' + authorBadge + statusBadge + ackBadge
       + '<div class="flex gap-4" style="margin-left:auto">'
+      + (canDelete && p.status !== 'sent' && p.status !== 'draft' ? '<button class="btn btn-primary btn-xs" onclick="event.stopPropagation();confirmPassdownSent(\'' + esc(p.id) + '\')">Confirm sent</button>' : '')
       + '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();copyPD(\'' + p.id + '\')">Copy</button>'
       + (canDelete ? '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();editPD(\'' + p.id + '\')">Edit</button>' : '')
       + (canDelete ? '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="event.stopPropagation();deletePD(\'' + p.id + '\',\'' + (p.authorId||'') + '\')">&#x2715;</button>' : '')
-      + '</div></div><div class="phi-body">' + p.text + '</div></div>';
+      + '</div></div><div class="phi-body">' + esc(p.text) + '</div></div>';
   });
   histEl.innerHTML = html;
 }
 function markPassdownSent(id) {
-  var found = null, up = state.userPassdowns || {};
-  Object.keys(up).forEach(function (uid) { (up[uid] || []).forEach(function (p) { if (p.id === id) found = p; }); });
+  var found = null, foundAuthor = null, up = state.userPassdowns || {};
+  Object.keys(up).forEach(function (uid) { (up[uid] || []).forEach(function (p) { if (p.id === id) { found = p; foundAuthor = uid; } }); });
   (state.passdowns || []).forEach(function (p) { if (p.id === id) found = p; });
   if (!found) return false;
   found.status = 'sent';
   if (!found.sentAt) found.sentAt = Date.now();
   if (!found.recipients) found.recipients = getPassdownRecipientString();
+  logActivity('passdown', 'sent', 'Confirmed ' + (found.shift || '') + ' passdown sent');
+  if (currentUser && foundAuthor === currentUser.id && found.date === today()) clearShiftLog();
   scheduleSave(); renderPassdownHistory();
   return true;
+}
+async function confirmPassdownSent(id) {
+  if (!await confirmModal('Confirm only after the passdown was actually sent to its recipients.', { danger:false, okLabel:'Confirm sent', cancelLabel:'Not yet' })) return;
+  if (markPassdownSent(id)) toast('Passdown marked sent');
 }
 async function copyPD(id) {
   var all = getAllPassdowns(); var p = all.find(function(x){return x.id===id;}); if (!p) return;
   try { await navigator.clipboard.writeText(p.text); toast('Copied'); } catch (e) { toast('Copy failed'); return; }
   // Copying from history is how the team actually delivers a passdown — offer to reflect that in its status.
   if (p.status !== 'sent') {
-    if (await confirmModal('Mark this passdown as sent? You just copied it to share.', { danger: false, okLabel: 'Mark sent', cancelLabel: 'Just copy' })) {
+    if (await confirmModal('Was this passdown actually delivered to its recipients?', { danger: false, okLabel: 'Yes, mark sent', cancelLabel: 'No, just copied' })) {
       markPassdownSent(id);
       toast('Marked as sent');
     }
@@ -11610,7 +11776,7 @@ function deleteTodoFromModal() {
   deleteTodo(id);
 }
 function saveTodoModal() {
-  var text = g('td-text').value.trim(); if (!text) { toast('Enter a task first'); return; }
+  var text = g('td-text').value.trim(); if (!requireFields([[g('td-text'),!!text,'Enter a task']])) return;
   var note = g('td-note').value.trim() || null;
   var dueDate = g('td-date').value || null;
   var dueShift = (g('td-shift') && g('td-shift').value) || null;
@@ -11803,7 +11969,7 @@ function applyImport(type, rows) {
       } else {
         var customIn = state.customInTasks || DEFAULT_IN_TASKS;
         var customOut = state.customOutTasks || DEFAULT_OUT_TASKS;
-        var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null, paymentTask: t.paymentTask || false }; });
+        var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null, paymentTask: t.paymentTask || false, automationId: getTaskAutomationId(t) || null }; });
         state.moves.push({ id: uid(), unit: unit, resident: resident||'', date: date, type: moveType, time: time, total: total, elevator: elevator||'no', notes: notes, tasks: tasks, archivedAt: null, createdAt: Date.now() });
         added++; preview.push({ action:'added', label: (resident||unit) + ' Unit ' + unit + ' ' + date });
       }
@@ -11879,7 +12045,7 @@ function showImportPreview(prefix, preview) {
   var html = '<div style="font-size:12px;max-height:160px;overflow-y:auto;background:var(--bg);border-radius:var(--radius);padding:8px 12px;border:1px solid var(--border)">';
   show.forEach(function (p) {
     var color = p.action === 'added' ? 'var(--green)' : 'var(--amber)';
-    html += '<div style="padding:2px 0;color:var(--text2)"><span style="color:' + color + ';font-weight:600;margin-right:6px;font-size:10px;text-transform:uppercase">' + p.action + '</span>' + p.label + '</div>';
+    html += '<div style="padding:2px 0;color:var(--text2)"><span style="color:' + color + ';font-weight:600;margin-right:6px;font-size:10px;text-transform:uppercase">' + esc(p.action) + '</span>' + esc(p.label) + '</div>';
   });
   if (preview.length > 12) html += '<div style="color:var(--text3);margin-top:4px;font-size:11px">...and ' + (preview.length - 12) + ' more</div>';
   html += '</div>';
@@ -11898,6 +12064,7 @@ function updateClaudePrompt() {
   var type = g('img-import-type') ? g('img-import-type').value : 'tours';
   var el = g('claude-prompt-display');
   if (el) el.textContent = IMG_PROMPTS[type] || IMG_PROMPTS.tours;
+  resetJsonImportPreview();
 }
 
 function copyClaudePrompt() {
@@ -11906,6 +12073,28 @@ function copyClaudePrompt() {
   navigator.clipboard.writeText(prompt).then(function () { toast('Prompt copied'); }).catch(function () { toast('Copy failed'); });
 }
 
+var _pendingJsonImport = null;
+function resetJsonImportPreview() {
+  _pendingJsonImport = null;
+  var btn = g('img-import-btn'); if (btn) btn.innerHTML = '&#8679; Review JSON';
+  var preview = g('img-import-preview'); if (preview) { preview.style.display = 'none'; preview.innerHTML = ''; }
+}
+function importRequiredFields(type, row) {
+  var missing = [];
+  function need(label, aliases, normalize) { var value = getField(row, aliases); if (normalize) value = normalize(value); if (!value) missing.push(label); }
+  if (type === 'tours') { need('name',['name','prospectname','prospect','guestname','residentname','tenant']); need('date',['date','tourdate','scheduleddate','appointmentdate','startdate'],normalizeDate); }
+  else if (type === 'moves') { need('unit',['unit','unitnumber','unitnum','apt','apartment']); need('date',['date','movedate','moveindate','moveoutdate','scheduleddate'],normalizeDate); }
+  else if (type === 'maintenance') { need('unit/location',['unit','unitnumber','location','apt']); need('issue',['issue','issuetype','type','category','problem']); }
+  else if (type === 'amenities') { need('space',['space','amenity','amenityspace','room','location']); need('date',['date','bookingdate','eventdate','reservationdate'],normalizeDate); }
+  return missing;
+}
+function importRowLabel(type, row, index) {
+  if (type === 'tours') return (getField(row,['name','prospectname','prospect']) || 'Tour') + ' · ' + normalizeDate(getField(row,['date','tourdate','scheduleddate']));
+  if (type === 'moves') return 'Unit ' + getField(row,['unit','unitnumber','apt']) + ' · ' + (getField(row,['resident','residentname','name']) || 'Resident not listed') + ' · ' + normalizeDate(getField(row,['date','movedate','moveindate','moveoutdate']));
+  if (type === 'maintenance') return 'Unit ' + getField(row,['unit','unitnumber','location','apt']) + ' · ' + getField(row,['issue','issuetype','type','problem']);
+  if (type === 'amenities') return (getField(row,['space','amenity','room']) || 'Amenity') + ' · ' + normalizeDate(getField(row,['date','bookingdate','eventdate'])) + ' · Unit ' + getField(row,['unit','unitnumber','apt']);
+  return 'Record ' + (index + 1);
+}
 function importFromPastedJSON() {
   var raw = (g('img-import-json').value || '').trim();
   var type = g('img-import-type').value;
@@ -11930,11 +12119,32 @@ function importFromPastedJSON() {
     else { statusEl.style.color = 'var(--red)'; statusEl.textContent = 'Expected a JSON array. Copy the full response from Claude.'; return; }
   }
   if (!rows.length) { statusEl.style.color = 'var(--amber)'; statusEl.textContent = 'Array was empty — nothing to import.'; return; }
+  var invalid = [];
+  rows.forEach(function(row, index) {
+    if (!row || typeof row !== 'object' || Array.isArray(row)) invalid.push('Row ' + (index + 1) + ': expected an object');
+    else { var missing = importRequiredFields(type, row); if (missing.length) invalid.push('Row ' + (index + 1) + ': missing ' + missing.join(', ')); }
+  });
+  if (invalid.length) {
+    _pendingJsonImport = null;
+    statusEl.style.color = 'var(--red)';
+    statusEl.textContent = 'Nothing imported. Fix ' + invalid.length + ' invalid row' + (invalid.length === 1 ? '' : 's') + ': ' + invalid.slice(0,4).join(' · ') + (invalid.length > 4 ? ' · …' : '');
+    return;
+  }
+  if (!_pendingJsonImport || _pendingJsonImport.raw !== raw || _pendingJsonImport.type !== type) {
+    _pendingJsonImport = { raw:raw, type:type, rows:rows };
+    statusEl.style.color = 'var(--amber)';
+    statusEl.textContent = 'Validated ' + rows.length + ' record' + (rows.length === 1 ? '' : 's') + '. Review the preview, then confirm the import.';
+    showImportPreview('img', rows.map(function(row,index){ return { action:'review', label:importRowLabel(type,row,index) }; }));
+    var reviewBtn = g('img-import-btn'); if (reviewBtn) reviewBtn.textContent = 'Confirm Import (' + rows.length + ')';
+    return;
+  }
   var result = applyImport(type, rows);
   statusEl.style.color = 'var(--green)';
   statusEl.textContent = 'Done: ' + result.msg;
   showImportPreview('img', result.preview);
   g('img-import-json').value = '';
+  _pendingJsonImport = null;
+  var btn = g('img-import-btn'); if (btn) btn.innerHTML = '&#8679; Review JSON';
   scheduleSave(); renderAll();
 }
 
@@ -12182,7 +12392,7 @@ var GUIDE_DATA = [
     html:'<h4>Welcome to the Front Desk Dashboard</h4><p>This is the Chorus SF Front Desk Hub — your central tool for managing everything that happens at the front desk during your shift. Whether it\'s your first day or you just need a quick refresher, this card covers the basics.</p><h4>What the Dashboard Does</h4><p>The dashboard keeps track of everything happening in the building in real time. Everything you log during your shift feeds directly into your end-of-shift passdown — so the more you log as you go, the less you have to write at the end.</p><h4>Sections at a Glance</h4><ul><li><strong>Dashboard</strong> — live overview of everything active in the building</li><li><strong>Calendar</strong> — all moves, bookings, and tours in one view</li><li><strong>Moves</strong> — move-in and move-out checklists and task tracking</li><li><strong>Key Tracker</strong> — keys issued, returned, and overdue</li><li><strong>Amenity Bookings</strong> — rooftop, party room, service elevator reservations</li><li><strong>Logbook</strong> — resident requests, concerns, and incidents in one place</li><li><strong>Lost &amp; Found</strong> — items logged and claimed</li><li><strong>Unit Tracker</strong> — per-unit keys, parking credentials, and WiFi info</li><li><strong>Passdown</strong> — build and send your end-of-shift passdown</li><li><strong>To-Do List</strong> — your personal task list, private to your account</li></ul><div class="guide-tip">💡 Every section feeds the Passdown builder. Log items as they happen and your passdown will mostly build itself by end of shift.</div><h4>Logging In</h4><ul><li>Click your name on the login screen and enter your 4-digit PIN</li><li>No account yet? Ask the Front Desk Lead to set one up before your shift begins</li><li>Forgot your PIN? The Lead can reset it in Settings → Team Accounts</li></ul><h4>Your Role</h4><ul><li><strong>Staff (Associate)</strong> — access to all day-to-day sections. Can check off move tasks but cannot add or edit move entries</li><li><strong>Admin / Lead</strong> — full access including Settings, Team Tracker, and staff visibility controls</li></ul><div class="guide-note">📌 All changes save automatically. No Save button needed for most actions.</div>' },
 
   { id:'g-passdown-how', icon:'📝', title:'How to Use the Passdown Builder', keywords:'passdown builder how to use step by step guide update next step shift summary generate send am pm overnight tone auto block log items',
-    html:'<h4>Overview</h4><p>The Passdown builder auto-fills from what you log during your shift. Your job is to review it, add context, and send it.</p><h4>Step 1 — Log items during your shift</h4><p>Use the right section as things happen — don\'t wait until the end:</p><ul><li>Keys issued → <strong>Key Tracker</strong></li><li>Anything logged at the desk → <strong>Logbook</strong></li><li>Amenity setup or follow-up → note in <strong>This Shift</strong> in the builder</li><li>Work order submitted or maintenance issue carrying to next shift → note in <strong>This Shift</strong> in the builder</li></ul><h4>Step 2 — Open the builder</h4><p>Click <strong>Passdown</strong> in the sidebar. Select your shift (AM / PM / Overnight) from the dropdown at the top.</p><h4>Step 3 — Write your shift summary</h4><p>Write 1–3 sentences in the Shift Summary field — what happened, who came in, anything the next shift should know the moment they start.</p><h4>Step 4 — Review the auto-blocks</h4><p>The builder pulls in live data automatically — moves, keys, amenities, concierge requests, incidents. For each item:</p><ul><li>Fill in the <strong>Update / Next Step</strong> field with what the incoming shift needs to know or do</li><li>Click <strong>–</strong> to exclude anything that was resolved during your shift</li></ul><div class="guide-note">📌 Incidents and Concierge Requests only appear in the passdown if you add an Update / Next Step note. Leave it blank to exclude them.</div><h4>Step 5 — Generate</h4><p>Click <strong>Generate</strong>. Read the full preview — check that unit numbers and names are correct, every open item has a clear Update / Next Step, and nothing resolved is still listed as active. Fix anything and generate again if needed.</p><h4>Step 6 — Send</h4><p>Click <strong>Review &amp; Send → Send via Gmail →</strong>. Gmail opens with the recipient, subject, and body pre-filled. Add your signature and send.</p><div class="guide-tip">💡 Use <strong>Save Draft</strong> at any point to save your progress. Your draft is tied to your account and stays until you send or clear it.</div><div class="guide-note" style="margin-top:8px;background:rgba(220,38,38,0.06);border-color:rgba(220,38,38,0.2)">⚠️ Your passdown must reflect your shift. Do not copy or reuse another associate\'s passdown. The dashboard logs all passdowns by author and date — if yours matches a previous shift\'s, it is visible to everyone.</div>' },
+    html:'<h4>Overview</h4><p>The Passdown builder auto-fills from what you log during your shift. Your job is to review it, add context, and send it.</p><h4>Step 1 — Log items during your shift</h4><p>Use the right section as things happen — don\'t wait until the end:</p><ul><li>Keys issued → <strong>Key Tracker</strong></li><li>Anything logged at the desk → <strong>Logbook</strong></li><li>Amenity setup or follow-up → note in <strong>This Shift</strong> in the builder</li><li>Work order submitted or maintenance issue carrying to next shift → note in <strong>This Shift</strong> in the builder</li></ul><h4>Step 2 — Open the builder</h4><p>Click <strong>Passdown</strong> in the sidebar. Select your shift (AM / PM / Overnight) from the dropdown at the top.</p><h4>Step 3 — Write your shift summary</h4><p>Write 1–3 sentences in the Shift Summary field — what happened, who came in, anything the next shift should know the moment they start.</p><h4>Step 4 — Review the auto-blocks</h4><p>The builder pulls in live data automatically — moves, keys, amenities, concierge requests, incidents. For each item:</p><ul><li>Fill in the <strong>Update / Next Step</strong> field with what the incoming shift needs to know or do</li><li>Click <strong>–</strong> to exclude anything that was resolved during your shift</li></ul><div class="guide-note">📌 Incidents and Concierge Requests only appear in the passdown if you add an Update / Next Step note. Leave it blank to exclude them.</div><h4>Step 5 — Generate</h4><p>Click <strong>Generate</strong>. Read the full preview — check that unit numbers and names are correct, every open item has a clear Update / Next Step, and nothing resolved is still listed as active. Fix anything and generate again if needed.</p><h4>Step 6 — Send and confirm</h4><p>Click <strong>Review &amp; Send → Send via Gmail →</strong>. Gmail opens with the recipient, subject, and body pre-filled. Send it in Gmail, then return to Passdown History and click <strong>Confirm sent</strong>. Opening Gmail alone does not mark it sent.</p><div class="guide-tip">💡 Use <strong>Save Draft</strong> at any point to save your progress. Your draft is tied to your account and stays until you clear it.</div><div class="guide-note" style="margin-top:8px;background:rgba(220,38,38,0.06);border-color:rgba(220,38,38,0.2)">⚠️ Your passdown must reflect your shift. Do not copy or reuse another associate\'s passdown. The dashboard logs all passdowns by author and date — if yours matches a previous shift\'s, it is visible to everyone.</div>' },
 
   { id:'g-dashboard', icon:'📊', title:'Dashboard', keywords:'dashboard home overview stats badges search greeting quick counts active',
     html:'<h4>Overview Cards</h4><p>The dashboard shows live counts of active items across all sections: pending moves, open maintenance, guests checked in, keys out, upcoming amenity bookings, open L&amp;F items, upcoming tours, and open concierge requests. Click any card to jump to that section.</p><h4>Quick Search</h4><p>Type any unit number, resident name, or keyword in the search bar to instantly find matching entries across moves, maintenance, guests, keys, amenities, and more. Click any result to navigate directly to that section.</p><h4>Greeting</h4><p>The greeting uses your logged-in name and adjusts based on the time of day. The date and building name are displayed at the top of the sidebar.</p>' },
@@ -13260,7 +13470,8 @@ function renderTaskList(type) {
     });
     var catSel = '<select class="stask-cat ie-sel" onchange="updateDefaultTask(\'' + type + '\',' + i + ',\'cat\',this.value)">' + catOpts + '</select>';
     var safeVal = t.text.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-    var textInput = '<input type="text" class="stask-text" value="' + safeVal + '" onblur="updateDefaultTask(\'' + type + '\',' + i + ',\'text\',this.value)" style="">';
+    var linked = getTaskAutomationId(t) ? '<span title="Connected workflow — safe to rename" aria-label="Connected workflow" style="color:var(--accent);font-size:11px">&#128279;</span>' : '';
+    var textInput = linked + '<input type="text" class="stask-text" value="' + safeVal + '" onblur="updateDefaultTask(\'' + type + '\',' + i + ',\'text\',this.value)" style="">';
     html += '<div class="stask-row"><div class="stask-arrows">' + upBtn + dnBtn + '</div>' + textInput + catSel + rmBtn + '</div>';
   });
   el2.innerHTML = html;
@@ -13268,9 +13479,9 @@ function renderTaskList(type) {
 
 function ensureCustomTasks(type) {
   if (type === 'in') {
-    if (!isValidTaskList(state.customInTasks)) state.customInTasks = DEFAULT_IN_TASKS.map(function(t){ return {text:t.text,cat:t.cat,hint:t.hint||null}; });
+    if (!isValidTaskList(state.customInTasks)) state.customInTasks = DEFAULT_IN_TASKS.map(function(t){ return {text:t.text,cat:t.cat,hint:t.hint||null,paymentTask:!!t.paymentTask,automationId:getTaskAutomationId(t)||null}; });
   } else {
-    if (!isValidTaskList(state.customOutTasks)) state.customOutTasks = DEFAULT_OUT_TASKS.map(function(t){ return {text:t.text,cat:t.cat,hint:t.hint||null}; });
+    if (!isValidTaskList(state.customOutTasks)) state.customOutTasks = DEFAULT_OUT_TASKS.map(function(t){ return {text:t.text,cat:t.cat,hint:t.hint||null,paymentTask:!!t.paymentTask,automationId:getTaskAutomationId(t)||null}; });
   }
 }
 
@@ -13315,7 +13526,7 @@ async function resetTasksToDefaults(type) {
   var label = type === 'in' ? 'move-in' : 'move-out';
   if (!await confirmModal('Replace your current ' + label + ' task list with the updated defaults? This cannot be undone.')) return;
   var defaults = type === 'in' ? DEFAULT_IN_TASKS : DEFAULT_OUT_TASKS;
-  var copy = defaults.map(function(t){ return {text:t.text, cat:t.cat, hint:t.hint||null}; });
+  var copy = defaults.map(function(t){ return {text:t.text, cat:t.cat, hint:t.hint||null, paymentTask:!!t.paymentTask, automationId:getTaskAutomationId(t)||null}; });
   if (type === 'in') state.customInTasks = copy;
   else state.customOutTasks = copy;
   scheduleSave(); renderTaskList(type);
@@ -13427,6 +13638,21 @@ function migrateTaskUpdatesV3() {
     });
   });
   state.taskMigrationV3 = true;
+  scheduleSave();
+}
+
+function migrateTaskAutomationIdsV1() {
+  if (state.taskAutomationIdsV1) return;
+  [state.customInTasks || [], state.customOutTasks || []].forEach(function(list) {
+    list.forEach(function(t) { var id = getTaskAutomationId(t); if (id) t.automationId = id; });
+  });
+  (state.moves || []).forEach(function(m) {
+    (m.tasks || []).forEach(function(t) { var id = getTaskAutomationId(t); if (id) t.automationId = id; });
+  });
+  (state.keys || []).forEach(function(k) {
+    if (!k.srcAutomationId && k.srcTaskText && TASK_AUTOMATION_BY_TEXT[k.srcTaskText]) k.srcAutomationId = TASK_AUTOMATION_BY_TEXT[k.srcTaskText];
+  });
+  state.taskAutomationIdsV1 = true;
   scheduleSave();
 }
 
@@ -13959,6 +14185,7 @@ async function init() {
   seedRoutinesV2();
   migrateTaskUpdatesV2();
   migrateTaskUpdatesV3();
+  migrateTaskAutomationIdsV1();
   migrateMovePhaseCats();
   migrateTodosV1();
   seedLoopTrackerTodosV1();
