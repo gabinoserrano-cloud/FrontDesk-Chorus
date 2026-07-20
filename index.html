@@ -175,6 +175,8 @@
   input,select,textarea{font-family:'DM Sans',sans-serif;font-size:14px;border:1px solid var(--border);border-radius:var(--radius);padding:9px 11px;background:var(--surface);color:var(--text);outline:none;transition:border-color .12s;width:100%}
   input:focus,select:focus,textarea:focus{border-color:var(--accent)}
   textarea{resize:vertical;min-height:80px}
+  /* Short note fields: start ~2 lines and grow with the text so nothing is typed out of sight */
+  textarea.ta-auto{min-height:52px;line-height:1.5;overflow-y:hidden}
   label{font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:4px}
   label.req::after{content:" *";color:var(--red);font-weight:700}
   .field-invalid{border-color:var(--red)!important;box-shadow:0 0 0 2px rgba(192,53,53,0.22)!important}
@@ -1641,7 +1643,7 @@
   <div class="modal-hdr"><span class="modal-title" id="modal-todo-title">Edit To-Do</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-todo')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fg"><label>Task</label><input id="td-text" type="text" placeholder="What needs to be done?"></div>
-    <div class="fg"><label>For / Note <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="td-note" type="text" placeholder="e.g. Unit 802, follow-up on maintenance request..."></div>
+    <div class="fg"><label>For / Note <span style="font-weight:400;color:var(--text3)">(optional)</span></label><textarea id="td-note" class="ta-auto" rows="2" placeholder="e.g. Unit 802, follow-up on maintenance request..."></textarea></div>
     <div class="fr">
       <div class="fg"><label>Category</label><select id="td-category"><option value="">&mdash; General &mdash;</option></select></div>
       <div class="fg"><label>Linked Unit <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="td-unit" type="text" list="unit-options" placeholder="e.g. 835"></div>
@@ -1694,7 +1696,7 @@
     <div class="fg"><label>Amenity Space(s) <span style="font-size:10px;color:var(--text3);font-weight:400">(select all that apply)</span></label><div id="am-space-wrap" style="border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;display:grid;grid-template-columns:1fr 1fr;gap:5px 14px;font-size:12.5px;background:var(--bg)"></div></div>
     <div class="fr"><div class="fg"><label>Date</label><input id="am-date" type="date"></div><div class="fg"><label>Type</label><select id="am-type"><option value="reservation">Reservation</option><option value="event">Resident Event</option></select></div></div>
     <div class="fr"><div class="fg"><label>Start Time</label><input id="am-start" type="time"></div><div class="fg"><label>End Time</label><input id="am-end" type="time"></div></div>
-    <div class="fr"><div class="fg"><label>Fee (reference)</label><input id="am-fee" type="text" placeholder="e.g. $150"></div><div class="fg"><label>Notes</label><input id="am-notes" type="text"></div></div>
+    <div class="fr"><div class="fg"><label>Fee (reference)</label><input id="am-fee" type="text" placeholder="e.g. $150"></div><div class="fg"><label>Notes</label><textarea id="am-notes" class="ta-auto" rows="2"></textarea></div></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-amenity')">Cancel</button><button class="btn btn-primary" onclick="saveAmenity()">Add Booking</button></div>
 </div></div>
@@ -1824,7 +1826,7 @@
       <div class="fg"><label>Current Qty</label><input id="sup-qty" type="number" min="0" value="0"></div>
       <div class="fg"><label>Low Alert At (optional)</label><input id="sup-low" type="number" min="0" placeholder="leave blank = counter"></div>
     </div>
-    <div class="fg"><label>Notes (optional)</label><input id="sup-notes" type="text" placeholder="Any notes about this item"></div>
+    <div class="fg"><label>Notes (optional)</label><textarea id="sup-notes" class="ta-auto" rows="2" placeholder="Any notes about this item"></textarea></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-supply')">Cancel</button><button class="btn btn-primary" onclick="saveSupply()">Save Item</button></div>
 </div></div>
@@ -1844,7 +1846,7 @@
         <button class="sup-qty-btn" onclick="qaDelta(+1)">&#43;</button>
       </div>
     </div>
-    <div class="fg"><label>Reason / Note <span style="font-weight:400;color:var(--text3)">(required)</span></label><input id="qa-reason" type="text" placeholder="e.g. Issued to Unit 2204, new stock received, damaged…" autocomplete="off"></div>
+    <div class="fg"><label>Reason / Note <span style="font-weight:400;color:var(--text3)">(required)</span></label><textarea id="qa-reason" class="ta-auto" rows="2" placeholder="e.g. Issued to Unit 2204, new stock received, damaged…" autocomplete="off"></textarea></div>
   </div>
   <div class="modal-ftr">
     <button class="btn btn-secondary" onclick="closeModal('modal-quick-adj')">Cancel</button>
@@ -3316,6 +3318,8 @@ function openModal(id) {
   ov.querySelectorAll('input[type=date]').forEach(function (f) { if (!f.value && !f.hasAttribute('data-no-autofill')) f.value = today(); });
   // Move focus into the modal so keyboard users land inside it, not stranded on the page behind.
   setTimeout(function () {
+    // Size pre-filled note fields once the modal actually has layout.
+    ov.querySelectorAll('textarea.ta-auto').forEach(autoGrowTextarea);
     var first = ov.querySelector('input:not([type=hidden]):not([disabled]),select,textarea,button.modal-close,[href],button');
     if (first) try { first.focus({ preventScroll: true }); } catch (e) { first.focus(); }
   }, 40);
@@ -3343,7 +3347,16 @@ document.addEventListener('input', function (e) {
   var ov = e.target.closest && e.target.closest('.modal-ov.open');
   if (ov) ov.dataset.dirty = '1';
   if (e.target.classList && e.target.classList.contains('field-invalid')) clearErr(e.target);
+  if (e.target.classList && e.target.classList.contains('ta-auto')) autoGrowTextarea(e.target);
 });
+// Grow a short note field to fit its content (capped) so typing never scrolls out of view.
+function autoGrowTextarea(el) {
+  // Skip unless the field is actually laid out. If the page isn't rendering (hidden tab,
+  // detached subtree) widths collapse and scrollHeight reports a wildly inflated value.
+  if (!el || el.clientWidth < 40) return;
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight + 2, 300) + 'px';
+}
 // ── Inline form validation (P1-5): mark a field, show the reason under it, focus the first offender ──
 function fieldError(el, msg) {
   if (!el) return;
@@ -9248,7 +9261,7 @@ function renderTodosFocus(sorted) {
         + '</div>'
         + '<button class="btn btn-ghost btn-xs" title="Unpick" onclick="toggleFocusPick(\'' + t.id + '\')">&#x2715;</button></div>';
     });
-    for (var i = p[tr.key].length; i < tr.cap; i++) html += '<div class="focus-slot empty" style="margin-bottom:6px">&#9734; pick from Do now</div>';
+    for (var i = p[tr.key].length; i < tr.cap; i++) html += '<div class="focus-slot empty" style="margin-bottom:6px">&#9734; tap &#9734; on any task below</div>';
     html += '</div>';
   });
   html += '</div></div></div><div class="focus-grid">';
@@ -9267,7 +9280,7 @@ function renderTodosFocus(sorted) {
         + (flare ? '<span class="pill" style="background:var(--amber-light);color:var(--amber)">&#9888; flared from Waiting &mdash; ' + todoStaleDays(t) + 'd</span>' : todoStaleChip(t))
         + todoUnitChip(t) + todoOwnerChip(t) + todoCatChip(t)
         + '</div></div>'
-        + (qd.key === 'now' || tier ? '<button class="btn btn-ghost btn-xs" title="' + (tier ? 'Unpick' : 'Pick for today') + '"' + (tier ? ' style="color:var(--amber)"' : '') + ' onclick="toggleFocusPick(\'' + t.id + '\')">' + (tier ? '&#9733;' : '&#9734;') + '</button>' : '')
+        + '<button class="btn btn-ghost btn-xs" title="' + (tier ? 'Unpick' : 'Pick for today') + '"' + (tier ? ' style="color:var(--amber)"' : '') + ' onclick="toggleFocusPick(\'' + t.id + '\')">' + (tier ? '&#9733;' : '&#9734;') + '</button>'
         + '</div>';
     });
     html += '</div>';
