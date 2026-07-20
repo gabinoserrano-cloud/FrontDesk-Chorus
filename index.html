@@ -9298,6 +9298,8 @@ function toggleTodo(id, checked) {
     todoTouch(t);
     pushUndo({ sec: 'todos', type: 'EDIT', path: currentTodosPath(), id: t.id, before: before, after: cloneData(t), label: (checked ? 'complete' : 'reopen') + ' to-do — ' + t.text });
     logActivity('todos', checked ? 'complete' : 'reopen', (checked ? 'Completed' : 'Reopened') + ' to-do — ' + t.text, 'Owner: ' + _todoOwnerLabel());
+    // Ticking off a routine's task rolls that routine forward to its next occurrence.
+    if (checked && t.routineId) completeRoutineFromTodo(t);
     scheduleSave(); renderTodos(); updateBadges(); renderDash();
   }
 }
@@ -12653,6 +12655,109 @@ var editingRecurringId = null;
 function rrData() { if (!state.recurringReminders) state.recurringReminders = []; return state.recurringReminders; }
 function rrDaysUntil(r) { if (!r.dueDate) return 0; return Math.round((new Date(r.dueDate + 'T00:00:00') - new Date(today() + 'T00:00:00')) / 86400000); }
 function rrIsDue(r) { return rrDaysUntil(r) <= 0; }
+// ── Routine schedules ──────────────────────────────────────────────────────
+// Legacy items only had intervalDays (a floating "N days after I last did it").
+// schedule = {type:'daily'} | {type:'weekly',days:[0-6]} | {type:'monthly',day:1-31} | {type:'everyN',n:N}
+var RR_DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+function rrSchedule(r) { return (r && r.schedule && r.schedule.type) ? r.schedule : { type: 'everyN', n: (r && r.intervalDays) || 14 }; }
+function _isoAddDays(iso, n) { var d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return localDateStr(d); }
+function rrCadenceLabel(r) {
+  var s = rrSchedule(r);
+  if (s.type === 'daily') return 'Daily';
+  if (s.type === 'weekly') { var ds = (s.days || []).slice().sort().map(function (d) { return RR_DOW[d]; }); return 'Weekly · ' + (ds.length ? ds.join(', ') : 'Mon'); }
+  if (s.type === 'monthly') return 'Monthly · day ' + (s.day || 1);
+  return 'Every ' + (s.n || 14) + ' days';
+}
+// Next occurrence strictly after `fromISO` (calendar-anchored for daily/weekly/monthly).
+function rrNextDue(r, fromISO) {
+  var s = rrSchedule(r), from = fromISO || today();
+  if (s.type === 'daily') return _isoAddDays(from, 1);
+  if (s.type === 'weekly') {
+    var days = (s.days && s.days.length) ? s.days.slice() : [1];
+    for (var i = 1; i <= 7; i++) {
+      var cand = _isoAddDays(from, i);
+      if (days.indexOf(new Date(cand + 'T12:00:00').getDay()) !== -1) return cand;
+    }
+    return _isoAddDays(from, 7);
+  }
+  if (s.type === 'monthly') {
+    var dom = Math.min(31, Math.max(1, s.day || 1));
+    var d0 = new Date(from + 'T12:00:00'), y = d0.getFullYear(), m = d0.getMonth();
+    function build(yy, mm) { var last = new Date(yy, mm + 1, 0).getDate(); return localDateStr(new Date(yy, mm, Math.min(dom, last), 12)); }
+    var thisMonth = build(y, m);
+    if (thisMonth > from) return thisMonth;
+    var nm = m + 1, ny = y; if (nm > 11) { nm = 0; ny++; }
+    return build(ny, nm);
+  }
+  return _isoAddDays(from, Math.max(1, s.n || 14));
+}
+function rrDefaultOwnerId() {
+  var accts = state.accounts || [];
+  var admin = accts.find(function (a) { return a.role === 'admin'; });
+  return (admin || accts[0] || {}).id || null;
+}
+function migrateRoutinesV1() {
+  if (state.routinesMigrationV1) return;
+  var defOwner = rrDefaultOwnerId();
+  rrData().forEach(function (r) {
+    if (!r.schedule) r.schedule = { type: 'everyN', n: r.intervalDays || 14 };
+    if (r.autoTodo === undefined) r.autoTodo = true;
+    if (!r.assignToId) r.assignToId = defOwner;
+    if (r.dueShift === undefined) r.dueShift = '';
+  });
+  state.routinesMigrationV1 = true;
+  scheduleSave();
+}
+// Materialize a to-do for any routine that has come due, once per occurrence.
+function generateRoutineTodos() {
+  var t = today(), changed = false;
+  rrData().forEach(function (r) {
+    if (!r.autoTodo) return;
+    if (!r.dueDate || r.dueDate > t) return;
+    if (r.lastGeneratedFor === r.dueDate) return;
+    var ownerId = r.assignToId || rrDefaultOwnerId();
+    if (!ownerId) return;
+    if (!state.userTodos) state.userTodos = {};
+    if (!Array.isArray(state.userTodos[ownerId])) state.userTodos[ownerId] = [];
+    // Don't duplicate if a to-do for this occurrence somehow already exists.
+    var exists = state.userTodos[ownerId].some(function (td) { return td.routineId === r.id && td.routineDueDate === r.dueDate; });
+    if (!exists) {
+      state.userTodos[ownerId].push({
+        id: uid(), text: r.label, priority: 'normal', dueDate: r.dueDate, done: false,
+        status: 'open', createdAt: Date.now(), addedBy: 'Routine',
+        dueShift: r.dueShift || '', routineId: r.id, routineDueDate: r.dueDate,
+        note: r.targetSupplyName ? ('Recurring count — updates "' + r.targetSupplyName + '"') : ''
+      });
+      logActivity('todos', 'create', 'Routine created to-do — ' + r.label, 'Due ' + r.dueDate);
+    }
+    r.lastGeneratedFor = r.dueDate;
+    changed = true;
+  });
+  if (changed) scheduleSave();
+  return changed;
+}
+var _routineGenStamp = '';
+function maybeGenerateRoutineTodos() {
+  var t = today();
+  if (_routineGenStamp === t) return;
+  _routineGenStamp = t;
+  migrateRoutinesV1();
+  if (generateRoutineTodos()) updateBadges();
+}
+// Completing a routine's to-do rolls the schedule forward.
+function completeRoutineFromTodo(td) {
+  var r = rrData().find(function (x) { return x.id === td.routineId; });
+  if (!r) return;
+  if (r.requireValue) { promptCompleteRecurring(r.id); return; }
+  var _rb = { lastCompletedAt: r.lastCompletedAt, lastCompletedBy: r.lastCompletedBy, dueDate: r.dueDate };
+  r.lastCompletedAt = Date.now();
+  r.lastCompletedBy = currentUser ? currentUser.name : '';
+  r.dueDate = rrNextDue(r, today());
+  pushUndo({ sec: 'recurringReminders', type: 'EDIT', id: r.id, before: _rb, after: { lastCompletedAt: r.lastCompletedAt, lastCompletedBy: r.lastCompletedBy, dueDate: r.dueDate }, label: 'complete routine — ' + r.label });
+  logActivity('settings', 'complete', 'Completed routine — ' + r.label, 'Next due ' + r.dueDate);
+  scheduleSave();
+  toast(r.label + ' — next due ' + fmtShort(r.dueDate));
+}
 function seedRecurringRemindersV1() {
   if (state.recurringRemindersSeedV1) return;
   var list = rrData();
@@ -12671,7 +12776,10 @@ function renderRecurringReminders() {
   list.forEach(function(r) {
     var d = rrDaysUntil(r);
     var status = d < 0 ? '<span style="color:var(--red);font-weight:600">' + (-d) + 'd overdue</span>' : d === 0 ? '<span style="color:var(--amber);font-weight:600">Due today</span>' : '<span style="color:var(--text3)">Due in ' + d + 'd</span>';
-    html += '<div class="set-row"><div><div class="set-lbl">' + esc(r.label) + '</div><div class="set-hint">Every ' + r.intervalDays + ' days'
+    var owner = (state.accounts || []).find(function (a) { return a.id === r.assignToId; });
+    html += '<div class="set-row"><div><div class="set-lbl">' + esc(r.label) + '</div><div class="set-hint">' + esc(rrCadenceLabel(r))
+      + (r.dueShift ? ' · ' + esc(r.dueShift.toUpperCase()) + ' shift' : '')
+      + (r.autoTodo ? ' · &#8594; to-do for ' + esc(owner ? owner.name : 'unassigned') : ' · reminder only')
       + (r.targetSupplyName ? ' · updates "' + esc(r.targetSupplyName) + '"' : '') + ' · Last done: '
       + (r.lastCompletedAt ? fmtShort(localDateStr(new Date(r.lastCompletedAt))) + (r.lastCompletedBy ? ' by ' + esc(r.lastCompletedBy) : '') : 'never') + '</div></div>'
       + '<div class="flex gap-8 items-center">' + status
@@ -12687,32 +12795,79 @@ function openRecurringModal() {
   var supOpts = '<option value="">— None (simple checkbox) —</option>' + (state.supplies || []).map(function(s) {
     return '<option value="' + esc(s.name) + '"' + (r && r.targetSupplyName === s.name ? ' selected' : '') + '>' + esc(s.name) + '</option>';
   }).join('');
-  var bdy = '<div class="fg"><label>Label</label><input type="text" id="rr-label" value="' + (r ? esc(r.label) : '') + '" placeholder="e.g. Recount Key Cards"></div>'
-    + '<div class="fg"><label>Repeats every</label><div class="flex gap-8 items-center"><input type="number" id="rr-interval" min="1" max="365" value="' + (r ? r.intervalDays : 14) + '" style="width:76px"><span class="set-hint">days</span></div></div>'
-    + '<div class="fg"><label>Linked supply item (optional)</label><select id="rr-supply">' + supOpts + '</select><div class="set-hint">If set, completing this reminder asks for the counted quantity and sets that item\'s stock directly — for things staff physically count (like Key Cards) rather than a plain to-do.</div></div>';
+  var sch = rrSchedule(r || {});
+  var acctOpts = (state.accounts || []).map(function (a) {
+    var sel = (r && r.assignToId === a.id) || (!r && a.id === (currentUser && currentUser.id)) ? ' selected' : '';
+    return '<option value="' + esc(a.id) + '"' + sel + '>' + esc(a.name) + '</option>';
+  }).join('');
+  var typeOpts = [['daily', 'Daily'], ['weekly', 'Weekly (choose days)'], ['monthly', 'Monthly (day of month)'], ['everyN', 'Every N days (from last done)']]
+    .map(function (o) { return '<option value="' + o[0] + '"' + (sch.type === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
+  var dowBoxes = RR_DOW.map(function (d, i) {
+    var on = (sch.days || [1]).indexOf(i) !== -1;
+    return '<label style="display:inline-flex;align-items:center;gap:4px;font-weight:400;margin:0 8px 4px 0;cursor:pointer"><input type="checkbox" class="rr-dow" value="' + i + '" style="width:auto;accent-color:var(--accent)"' + (on ? ' checked' : '') + '> ' + d + '</label>';
+  }).join('');
+  var shiftOpts = [['', '— any time —'], ['am', 'AM shift'], ['pm', 'PM shift'], ['overnight', 'Overnight']]
+    .map(function (o) { return '<option value="' + o[0] + '"' + ((r && r.dueShift === o[0]) ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
+  var bdy = '<div class="fg"><label class="req">Label</label><input type="text" id="rr-label" value="' + (r ? esc(r.label) : '') + '" placeholder="e.g. Storage space audit"></div>'
+    + '<div class="fg"><label>Repeats</label><select id="rr-type" onchange="rrTypeChange()">' + typeOpts + '</select></div>'
+    + '<div class="fg" id="rr-row-weekly" style="display:none"><label>On these days</label><div>' + dowBoxes + '</div></div>'
+    + '<div class="fg" id="rr-row-monthly" style="display:none"><label>Day of month</label><input type="number" id="rr-monthday" min="1" max="31" value="' + (sch.day || 1) + '" style="width:90px"><div class="set-hint">Months without that day use the last day.</div></div>'
+    + '<div class="fg" id="rr-row-everyn" style="display:none"><label>Repeats every</label><div class="flex gap-8 items-center"><input type="number" id="rr-interval" min="1" max="365" value="' + (sch.n || 14) + '" style="width:76px"><span class="set-hint">days after it was last completed</span></div></div>'
+    + '<div class="fr"><div class="fg"><label>Shift (optional)</label><select id="rr-shift">' + shiftOpts + '</select></div>'
+    + '<div class="fg"><label>Assign to</label><select id="rr-assign">' + acctOpts + '</select></div></div>'
+    + '<div class="fg"><label style="display:flex;align-items:center;gap:8px;font-weight:500;cursor:pointer"><input type="checkbox" id="rr-autotodo" style="width:auto;accent-color:var(--accent)"' + ((!r || r.autoTodo !== false) ? ' checked' : '') + '> Create a to-do when it comes due</label><div class="set-hint">The task lands in that person\'s To-Do list on its due date, so it flows into Focus and the passdown. Ticking it off completes the routine and schedules the next one. Uncheck to leave it as a dashboard reminder only.</div></div>'
+    + '<div class="fg"><label>Linked supply item (optional)</label><select id="rr-supply">' + supOpts + '</select><div class="set-hint">If set, completing this asks for the counted quantity and sets that item\'s stock directly — for things staff physically count (like Key Cards) rather than a plain to-do.</div></div>';
   var ov = g('modal-recurring');
   if (!ov) { ov = document.createElement('div'); ov.className = 'modal-ov'; ov.id = 'modal-recurring'; document.body.appendChild(ov); }
   ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">' + (r ? 'Edit' : 'Add') + ' Recurring Reminder</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-recurring\')">&#x2715;</button></div>'
     + '<div class="modal-bdy">' + bdy + '</div>'
     + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-recurring\')">Cancel</button><button class="btn btn-primary" onclick="saveRecurring()">Save</button></div></div>';
   openModal('modal-recurring');
+  rrTypeChange();
+}
+// Show only the fields that belong to the selected schedule type.
+function rrTypeChange() {
+  var t = g('rr-type') ? g('rr-type').value : 'everyN';
+  var rows = { weekly: 'rr-row-weekly', monthly: 'rr-row-monthly', everyN: 'rr-row-everyn' };
+  Object.keys(rows).forEach(function (k) { var el = g(rows[k]); if (el) el.style.display = (k === t) ? '' : 'none'; });
 }
 function saveRecurring() {
-  var label = (g('rr-label').value || '').trim(); if (!label) { toast('Enter a label'); return; }
-  var interval = parseInt(g('rr-interval').value, 10) || 14;
+  var labelEl = g('rr-label'), label = (labelEl.value || '').trim();
+  if (!requireFields([[labelEl, !!label, 'Give this routine a name']])) return;
+  var type = g('rr-type').value || 'everyN';
+  var schedule = { type: type };
+  if (type === 'weekly') {
+    schedule.days = [].slice.call(document.querySelectorAll('.rr-dow:checked')).map(function (c) { return parseInt(c.value, 10); });
+    if (!schedule.days.length) { toast('Pick at least one day'); return; }
+  } else if (type === 'monthly') {
+    schedule.day = Math.min(31, Math.max(1, parseInt(g('rr-monthday').value, 10) || 1));
+  } else if (type === 'everyN') {
+    schedule.n = Math.min(365, Math.max(1, parseInt(g('rr-interval').value, 10) || 14));
+  }
   var supplyName = g('rr-supply').value || '';
+  var dueShift = g('rr-shift').value || '';
+  var assignToId = g('rr-assign').value || rrDefaultOwnerId();
+  var autoTodo = !!(g('rr-autotodo') && g('rr-autotodo').checked);
   var list = rrData();
   if (editingRecurringId) {
     var r = list.find(function(x) { return x.id === editingRecurringId; }); if (!r) return;
-    r.label = label; r.intervalDays = interval; r.targetSupplyName = supplyName; r.requireValue = !!supplyName; r.valueLabel = supplyName ? 'Counted quantity' : '';
-    logActivity('settings', 'edit', 'Updated recurring reminder — ' + label);
+    var schedChanged = JSON.stringify(rrSchedule(r)) !== JSON.stringify(schedule);
+    r.label = label; r.schedule = schedule; r.intervalDays = schedule.n || r.intervalDays;
+    r.targetSupplyName = supplyName; r.requireValue = !!supplyName; r.valueLabel = supplyName ? 'Counted quantity' : '';
+    r.dueShift = dueShift; r.assignToId = assignToId; r.autoTodo = autoTodo;
+    // Re-anchor the next occurrence if the cadence itself changed.
+    if (schedChanged) { r.dueDate = rrNextDue(r, _isoAddDays(today(), -1)); r.lastGeneratedFor = ''; }
+    logActivity('settings', 'edit', 'Updated routine — ' + label, rrCadenceLabel(r));
   } else {
-    var due = new Date(); due.setDate(due.getDate() + interval);
-    list.push({ id: uid(), label: label, intervalDays: interval, requireValue: !!supplyName, valueLabel: supplyName ? 'Counted quantity' : '', targetSupplyName: supplyName, lastCompletedAt: null, lastCompletedBy: '', dueDate: localDateStr(due), createdAt: Date.now() });
-    logActivity('settings', 'create', 'Added recurring reminder — ' + label);
+    var nr = { id: uid(), label: label, schedule: schedule, intervalDays: schedule.n || 14, requireValue: !!supplyName, valueLabel: supplyName ? 'Counted quantity' : '', targetSupplyName: supplyName, dueShift: dueShift, assignToId: assignToId, autoTodo: autoTodo, lastCompletedAt: null, lastCompletedBy: '', lastGeneratedFor: '', dueDate: null, createdAt: Date.now() };
+    // First occurrence: today if it lands today, otherwise the next matching date.
+    nr.dueDate = rrNextDue(nr, _isoAddDays(today(), -1));
+    list.push(nr);
+    logActivity('settings', 'create', 'Added routine — ' + label, rrCadenceLabel(nr));
   }
   editingRecurringId = null;
-  scheduleSave(); closeModal('modal-recurring'); renderRecurringReminders(); renderDash();
+  generateRoutineTodos();
+  scheduleSave(); closeModal('modal-recurring'); renderRecurringReminders(); renderDash(); renderTodos(); updateBadges();
   toast('Saved');
 }
 async function deleteRecurring(id) {
@@ -12743,8 +12898,8 @@ function completeRecurring(id, enteredValue) {
     }
   }
   r.lastCompletedAt = Date.now(); r.lastCompletedBy = currentUser ? currentUser.name : '';
-  var nextDue = new Date(); nextDue.setDate(nextDue.getDate() + (r.intervalDays || 14));
-  r.dueDate = localDateStr(nextDue);
+  r.dueDate = rrNextDue(r, today());
+  r.lastGeneratedFor = '';
   cmds.push({ sec: 'recurringReminders', type: 'EDIT', id: r.id, before: _rb, after: { lastCompletedAt: r.lastCompletedAt, lastCompletedBy: r.lastCompletedBy, dueDate: r.dueDate }, label: 'complete recurring — ' + r.label });
   pushBatchUndo('recurringReminders', 'complete recurring — ' + r.label, cmds);
   logActivity('settings', 'complete', 'Completed recurring reminder — ' + r.label, r.requireValue ? ('Counted: ' + enteredValue) : '');
@@ -13536,6 +13691,7 @@ async function submitPin() {
     g('hdr-title').textContent = 'Dashboard';
     g('hdr-actions').innerHTML = '';
     syncHdrMore();
+    maybeGenerateRoutineTodos();
     renderDash(); updateBadges();
     toast('Welcome, ' + currentUser.name + '!');
     applyUserDisplay();
@@ -13774,6 +13930,7 @@ async function init() {
   migrateKeyKindV1();
   checkUnreturnedKeyFees();
   seedRecurringRemindersV1();
+  migrateRoutinesV1();
   migrateTaskUpdatesV2();
   migrateTaskUpdatesV3();
   migrateMovePhaseCats();
