@@ -2254,8 +2254,26 @@ async function mergeTodoInbox() {
       if (amenitiesTouched) parts.push(amenitiesTouched + ' amenity booking(s)');
       toast(parts.join(' + ') + ' from email triage');
     }
-    // Clear the queue only once the merged state is confirmed saved (or nothing was new).
-    var cleared = Object.assign({}, rowData, { todos: [], moveUpdates: [], amenityUpdates: [] });
+    // Clear only the items we actually processed above. Re-read the row fresh
+    // right before clearing (rather than blanking from the stale rowData snapshot)
+    // so anything a concurrent inbox_push.py run appended while we were merging/
+    // saving survives instead of being silently wiped by this PATCH.
+    var seenTodoIds = {}, seenMoveIds = {}, seenAmenIds = {};
+    inbox.forEach(function (t) { if (t && t.id) seenTodoIds[t.id] = true; });
+    moveUpdates.forEach(function (m) { if (m && m.id) seenMoveIds[m.id] = true; });
+    amenityUpdates.forEach(function (a) { if (a && a.id) seenAmenIds[a.id] = true; });
+    var freshRowData = rowData;
+    try {
+      var freshRes = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox&select=data', { headers: await getSupaHdr() });
+      if (freshRes.ok) {
+        var freshRows = await freshRes.json();
+        freshRowData = (freshRows[0] && freshRows[0].data) || rowData;
+      }
+    } catch (e) { /* fall back to the original snapshot below */ }
+    var remainTodos = (Array.isArray(freshRowData.todos) ? freshRowData.todos : []).filter(function (t) { return !(t && seenTodoIds[t.id]); });
+    var remainMoves = (Array.isArray(freshRowData.moveUpdates) ? freshRowData.moveUpdates : []).filter(function (m) { return !(m && seenMoveIds[m.id]); });
+    var remainAmens = (Array.isArray(freshRowData.amenityUpdates) ? freshRowData.amenityUpdates : []).filter(function (a) { return !(a && seenAmenIds[a.id]); });
+    var cleared = Object.assign({}, freshRowData, { todos: remainTodos, moveUpdates: remainMoves, amenityUpdates: remainAmens });
     await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox', {
       method: 'PATCH',
       headers: await getSupaHdr({ 'Prefer': 'return=minimal' }),
