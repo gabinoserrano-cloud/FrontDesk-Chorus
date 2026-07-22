@@ -21,11 +21,15 @@
     --ease-in-out:cubic-bezier(0.77,0,0.175,1);
   }
   body.dark-mode{--bg:#0F1923;--surface:#162130;--surface2:#1C2A3A;--border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.05);--text:#E2EAF0;--text2:#8FA8BC;--text3:#6E8EA2;--green-light:rgba(26,102,64,0.18);--red-light:rgba(192,53,53,0.15);--amber-light:rgba(181,112,32,0.15);--purple-light:rgba(96,68,178,0.15);--accent-light:rgba(26,92,62,0.18);--shadow:0 1px 4px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);--shadow-md:0 4px 24px rgba(0,0,0,.5),0 2px 4px rgba(0,0,0,.4)}
-  body.text-sm #content{zoom:0.9}body.text-sm .modal-ov .modal{zoom:0.9}
-  body.text-lg #content{zoom:1.14}body.text-lg .modal-ov .modal{zoom:1.14}
+  body.text-sm{font-size:12.5px}
+  body.text-lg{font-size:16px}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%}
   body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;display:flex;height:100vh;height:100dvh;overflow:hidden}
+  .skip-link{position:fixed;left:12px;top:8px;z-index:10000;background:var(--surface);color:var(--text);border:2px solid var(--accent);border-radius:6px;padding:8px 12px;transform:translateY(-150%);transition:transform 120ms ease-out}
+  .skip-link:focus{transform:translateY(0)}
+  .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+  :focus-visible{outline:3px solid rgba(26,92,62,.42);outline-offset:2px}
 
   /* SIDEBAR */
   #sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:#0D1B2A;border-right:0.5px solid rgba(255,255,255,0.09);display:flex;flex-direction:column;height:100vh;height:100dvh;overflow-y:auto;overflow-x:hidden;z-index:200;transition:width 220ms ease-out,min-width 220ms ease-out,transform 220ms var(--ease-out);flex-shrink:0}
@@ -88,7 +92,7 @@
     #hdr-actions.open{display:flex}
     #hdr-actions .btn{width:100%;justify-content:flex-start;padding:10px 12px;font-size:13.5px}
   }
-  #content{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch;max-width:1280px}
+  #content{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch;max-width:1280px;width:100%;min-width:0}
   @media(max-width:700px){#content{padding:12px;padding-bottom:80px}}
   .section{display:none}.section.active{display:block}
 
@@ -220,7 +224,7 @@
   .modal-ov{display:none;position:fixed;inset:0;background:rgba(26,25,22,.5);z-index:1000;align-items:flex-end;justify-content:center;padding:0}
   @media(min-width:600px){.modal-ov{align-items:center;padding:20px}}
   .modal-ov.open{display:flex}
-  .modal{background:var(--surface);border-radius:14px 14px 0 0;width:100%;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-md);animation:slideUp 220ms var(--ease-out)}
+  .modal{background:var(--surface);border-radius:14px 14px 0 0;width:100%;max-height:92vh;overflow-y:auto;overflow-x:hidden;box-shadow:var(--shadow-md);animation:slideUp 220ms var(--ease-out)}
   @media(min-width:600px){.modal{border-radius:10px;max-width:480px;animation:scaleIn 200ms var(--ease-out)}}
   @keyframes slideUp{from{opacity:0;transform:translateY(12px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}
   @keyframes scaleIn{from{opacity:0;transform:scale(0.97)}to{opacity:1;transform:scale(1)}}
@@ -237,8 +241,9 @@
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
   /* DASH */
-  .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
-  .dash-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+  .dash-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-bottom:14px;min-width:0}
+  .dash-grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px;min-width:0}
+  .dash-grid>*,.dash-grid3>*{min-width:0;max-width:100%}
   @media(max-width:900px){.dash-grid3{grid-template-columns:1fr 1fr}}
   @media(max-width:600px){.dash-grid{grid-template-columns:1fr}.dash-grid3{grid-template-columns:1fr}}
   .tight-alert{background:#FFF8E6;border:1px solid #F5D39A;border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;font-size:12.5px}
@@ -252,7 +257,7 @@
   .search-wrap input{padding-left:34px}
   .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none}
   #dash-results{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);z-index:200;display:none}
-  .sr-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border2)}.sr-item:hover{background:var(--bg)}.sr-item:last-child{border-bottom:none}
+  .sr-item{display:block;width:100%;padding:10px 14px;cursor:pointer;border:0;border-bottom:1px solid var(--border2);background:var(--surface);color:var(--text);font:inherit;text-align:left}.sr-item:hover,.sr-item:focus-visible{background:var(--bg)}.sr-item:last-child{border-bottom:none}
 
   /* MOVES INLINE CHECKLIST */
   .move-row{cursor:pointer}.move-row td{transition:background .1s}.move-row.sel>td{background:var(--accent-light)!important}
@@ -663,7 +668,7 @@
   .td-bcard-meta{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
   .td-bcard-owner{font-size:11px;color:var(--text3);margin-top:5px}
   @media(max-width:650px){.td-board-cols{display:flex;overflow-x:auto;padding-bottom:4px;grid-template-columns:none}.td-board-col{flex:0 0 200px}}
-  /* Focus view — computed Eisenhower quadrants + today's 1-2-3 picks */
+  /* This Shift view — computed urgency quadrants + today's Top 3 */
   .focus-grid{display:grid;gap:8px;grid-template-columns:repeat(2,minmax(0,1fr))}
   .focus-quad{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:8px;min-height:70px}
   .focus-quad-hdr{display:flex;justify-content:space-between;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);padding:2px 2px 8px}
@@ -685,6 +690,19 @@
   .td-filter-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
   .td-filter-pill{font-size:11px;padding:3px 10px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;white-space:nowrap}
   .td-filter-pill.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .todo-capture-main{display:flex;gap:8px;align-items:center}
+  .todo-capture-main input{flex:1;min-width:0}
+  .todo-quick-options{display:none;gap:8px;align-items:center;flex-wrap:wrap;padding-top:10px;margin-top:10px;border-top:1px solid var(--border2)}
+  .todo-quick-options.open{display:flex}
+  .todo-workspace-tabs{margin-bottom:10px;overflow-x:auto;scrollbar-width:thin}
+  .todo-workspace-tabs .sub-tab{white-space:nowrap}
+  .todo-list-tools{display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+  .todo-list-tools.open{display:flex}
+  .todo-list-tools input{flex:1;min-width:180px}
+  .todo-followup-note{font-size:11px;color:var(--text2);margin-top:3px;line-height:1.4}
+  .todo-status-quick{font-size:10px;padding:2px 5px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text2);max-width:105px}
+  .todo-project-banner{padding:10px 12px;margin-bottom:10px;border:1px solid rgba(96,68,178,.22);border-radius:var(--radius);background:var(--purple-light);color:var(--purple);font-size:12px}
+  @media(max-width:650px){.todo-capture-main{flex-wrap:wrap}.todo-capture-main input{flex-basis:100%}.todo-capture-main .btn{flex:1;justify-content:center}.todo-list-tools>*{flex:1;min-width:140px}.todo-list-tools input{flex-basis:100%}}
   /* ─── Settings ─── */
   #section-settings{max-width:840px}
   .set-pane{display:none}
@@ -703,7 +721,15 @@
   .pay-amt{font-size:11px;padding:2px 5px;border:1px solid var(--border2);border-radius:4px;background:var(--surface);color:var(--text);width:72px;text-align:right}
   .pay-mismatch{color:var(--red);font-size:10px;font-weight:700}
 
-  @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.stat-clickable:hover,.unit-dot:hover{transform:none!important}#dash-bg-canvas{display:none!important}}
+  @media(max-width:420px){
+    #content{padding:10px;padding-bottom:78px}
+    .dash-grid,.dash-grid3{grid-template-columns:minmax(0,1fr);gap:10px}
+    .card,.dash-greeting-wrap,.tight-alert{max-width:100%;overflow-wrap:anywhere}
+    .card-hdr{flex-wrap:wrap;gap:6px}
+    .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .modal-bdy,.modal-hdr,.modal-ftr{padding-left:14px;padding-right:14px}
+  }
 
   /* ===== DASHBOARD 3D / VISUAL FEATURES ===== */
   .dash-greeting-wrap{position:relative;margin-bottom:14px;overflow:hidden;border-radius:8px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow)}
@@ -749,6 +775,7 @@
 </style>
 </head>
 <body>
+<a class="skip-link" href="#content">Skip to main content</a>
 <div id="sb-ov" onclick="closeMobSidebar()"></div>
 
 <div id="sidebar-wrap">
@@ -812,10 +839,10 @@
 <button id="collapse-btn" onclick="toggleSidebar()" aria-label="Collapse sidebar">&#8249;</button>
 </div><!-- /sidebar-wrap -->
 
-<div id="main">
+<div id="main" role="main" aria-labelledby="hdr-title">
   <div id="header">
     <button id="mob-menu" onclick="openMobSidebar()" aria-label="Open menu">&#9776;</button>
-    <div class="hdr-title" id="hdr-title">Dashboard</div>
+    <div class="hdr-title" id="hdr-title" role="heading" aria-level="1">Dashboard</div>
     <div style="display:flex;gap:4px;margin-left:auto;margin-right:8px">
       <button id="btn-undo" onclick="applyUndo()" title="Undo (⌘Z)" class="btn btn-ghost btn-sm" disabled style="opacity:0.35;font-size:15px;padding:3px 8px;line-height:1">↩</button>
       <button id="btn-redo" onclick="applyRedo()" title="Redo (⌘⇧Z)" class="btn btn-ghost btn-sm" disabled style="opacity:0.35;font-size:15px;padding:3px 8px;line-height:1">↪</button>
@@ -823,9 +850,9 @@
     <button id="hdr-more" class="btn btn-ghost btn-sm" onclick="toggleHdrActions(event)" aria-label="More actions" aria-expanded="false" style="font-size:17px;padding:3px 10px;line-height:1">&#8943;</button>
     <div class="hdr-actions" id="hdr-actions"></div>
   </div>
-  <div id="content">
+  <div id="content" tabindex="-1">
     <div class="section active" id="section-dashboard">
-      <div class="search-wrap"><span class="search-icon">&#128269;</span><input type="text" placeholder="Search residents, units, keys..." oninput="dashSearch(this.value)" onkeydown="if(event.key==='Enter'){var f=document.querySelector('#dash-results .sr-item');if(f)f.click();}" id="dash-search-input"><div id="dash-results"></div></div>
+      <div class="search-wrap"><span class="search-icon" aria-hidden="true">&#128269;</span><label class="sr-only" for="dash-search-input">Search dashboard records</label><input type="search" placeholder="Search residents, units, keys… (⌘K)" oninput="dashSearch(this.value)" onkeydown="if(event.key==='Enter'){var f=document.querySelector('#dash-results .sr-item');if(f)f.click();}" id="dash-search-input" autocomplete="off" aria-controls="dash-results" aria-expanded="false"><div id="dash-results" role="listbox" aria-label="Search results"></div></div>
       <div id="dash-body"></div>
     </div>
     <div class="section" id="section-moves">
@@ -930,32 +957,33 @@
     <div class="section" id="section-todos">
       <div id="todos-user-switcher" style="display:none;margin-bottom:10px;padding:6px 10px;background:var(--accent-light);border:1px solid var(--border);border-radius:var(--radius);align-items:center;gap:6px"></div>
       <div class="card mb-12"><div class="card-body">
-        <div class="flex gap-8 items-center" style="flex-wrap:wrap">
-          <input type="text" id="todo-input" placeholder="Add a to-do..." style="flex:1;min-width:160px" onkeydown="if(event.key==='Enter')openAddTodoFromBar()">
-          <select id="todo-category-quick" style="width:150px"></select>
-          <input type="date" id="todo-date" style="width:140px">
-          <select id="todo-priority" style="width:110px"><option value="normal">Normal</option><option value="urgent">Urgent</option></select>
-          <button class="btn btn-primary" onclick="openAddTodoFromBar()">Add</button>
-          <button class="btn btn-ghost btn-sm" onclick="clearDoneTodos()">Clear done</button>
+        <div class="todo-capture-main">
+          <input type="text" id="todo-input" placeholder="What needs to be done?" onkeydown="if(event.key==='Enter')addTodo()">
+          <button class="btn btn-primary" onclick="addTodo()">Add</button>
+          <button class="btn btn-secondary" onclick="openAddTodoFromBar()">More details</button>
+          <button class="btn btn-ghost btn-sm" id="todo-quick-toggle" aria-expanded="false" onclick="toggleTodoQuickOptions()">Options</button>
+        </div>
+        <div class="todo-quick-options" id="todo-quick-options">
+          <select id="todo-category-quick" style="min-width:170px"></select>
+          <input type="date" id="todo-date" style="width:150px" aria-label="Due date">
+          <select id="todo-priority" style="width:120px" aria-label="Priority"><option value="normal">Normal priority</option><option value="urgent">Urgent</option></select>
         </div>
       </div></div>
-      <div class="sub-tabs" id="todos-tabs">
-        <div class="sub-tab td-cf active" onclick="setTodoCatFilter('all',this)">All</div>
-        <div class="sub-tab td-cf" onclick="setTodoCatFilter('resident',this)">Resident</div>
-        <div class="sub-tab td-cf" onclick="setTodoCatFilter('building',this)">Building, Physical &amp; Vendors</div>
-        <div class="sub-tab td-cf" onclick="setTodoCatFilter('leasing',this)">Leasing &amp; Management</div>
-        <div class="sub-tab td-cf" onclick="setTodoCatFilter('dashboard',this)">Dashboard &amp; Admin</div>
-        <div class="sub-tab td-cf" id="td-assigned-pill" style="display:none" onclick="setTodoAssignedView(this)">&#128100; Assigned by me</div>
-        <div class="sub-tab td-vt" id="td-vt-list" style="margin-left:auto" title="List view" onclick="setTodosView('list')">&#9776; List</div>
-        <div class="sub-tab td-vt" id="td-vt-board" title="Loop board — see everything by status" onclick="setTodosView('board')">&#9638; Board</div>
-        <div class="sub-tab td-vt" id="td-vt-focus" title="Focus — today's 1-2-3 picks + auto-sorted quadrants" onclick="setTodosView('focus')">&#9678; Focus</div>
+      <div class="sub-tabs todo-workspace-tabs" id="todos-tabs">
+        <div class="sub-tab todo-ws" data-workspace="shift" onclick="setTodoWorkspace('shift',this)">&#9678; This Shift</div>
+        <div class="sub-tab todo-ws" data-workspace="all" onclick="setTodoWorkspace('all',this)">&#9776; All Tasks</div>
+        <div class="sub-tab todo-ws" data-workspace="followup" onclick="setTodoWorkspace('followup',this)">&#8635; Follow-Ups</div>
+        <div class="sub-tab todo-ws" data-workspace="assigned" onclick="setTodoWorkspace('assigned',this)">&#128100; Assigned</div>
+        <div class="sub-tab todo-ws" data-workspace="done" onclick="setTodoWorkspace('done',this)">&#10003; Completed</div>
+        <div class="sub-tab todo-ws" id="td-projects-pill" data-workspace="projects" style="display:none" onclick="setTodoWorkspace('projects',this)">&#128188; Admin Projects</div>
       </div>
-      <div class="sub-tabs" id="todos-status-tabs">
-        <div class="sub-tab td-sf active" onclick="setTodoStatusFilter('all',this)">All</div>
-        <div class="sub-tab td-sf" onclick="setTodoStatusFilter('open',this)">Open</div>
-        <div class="sub-tab td-sf" onclick="setTodoStatusFilter('waiting',this)">Waiting On</div>
-        <div class="sub-tab td-sf" onclick="setTodoStatusFilter('blocked',this)">Blocked</div>
-        <div class="sub-tab td-sf" onclick="setTodoStatusFilter('done',this)">Done</div>
+      <div class="todo-list-tools" id="todo-list-tools">
+        <input type="search" id="todo-search" placeholder="Search tasks, units, notes, or owners…" oninput="setTodoSearch(this.value)">
+        <select id="todo-category-filter" aria-label="Filter by category" onchange="setTodoCategorySelect(this.value)"></select>
+        <select id="todo-status-filter" aria-label="Filter by status" onchange="setTodoStatusSelect(this.value)"></select>
+        <button class="btn btn-secondary btn-sm" id="td-vt-list" onclick="setTodosView('list')">&#9776; List</button>
+        <button class="btn btn-ghost btn-sm" id="td-vt-board" onclick="setTodosView('board')">&#9638; Board</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearDoneTodos()">Archive completed</button>
       </div>
       <div class="card" id="todos-list-card"><div class="card-hdr"><span class="card-title" id="todos-section-title">To-Do List</span><span class="card-count" id="todos-count">0 pending</span></div><div id="todos-list"></div></div>
       <div id="todos-board" style="display:none"></div>
@@ -1050,7 +1078,7 @@
                 <button class="btn btn-primary" onclick="checkPassdownReady()">Generate</button>
                 <button class="btn btn-secondary" onclick="savePassdown()">Save Draft</button>
                 <button class="btn btn-ghost" onclick="copyPassdown()">Copy</button>
-                <button class="btn btn-secondary" onclick="copyMarkSent()">&#10003; Copy &amp; mark sent</button>
+                <button class="btn btn-secondary" onclick="copyMarkSent()">&#10003; Copy &amp; prepare to send</button>
                 <button class="btn btn-secondary" onclick="reviewBeforeSend()">&#9993; Review &amp; Send</button>
                 <button class="btn btn-ghost" style="margin-left:auto;color:var(--text3);font-size:12px" onclick="pdClearDraft()">Clear draft</button>
               </div>
@@ -1068,10 +1096,13 @@
           <div style="background:var(--accent-light);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--accent)">
             <strong>How it works:</strong> Paste your screenshot into a Claude chat (claude.ai), ask it to extract the data as JSON, then paste the result below. Takes about 30 seconds.
           </div>
+          <div style="background:var(--amber-light);border:1px solid rgba(181,112,32,.28);border-radius:var(--radius);padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.55">
+            <strong style="color:var(--amber)">Privacy check:</strong> Crop screenshots to the minimum needed and remove phone numbers, email addresses, access codes, credentials, and unrelated resident details. Use only an account approved for work data.
+          </div>
           <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.8">
             <strong style="color:var(--text)">Step 1</strong> &mdash; Take a screenshot of your EliseAI calendar, move list, or Excel sheet.<br>
-            <strong style="color:var(--text)">Step 2</strong> &mdash; Paste it into <a href="https://claude.ai" target="_blank" style="color:var(--accent)">claude.ai</a> and send this message:<br>
-            <div id="prompt-copy-area" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin:8px 0;font-family:'DM Mono',monospace;font-size:11.5px;line-height:1.7;white-space:pre-wrap" id="claude-prompt-display"></div>
+            <strong style="color:var(--text)">Step 2</strong> &mdash; Paste it into <a href="https://claude.ai" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">claude.ai</a> and send this message:<br>
+            <div id="claude-prompt-display" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin:8px 0;font-family:'DM Mono',monospace;font-size:11.5px;line-height:1.7;white-space:pre-wrap"></div>
             <button class="btn btn-secondary btn-sm" onclick="copyClaudePrompt()" style="margin-top:4px">&#128203; Copy prompt</button><br>
             <strong style="color:var(--text)">Step 3</strong> &mdash; Paste Claude's JSON response in the box below and click Import.
           </div>
@@ -1086,10 +1117,10 @@
           </div>
           <div class="fg">
             <label>Paste Claude's JSON response here</label>
-            <textarea id="img-import-json" rows="6" placeholder="Paste the JSON array Claude gives you here..."></textarea>
+            <textarea id="img-import-json" rows="6" placeholder="Paste the JSON array Claude gives you here…" oninput="resetJsonImportPreview()"></textarea>
           </div>
           <div style="margin-top:10px">
-            <button class="btn btn-primary" onclick="importFromPastedJSON()">&#8679; Import JSON</button>
+            <button class="btn btn-primary" id="img-import-btn" onclick="importFromPastedJSON()">&#8679; Review JSON</button>
           </div>
           <div id="img-import-status" style="margin-top:12px;font-size:13px;color:var(--text2);display:none"></div>
           <div id="img-import-preview" style="margin-top:12px;display:none"></div>
@@ -1649,8 +1680,12 @@
       <div class="fg"><label>Linked Unit <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="td-unit" type="text" list="unit-options" placeholder="e.g. 835"></div>
     </div>
     <div class="fr">
-      <div class="fg"><label>Status</label><select id="td-status"></select></div>
-      <div class="fg"><label>Owner / Waiting On <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="td-owner" type="text" placeholder="Me, Paige, Marissa, Blueground..."></div>
+      <div class="fg"><label>Status</label><select id="td-status" onchange="todoStatusFieldsChange()"></select></div>
+      <div class="fg"><label id="td-owner-label">Owner <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="td-owner" type="text" placeholder="Me, Paige, Marissa, Blueground…"></div>
+    </div>
+    <div id="td-followup-fields" style="display:none;padding:10px 12px;margin-bottom:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2)">
+      <div class="fr"><div class="fg"><label>Follow-up / Review Date</label><input id="td-followup-date" type="date" data-no-autofill></div><div class="fg"><label>Last Contact <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="td-last-contact" type="text" placeholder="e.g. Emailed Paige Jul 18"></div></div>
+      <div class="fg" id="td-blocker-wrap" style="display:none"><label>What is blocking this task?</label><textarea id="td-blocker" rows="2" placeholder="Describe the dependency or decision needed"></textarea></div>
     </div>
     <div class="fr">
       <div class="fg"><label>Due Date</label><input id="td-date" type="date" data-no-autofill></div>
@@ -1660,6 +1695,7 @@
       <div class="fg"><label>Priority</label><select id="td-priority"><option value="normal">Normal</option><option value="urgent">Urgent</option></select></div>
       <div class="fg" id="td-assign-wrap" style="display:none"><label>Assign To</label><select id="td-assign"></select></div>
     </div>
+    <div class="fg" id="td-worktype-wrap" style="display:none"><label>Work Area</label><select id="td-worktype"><option value="task">Front Desk Task</option><option value="project">Admin Project</option></select><div class="set-hint">Projects stay out of the shift queue and live under Admin Projects.</div></div>
     <div class="fg"><label>Flag as stale after <span style="font-weight:400;color:var(--text3)">(days, optional — default 5)</span></label><input id="td-staledays" type="number" min="1" placeholder="5"></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-ghost btn-sm" id="modal-todo-delete-btn" style="color:var(--red);display:none" onclick="deleteTodoFromModal()">Delete</button><button class="btn btn-secondary" onclick="closeModal('modal-todo')">Cancel</button><button class="btn btn-primary" id="modal-todo-savebtn" onclick="saveTodoModal()">Save</button></div>
@@ -2365,17 +2401,17 @@ function saveSessionTimeout() {
 
 var DEFAULT_IN_TASKS = [
   // Pre-Move-In
-  { text: 'Send Welcome Letter', cat: 'Pre Move-In' },
+  { text: 'Send Welcome Letter', cat: 'Pre Move-In', automationId: 'welcome-letter' },
   { text: 'Send Invite Link to RiseIO', cat: 'Pre Move-In' },
   { text: 'Create RiseIO Profile', cat: 'Pre Move-In' },
   { text: 'Pre-Move Follow-Up Call', cat: 'Pre Move-In' },
   { text: 'Send WiFi Activation Link', cat: 'Pre Move-In' },
   // Keys & Credentials (prepare before move-in day)
-  { text: 'Prepare Unit Key(s)', cat: 'Keys & Access', hint: '# of keys: ___ (e.g. 2 unit keys)' },
-  { text: 'Prepare Unit Mail Key(s)', cat: 'Keys & Access', hint: '# of mail keys: ___ (e.g. 1 mail key)' },
-  { text: 'Parking: Vehicle info & transponder issued', cat: 'Parking', hint: 'Vehicle type & color: ___ | Transponder #: ___' },
-  { text: 'Parking: Key tag issued', cat: 'Parking', hint: 'Key tag #: ___' },
-  { text: 'Parking: Xpress sticker issued', cat: 'Parking', hint: 'Xpress sticker #: ___' },
+  { text: 'Prepare Unit Key(s)', cat: 'Keys & Access', hint: '# of keys: ___ (e.g. 2 unit keys)', automationId: 'unit-key-issued' },
+  { text: 'Prepare Unit Mail Key(s)', cat: 'Keys & Access', hint: '# of mail keys: ___ (e.g. 1 mail key)', automationId: 'mail-key-issued' },
+  { text: 'Parking: Vehicle info & transponder issued', cat: 'Parking', hint: 'Vehicle type & color: ___ | Transponder #: ___', automationId: 'park-transponder-issued' },
+  { text: 'Parking: Key tag issued', cat: 'Parking', hint: 'Key tag #: ___', automationId: 'park-keytag-issued' },
+  { text: 'Parking: Xpress sticker issued', cat: 'Parking', hint: 'Xpress sticker #: ___', automationId: 'park-sticker-issued' },
   // Move-In Day
   { text: 'Confirm move-in date and time window', cat: 'Pre Move-In' },
   { text: 'Reserve service elevator', cat: 'Elevator' },
@@ -2397,12 +2433,12 @@ var DEFAULT_OUT_TASKS = [
   { text: 'Confirm move-out date and time window', cat: 'Pre Move-Out' },
   { text: 'Reserve service elevator', cat: 'Elevator' },
   { text: 'Unit inspection completed and documented', cat: 'Move Out' },
-  { text: 'Any damage noted and photographed', cat: 'Move Out' },
-  { text: 'Collect & Verify All Unit Keys', cat: 'Keys & Access' },
-  { text: 'Collect & Verify All Unit Mail Keys', cat: 'Keys & Access' },
-  { text: 'Parking: Transponder returned', cat: 'Parking', hint: 'If not returned or returned damaged, note here (e.g. adhered to windshield / cracked)' },
-  { text: 'Parking: Key tag returned', cat: 'Parking' },
-  { text: 'Parking: Xpress sticker returned', cat: 'Parking' },
+  { text: 'Any damage noted and photographed', cat: 'Move Out', automationId: 'damage-review' },
+  { text: 'Collect & Verify All Unit Keys', cat: 'Keys & Access', automationId: 'collect-unit-keys' },
+  { text: 'Collect & Verify All Unit Mail Keys', cat: 'Keys & Access', automationId: 'collect-mail-keys' },
+  { text: 'Parking: Transponder returned', cat: 'Parking', hint: 'If not returned or returned damaged, note here (e.g. adhered to windshield / cracked)', automationId: 'park-transponder-returned' },
+  { text: 'Parking: Key tag returned', cat: 'Parking', automationId: 'park-keytag-returned' },
+  { text: 'Parking: Xpress sticker returned', cat: 'Parking', automationId: 'park-sticker-returned' },
   { text: 'Mobile key deactivated (Lenel)', cat: 'Wrap-Up' },
   { text: 'Parking spot vacated', cat: 'Move Out' },
   { text: 'Mail forwarding reminder given', cat: 'Move Out' },
@@ -2442,14 +2478,21 @@ var DEFAULT_SUPPLIES = [
   { name: 'One-Time Cards – Active Issued', cat: 'Key Cards & Access', unit: 'cards', lowAt: null },
   { name: 'Self-Guided Tour Keys – Active', cat: 'Key Cards & Access', unit: 'keys', lowAt: null }
 ];
-// Task text → supply adjustment when checked/unchecked on move checklist
+// Stable automation identities survive task renaming. The text map migrates older saved data.
+var TASK_AUTOMATION_BY_TEXT = {
+  'Send Welcome Letter':'welcome-letter', 'Prepare Unit Key(s)':'unit-key-issued', 'Prepare Unit Mail Key(s)':'mail-key-issued',
+  'Parking: Vehicle info & transponder issued':'park-transponder-issued', 'Parking: Key tag issued':'park-keytag-issued', 'Parking: Xpress sticker issued':'park-sticker-issued',
+  'Any damage noted and photographed':'damage-review', 'Collect & Verify All Unit Keys':'collect-unit-keys', 'Collect & Verify All Unit Mail Keys':'collect-mail-keys',
+  'Parking: Transponder returned':'park-transponder-returned', 'Parking: Key tag returned':'park-keytag-returned', 'Parking: Xpress sticker returned':'park-sticker-returned'
+};
+function getTaskAutomationId(task) { return task ? (task.automationId || TASK_AUTOMATION_BY_TEXT[task.text] || '') : ''; }
 var TASK_SUPPLY_MAP = {
-  'Parking: Vehicle info & transponder issued': { supName: 'Transponders',        delta: -1 },
-  'Parking: Key tag issued':                   { supName: 'Key Tags',             delta: -1 },
-  'Parking: Xpress sticker issued':             { supName: 'Xpress Stickers',       delta: -1 },
-  'Parking: Transponder returned':             { supName: 'Transponders',         delta: +1 },
-  'Parking: Key tag returned':                 { supName: 'Key Tags',             delta: +1 },
-  'Parking: Xpress sticker returned':           { supName: 'Xpress Stickers',       delta: +1 }
+  'park-transponder-issued': { supName: 'Transponders', delta: -1 },
+  'park-keytag-issued': { supName: 'Key Tags', delta: -1 },
+  'park-sticker-issued': { supName: 'Xpress Stickers', delta: -1 },
+  'park-transponder-returned': { supName: 'Transponders', delta: +1 },
+  'park-keytag-returned': { supName: 'Key Tags', delta: +1 },
+  'park-sticker-returned': { supName: 'Xpress Stickers', delta: +1 }
 };
 var WT_FLOORS = [
   { label: 'Lobby & Exterior', items: ['Main entrance clean & clear', 'Door signage OK', 'Lobby furniture arranged', 'Elevator lobby clean', 'Mail room organized', 'Package area clean', 'Bike storage OK', 'Trash/recycling rooms clear', 'Lighting OK'] },
@@ -2497,10 +2540,18 @@ async function pushCloud() {
   catch (e) { console.warn('pushCloud failed:', e); setSyncStatus('error', 'Offline - local only'); }
   isSyncing = false;
 }
+// Bounds a promise so a stalled request can't hold the app open forever — used on the
+// initial cloud load so login/local-fallback always appears even if the network hangs.
+function withTimeout(promise, ms) {
+  return new Promise(function(resolve, reject) {
+    var timer = setTimeout(function() { reject(new Error('timed out after ' + ms + 'ms')); }, ms);
+    promise.then(function(v) { clearTimeout(timer); resolve(v); }, function(e) { clearTimeout(timer); reject(e); });
+  });
+}
 async function pullCloud() {
   setSyncStatus('syncing', 'Loading...');
   try {
-    var row = await supaGet();
+    var row = await withTimeout(supaGet(), 10000);
     if (row && row.data && Object.keys(row.data).length > 5) {
       var incoming = Object.assign(emptyState(), row.data);
       var localSnap = null;
@@ -3084,7 +3135,7 @@ function openMobSidebar() { g('sidebar').classList.add('mob-open'); g('sb-ov').s
 function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov').style.display = 'none'; }
 
 // ─── NAV ───
-var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Unit Tracker', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', parking: 'Parking Credentials', transponders: 'Transponders', security: 'Security Incidents', session: 'Login / Session', logbook: 'Logbook', supplies: 'Supplies & Inventory' };
+var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Unit Tracker', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', team: 'Team Tracker', parking: 'Parking Credentials', transponders: 'Transponders', security: 'Incident Log', session: 'Login / Session', logbook: 'Logbook', supplies: 'Supplies' };
 var patrolFilter = 'amenity';
 var SEC_ACTIONS = {
   moves: '<button class="btn btn-secondary btn-sm" onclick="openLetterImport()">&#128231; Import Letter</button> <button class="btn btn-secondary btn-sm" onclick="openReconcile()">&#128269; Reconcile</button> <button class="btn btn-secondary btn-sm" onclick="printMovesReport()">&#128424; Print Report</button> <button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
@@ -3102,7 +3153,7 @@ var SEC_ACTIONS = {
   templates: '<button class="btn btn-primary btn-sm" onclick="openAddTemplate()">+ Add Template</button>'
 };
 var curSec = 'dashboard';
-var SEC_HELP = { passdown: 'g-passdown', logbook: 'g-logbook', moves: 'g-moves', keys: 'g-keys' };
+var SEC_HELP = { dashboard:'g-dashboard', moves:'g-moves', maintenance:'g-maint', guests:'g-guests', keys:'g-keys', amenities:'g-amenities', tours:'g-tours', walkthrough:'g-patrol', todos:'g-todos', laf:'g-laf', passdown:'g-passdown', calendar:'g-calendar', settings:'g-settings', import:'g-import', residents:'g-residents', team:'g-team', logbook:'g-logbook', supplies:'g-supplies' };
 var STAFF_NO_ADD = ['moves', 'templates'];
 function getSecActions(sec) {
   var isStaff = currentUser && currentUser.role === 'staff';
@@ -3112,7 +3163,7 @@ function getSecActions(sec) {
 }
 function helpBtn(sec) {
   if (!SEC_HELP[sec]) return '';
-  return '<button class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:13px;color:var(--text3)" title="How to use this section" onclick="showSectionHelp(\'' + SEC_HELP[sec] + '\')">?</button>';
+  return '<button type="button" class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:13px;color:var(--text3)" title="How to use this section" aria-label="How to use ' + esc(SEC_TITLES[sec] || sec) + '" onclick="showSectionHelp(\'' + SEC_HELP[sec] + '\')">?</button>';
 }
 // Header overflow menu (mobile): the ⋯ button only matters when the section has actions.
 function syncHdrMore() {
@@ -3143,6 +3194,8 @@ function nav(item) {
     var dash = document.querySelector('.nav-item[data-sec="dashboard"]');
     if (dash) nav(dash); return;
   }
+  var previousSec = curSec;
+  stopDashVisualEffects();
   document.querySelectorAll('.nav-item').forEach(function (n) { n.classList.remove('active'); });
   item.classList.add('active');
   document.querySelectorAll('.section').forEach(function (s) { s.classList.remove('active'); });
@@ -3150,11 +3203,13 @@ function nav(item) {
   g('hdr-title').textContent = SEC_TITLES[sec] || sec;
   g('hdr-actions').innerHTML = getSecActions(sec);
   syncHdrMore();
-  curSec = sec; renderSection(sec); closeMobSidebar();
+  curSec = sec; renderSection(sec); releaseSectionDom(previousSec, sec); closeMobSidebar();
 }
 function mobNav(item) {
   var sec = item.dataset.sec;
   if (currentUser && currentUser.role === 'staff' && (STAFF_HIDDEN.indexOf(sec) !== -1 || (state.staffHiddenSections||[]).indexOf(sec) !== -1)) return;
+  var previousSec = curSec;
+  stopDashVisualEffects();
   document.querySelectorAll('.mn-item').forEach(function (n) { n.classList.remove('active'); });
   item.classList.add('active');
   var si = document.querySelector('.nav-item[data-sec="' + sec + '"]');
@@ -3164,13 +3219,28 @@ function mobNav(item) {
   g('hdr-title').textContent = SEC_TITLES[sec] || sec;
   g('hdr-actions').innerHTML = getSecActions(sec);
   syncHdrMore();
-  curSec = sec; renderSection(sec);
+  curSec = sec; renderSection(sec); releaseSectionDom(previousSec, sec);
 }
 function renderSection(sec) {
   var map = { dashboard: renderDash, moves: renderMoves, maintenance: renderMaint, guests: renderGuests, keys: renderKeysSection, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, templates: renderTemplates, guide: renderGuide, security: renderSecurity, supplies: renderSupplies, activity: renderActivityLog, parking: renderParking, logbook: renderLogbook };
   if (map[sec]) map[sec]();
 }
 function renderAll() { renderSection(curSec); updateBadges(); }
+// Heavy section results are reproducible from state. Releasing them after navigation keeps
+// long signed-in sessions from retaining thousands of hidden rows and cards.
+var SECTION_VOLATILE = {
+  dashboard:['dash-body','dash-results'],
+  moves:['moves-stats','moves-board','moves-tbody','moves-cards','tight-body'],
+  maintenance:['maint-stats','maint-tbody'], guests:['guests-stats','guests-tbody'],
+  keys:['keys-stats','keys-tbody','keys-otk-cards','parking-tbody','tp-tbody','tp-history-tbody'],
+  amenities:['amenities-tbody'], tours:['tours-stats','tours-tbody'],
+  walkthrough:['patrol-body'], todos:['todo-list','todo-board'], laf:['laf-tbody'],
+  team:['team-body'], activity:['activity-tbody'], logbook:['logbook-body'], supplies:['supplies-body']
+};
+function releaseSectionDom(previousSec, nextSec) {
+  if (!previousSec || previousSec === nextSec) return;
+  (SECTION_VOLATILE[previousSec] || []).forEach(function(id) { var el = g(id); if (el) el.replaceChildren(); });
+}
 
 // ─── TEST DATA ───
 async function loadTestData() {
@@ -3304,16 +3374,23 @@ function confirmModal(message, opts) {
     cancelBtn.textContent = opts.cancelLabel || 'Cancel';
     okBtn.className = 'btn ' + (opts.danger === false ? 'btn-primary' : 'btn-danger');
     var prevFocus = document.activeElement;
+    var hadOpenModal = _modalStack && _modalStack.length > 0;
+    setPageModalState(true);
     function done(val) {
       ov.classList.remove('open');
       okBtn.onclick = null; cancelBtn.onclick = null; ov.onclick = null;
       document.removeEventListener('keydown', onKey, true);
+      if (!hadOpenModal) setPageModalState(false);
       if (prevFocus && prevFocus.focus) { try { prevFocus.focus({ preventScroll: true }); } catch (e) {} }
       resolve(val);
     }
     function onKey(e) {
       if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); done(false); }
       else if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); done(true); }
+      else if (e.key === 'Tab') {
+        if (e.shiftKey && document.activeElement === cancelBtn) { e.preventDefault(); okBtn.focus(); }
+        else if (!e.shiftKey && document.activeElement === okBtn) { e.preventDefault(); cancelBtn.focus(); }
+      }
     }
     okBtn.onclick = function () { done(true); };
     cancelBtn.onclick = function () { done(false); };
@@ -3327,11 +3404,14 @@ var _modalStack = [];
 var _modalReturnFocus = null;
 function openModal(id) {
   var ov = g(id);
+  if (!ov) return;
+  prepareModalA11y(ov);
   ov.classList.add('open');
   ov.dataset.dirty = '';
   if (!_modalStack.length) _modalReturnFocus = document.activeElement;
   var si = _modalStack.indexOf(id); if (si !== -1) _modalStack.splice(si, 1);
   _modalStack.push(id);
+  setPageModalState(true);
   refreshUnitDatalist();
   ov.querySelectorAll('input[type=date]').forEach(function (f) { if (!f.value && !f.hasAttribute('data-no-autofill')) f.value = today(); });
   // Move focus into the modal so keyboard users land inside it, not stranded on the page behind.
@@ -3344,11 +3424,15 @@ function openModal(id) {
 }
 function closeModal(id) {
   var ov = g(id);
+  if (!ov) return;
   ov.classList.remove('open');
   var si = _modalStack.indexOf(id); if (si !== -1) _modalStack.splice(si, 1);
-  if (!_modalStack.length && _modalReturnFocus && _modalReturnFocus.focus) {
-    try { _modalReturnFocus.focus({ preventScroll: true }); } catch (e) {}
-    _modalReturnFocus = null;
+  if (!_modalStack.length) {
+    setPageModalState(false);
+    if (_modalReturnFocus && _modalReturnFocus.focus) {
+      try { _modalReturnFocus.focus({ preventScroll: true }); } catch (e) {}
+      _modalReturnFocus = null;
+    }
   }
   if (curSec === 'passdown' && ['modal-maint','modal-logbook','modal-key','modal-amenity'].indexOf(id) !== -1) {
     setTimeout(function(){ renderPdAutoBlocks(currentUser && currentUser.role === 'admin'); }, 150);
@@ -3381,8 +3465,10 @@ function fieldError(el, msg) {
   el.classList.add('field-invalid');
   var host = (el.closest && el.closest('.fg')) || el.parentNode;
   var n = host.querySelector(':scope > .field-err');
-  if (!n) { n = document.createElement('div'); n.className = 'field-err'; host.appendChild(n); }
+  if (!n) { n = document.createElement('div'); n.className = 'field-err'; n.id = (el.id || 'field') + '-error'; n.setAttribute('role','alert'); host.appendChild(n); }
   n.textContent = msg;
+  el.setAttribute('aria-invalid', 'true');
+  el.setAttribute('aria-describedby', n.id);
 }
 function clearErr(el) {
   if (!el) return;
@@ -3390,6 +3476,8 @@ function clearErr(el) {
   var host = (el.closest && el.closest('.fg')) || el.parentNode;
   var n = host && host.querySelector(':scope > .field-err');
   if (n) n.remove();
+  el.removeAttribute('aria-invalid');
+  if (el.getAttribute('aria-describedby') && /-error$/.test(el.getAttribute('aria-describedby'))) el.removeAttribute('aria-describedby');
 }
 // specs: [[el, isValid, message], ...] — returns true if all valid, else marks all and focuses the first invalid.
 function requireFields(specs) {
@@ -3418,19 +3506,61 @@ document.addEventListener('keydown', function (e) {
   if (fallback) attemptCloseModalOv(fallback);
 });
 
-// ── Keyboard accessibility (A-1): make div-based controls focusable + operable ──
-var A11Y_INTERACTIVE = '.nav-item,.sub-tab,.mn-item,.stat-clickable';
+// ── Keyboard and form accessibility ──
+var A11Y_INTERACTIVE = '.nav-item,.sub-tab,.mn-item,.stat-clickable,.phi-hdr,.th-sort,.move-row,.mc-hdr,.wt-floor-hdr,.unit-dot';
+var _a11yFieldSeq = 0, _a11yTitleSeq = 0;
+function prepareModalA11y(root) {
+  var overlays = [];
+  if (root && root.classList && root.classList.contains('modal-ov')) overlays.push(root);
+  (root || document).querySelectorAll('.modal-ov').forEach(function(ov){ overlays.push(ov); });
+  overlays.forEach(function(ov) {
+    ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true');
+    var title = ov.querySelector('.modal-title');
+    if (title) { if (!title.id) title.id = 'modal-title-' + (++_a11yTitleSeq); ov.setAttribute('aria-labelledby', title.id); }
+    else if (!ov.hasAttribute('aria-label')) ov.setAttribute('aria-label','Dialog');
+  });
+}
+function enhanceFormA11y(root) {
+  var scope = root || document;
+  scope.querySelectorAll('button:not([type])').forEach(function(btn){ btn.type = 'button'; });
+  scope.querySelectorAll('input:not([type])').forEach(function(inp){ inp.type = 'text'; });
+  scope.querySelectorAll('input:not([type=hidden]),select,textarea').forEach(function(el) {
+    if (!el.id) el.id = 'field-' + (++_a11yFieldSeq);
+    var host = el.closest && el.closest('.fg');
+    var label = host && host.querySelector('label');
+    if (label && !label.htmlFor && !label.contains(el)) label.htmlFor = el.id;
+    if (!el.getAttribute('aria-label') && !el.getAttribute('aria-labelledby') && (!label || (!label.htmlFor && !label.contains(el)))) {
+      var text = el.getAttribute('placeholder') || el.getAttribute('title') || el.getAttribute('name');
+      var enclosing = el.closest && el.closest('label');
+      if (!text && enclosing) text = enclosing.textContent.trim();
+      if (text) el.setAttribute('aria-label', text.replace(/[.…]+$/,''));
+    }
+  });
+}
+function setPageModalState(open) {
+  ['sidebar-wrap','main','mob-nav','notepad-panel','notepad-tab'].forEach(function(id) {
+    var el = g(id); if (!el) return;
+    if (open) { el.setAttribute('inert',''); el.setAttribute('aria-hidden','true'); }
+    else { el.removeAttribute('inert'); el.removeAttribute('aria-hidden'); }
+  });
+}
 function enhanceA11y(root) {
-  (root || document).querySelectorAll(A11Y_INTERACTIVE).forEach(function (el) {
+  var scope = root || document;
+  scope.querySelectorAll(A11Y_INTERACTIVE + ',[onclick]').forEach(function (el) {
+    if (/^(BUTTON|A|INPUT|SELECT|TEXTAREA|OPTION|LABEL)$/.test(el.tagName)) return;
+    var handler = (el.getAttribute('onclick') || '').replace(/\s+/g,'');
+    if (handler === 'event.stopPropagation()' || handler === 'event.stopPropagation();') return;
     if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
     if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+    el.setAttribute('data-a11y-clickable','1');
   });
+  enhanceFormA11y(scope); prepareModalA11y(scope);
 }
 // Enter/Space activate a focused div-control, matching native button behavior.
 document.addEventListener('keydown', function (e) {
   if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
   var el = document.activeElement;
-  if (el && el.matches && el.matches(A11Y_INTERACTIVE) && el.tagName !== 'BUTTON' && el.tagName !== 'A' && el.tagName !== 'INPUT' && el.tagName !== 'SELECT' && el.tagName !== 'TEXTAREA') {
+  if (el && el.matches && el.matches('[data-a11y-clickable="1"]')) {
     e.preventDefault();
     el.click();
   }
@@ -3438,7 +3568,7 @@ document.addEventListener('keydown', function (e) {
 // Static controls exist now (script runs after markup); dynamic re-renders are caught by the observer below.
 enhanceA11y(document);
 (function () {
-  var target = g('content') || document.body;
+  var target = document.body;
   if (!window.MutationObserver) return;
   var obs = new MutationObserver(function (muts) {
     for (var i = 0; i < muts.length; i++) {
@@ -3449,6 +3579,23 @@ enhanceA11y(document);
   obs.observe(target, { childList: true, subtree: true });
 })();
 
+// Keep focus inside the top dialog and make Enter consistently activate its one clear primary action.
+document.addEventListener('keydown', function(e) {
+  if (!_modalStack.length) return;
+  var ov = g(_modalStack[_modalStack.length - 1]);
+  if (!ov || !ov.classList.contains('open')) return;
+  if (e.key === 'Tab') {
+    var focusable = Array.from(ov.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter(function(el){ return el.offsetParent !== null; });
+    if (!focusable.length) { e.preventDefault(); ov.focus(); return; }
+    var first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  } else if (e.key === 'Enter' && /^(INPUT)$/.test(e.target.tagName) && !/^(checkbox|radio|button|submit|file)$/.test(e.target.type)) {
+    var primaries = Array.from(ov.querySelectorAll('.modal-ftr .btn-primary:not([disabled])')).filter(function(el){ return el.offsetParent !== null; });
+    if (primaries.length === 1) { e.preventDefault(); primaries[0].click(); }
+  }
+}, true);
+
 // ─── BADGES ───
 function updateBadges() {
   var mN = (state.moves || []).filter(function (m) { return !m.archivedAt; }).length;
@@ -3457,7 +3604,7 @@ function updateBadges() {
   var kN = (state.keys || []).filter(function (k) { return k.status === 'issued' && k.type !== 'resident'; }).length;
   var aN = (state.amenities || []).filter(function (a) { return a.date >= today(); }).length;
   var trN = (state.tours || []).filter(function (t) { return t.date === today(); }).length;
-  var tdN = getCurrentTodos().filter(function (t) { return !t.done; }).length;
+  var tdN = getCurrentTodos().filter(function (t) { return !t.done && (t.workType || 'task') !== 'project'; }).length;
   var lN = (state.laf || []).filter(function (i) { return !i.claimedAt; }).length;
   var naN = (state.moves || []).filter(function (m) { return !m.archivedAt && !m.apptDate && !m.apptTbd && m.date >= today(); }).length;
   setBadge('badge-needs-appt', naN);
@@ -3478,6 +3625,7 @@ function setMBadge(id, n) { var e = g(id); if (!e) return; e.textContent = n; e.
 // ─── DASHBOARD ───
 // ===== [DASHBOARD] ===========================================================
 function renderDash() {
+  if (curSec !== 'dashboard') { stopDashVisualEffects(); var hiddenDash = g('dash-body'); if (hiddenDash) hiddenDash.replaceChildren(); return; }
   var t = today(), moves = state.moves || [];
   var active = moves.filter(function (m) { return !m.archivedAt; });
   // Today = moves with appt today, OR lease start today with no appt yet
@@ -3494,7 +3642,7 @@ function renderDash() {
   // Resident fobs are permanent possessions, not desk loans — exclude them from the actionable "Keys Out" count/widget.
   var activeOut = issuedK.filter(function (k) { return k.type !== 'resident'; });
   var overdueOut = activeOut.filter(function (k) { return k.type === 'one-time' && k.issuedAt && (Date.now() - k.issuedAt) >= 2 * 3600000; });
-  var pendTd = getCurrentTodos().filter(function (t2) { return !t2.done; });
+  var pendTd = getCurrentTodos().filter(function (t2) { return !t2.done && (t2.workType || 'task') !== 'project'; });
   var unclLAF = (state.laf || []).filter(function (i) { return !i.claimedAt; });
   var outs = active.filter(function (m) { return m.type === 'out'; });
   var ins = active.filter(function (m) { return m.type === 'in'; });
@@ -3662,12 +3810,11 @@ function renderDash() {
   html += '</div></div>';
 
   g('dash-body').innerHTML = html;
-  // focus shift log input if dashboard is visible
-  setTimeout(function(){ var el = g('shift-log-input'); if (el && curSec === 'dashboard') el.focus(); }, 80);
   initStatCardTilt();
   initDashBgCanvas();
 }
 function initStatCardTilt() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || window.matchMedia('(pointer: coarse)').matches) return;
   document.querySelectorAll('#dash-body .stat-card.stat-clickable').forEach(function(card) {
     card.addEventListener('mousemove', function(e) {
       var rect = card.getBoundingClientRect();
@@ -3686,10 +3833,13 @@ function initStatCardTilt() {
   });
 }
 var _dashBgAnimId = null;
-function initDashBgCanvas() {
+function stopDashVisualEffects() {
   if (_dashBgAnimId) { cancelAnimationFrame(_dashBgAnimId); _dashBgAnimId = null; }
+}
+function initDashBgCanvas() {
+  stopDashVisualEffects();
   var canvas = document.getElementById('dash-bg-canvas');
-  if (!canvas) return;
+  if (!canvas || curSec !== 'dashboard' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   var wrap = canvas.parentElement;
   canvas.width = wrap.offsetWidth;
   canvas.height = wrap.offsetHeight;
@@ -3706,6 +3856,7 @@ function initDashBgCanvas() {
     });
   }
   function draw() {
+    if (curSec !== 'dashboard' || !canvas.isConnected || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { stopDashVisualEffects(); return; }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     particles.forEach(function(p) {
       ctx.beginPath();
@@ -3724,20 +3875,36 @@ function initDashBgCanvas() {
 }
 function dashSearch(q) {
   var res = g('dash-results');
-  if (!q.trim()) { res.style.display = 'none'; return; }
+  var input = g('dash-search-input');
+  if (!q.trim()) { res.style.display = 'none'; if (input) input.setAttribute('aria-expanded','false'); return; }
   var ql = q.toLowerCase(), results = [];
-  (state.moves || []).filter(function (m) { return (m.resident || '').toLowerCase().includes(ql) || (m.unit || '').toLowerCase().includes(ql); }).forEach(function (m) { results.push({ label: m.resident + ' — Unit ' + m.unit, sub: (m.type === 'in' ? 'Move In' : 'Move Out') + ' · ' + fmtShort(m.date), sec: 'moves' }); });
-  (state.guests || []).filter(function (gst) { return (gst.name || '').toLowerCase().includes(ql) || (gst.unit || '').toLowerCase().includes(ql); }).forEach(function (gst) { results.push({ label: gst.name + ' (Guest)', sub: 'Unit ' + gst.unit + ' · ' + gst.status, sec: 'guests' }); });
-  (state.unitRecords || []).filter(function (r) { return (r.leaseholder || '').toLowerCase().includes(ql) || (r.unit || '').toLowerCase().includes(ql); }).forEach(function (r) { results.push({ label: (r.leaseholder || 'Unit') + ' — Unit ' + r.unit, sub: 'Unit Tracker', sec: 'residents' }); });
-  (state.keys || []).filter(function (k) { return (k.name || '').toLowerCase().includes(ql) || (k.unit || '').toLowerCase().includes(ql) || (k.fob || '').toLowerCase().includes(ql); }).forEach(function (k) { results.push({ label: k.name + ' — Unit ' + k.unit, sub: 'Key Tracker · ' + k.type + ' · ' + k.status, sec: 'keys' }); });
-  (state.maintenance || []).filter(function (m) { return (m.unit || '').toLowerCase().includes(ql) || (m.issue || '').toLowerCase().includes(ql); }).forEach(function (m) { results.push({ label: m.issue + ' — Unit ' + m.unit, sub: 'Maintenance · ' + m.status, sec: 'maintenance' }); });
-  (state.concierge || []).filter(function (c) { return (c.resident || '').toLowerCase().includes(ql) || (c.unit || '').toLowerCase().includes(ql); }).forEach(function (c) { results.push({ label: c.resident + ' — Unit ' + c.unit, sub: 'Concierge · ' + c.type + ' · ' + c.status, sec: 'concierge' }); });
-  if (!results.length) { res.innerHTML = '<div class="sr-item text-3">No results</div>'; res.style.display = ''; return; }
+  (state.moves || []).filter(function (m) { return (m.resident || '').toLowerCase().includes(ql) || (m.unit || '').toLowerCase().includes(ql); }).forEach(function (m) { results.push({ id:m.id, kind:'move', label: m.resident + ' — Unit ' + m.unit, sub: (m.type === 'in' ? 'Move In' : 'Move Out') + ' · ' + fmtShort(m.date), sec: 'moves' }); });
+  (state.guests || []).filter(function (gst) { return (gst.name || '').toLowerCase().includes(ql) || (gst.unit || '').toLowerCase().includes(ql); }).forEach(function (gst) { results.push({ id:gst.id, kind:'guest', label: gst.name + ' (Guest)', sub: 'Unit ' + gst.unit + ' · ' + gst.status, sec: 'guests' }); });
+  (state.unitRecords || []).filter(function (r) { return (r.leaseholder || '').toLowerCase().includes(ql) || (r.unit || '').toLowerCase().includes(ql); }).forEach(function (r) { results.push({ id:r.id, kind:'unit', label: (r.leaseholder || 'Unit') + ' — Unit ' + r.unit, sub: 'Unit Tracker', sec: 'residents' }); });
+  (state.keys || []).filter(function (k) { return (k.name || '').toLowerCase().includes(ql) || (k.unit || '').toLowerCase().includes(ql) || (k.fob || '').toLowerCase().includes(ql); }).forEach(function (k) { results.push({ id:k.id, kind:'key', label: k.name + ' — Unit ' + k.unit, sub: 'Key Tracker · ' + k.type + ' · ' + k.status, sec: 'keys' }); });
+  (state.maintenance || []).filter(function (m) { return (m.unit || '').toLowerCase().includes(ql) || (m.issue || '').toLowerCase().includes(ql); }).forEach(function (m) { results.push({ id:m.id, kind:'maintenance', label: m.issue + ' — Unit ' + m.unit, sub: 'Maintenance · ' + m.status, sec: 'maintenance' }); });
+  (state.concierge || []).filter(function (c) { return (c.resident || '').toLowerCase().includes(ql) || (c.unit || '').toLowerCase().includes(ql); }).forEach(function (c) { results.push({ id:c.id, kind:'concierge', label: c.resident + ' — Unit ' + c.unit, sub: 'Logbook · ' + c.type + ' · ' + c.status, sec: 'logbook' }); });
+  if (!results.length) { res.innerHTML = '<div class="sr-item text-3" role="status">No matching records</div>'; res.style.display = ''; if (input) input.setAttribute('aria-expanded','true'); return; }
   var html = '';
-  results.slice(0, 8).forEach(function (r) { html += '<div class="sr-item" onclick="navToSearch(\'' + r.sec + '\')"><div class="text-sm font-600">' + esc(r.label) + '</div><div class="text-xs text-3">' + esc(r.sub) + '</div></div>'; });
-  res.innerHTML = html; res.style.display = '';
+  results.slice(0, 8).forEach(function (r) { html += '<button type="button" class="sr-item" role="option" data-search-sec="' + esc(r.sec) + '" data-search-id="' + esc(r.id) + '" data-search-kind="' + esc(r.kind) + '"><div class="text-sm font-600">' + esc(r.label) + '</div><div class="text-xs text-3">' + esc(r.sub) + '</div></button>'; });
+  res.innerHTML = html; res.style.display = ''; if (input) input.setAttribute('aria-expanded','true');
 }
-function navToSearch(sec) { g('dash-results').style.display = 'none'; g('dash-search-input').value = ''; var item = document.querySelector('.nav-item[data-sec="' + sec + '"]'); if (item) nav(item); }
+function navToSearch(sec, id, kind) {
+  g('dash-results').style.display = 'none'; g('dash-search-input').value = ''; g('dash-search-input').setAttribute('aria-expanded','false');
+  var item = document.querySelector('.nav-item[data-sec="' + sec + '"]'); if (item) nav(item);
+  var editors = { move:openEditMove, guest:openEditGuest, unit:openEditUnitRecord, key:openEditKey, maintenance:openEditMaint, concierge:openEditConcierge };
+  if (id && editors[kind]) setTimeout(function(){ editors[kind](id); }, 60);
+}
+document.addEventListener('click', function(e) {
+  var hit = e.target.closest && e.target.closest('[data-search-sec]');
+  if (hit) navToSearch(hit.dataset.searchSec, hit.dataset.searchId, hit.dataset.searchKind);
+});
+document.addEventListener('keydown', function(e) {
+  if (!currentUser || !(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'k') return;
+  e.preventDefault();
+  var item = document.querySelector('.nav-item[data-sec="dashboard"]'); if (item && curSec !== 'dashboard') nav(item);
+  setTimeout(function(){ var input = g('dash-search-input'); if (input) { input.focus(); input.select(); } }, 50);
+});
 // ===== [MOVE-INS / MOVE-OUTS] ================================================
 function navToMoves(filter) {
   var item = document.querySelector('.nav-item[data-sec="moves"]');
@@ -4451,7 +4618,7 @@ async function saveMove() {
   // New move
   var customIn = state.customInTasks || DEFAULT_IN_TASKS;
   var customOut = state.customOutTasks || DEFAULT_OUT_TASKS;
-  var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null, paymentTask: t.paymentTask || false }; });
+  var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null, paymentTask: t.paymentTask || false, automationId: getTaskAutomationId(t) || null }; });
   var leaseStatus = (moveType === 'in' && g('mv-lease-status')) ? g('mv-lease-status').value : '';
   var m = { id: uid(), unit: unit, resident: resident, date: date, type: moveType, total: total, notes: notes, apptDate: apptDate, apptTime: apptTime, apptTbd: apptTbd, leaseStatus: leaseStatus, tasks: tasks, archivedAt: null, createdAt: Date.now(), addedBy: currentUser ? currentUser.name : 'Front Desk' };
   if (!state.moves) state.moves = [];
@@ -4554,10 +4721,11 @@ function buildCL(m, filterCat) {
     }
     html += '<div class="cl-item' + (isParkingTask ? ' cl-item-parking' : '') + '" onclick="event.stopPropagation()">';
     html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTask(\'' + m.id + '\',\'' + t.id + '\',this.checked)">';
+    if (getTaskAutomationId(t)) html += '<span title="Connected task: renaming it will not break its workflow" aria-label="Connected task" style="font-size:10px;color:var(--accent);flex-shrink:0">&#128279;</span>';
     // Editable task text
     html += '<input type="text" class="cl-text-input ' + (t.done ? 'done' : '') + '" value="' + (t.text || t.label || '').replace(/"/g, '&quot;') + '" onblur="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'text\',this.value)" onclick="event.stopPropagation()">';
     // Quantity field (only for key tasks)
-    var isKeyQtyTask = (t.text === 'Prepare Unit Key(s)' || t.text === 'Prepare Unit Mail Key(s)');
+    var isKeyQtyTask = (getTaskAutomationId(t) === 'unit-key-issued' || getTaskAutomationId(t) === 'mail-key-issued');
     if (isKeyQtyTask) {
       html += '<span style="font-size:11px;color:var(--text3);flex-shrink:0;margin:0 2px" title="Number of keys to prepare">&#215;</span>';
       html += '<input type="text" value="' + (t.qty||'').replace(/"/g,'&quot;') + '" placeholder="# keys" title="Number of keys (1 per leaseholder)" style="width:52px;font-size:12px;text-align:center;border:1px solid var(--border2);border-radius:4px;padding:2px 4px;background:var(--surface);color:var(--text);flex-shrink:0;opacity:' + (t.qty ? '1' : '0.4') + '" onclick="event.stopPropagation()" onfocus="this.style.opacity=\'1\'" onblur="this.style.opacity=this.value?\'1\':\'0.4\';updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'qty\',this.value)">';
@@ -4645,6 +4813,8 @@ function buildCL(m, filterCat) {
 function updateTaskField(moveId, taskId, field, value) {
   var m = (state.moves || []).find(function (x) { return x.id === moveId; }); if (!m) return;
   var t = (m.tasks || []).find(function (x) { return x.id === taskId; }); if (!t) return;
+  var automationId = getTaskAutomationId(t);
+  if (automationId && !t.automationId) t.automationId = automationId;
   var trimmed = typeof value === 'string' ? value.trim() : value;
   if (field === 'text' && !trimmed) return; // don't save empty text
   t[field] = trimmed || null;
@@ -4973,27 +5143,31 @@ function toggleCL(id) {
 async function toggleTask(moveId, taskId, checked) {
   var m = (state.moves || []).find(function (x) { return x.id === moveId; }); if (!m) return;
   var t = (m.tasks || []).find(function (x) { return x.id === taskId; }); if (!t) return;
+  var automationId = getTaskAutomationId(t);
   var tasksBefore = JSON.parse(JSON.stringify(m.tasks));
+  var welcomeLetterSentBefore = !!m.welcomeLetterSent; // coerce so undo-JSON-clone doesn't drop an undefined key
   t.done = checked;
   if (checked) { t.completedBy = currentUser ? currentUser.name : ''; t.completedAt = Date.now(); }
   else { t.completedBy = null; t.completedAt = null; }
-  var tasksAfter = JSON.parse(JSON.stringify(m.tasks));
   var taskLabel = (checked ? 'check' : 'uncheck') + ' task — ' + (t.text || 'task');
-  // Every side effect below (supply counts, Key Tracker entries) is collected here so one
-  // undo/redo reverses the whole action atomically instead of leaving it half-reversed.
-  var cmds = [{ sec: 'moves', type: 'EDIT', id: m.id, before: { tasks: tasksBefore }, after: { tasks: tasksAfter }, label: taskLabel }];
+  // Every side effect below (supply counts, Key Tracker entries, welcome-call to-do, parking
+  // returns, damage reports) is collected into this one array so a single undo/redo reverses
+  // the whole action atomically instead of leaving part of it behind.
+  var cmds = [];
   logActivity('moves', checked ? 'complete' : 'reopen', (checked ? 'Completed' : 'Reopened') + ' move task — Unit ' + m.unit + ' · ' + (t.text || 'task'), 'Resident: ' + (m.resident || '-') + (checked && t.completedBy ? ' · Completed by: ' + t.completedBy : ''));
   // ── Welcome letter trigger → stage + welcome call To-Do ──
-  if (checked && m.type === 'in' && t.text === 'Send Welcome Letter' && !m.welcomeLetterSent) {
+  if (checked && m.type === 'in' && automationId === 'welcome-letter' && !m.welcomeLetterSent) {
     m.welcomeLetterSent = true;
     var wcDue = '';
     try { var wcD = new Date(); wcD.setDate(wcD.getDate() + 2); wcDue = localDateStr(wcD); } catch(e) {}
     var wcTodos = getCurrentTodos();
-    wcTodos.push({ id: uid(), text: 'Welcome call — ' + m.resident + ', Unit ' + m.unit, dueDate: wcDue, priority: 'normal', done: false, status: 'open', category: 'resident', linkedUnit: m.unit, note: '2-3 min call — did they receive the welcome letter? any questions so far?', createdAt: Date.now(), lastUpdated: Date.now(), moveRef: m.id });
+    var wcTodo = { id: uid(), text: 'Welcome call — ' + m.resident + ', Unit ' + m.unit, dueDate: wcDue, priority: 'normal', done: false, status: 'open', category: 'resident', linkedUnit: m.unit, note: '2-3 min call — did they receive the welcome letter? any questions so far?', createdAt: Date.now(), lastUpdated: Date.now(), moveRef: m.id };
+    wcTodos.push(wcTodo);
+    cmds.push({ sec: 'todos', type: 'ADD', path: currentTodosPath(), id: wcTodo.id, data: cloneData(wcTodo), label: 'welcome call to-do created — Unit ' + m.unit });
     toast('Welcome letter logged — welcome call to-do created (due in 2 days)');
   }
   // ── Supply integration ──
-  var supLink = TASK_SUPPLY_MAP[t.text];
+  var supLink = TASK_SUPPLY_MAP[automationId];
   if (supLink) {
     var direction = checked ? supLink.delta : -supLink.delta;
     var action = direction < 0 ? 'Issued' : 'Returned';
@@ -5004,23 +5178,23 @@ async function toggleTask(moveId, taskId, checked) {
   }
   // ── Connection 1: Move-in key tasks → Key Tracker ──
   if (checked && m.type === 'in') {
-    var isResidentKey = t.text === 'Prepare Unit Key(s)';
-    var isMailKey = t.text === 'Prepare Unit Mail Key(s)';
+    var isResidentKey = automationId === 'unit-key-issued';
+    var isMailKey = automationId === 'mail-key-issued';
     if (isResidentKey || isMailKey) {
       if (!state.keys) state.keys = [];
       // Dedupe guard: if this checklist task already created key entries, don't create them again on re-check.
-      var alreadyMade = state.keys.some(function(k) { return k.srcMoveId === m.id && k.srcTaskText === t.text; });
+      var alreadyMade = state.keys.some(function(k) { return k.srcMoveId === m.id && (k.srcAutomationId === automationId || (!k.srcAutomationId && k.srcTaskText === t.text)); });
       if (alreadyMade) {
         toast('Keys for this task are already in the Key Tracker');
       } else {
         var keyNote = isMailKey ? 'Mail key — created from move-in checklist' : 'Created from move-in checklist';
         var keyKindTag = isMailKey ? 'mail' : 'unit';
-        var mainKeyEntry = { id: uid(), unit: m.unit, name: m.resident, type: 'resident', keyKind: keyKindTag, fob: '', status: 'issued', notes: keyNote, addedBy: currentUser ? currentUser.name : '', srcMoveId: m.id, srcTaskText: t.text, issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null };
+        var mainKeyEntry = { id: uid(), unit: m.unit, name: m.resident, type: 'resident', keyKind: keyKindTag, fob: '', status: 'issued', notes: keyNote, addedBy: currentUser ? currentUser.name : '', srcMoveId: m.id, srcTaskText: t.text, srcAutomationId: automationId, issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null };
         state.keys.push(mainKeyEntry);
         cmds.push({ sec: 'keys', type: 'ADD', id: mainKeyEntry.id, data: cloneData(mainKeyEntry), label: 'key created — Unit ' + m.unit });
         if (m.coResidents && m.coResidents.length) {
           m.coResidents.forEach(function(cr) {
-            var coKeyEntry = { id: uid(), unit: m.unit, name: cr.name, type: 'resident', keyKind: keyKindTag, fob: '', status: 'issued', notes: keyNote + ' (co-resident)', addedBy: currentUser ? currentUser.name : '', srcMoveId: m.id, srcTaskText: t.text, issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null };
+            var coKeyEntry = { id: uid(), unit: m.unit, name: cr.name, type: 'resident', keyKind: keyKindTag, fob: '', status: 'issued', notes: keyNote + ' (co-resident)', addedBy: currentUser ? currentUser.name : '', srcMoveId: m.id, srcTaskText: t.text, srcAutomationId: automationId, issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null };
             state.keys.push(coKeyEntry);
             cmds.push({ sec: 'keys', type: 'ADD', id: coKeyEntry.id, data: cloneData(coKeyEntry), label: 'key created — Unit ' + m.unit + ' (co-resident)' });
           });
@@ -5031,7 +5205,7 @@ async function toggleTask(moveId, taskId, checked) {
     }
   }
   // ── Connection 1: Move-out collect keys task → mark keys returned ──
-  if (m.type === 'out' && t.text === 'Collect & Verify All Unit Keys') {
+  if (m.type === 'out' && automationId === 'collect-unit-keys') {
     if (checked) {
       var issuedKeys = (state.keys || []).filter(function(k) { return k.unit === m.unit && k.status === 'issued'; });
       if (issuedKeys.length) {
@@ -5046,9 +5220,8 @@ async function toggleTask(moveId, taskId, checked) {
       }
     }
   }
-  pushBatchUndo('moves', taskLabel, cmds);
   // ── Connection 2: Move-out parking tasks → mark parking credential returned ──
-  if (m.type === 'out' && checked && ['Parking: Transponder returned', 'Parking: Key tag returned', 'Parking: Xpress sticker returned'].indexOf(t.text) !== -1) {
+  if (m.type === 'out' && checked && ['park-transponder-returned','park-keytag-returned','park-sticker-returned'].indexOf(automationId) !== -1) {
     var parkTasks = (m.tasks || []).filter(function(tk) { return tk.cat === 'Parking'; });
     var allParkDone = parkTasks.length > 0 && parkTasks.every(function(tk) { return tk.done; });
     if (allParkDone) {
@@ -5057,24 +5230,30 @@ async function toggleTask(moveId, taskId, checked) {
         var _apb = cloneData(activePark);
         activePark.status = 'returned'; activePark.returnedAt = Date.now();
         var tpMoCmd = syncParkingToCredentials(activePark);
-        var moCmds = [{ sec: 'parking', type: 'EDIT', id: activePark.id, before: _apb, after: cloneData(activePark), label: 'parking returned — Unit ' + m.unit }];
-        if (tpMoCmd) moCmds.push(tpMoCmd);
-        pushBatchUndo('parking', 'parking returned — Unit ' + m.unit, moCmds);
+        cmds.push({ sec: 'parking', type: 'EDIT', id: activePark.id, before: _apb, after: cloneData(activePark), label: 'parking returned — Unit ' + m.unit });
+        if (tpMoCmd) cmds.push(tpMoCmd);
         logActivity('parking', 'complete', 'Parking credentials returned — Unit ' + m.unit + ' · ' + activePark.resident + ' (move-out checklist)' + (tpMoCmd ? ' · Credentials stock updated' : ''));
-        scheduleSave(); renderParking(); renderTransponders();
+        renderParking(); renderTransponders();
         toast('Parking credentials for Unit ' + m.unit + ' marked returned');
       }
     }
   }
   // ── Connection 3: Move-out damage task → Maintenance ──
-  if (checked && m.type === 'out' && t.text === 'Any damage noted and photographed') {
+  if (checked && m.type === 'out' && automationId === 'damage-review') {
     if (await confirmModal('Log damage as a maintenance issue for Unit ' + m.unit + '?')) {
       if (!state.maintenance) state.maintenance = [];
-      state.maintenance.push({ id: uid(), unit: m.unit, resident: m.resident, type: 'Damage', priority: 'medium', status: 'open', notes: 'Damage noted during move-out — see move-out checklist and photos', log: [], createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' });
-      scheduleSave(); renderMaint(); updateBadges(); renderDash();
+      var damageNow = Date.now(), damageBy = currentUser ? currentUser.name : '';
+      var damageNote = 'Damage noted during move-out — see move-out checklist and photos';
+      var damageEntry = { id: uid(), unit: m.unit, issue: 'Move-out damage — Unit ' + m.unit, desc: damageNote, priority: 'medium', status: 'open', reporter: m.resident || '', workorder: false, addedBy: damageBy, createdAt: damageNow, log: [{ ts: damageNow, by: damageBy, note: damageNote }] };
+      state.maintenance.push(damageEntry);
+      cmds.push({ sec: 'maintenance', type: 'ADD', id: damageEntry.id, data: cloneData(damageEntry), label: 'damage logged — Unit ' + m.unit });
+      renderMaint(); updateBadges(); renderDash();
       toast('Maintenance issue logged for Unit ' + m.unit);
     }
   }
+  var tasksAfter = JSON.parse(JSON.stringify(m.tasks));
+  cmds.unshift({ sec: 'moves', type: 'EDIT', id: m.id, before: { tasks: tasksBefore, welcomeLetterSent: welcomeLetterSentBefore }, after: { tasks: tasksAfter, welcomeLetterSent: !!m.welcomeLetterSent }, label: taskLabel });
+  pushBatchUndo('moves', taskLabel, cmds);
   scheduleSave();
   var ci = document.querySelector('#cl-' + moveId + ' .cl-inner'); if (ci) ci.innerHTML = buildCL(m, moveFilter);
   var mci = document.querySelector('#mc-' + moveId + ' .mc-cl'); if (mci) mci.innerHTML = buildCL(m, moveFilter);
@@ -5708,7 +5887,7 @@ var maintFilter = 'all';
 function filterMaint(f, item) { maintFilter = f; document.querySelectorAll('#section-maintenance .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderMaint(); }
 function saveMaint() {
   var unit = g('mt-unit').value.trim(), issue = g('mt-issue').value.trim();
-  if (!unit || !issue) { toast('Fill in unit and issue type'); return; }
+  if (!requireFields([[g('mt-unit'),!!unit,'Enter the unit or location'],[g('mt-issue'),!!issue,'Describe the issue']])) return;
   if (editingMaintId) {
     var m = (state.maintenance||[]).find(function(x){return x.id===editingMaintId;}); if(!m) return;
     var _mb = Object.assign({}, m);
@@ -5781,7 +5960,7 @@ var guestFilter = 'all';
 function filterGuests(f, item) { guestFilter = f; document.querySelectorAll('#section-guests .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderGuests(); }
 function saveGuest() {
   var name = g('gs-name').value.trim(), unit = g('gs-unit').value.trim();
-  if (!name || !unit) { toast('Fill in guest name and unit'); return; }
+  if (!requireFields([[g('gs-name'),!!name,'Enter the guest name'],[g('gs-unit'),!!unit,'Enter the host unit']])) return;
   if (editingGuestId) {
     var gst = (state.guests||[]).find(function(x){return x.id===editingGuestId;}); if(!gst) return;
     var _gb = Object.assign({}, gst);
@@ -6052,7 +6231,7 @@ function updateReplacementFeeLabel() {
 }
 function saveKey() {
   var unit = g('ky-unit').value.trim(), name = g('ky-name').value.trim();
-  if (!unit || !name) { toast('Fill in unit and resident name'); return; }
+  if (!requireFields([[g('ky-unit'),!!unit,'Enter the unit'],[g('ky-name'),!!name,'Enter the resident or recipient name']])) return;
   var type = g('ky-type').value;
   var issuedToEl = document.querySelector('input[name="ky-issued-to"]:checked');
   var issuedTo = (type === 'one-time' && issuedToEl) ? issuedToEl.value : 'guest';
@@ -6656,10 +6835,13 @@ function syncParkingToCredentials(p) {
   var qty = p.transponder && p.transponder.issued ? 1 : 0;
   var qtyTags = p.keyTag && p.keyTag.issued ? 1 : 0;
   var qtyStickers = p.valetSticker && p.valetSticker.issued ? 1 : 0;
-  if (!qty && !qtyTags && !qtyStickers) return null;
   var d = tpData();
-  var wantStatus = p.status === 'returned' ? 'returned' : 'issued';
   var linked = p.tpLogId ? d.log.find(function(x){ return x.id === p.tpLogId; }) : null;
+  // Only skip entirely when there's nothing issued AND no existing linked record to update —
+  // if a link exists, removing every component must still sync it (to zero qty / returned),
+  // otherwise the Credentials record is left stranded holding stale quantities/status.
+  if (!qty && !qtyTags && !qtyStickers && !linked) return null;
+  var wantStatus = (p.status === 'returned' || (!qty && !qtyTags && !qtyStickers)) ? 'returned' : 'issued';
   if (linked) {
     var _tb = cloneData(linked);
     linked.unit = p.unit; linked.recipient = p.resident; linked.category = p.category || 'Resident';
@@ -7631,7 +7813,7 @@ function setSpaceCheckboxes(spaceStr) { clearSpaceCheckboxes(); if(!spaceStr) re
 async function saveAmenity() {
   var resident = g('am-resident').value.trim(), unit = g('am-unit').value.trim(), date = g('am-date').value;
   var space = getSelectedSpaces();
-  if (!resident || !unit || !date) { toast('Fill in resident, unit & date'); return; }
+  if (!requireFields([[g('am-resident'),!!resident,'Enter the resident name'],[g('am-unit'),!!unit,'Enter the unit'],[g('am-date'),!!date,'Choose a booking date']])) return;
   if (!space) { toast('Select at least one amenity space'); return; }
   if (editingAmenityId) {
     var a = (state.amenities||[]).find(function(x){return x.id===editingAmenityId;}); if(!a) return;
@@ -7782,7 +7964,7 @@ function showTourUnitInfo() {
 }
 function saveTour() {
   var name = g('tr-name').value.trim(), date = g('tr-date').value;
-  if (!name || !date) { toast('Fill in prospect name and date'); return; }
+  if (!requireFields([[g('tr-name'),!!name,'Enter the prospect name'],[g('tr-date'),!!date,'Choose a tour date']])) return;
   if (editingTourId) {
     var tr = (state.tours||[]).find(function(x){return x.id===editingTourId;}); if(!tr) return;
     var _tb = Object.assign({}, tr);
@@ -8127,7 +8309,7 @@ function openEditCheckpoint(cpId) {
 
 function logScan(checkpointId, staffName, manual) {
   var cp = (state.checkpoints || []).find(function(c) { return c.id === checkpointId; });
-  if (!cp) { toast('Checkpoint not found'); return; }
+  if (!cp) { toast('Checkpoint not found'); return false; }
   if (!state.scans) state.scans = [];
   var scan = { id: uid(), checkpointId: checkpointId, checkpointName: cp.name, staffName: staffName, timestamp: Date.now(), manual: !!manual };
   state.scans.push(scan);
@@ -8136,6 +8318,7 @@ function logScan(checkpointId, staffName, manual) {
   localStorage.setItem('chorus-patrol-name', staffName);
   scheduleSave(); renderDash();
   if ((patrolFilter === 'amenity' || patrolFilter === 'stairway') && g('patrol-body')) renderWT();
+  return true;
 }
 
 function openManualScan() {
@@ -8262,16 +8445,17 @@ function openQRPrintSelector() {
 function showScanOverlay(checkpointId) {
   var overlay = g('scan-overlay'); if (!overlay) return;
   var cp = (state.checkpoints || []).find(function(c) { return c.id === checkpointId; });
-  var cpName = cp ? cp.name : 'Checkpoint';
-  var cpLoc = cp ? (cp.location || '') : '';
+  if (!cp) { showScanError('This checkpoint is unavailable. The QR code may be out of date; ask a manager to replace it.'); return; }
+  var cpName = cp.name;
+  var cpLoc = cp.location || '';
 
   // Require patrol PIN before logging a scan (separate from Team Tracker PIN)
   var pin = state.patrolPin || '';
   if (pin && !window._patrolPinVerified) {
     overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
       + '<div style="font-size:28px;margin-bottom:10px">&#128274;</div>'
-      + '<div style="font-size:20px;font-weight:600;margin-bottom:4px">' + cpName + '</div>'
-      + (cpLoc ? '<div style="font-size:13px;color:var(--text2);margin-bottom:16px">' + cpLoc + '</div>' : '<div style="margin-bottom:16px"></div>')
+      + '<div style="font-size:20px;font-weight:600;margin-bottom:4px">' + esc(cpName) + '</div>'
+      + (cpLoc ? '<div style="font-size:13px;color:var(--text2);margin-bottom:16px">' + esc(cpLoc) + '</div>' : '<div style="margin-bottom:16px"></div>')
       + '<div style="font-size:13px;color:var(--text2);margin-bottom:12px">Enter staff PIN to log this patrol checkpoint.</div>'
       + '<input type="password" id="patrol-pin-inp" maxlength="8" inputmode="numeric" placeholder="PIN" style="width:100%;font-size:16px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);text-align:center;margin-bottom:12px">'
       + '<button id="patrol-pin-btn" class="btn btn-primary" style="width:100%;justify-content:center;font-size:15px;padding:12px 0">Continue</button>'
@@ -8305,13 +8489,13 @@ function showScanOverlay(checkpointId) {
   var remembered = localStorage.getItem('chorus-patrol-name') || '';
   var hdr = '<div style="font-size:22px;margin-bottom:10px">&#128737;</div>'
     + '<div style="font-size:10px;letter-spacing:1px;color:var(--text3);text-transform:uppercase;margin-bottom:6px">' + getPropertyConfig().name + ' \u2014 Staff Check-in</div>'
-    + '<div style="font-size:20px;font-weight:600;margin-bottom:3px">' + cpName + '</div>'
-    + (cpLoc ? '<div style="font-size:13px;color:var(--text2);margin-bottom:18px">' + cpLoc + '</div>' : '<div style="margin-bottom:18px"></div>');
+    + '<div style="font-size:20px;font-weight:600;margin-bottom:3px">' + esc(cpName) + '</div>'
+    + (cpLoc ? '<div style="font-size:13px;color:var(--text2);margin-bottom:18px">' + esc(cpLoc) + '</div>' : '<div style="margin-bottom:18px"></div>');
   var content = '';
   if (remembered && (staff.length === 0 || staff.indexOf(remembered) !== -1)) {
     content = hdr
       + '<div style="background:var(--accent-light);border-radius:var(--radius);padding:12px 16px;margin-bottom:18px;font-size:14px;color:var(--accent)">'
-      + 'Logging as <strong>' + remembered + '</strong>'
+      + 'Logging as <strong>' + esc(remembered) + '</strong>'
       + '<br><span id="not-you-lnk" style="font-size:12px;color:var(--text3);text-decoration:underline;cursor:pointer">Not you?</span>'
       + '</div>'
       + '<button id="confirm-scan-btn" class="btn btn-primary" style="width:100%;justify-content:center;font-size:16px;padding:14px 0">Confirm Check-in</button>'
@@ -8320,7 +8504,7 @@ function showScanOverlay(checkpointId) {
     var listHtml = '';
     if (staff.length) {
       staff.forEach(function(s) {
-        listHtml += '<button class="btn btn-secondary staff-pick-btn" data-name="' + s + '" style="width:100%;justify-content:center;margin-bottom:8px;font-size:15px">' + s + '</button>';
+        listHtml += '<button class="btn btn-secondary staff-pick-btn" data-name="' + esc(s) + '" style="width:100%;justify-content:center;margin-bottom:8px;font-size:15px">' + esc(s) + '</button>';
       });
     } else {
       listHtml = '<input type="text" id="staff-name-free" placeholder="Your name..." style="width:100%;font-size:15px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);text-align:center;margin-bottom:10px">'
@@ -8378,7 +8562,7 @@ function showScanSuccess(cpName) {
   overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
     + '<div style="font-size:60px;color:var(--green);margin-bottom:16px">&#10003;</div>'
     + '<div style="font-size:22px;font-weight:600;color:var(--green);margin-bottom:8px">Checked in!</div>'
-    + '<div style="font-size:15px;color:var(--text2)">' + cpName + '</div>'
+    + '<div style="font-size:15px;color:var(--text2)">' + esc(cpName) + '</div>'
     + closeMsg
     + '</div>';
   if (window._openedViaScan) {
@@ -8393,12 +8577,21 @@ function showScanSuccess(cpName) {
   }
 }
 
+function showScanError(message) {
+  var overlay = g('scan-overlay'); if (!overlay) return;
+  overlay.innerHTML = '<div role="alert" style="text-align:center;max-width:360px;width:100%;padding:0 20px">'
+    + '<div style="font-size:52px;color:var(--red);margin-bottom:14px">&#9888;</div>'
+    + '<div style="font-size:22px;font-weight:600;color:var(--red);margin-bottom:8px">Check-in not recorded</div>'
+    + '<div style="font-size:14px;color:var(--text2);line-height:1.55">' + esc(message) + '</div></div>';
+  overlay.style.display = 'flex';
+}
+
 function showScanPinPrompt(checkpointId, staffName, cpName) {
   var overlay = g('scan-overlay'); if (!overlay) return;
   var acct = (state.accounts || []).find(function(a) { return a.name === staffName; });
   overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
-    + '<div style="font-size:22px;font-weight:600;margin-bottom:4px">' + cpName + '</div>'
-    + '<div style="font-size:13px;color:var(--accent);font-weight:500;margin-bottom:16px">Logging as <strong>' + staffName + '</strong></div>'
+    + '<div style="font-size:22px;font-weight:600;margin-bottom:4px">' + esc(cpName) + '</div>'
+    + '<div style="font-size:13px;color:var(--accent);font-weight:500;margin-bottom:16px">Logging as <strong>' + esc(staffName) + '</strong></div>'
     + '<div style="font-size:13px;color:var(--text2);margin-bottom:12px">Enter your PIN to confirm check-in.</div>'
     + '<input type="password" id="scan-acct-pin" maxlength="8" inputmode="numeric" placeholder="PIN" style="width:100%;font-size:16px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);text-align:center;margin-bottom:12px">'
     + '<button id="scan-acct-pin-btn" class="btn btn-primary" style="width:100%;justify-content:center;font-size:15px;padding:12px 0">Confirm Check-in</button>'
@@ -8410,17 +8603,18 @@ function showScanPinPrompt(checkpointId, staffName, cpName) {
   var backLnk = g('scan-back-lnk');
   async function tryAcctPin() {
     var entered = inp ? inp.value : '';
+    function finishScan() { if (logScan(checkpointId, staffName, false)) showScanSuccess(cpName); else showScanError('The checkpoint could not be found, so no patrol entry was saved.'); }
     if (acct) {
-      if ((await hashPin(entered, acct.id)) === acct.pin) { logScan(checkpointId, staffName, false); showScanSuccess(cpName); }
+      if ((await hashPin(entered, acct.id)) === acct.pin) { finishScan(); }
       else { toast('Incorrect PIN'); if (inp) { inp.value = ''; inp.focus(); } }
     } else {
       // No account found — require patrol PIN if set, else allow
       var pp = state.patrolPin || '';
       if (pp) {
-        if (await verifySectionPin(entered, pp, PATROLPIN_SALT)) { logScan(checkpointId, staffName, false); showScanSuccess(cpName); }
+        if (await verifySectionPin(entered, pp, PATROLPIN_SALT)) { finishScan(); }
         else { toast('Incorrect PIN'); if (inp) { inp.value = ''; inp.focus(); } }
       } else {
-        logScan(checkpointId, staffName, false); showScanSuccess(cpName);
+        finishScan();
       }
     }
   }
@@ -8674,6 +8868,7 @@ function currentTodosPath() {
   var vid = (currentUser.role === 'admin' && todosViewingId) ? todosViewingId : currentUser.id;
   return ['userTodos', vid];
 }
+function todoReadOnlyView() { return !!(currentUser && currentUser.role === 'admin' && todosViewingId && todosViewingId !== currentUser.id); }
 function _archTodosKey() {
   if (!currentUser) return '_shared';
   return (currentUser.role === 'admin' && todosViewingId) ? todosViewingId : currentUser.id;
@@ -8689,11 +8884,12 @@ function addTodo() {
   var input = g('todo-input'), text = input.value.trim(); if (!text) { toast('Enter a to-do first'); return; }
   if (currentUser && currentUser.role === 'admin' && todosViewingId && todosViewingId !== currentUser.id) { toast('Switch to your own list to add tasks'); return; }
   var todos = getCurrentTodos();
-  var todo = { id: uid(), text: text, priority: g('todo-priority').value, dueDate: g('todo-date').value || null, done: false, createdAt: Date.now() };
+  var todo = { id: uid(), text: text, priority: g('todo-priority').value, dueDate: g('todo-date').value || null, category: (g('todo-category-quick') || {}).value || '', status: 'open', workType: 'task', done: false, createdAt: Date.now(), lastUpdated: Date.now() };
   todos.push(todo);
   pushUndo({ sec: 'todos', type: 'ADD', path: currentTodosPath(), id: todo.id, data: todo, label: 'add to-do — ' + text });
   logActivity('todos', 'create', 'Added to-do — ' + text, 'Owner: ' + _todoOwnerLabel() + (todo.dueDate ? ' · Due: ' + fmtShort(todo.dueDate) : '') + ' · Priority: ' + todo.priority);
-  input.value = ''; g('todo-date').value = ''; g('todo-priority').value = 'normal';
+  input.value = ''; g('todo-date').value = ''; g('todo-priority').value = 'normal'; if (g('todo-category-quick')) g('todo-category-quick').value = '';
+  if (todoWorkspace === 'projects') { todoWorkspace = 'shift'; try { localStorage.setItem('chorus-todo-workspace', todoWorkspace); } catch (e) {} }
   scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Added');
 }
 function openAddTodoFromBar() {
@@ -8724,12 +8920,18 @@ function todoCategoryLabel(key) { var c = TODO_CATEGORIES.find(function (x) { re
 function todoStatusLabel(key) { var s = TODO_STATUSES.find(function (x) { return x.key === key; }); return s ? s.label : 'Open'; }
 function todoStatus(t) { return t.status || (t.done ? 'done' : 'open'); }
 function todoStaleDays(t) { var ref = t.lastUpdated || t.createdAt || Date.now(); return Math.floor((Date.now() - ref) / 86400000); }
-function todoIsStale(t) { if (todoStatus(t) === 'done') return false; var threshold = t.staleDays || 5; return todoStaleDays(t) >= threshold; }
+function todoIsStale(t) {
+  var status = todoStatus(t); if (status === 'done') return false;
+  if ((status === 'waiting' || status === 'blocked') && t.followUpDate) return t.followUpDate <= today();
+  var threshold = t.staleDays || 5; return todoStaleDays(t) >= threshold;
+}
 function fillTodoCategorySelects() {
   var catOpts = TODO_CATEGORIES.map(function (c) { return '<option value="' + c.key + '">' + c.label + '</option>'; }).join('');
   var el1 = g('td-category'); if (el1 && !el1.dataset.filled) { el1.innerHTML = '<option value="">&mdash; General &mdash;</option>' + catOpts; el1.dataset.filled = '1'; }
   var el2 = g('todo-category-quick'); if (el2 && !el2.dataset.filled) { el2.innerHTML = '<option value="">Category&hellip;</option>' + catOpts; el2.dataset.filled = '1'; }
   var st = g('td-status'); if (st && !st.dataset.filled) { st.innerHTML = TODO_STATUSES.map(function (s) { return '<option value="' + s.key + '">' + s.label + '</option>'; }).join(''); st.dataset.filled = '1'; }
+  var cf = g('todo-category-filter'); if (cf && !cf.dataset.filled) { cf.innerHTML = '<option value="all">All categories</option>' + catOpts; cf.dataset.filled = '1'; }
+  var sf = g('todo-status-filter'); if (sf && !sf.dataset.filled) { sf.innerHTML = '<option value="all">All statuses</option>' + TODO_STATUSES.map(function (s) { return '<option value="' + s.key + '">' + s.label + '</option>'; }).join(''); sf.dataset.filled = '1'; }
 }
 function migrateTodosV1() {
   if (state.todosSchemaV1) return;
@@ -8749,96 +8951,79 @@ function migrateTodosV1() {
   state.todosSchemaV1 = true;
   scheduleSave();
 }
-// One-time seed from the July 2026 open-loop audit (shift notes + retrospectives + Gmail).
-// Lands in Gabino's personal list; retries on next load if his account isn't found yet.
-function seedLoopTrackerTodosV1() {
-  if (state.loopTodosSeedV1) return;
-  var acct = (state.accounts || []).find(function (a) { return /gabino/i.test(a.name || ''); });
-  if (!acct) return;
-  var now = Date.now();
-  function T(text, note, category, status, owner, linkedUnit, dueDate, priority) {
-    return { id: uid(), text: text, note: note || null, priority: priority || 'normal', dueDate: dueDate || null,
-      category: category, linkedUnit: linkedUnit || '', owner: owner || '', staleDays: null,
-      status: status, done: false, createdAt: now, lastUpdated: now, addedBy: 'Loop Audit Jul 2026' };
+function migrateTodosV2() {
+  if (state.todosSchemaV2) return;
+  function fix(list, archived) {
+    (list || []).forEach(function (t) {
+      if (!t) return;
+      if (!t.workType) t.workType = (!archived && t.addedBy === 'Loop Audit Jul 2026' && t.category === 'dashboard') ? 'project' : 'task';
+      if (t.followUpDate === undefined) t.followUpDate = null;
+      if (t.lastContactNote === undefined) t.lastContactNote = null;
+      if (t.blockerNote === undefined) t.blockerNote = null;
+    });
   }
-  var items = [
-    // Resident — waiting on someone
-    T('Unit 835 — confirm Blueground verified Elizabeth + approved Karmanya mail pickup', 'Blueground said 7/7 their internal team emailed "last Thursday" — no actual verification on record', 'resident', 'waiting', 'Blueground', '835'),
-    T('Unit 933 — Blueground guest parking: vehicle details still not sent', 'Jennifer Price, 7/30–10/5 · $595/mo to Blueground ledger · process sent 7/7', 'resident', 'waiting', 'Blueground', '933'),
-    T('Unit 727 — lease-end date dispute (Layaill Mustafa)', 'Escalated 7/6 · no reply traffic since · do not confirm a date at the desk', 'resident', 'waiting', 'Marissa', '727'),
-    T('Unit 1606 — ~$237 utility charge discrepancy (Paul Yap)', 'Escalated 7/6 · no reply traffic since', 'resident', 'waiting', 'Marissa', '1606'),
-    T('Unit 726 — concessions not yet applied to ledger (Ansh)', 'Escalated 7/6 · no reply traffic since', 'resident', 'waiting', 'Marissa', '726'),
-    T('Unit 239 — refrigerator repeat failure (Dania Duke)', 'Escalated to Carlos 7/6 w/ urgency · spoiled groceries · possible compensation convo → Faruk', 'resident', 'waiting', 'Carlos', '239'),
-    T('Unit 645 — confirm refund checks arrived + Roost amount corrected (Andrew Nguyen)', 'Silent since 6/23 · Ian owned it and has left · checks were to arrive at property', 'resident', 'waiting', 'Marissa', '645'),
-    // Building, Physical & Vendors
-    T('Reply to Piece of Cake Moving — close the partnership loop', 'Vendor followed up 6/29 + 7/6 after "passed to management" · answer either way', 'building', 'open', 'Me'),
-    T('Create missing/oversized package escalation protocol', 'Unit 2509 now 31 days on oversized wall — same pattern as 622 · 14-day auto-call idea from 5/10 never built', 'building', 'open', 'Me'),
-    T('Tighten key-return verification at shift handoff', 'Disputed returns logged for 521/2707 (6/30 PM passdown) · recurring since May', 'building', 'open', 'Me'),
-    T('Draft Blueground guest-info SOP (standing submission process)', 'Root cause of 835/933 gaps · Paige now requires CC on BG move-ins — formalize the rest', 'building', 'open', 'Me'),
-    // Leasing & Management
-    T('Arrange desk coverage for Mark’s vacation Jul 19–27', 'Committed to Ian 7/2 — Ian gone, nobody else tracking · coordinate w/ Kiran’s team (DataGovern)', 'leasing', 'open', 'Me', '', '2026-07-17', 'urgent'),
-    T('Review + send the United/Jonathan vehicle-list email (in Gmail drafts)', 'Asks for complete unfiltered 30 Otis list · draft reply on "Updated Vehicle List" thread', 'leasing', 'open', 'Me'),
-    T('Import welcome letters #1502 (7/31) + #1809 (7/18) into Moves', 'Arrived 7/8 · use 📧 Import Letter in Moves', 'leasing', 'open', 'Me'),
-    // Dashboard & Admin
-    T('Review Gusto hours for Jun 25 – Jul 8 pay period', '"Last chance" reminder 7/9 — 71h 27m on record', 'dashboard', 'open', 'Me', '', '2026-07-10', 'urgent'),
-    T('Cloudflare Access gate for the dashboard', 'Biggest open security gap — needs CF login + domain decision (chorusdesk.com?)', 'dashboard', 'open', 'Me'),
-    T('Upgrade PIN hashing SHA-256 → PBKDF2', 'Offline brute-force resistance for 4-digit PINs', 'dashboard', 'open', 'Me'),
-    T('Fix: supply adjustments don’t reverse on undo', 'Flagged 5/24, confirmed in 6/9 audit, then dropped', 'dashboard', 'open', 'Me'),
-    T('Decide: keep or remove Guest & Visitor section', 'RiseIO already owns guest logs — open since 5/12', 'dashboard', 'open', 'Me'),
-    T('Add 6 approved docs to official OneNote Property Bible', 'Emergency SOP, Escalation SOP, Disruptive SOP, Incident Report, Contact Sheet, Training Checklist', 'dashboard', 'open', 'Me'),
-    T('Laminate printed quick-reference cards', 'From 6/28 binder session', 'dashboard', 'open', 'Me'),
-    T('Build full Property Bible binder print set (24+ files)', 'Design locked 6/28 — template: Binder/binder-sample.html', 'dashboard', 'open', 'Me'),
-    T('Print-test Move-In/Move-Out Condition Form + find new reviewer', 'v1 ready since May — duplex bleed test on desk printer · CA Civil Code §1950.5 review was earmarked for Ian → needs Faruk or Paige', 'dashboard', 'open', 'Me')
-  ];
-  if (!state.userTodos) state.userTodos = {};
-  if (!state.userTodos[acct.id]) state.userTodos[acct.id] = [];
-  var listRef = state.userTodos[acct.id];
-  items.forEach(function (t) { listRef.push(t); });
-  state.loopTodosSeedV1 = true;
-  logActivity('todos', 'create', 'Seeded ' + items.length + ' to-dos from July 2026 open-loop audit', 'Categories: resident/building/leasing/dashboard · Owner: ' + acct.name);
+  fix(state.todos, false);
+  Object.keys(state.userTodos || {}).forEach(function (uidKey) { fix(state.userTodos[uidKey], false); });
+  Object.keys(state.archivedTodos || {}).forEach(function (uidKey) { fix(state.archivedTodos[uidKey], true); });
+  state.todosSchemaV2 = true;
   scheduleSave();
 }
 var todosView = 'list';
 try { todosView = localStorage.getItem('chorus-todos-view') || 'list'; } catch (e) {}
 function setTodosView(v) { todosView = v; try { localStorage.setItem('chorus-todos-view', v); } catch (e) {} renderTodos(); }
+var todoWorkspace = 'shift';
+try { todoWorkspace = localStorage.getItem('chorus-todo-workspace') || 'shift'; } catch (e) {}
+var todoSearch = '';
 var todoCatFilter = 'all';
-function setTodoCatFilter(f, el) {
-  todoCatFilter = f;
-  todoAssignedView = false;
-  document.querySelectorAll('#todos-tabs .td-cf').forEach(function (t) { t.classList.remove('active'); });
-  if (el) el.classList.add('active');
+var todoStatusFilter = 'all';
+function setTodoWorkspace(workspace, el) {
+  todoWorkspace = workspace || 'shift';
+  todoAssignedView = todoWorkspace === 'assigned';
+  if (todoWorkspace !== 'all') { todoCatFilter = 'all'; todoStatusFilter = 'all'; todoSearch = ''; }
+  try { localStorage.setItem('chorus-todo-workspace', todoWorkspace); } catch (e) {}
+  document.querySelectorAll('#todos-tabs .todo-ws').forEach(function(x){ x.classList.toggle('active', x.dataset.workspace === todoWorkspace); });
   renderTodos();
 }
-var todoStatusFilter = 'all';
+function toggleTodoQuickOptions() {
+  var box = g('todo-quick-options'), btn = g('todo-quick-toggle'); if (!box) return;
+  var open = box.classList.toggle('open'); if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+function setTodoSearch(value) { todoSearch = String(value || '').toLowerCase().trim(); renderTodos(); }
+function setTodoCategorySelect(value) { todoCatFilter = value || 'all'; renderTodos(); }
+function setTodoStatusSelect(value) { todoStatusFilter = value || 'all'; renderTodos(); }
+function setTodoCatFilter(f, el) {
+  todoCatFilter = f;
+  todoWorkspace = 'all'; todoAssignedView = false;
+  renderTodos();
+}
 function setTodoStatusFilter(f, el) {
   todoStatusFilter = f;
-  document.querySelectorAll('#todos-status-tabs .td-sf').forEach(function (t) { t.classList.remove('active'); });
-  if (el) el.classList.add('active');
-  if (todoAssignedView) {
-    // leaving the assigned view via a status tab: reset category pills to All
-    todoAssignedView = false;
-    todoCatFilter = 'all';
-    document.querySelectorAll('#todos-tabs .td-cf').forEach(function (x) { x.classList.remove('active'); });
-    var first = document.querySelector('#todos-tabs .td-cf');
-    if (first) first.classList.add('active');
-  }
+  todoWorkspace = 'all'; todoAssignedView = false;
   renderTodos();
 }
 function todoMatchesFilters(t) {
   if (todoCatFilter !== 'all' && (t.category || '') !== todoCatFilter) return false;
   if (todoStatusFilter !== 'all' && todoStatus(t) !== todoStatusFilter) return false;
+  if (todoSearch) {
+    var hay = [t.text,t.note,t.owner,t.linkedUnit,t.lastContactNote,t.blockerNote,t.category].filter(Boolean).join(' ').toLowerCase();
+    if (hay.indexOf(todoSearch) === -1) return false;
+  }
   return true;
 }
 function todoCatChip(t) { if (!t.category) return ''; return '<span class="pill pill-cat-' + t.category + '">' + todoCategoryLabel(t.category) + '</span>'; }
 function todoStatusChip(t) { var s = todoStatus(t); return '<span class="pill pill-status-' + s + '">' + todoStatusLabel(s) + '</span>'; }
-function todoStaleChip(t) { if (!todoIsStale(t)) return ''; return '<span class="stale-badge">&#9888; Stale &mdash; ' + todoStaleDays(t) + 'd</span>'; }
+function todoStaleChip(t) { if (!todoIsStale(t) || ((todoStatus(t) === 'waiting' || todoStatus(t) === 'blocked') && t.followUpDate)) return ''; return '<span class="stale-badge">&#9888; Stale &mdash; ' + todoStaleDays(t) + 'd</span>'; }
 function todoOwnerChip(t) { if (!t.owner) return ''; return '<span class="pill" style="background:var(--surface2);color:var(--text2)">&#128100; ' + esc(t.owner) + '</span>'; }
 function todoUnitChip(t) { if (!t.linkedUnit) return ''; return '<span class="pill" style="background:var(--surface2);color:var(--text2)">Unit ' + esc(t.linkedUnit) + '</span>'; }
+function todoFollowUpChip(t) { if (!t.followUpDate) return ''; var due = t.followUpDate <= today(); return '<span class="pill" style="background:' + (due ? 'var(--red-light)' : 'var(--amber-light)') + ';color:' + (due ? 'var(--red)' : 'var(--amber)') + '">Follow up ' + fmtShort(t.followUpDate) + '</span>'; }
+function todoStatusQuickSelect(t) {
+  var opts = TODO_STATUSES.map(function(s){ return '<option value="' + s.key + '"' + (todoStatus(t) === s.key ? ' selected' : '') + '>' + s.label + '</option>'; }).join('');
+  return '<select class="todo-status-quick" aria-label="Change status for ' + esc(t.text) + '" onclick="event.stopPropagation()" onchange="event.stopPropagation();setTodoStatusQuick(\'' + t.id + '\',this.value)">' + opts + '</select>';
+}
 function todoPickChip(t) {
   if (t.done) return '';
-  var tier = focusPickTier(t); if (!tier) return '';
-  var lbl = { big: 'Big', med: 'Medium', small: 'Small' }[tier] || tier;
-  return '<span class="pill" style="background:var(--amber-light);color:var(--amber)">&#9733; Today &middot; ' + lbl + '</span>';
+  if (!focusPickTier(t)) return '';
+  return '<span class="pill" style="background:var(--amber-light);color:var(--amber)">&#9733; Top 3 today</span>';
 }
 function todoTouch(t) { t.lastUpdated = Date.now(); }
 // ─── Task assignment: admin delegates, assignee accepts or flags, silence goes stale ───
@@ -8909,10 +9094,7 @@ function takeBackAssignedTodo(userId, id) {
 }
 var todoAssignedView = false;
 function setTodoAssignedView(el) {
-  todoAssignedView = true;
-  document.querySelectorAll('#todos-tabs .td-cf').forEach(function (x) { x.classList.remove('active'); });
-  if (el) el.classList.add('active');
-  renderTodos();
+  setTodoWorkspace('assigned', el);
 }
 function getAssignedByMe() {
   if (!currentUser) return [];
@@ -8955,6 +9137,36 @@ function renderAssignedByMe(listEl, cntEl) {
     if (!t.done) html += '<button class="btn btn-ghost btn-xs" onclick="takeBackAssignedTodo(\'' + r.acct.id + '\',\'' + t.id + '\')" title="Take back to my list">&#8617; Take back</button>';
     html += '</div>';
   });
+  listEl.innerHTML = html;
+}
+function renderAssignmentsWorkspace(listEl, cntEl) {
+  var readOnly = todoReadOnlyView();
+  var incoming = getCurrentTodos().filter(function(t){ return !!t.assignedBy; });
+  var outgoing = !readOnly && currentUser && currentUser.role === 'admin' ? getAssignedByMe() : [];
+  var openCount = incoming.filter(function(t){return !t.done;}).length + outgoing.filter(function(r){return !r.t.done;}).length;
+  if (cntEl) cntEl.textContent = openCount + ' open';
+  if (!incoming.length && !outgoing.length) { listEl.innerHTML = '<div class="text-3 text-sm" style="padding:18px 16px">No assigned tasks yet.</div>'; return; }
+  var html = '';
+  if (incoming.length) {
+    html += '<div style="padding:10px 14px 6px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">' + (readOnly ? 'Assigned to this team member' : 'Assigned to me') + '</div>';
+    incoming.sort(function(a,b){ return (a.done-b.done) || String(a.dueDate||'9999').localeCompare(String(b.dueDate||'9999')); });
+    incoming.forEach(function(t){
+      html += '<div class="todo-item ' + (t.done?'done':'') + '"><input type="checkbox" ' + (t.done?'checked':'') + (readOnly?' disabled':'') + ' onchange="toggleTodo(\'' + t.id + '\',this.checked)">'
+        + '<div style="flex:1;min-width:0"><div class="todo-text ' + (t.done?'strk':'') + '">' + esc(t.text) + '</div>'
+        + '<div class="todo-meta">' + todoFromChip(t) + todoAckChip(t) + todoFollowUpChip(t) + todoUnitChip(t) + (t.dueDate?'<span class="todo-due">Due: '+fmtShort(t.dueDate)+'</span>':'') + '</div></div>'
+        + (!readOnly && !t.ack && !t.done ? '<button class="btn btn-green btn-xs" onclick="ackAssignedTodo(\''+t.id+'\')">Accept</button><button class="btn btn-ghost btn-xs" style="color:var(--amber)" onclick="openFlagTodo(\''+t.id+'\')">Flag</button>' : '')
+        + (!readOnly ? '<button class="btn btn-ghost btn-xs" onclick="openEditTodo(\''+t.id+'\')">Edit</button>' : '') + '</div>';
+    });
+  }
+  if (outgoing.length) {
+    html += '<div style="padding:10px 14px 6px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-top:1px solid var(--border);margin-top:4px">Assigned by me</div>';
+    outgoing.forEach(function(r){ var t=r.t;
+      html += '<div class="todo-item ' + (t.done?'done':'') + '"><div style="flex:1;min-width:0"><div class="todo-text ' + (t.done?'strk':'') + '">' + esc(t.text) + '</div>'
+        + '<div class="todo-meta"><span class="pill" style="background:var(--accent-light);color:var(--accent)">To ' + esc(r.acct.name) + '</span>' + todoAckChip(t) + todoFollowUpChip(t) + (t.dueDate?'<span class="todo-due">Due: '+fmtShort(t.dueDate)+'</span>':'') + '</div>'
+        + (t.ack&&t.ack.status==='flagged'&&t.ack.note?'<div class="todo-followup-note" style="color:var(--red)">'+esc(t.ack.note)+'</div>':'') + '</div>'
+        + (!t.done?'<button class="btn btn-ghost btn-xs" onclick="takeBackAssignedTodo(\''+r.acct.id+'\',\''+t.id+'\')">Take back</button>':'') + '</div>';
+    });
+  }
   listEl.innerHTML = html;
 }
 function checkAssignedTodosOnLogin() {
@@ -9013,21 +9225,24 @@ function renderTodos() {
     viewingName = va ? va.name + '\'s ' : '';
   }
   var titleEl = g('todos-section-title');
-  if (titleEl) titleEl.textContent = viewingName + 'To-Do List';
-  var ap = g('td-assigned-pill');
-  if (ap) ap.style.display = (currentUser && currentUser.role === 'admin') ? '' : 'none';
-  // Board \u21c4 list view switching (assigned view always renders in the list card)
-  var isBoardView = todosView === 'board' && !todoAssignedView;
-  var isFocusView = todosView === 'focus' && !todoAssignedView;
-  var vtL = g('td-vt-list'), vtB = g('td-vt-board'), vtF = g('td-vt-focus');
-  if (vtL) vtL.classList.toggle('active', !isBoardView && !isFocusView);
-  if (vtB) vtB.classList.toggle('active', isBoardView);
-  if (vtF) vtF.classList.toggle('active', isFocusView);
-  var listCard = g('todos-list-card'), boardWrap = g('todos-board'), focusWrap = g('todos-focus'), statusTabs = g('todos-status-tabs');
+  var projectTab = g('td-projects-pill'); if (projectTab) projectTab.style.display = (currentUser && currentUser.role === 'admin' && !isViewingOther) ? '' : 'none';
+  if (todoWorkspace === 'projects' && (!currentUser || currentUser.role !== 'admin' || isViewingOther)) todoWorkspace = 'shift';
+  document.querySelectorAll('#todos-tabs .todo-ws').forEach(function(x){ x.classList.toggle('active', x.dataset.workspace === todoWorkspace); });
+  var titleMap = { shift:'This Shift', all:'All Tasks', followup:'Waiting & Blocked Follow-Ups', assigned:'Assignments', done:'Completed Tasks', projects:'Admin Projects' };
+  if (titleEl) titleEl.textContent = viewingName + (titleMap[todoWorkspace] || 'Tasks');
+  var isBoardView = todoWorkspace === 'all' && todosView === 'board';
+  var isFocusView = todoWorkspace === 'shift';
+  var vtL = g('td-vt-list'), vtB = g('td-vt-board');
+  if (vtL) vtL.className = 'btn ' + (!isBoardView ? 'btn-secondary' : 'btn-ghost') + ' btn-sm';
+  if (vtB) vtB.className = 'btn ' + (isBoardView ? 'btn-secondary' : 'btn-ghost') + ' btn-sm';
+  var listTools = g('todo-list-tools'); if (listTools) listTools.classList.toggle('open', todoWorkspace === 'all');
+  var searchEl = g('todo-search'); if (searchEl && searchEl.value !== todoSearch) searchEl.value = todoSearch;
+  var catEl = g('todo-category-filter'); if (catEl) catEl.value = todoCatFilter;
+  var statEl = g('todo-status-filter'); if (statEl) statEl.value = todoStatusFilter;
+  var listCard = g('todos-list-card'), boardWrap = g('todos-board'), focusWrap = g('todos-focus');
   if (listCard) listCard.style.display = (isBoardView || isFocusView) ? 'none' : '';
   if (boardWrap) boardWrap.style.display = isBoardView ? '' : 'none';
   if (focusWrap) focusWrap.style.display = isFocusView ? '' : 'none';
-  if (statusTabs) statusTabs.style.display = (isBoardView || isFocusView || todoAssignedView) ? 'none' : '';
   var todos = getCurrentTodos();
   var sorted = todos.slice().sort(function (a, b) {
     if (a.done !== b.done) return a.done ? 1 : -1;
@@ -9037,7 +9252,7 @@ function renderTodos() {
     if (a.dueDate && !b.dueDate) return -1; if (!a.dueDate && b.dueDate) return 1;
     return b.createdAt - a.createdAt;
   });
-  var pending = sorted.filter(function (t) { return !t.done; }).length;
+  var pending = sorted.filter(function (t) { return !t.done && (t.workType || 'task') !== 'project'; }).length;
   // Collect move checklist tasks that have a due date and aren't done
   var clTasks = [];
   (state.moves || []).filter(function (m) { return !m.archivedAt; }).forEach(function (m) {
@@ -9053,33 +9268,48 @@ function renderTodos() {
   });
   var totalPending = pending + clTasks.length;
   setBadge('badge-todos', totalPending); setMBadge('mb-todos', totalPending);
-  if (todoAssignedView) { var alEl = g('todos-list'); if (alEl) renderAssignedByMe(alEl, g('todos-count')); return; }
-  if (isBoardView) { renderTodosBoard(sorted); return; }
-  if (isFocusView) { renderTodosFocus(sorted); return; }
-  var filtered = sorted.filter(todoMatchesFilters);
-  var showCL = todoCatFilter === 'all' && (todoStatusFilter === 'all' || todoStatusFilter === 'open');
+  if (todoWorkspace === 'assigned') { var alEl = g('todos-list'); if (alEl) renderAssignmentsWorkspace(alEl, g('todos-count')); return; }
+  var taskRows = sorted.filter(function(t){ return (t.workType || 'task') !== 'project'; });
+  if (isBoardView) { renderTodosBoard(taskRows); return; }
+  if (isFocusView) { renderTodosFocus(taskRows); return; }
+  var filtered;
+  if (todoWorkspace === 'followup') filtered = taskRows.filter(function(t){ return !t.done && (todoStatus(t) === 'waiting' || todoStatus(t) === 'blocked'); });
+  else if (todoWorkspace === 'projects') filtered = sorted.filter(function(t){ return (t.workType || 'task') === 'project'; });
+  else if (todoWorkspace === 'done') filtered = taskRows.filter(function(t){ return t.done; });
+  else filtered = taskRows.filter(todoMatchesFilters);
+  var showCL = todoWorkspace === 'all' && todoCatFilter === 'all' && (todoStatusFilter === 'all' || todoStatusFilter === 'open') && !todoSearch;
   var cnt = g('todos-count');
-  if (cnt) cnt.textContent = (todoCatFilter !== 'all' || todoStatusFilter !== 'all') ? (filtered.length + (showCL ? clTasks.length : 0) + ' shown') : (totalPending + ' pending');
+  if (cnt) cnt.textContent = todoWorkspace === 'projects' ? filtered.filter(function(t){return !t.done;}).length + ' active' : todoWorkspace === 'followup' ? filtered.length + ' to follow up' : (filtered.length + (showCL ? clTasks.length : 0) + ' shown');
   var list = g('todos-list'); if (!list) return;
-  if (todoStatusFilter === 'done') { renderTodosDoneHistory(filtered, list, cnt); return; }
-  if (!filtered.length && !(showCL && clTasks.length)) { list.innerHTML = '<div class="text-3 text-sm" style="padding:18px 16px">No to-dos match.</div>'; return; }
-  var html = '';
+  if (todoWorkspace === 'done') { renderTodosDoneHistory(filtered, list, cnt); return; }
+  if (!filtered.length && !(showCL && clTasks.length)) {
+    var emptyCopy = todoWorkspace === 'followup' ? 'No follow-ups are waiting on you.'
+      : todoWorkspace === 'projects' ? 'No admin projects yet. Use More details to add one.'
+      : todoWorkspace === 'shift' ? 'Your shift queue is clear.' : 'No to-dos match.';
+    list.innerHTML = '<div class="text-3 text-sm" style="padding:18px 16px">' + emptyCopy + '</div>'; return;
+  }
+  var html = todoWorkspace === 'projects' ? '<div class="todo-project-banner"><strong>Admin Projects</strong> stay out of the shift queue. Use this area for dashboard, documentation, security, and longer-term improvement work.</div>' : '';
   filtered.forEach(function (t) {
     var urgIcon = (t.priority === 'urgent' && !t.done) ? '<span style="color:var(--red)">! </span>' : '';
     var due = t.dueDate ? '<span class="todo-due">Due: ' + fmtShort(t.dueDate) + '</span>' : '';
     html += '<div class="todo-item ' + (t.done ? 'done' : '') + '">';
-    html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTodo(\'' + t.id + '\',this.checked)">';
+    html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + (isViewingOther ? ' disabled' : '') + ' onchange="toggleTodo(\'' + t.id + '\',this.checked)">';
     html += '<div style="flex:1;min-width:0">';
     html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + urgIcon + esc(t.text) + '</div>';
     if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + esc(t.note) + '</div>';
-    html += '<div class="todo-meta">' + todoPickChip(t) + due + todoShiftChip(t) + todoCatChip(t) + (t.done ? '' : todoStatusChip(t)) + todoFromChip(t) + todoAckChip(t) + todoUnitChip(t) + todoOwnerChip(t) + todoStaleChip(t) + '<span class="text-xs text-3">' + new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span></div>';
+    if (t.lastContactNote) html += '<div class="todo-followup-note"><strong>Last contact:</strong> ' + esc(t.lastContactNote) + '</div>';
+    if (t.blockerNote) html += '<div class="todo-followup-note"><strong>Blocked by:</strong> ' + esc(t.blockerNote) + '</div>';
+    html += '<div class="todo-meta">' + todoPickChip(t) + due + todoFollowUpChip(t) + todoShiftChip(t) + todoCatChip(t) + (t.done ? '' : todoStatusChip(t)) + todoFromChip(t) + todoAckChip(t) + todoUnitChip(t) + todoOwnerChip(t) + todoStaleChip(t) + '<span class="text-xs text-3">' + new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span></div>';
     html += '</div>';
     if (t.assignedBy && !t.ack && !t.done && !isViewingOther) {
       html += '<button class="btn btn-ghost btn-xs" style="color:var(--green)" onclick="ackAssignedTodo(\'' + t.id + '\')" title="Accept this task">&#10003;</button>';
       html += '<button class="btn btn-ghost btn-xs" style="color:var(--amber)" onclick="openFlagTodo(\'' + t.id + '\')" title="Flag a problem">&#9888;</button>';
     }
-    html += '<button class="btn btn-ghost btn-xs" onclick="openEditTodo(\'' + t.id + '\')" title="Edit">&#9998;</button>';
-    html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteTodo(\'' + t.id + '\')">&#x2715;</button>';
+    if (!isViewingOther && !t.done) html += todoStatusQuickSelect(t);
+    if (!isViewingOther) {
+      html += '<button class="btn btn-ghost btn-xs" onclick="openEditTodo(\'' + t.id + '\')" title="Edit">&#9998;</button>';
+      html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteTodo(\'' + t.id + '\')">&#x2715;</button>';
+    }
     html += '</div>';
   });
   if (showCL && clTasks.length) {
@@ -9095,7 +9325,6 @@ function renderTodos() {
       html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + esc(t.text) + '</div>';
       html += '<div class="todo-meta">' + due + '<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:4px;padding:1px 5px">'
         + 'Unit ' + esc(m.unit) + ' \u00b7 ' + esc(m.resident.split(' ')[0]) + '</span></div>';
-      html += '</div>';
       html += '<button class="btn btn-ghost btn-xs" onclick="openEditMove(\'' + m.id + '\')" title="Open move">&#8599;</button>';
       html += '</div>';
     });
@@ -9104,7 +9333,8 @@ function renderTodos() {
 }
 // Done tab = completion history: current done items + archived ones, grouped by day.
 function renderTodosDoneHistory(currentDone, listEl, cntEl) {
-  var arch = getCurrentArchivedTodos().filter(function (t) { return todoCatFilter === 'all' || (t.category || '') === todoCatFilter; });
+  var readOnly = todoReadOnlyView();
+  var arch = getCurrentArchivedTodos().filter(function (t) { return (t.workType || 'task') !== 'project' && (todoCatFilter === 'all' || (t.category || '') === todoCatFilter); });
   var rows = currentDone.map(function (t) { return { t: t, archived: false, ts: t.completedAt || t.lastUpdated || t.createdAt || 0 }; })
     .concat(arch.map(function (t) { return { t: t, archived: true, ts: t.completedAt || t.archivedAt || t.lastUpdated || 0 }; }));
   if (cntEl) cntEl.textContent = rows.length + ' completed';
@@ -9123,7 +9353,7 @@ function renderTodosDoneHistory(currentDone, listEl, cntEl) {
     if (r.archived) {
       html += '<span style="width:16px;text-align:center;color:var(--green);flex-shrink:0">&#10003;</span>';
     } else {
-      html += '<input type="checkbox" checked onchange="toggleTodo(\'' + t.id + '\',this.checked)">';
+      html += '<input type="checkbox" checked' + (readOnly ? ' disabled' : '') + ' onchange="toggleTodo(\'' + t.id + '\',this.checked)">';
     }
     html += '<div style="flex:1;min-width:0">';
     html += '<div class="todo-text strk">' + esc(t.text) + '</div>';
@@ -9132,9 +9362,9 @@ function renderTodosDoneHistory(currentDone, listEl, cntEl) {
       + '<span class="text-xs text-3">' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + '</span>'
       + (r.archived ? '<span class="text-xs text-3">archived</span>' : '') + '</div>';
     html += '</div>';
-    if (r.archived) {
+    if (r.archived && !readOnly) {
       html += '<button class="btn btn-ghost btn-xs" onclick="restoreArchivedTodo(\'' + t.id + '\')" title="Restore to Open">&#8617; Restore</button>';
-    } else {
+    } else if (!r.archived && !readOnly) {
       html += '<button class="btn btn-ghost btn-xs" onclick="openEditTodo(\'' + t.id + '\')" title="Edit">&#9998;</button>';
       html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteTodo(\'' + t.id + '\')">&#x2715;</button>';
     }
@@ -9144,7 +9374,8 @@ function renderTodosDoneHistory(currentDone, listEl, cntEl) {
 }
 function renderTodosBoard(sorted) {
   var el = g('todos-board'); if (!el) return;
-  var filtered = sorted.filter(function (t) { return todoCatFilter === 'all' || (t.category || '') === todoCatFilter; });
+  var readOnly = todoReadOnlyView();
+  var filtered = sorted.filter(todoMatchesFilters);
   if (!filtered.length) { el.innerHTML = '<div class="text-3 text-sm" style="text-align:center;padding:24px">No to-dos' + (todoCatFilter !== 'all' ? ' in this category' : '') + '.</div>'; return; }
   var html = '<div class="td-board-cols">';
   TODO_STATUSES.forEach(function (st) {
@@ -9159,11 +9390,13 @@ function renderTodosBoard(sorted) {
     html += '<div class="td-board-col"><div class="td-board-col-hdr"><span>' + st.label + '</span><span>' + (col.length || '') + '</span></div>';
     col.forEach(function (t) {
       var stale = todoIsStale(t);
-      html += '<div class="td-bcard' + (stale ? ' stale' : '') + '" onclick="openEditTodo(\'' + t.id + '\')">';
+      html += '<div class="td-bcard' + (stale ? ' stale' : '') + '"' + (readOnly ? '' : ' onclick="openEditTodo(\'' + t.id + '\')"') + '>';
       html += '<div class="td-bcard-text">' + (t.priority === 'urgent' && !t.done ? '<span style="color:var(--red)">! </span>' : '') + esc(t.text) + '</div>';
       if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:3px">' + esc(t.note) + '</div>';
-      html += '<div class="td-bcard-meta">' + todoPickChip(t) + todoCatChip(t) + todoFromChip(t) + todoAckChip(t) + todoUnitChip(t) + (t.dueDate ? '<span class="pill" style="background:var(--surface2);color:var(--text2)">Due ' + fmtShort(t.dueDate) + '</span>' : '') + todoShiftChip(t) + todoStaleChip(t) + '</div>';
+      html += '<div class="td-bcard-meta">' + todoPickChip(t) + todoCatChip(t) + todoFromChip(t) + todoAckChip(t) + todoUnitChip(t) + (t.dueDate ? '<span class="pill" style="background:var(--surface2);color:var(--text2)">Due ' + fmtShort(t.dueDate) + '</span>' : '') + todoFollowUpChip(t) + todoShiftChip(t) + todoStaleChip(t) + '</div>';
       if (t.owner) html += '<div class="td-bcard-owner">&#128100; ' + esc(t.owner) + '</div>';
+      if (t.lastContactNote) html += '<div class="todo-followup-note"><strong>Last contact:</strong> ' + esc(t.lastContactNote) + '</div>';
+      html += readOnly ? '<div class="td-bcard-meta">' + todoStatusChip(t) + '</div>' : '<div style="margin-top:7px" onclick="event.stopPropagation()">' + todoStatusQuickSelect(t) + '</div>';
       html += '</div>';
     });
     html += '</div>';
@@ -9171,12 +9404,12 @@ function renderTodosBoard(sorted) {
   html += '</div>';
   el.innerHTML = html;
 }
-// ─── Focus view: computed Eisenhower quadrants + today's 1-2-3 picks ───
+// ─── This Shift view: computed urgency quadrants + a simple Top 3 ───
 // Quadrants are derived from fields to-dos already carry (priority, dueDate,
 // status, staleness, TODAY moves) — nothing new to maintain. Picks are stored
 // per account keyed like archived to-dos, stamped with today's date, so they
-// reset themselves each shift. The 1-2-3 strip doubles as the WIP cap.
-var FOCUS_TIERS = [{ key: 'big', label: '1 Big', cap: 1 }, { key: 'med', label: '2 Medium', cap: 2 }, { key: 'small', label: '3 Small', cap: 3 }];
+// reset themselves each shift. The Top 3 strip doubles as the WIP cap.
+var FOCUS_LIMIT = 3;
 var FOCUS_QUADS = [
   { key: 'now', label: 'Do now', color: 'var(--red)', hint: 'urgent / due or overdue / TODAY move / stale flare' },
   { key: 'scheduled', label: 'Scheduled', color: 'var(--accent)', hint: 'future due date — moves to Do now on its own' },
@@ -9187,8 +9420,8 @@ function getFocusPicks() {
   if (!state.focusPicks) state.focusPicks = {};
   var k = _archTodosKey();
   var p = state.focusPicks[k];
-  if (!p || p.date !== today()) { p = { date: today(), big: [], med: [], small: [] }; state.focusPicks[k] = p; }
-  FOCUS_TIERS.forEach(function (tr) { if (!Array.isArray(p[tr.key])) p[tr.key] = []; });
+  if (!p || p.date !== today()) { p = { date: today(), top: [] }; state.focusPicks[k] = p; }
+  if (!Array.isArray(p.top)) { p.top = ([].concat(p.big||[],p.med||[],p.small||[])).slice(0,FOCUS_LIMIT); scheduleSave(); }
   return p;
 }
 function focusTodayMoveUnits() {
@@ -9224,32 +9457,28 @@ function focusRankCompare(a, b) {
 }
 function focusPickTier(t) {
   var p = getFocusPicks();
-  for (var i = 0; i < FOCUS_TIERS.length; i++) if (p[FOCUS_TIERS[i].key].indexOf(t.id) !== -1) return FOCUS_TIERS[i].key;
-  return null;
+  return p.top.indexOf(t.id) !== -1 ? 'top' : null;
 }
 function toggleFocusPick(id) {
-  var p = getFocusPicks(), had = false;
-  FOCUS_TIERS.forEach(function (tr) { var i = p[tr.key].indexOf(id); if (i !== -1) { p[tr.key].splice(i, 1); had = true; } });
-  if (!had) {
-    var open = FOCUS_TIERS.find(function (tr) { return p[tr.key].length < tr.cap; });
-    if (!open) { toast('All 6 slots are full — finish or unpick something first'); return; }
-    p[open.key].push(id);
-  }
+  if (todoReadOnlyView()) { toast('Switch to your own list to change priorities'); return; }
+  var p = getFocusPicks(), i = p.top.indexOf(id);
+  if (i !== -1) p.top.splice(i,1);
+  else { if (p.top.length >= FOCUS_LIMIT) { toast('Your Top 3 is full — finish or unpick something first'); return; } p.top.push(id); }
   scheduleSave(); renderTodos();
 }
 function acceptFocusSuggestion() {
+  if (todoReadOnlyView()) { toast('Switch to your own list to change priorities'); return; }
   var units = focusTodayMoveUnits();
   var q1 = getCurrentTodos().filter(function (t) { return todoFocusQuadrant(t, units) === 'now' && !focusPickTier(t); });
   q1.sort(focusRankCompare);
   var p = getFocusPicks(), took = 0;
-  FOCUS_TIERS.forEach(function (tr) {
-    while (p[tr.key].length < tr.cap && q1.length) { p[tr.key].push(q1.shift().id); took++; }
-  });
+  while (p.top.length < FOCUS_LIMIT && q1.length) { p.top.push(q1.shift().id); took++; }
   if (!took) { toast('Nothing in Do now to suggest'); return; }
-  scheduleSave(); renderTodos(); toast("Today's 1-2-3 set — work top-down, big first");
+  scheduleSave(); renderTodos(); toast("Today's Top 3 is ready");
 }
 function renderTodosFocus(sorted) {
   var el = g('todos-focus'); if (!el) return;
+  var readOnly = todoReadOnlyView();
   var todos = getCurrentTodos(), units = focusTodayMoveUnits();
   var quads = { now: [], scheduled: [], waiting: [], someday: [] };
   sorted.forEach(function (t) { var q = todoFocusQuadrant(t, units); if (q) quads[q].push(t); });
@@ -9257,31 +9486,20 @@ function renderTodosFocus(sorted) {
   quads.scheduled.sort(function (a, b) { return String(a.dueDate || '9999').localeCompare(String(b.dueDate || '9999')); });
   var p = getFocusPicks();
   // completed/deleted picks free their slot automatically
-  FOCUS_TIERS.forEach(function (tr) {
-    p[tr.key] = p[tr.key].filter(function (id) {
-      var t = todos.find(function (x) { return x.id === id; }); return t && !t.done;
-    });
-  });
-  var picked = p.big.length + p.med.length + p.small.length;
-  var html = '<div class="card mb-12"><div class="card-hdr"><span class="card-title">Today\'s 1-2-3 &mdash; ' + fmtShort(today()) + '</span>'
-    + '<span class="card-count">' + picked + ' of 6 picked &middot; work top-down</span>'
-    + (picked < 6 && quads.now.length ? '<button class="btn btn-secondary btn-sm ml-auto" onclick="acceptFocusSuggestion()">&#9733; Suggest from Do now</button>' : '')
+  p.top = p.top.filter(function (id) { var t = todos.find(function (x) { return x.id === id; }); return t && !t.done; });
+  var picked = p.top.length;
+  var html = '<div class="card mb-12"><div class="card-hdr"><span class="card-title">Today\'s Top 3 &mdash; ' + fmtShort(today()) + '</span>'
+    + '<span class="card-count">' + picked + ' of 3 picked</span>'
+    + (!readOnly && picked < FOCUS_LIMIT && quads.now.length ? '<button class="btn btn-secondary btn-sm ml-auto" onclick="acceptFocusSuggestion()">&#9733; Suggest priorities</button>' : '')
     + '</div><div class="card-body"><div class="focus-strip">';
-  FOCUS_TIERS.forEach(function (tr) {
-    html += '<div><div class="focus-tier-tag">' + tr.label + ' &middot; ' + p[tr.key].length + '/' + tr.cap + '</div>';
-    p[tr.key].forEach(function (id) {
-      var t = todos.find(function (x) { return x.id === id; }); if (!t) return;
-      html += '<div class="focus-slot" style="margin-bottom:6px;display:flex;gap:8px;align-items:flex-start">'
-        + '<input type="checkbox" title="Mark done" onchange="toggleTodo(\'' + t.id + '\',this.checked)">'
-        + '<div style="flex:1;min-width:0;cursor:pointer" onclick="openEditTodo(\'' + t.id + '\')">'
-        + '<div style="font-size:13px;font-weight:600;line-height:1.35">' + (t.priority === 'urgent' ? '<span style="color:var(--red)">! </span>' : '') + esc(t.text) + '</div>'
-        + (t.dueDate ? '<div style="font-size:11px;color:var(--text3);margin-top:2px">Due ' + fmtShort(t.dueDate) + '</div>' : '')
-        + '</div>'
-        + '<button class="btn btn-ghost btn-xs" title="Unpick" onclick="toggleFocusPick(\'' + t.id + '\')">&#x2715;</button></div>';
-    });
-    for (var i = p[tr.key].length; i < tr.cap; i++) html += '<div class="focus-slot empty" style="margin-bottom:6px">&#9734; tap &#9734; on any task below</div>';
-    html += '</div>';
-  });
+  for (var slot=0; slot<FOCUS_LIMIT; slot++) {
+    var id = p.top[slot], t = id ? todos.find(function(x){return x.id===id;}) : null;
+    if (t) html += '<div><div class="focus-tier-tag">Priority ' + (slot+1) + '</div><div class="focus-slot" style="margin-bottom:6px;display:flex;gap:8px;align-items:flex-start">'
+      + '<input type="checkbox" title="Mark done"' + (readOnly ? ' disabled' : '') + ' onchange="toggleTodo(\'' + t.id + '\',this.checked)"><div style="flex:1;min-width:0;cursor:pointer" onclick="openEditTodo(\'' + t.id + '\')">'
+      + '<div style="font-size:13px;font-weight:600;line-height:1.35">' + (t.priority==='urgent'?'<span style="color:var(--red)">! </span>':'') + esc(t.text) + '</div>'
+      + (t.dueDate?'<div style="font-size:11px;color:var(--text3);margin-top:2px">Due '+fmtShort(t.dueDate)+'</div>':'') + '</div>' + (readOnly ? '' : '<button class="btn btn-ghost btn-xs" title="Unpick" onclick="toggleFocusPick(\''+t.id+'\')">&#x2715;</button>') + '</div></div>';
+    else html += '<div><div class="focus-tier-tag">Priority ' + (slot+1) + '</div><div class="focus-slot empty" style="margin-bottom:6px">&#9734; Pick a task below</div></div>';
+  }
   html += '</div></div></div><div class="focus-grid">';
   FOCUS_QUADS.forEach(function (qd) {
     var list = quads[qd.key];
@@ -9295,10 +9513,11 @@ function renderTodosFocus(sorted) {
         + '<div class="td-bcard-text">' + (t.priority === 'urgent' ? '<span style="color:var(--red)">! </span>' : '') + esc(t.text) + '</div>'
         + '<div class="td-bcard-meta">'
         + (t.dueDate ? '<span class="pill" style="background:var(--surface2);color:var(--text2)">Due ' + fmtShort(t.dueDate) + '</span>' : '')
-        + (flare ? '<span class="pill" style="background:var(--amber-light);color:var(--amber)">&#9888; flared from Waiting &mdash; ' + todoStaleDays(t) + 'd</span>' : todoStaleChip(t))
+        + (flare ? '<span class="pill" style="background:var(--amber-light);color:var(--amber)">&#9888; follow-up due</span>' : todoStaleChip(t))
+        + todoFollowUpChip(t)
         + todoUnitChip(t) + todoOwnerChip(t) + todoCatChip(t)
         + '</div></div>'
-        + '<button class="btn btn-ghost btn-xs" title="' + (tier ? 'Unpick' : 'Pick for today') + '"' + (tier ? ' style="color:var(--amber)"' : '') + ' onclick="toggleFocusPick(\'' + t.id + '\')">' + (tier ? '&#9733;' : '&#9734;') + '</button>'
+        + (readOnly ? '' : '<button class="btn btn-ghost btn-xs" title="' + (tier ? 'Unpick' : 'Pick for today') + '"' + (tier ? ' style="color:var(--amber)"' : '') + ' onclick="toggleFocusPick(\'' + t.id + '\')">' + (tier ? '&#9733;' : '&#9734;') + '</button>')
         + '</div>';
     });
     html += '</div>';
@@ -9307,6 +9526,7 @@ function renderTodosFocus(sorted) {
   el.innerHTML = html;
 }
 function toggleTodo(id, checked) {
+  if (todoReadOnlyView()) { toast('This team member\'s list is read-only'); return; }
   var todos = getCurrentTodos();
   var t = todos.find(function (x) { return x.id === id; });
   if (t) {
@@ -9321,7 +9541,25 @@ function toggleTodo(id, checked) {
     scheduleSave(); renderTodos(); updateBadges(); renderDash();
   }
 }
+function setTodoStatusQuick(id, status) {
+  if (todoReadOnlyView()) { toast('This team member\'s list is read-only'); return; }
+  var t = getCurrentTodos().find(function(x){ return x.id === id; }); if (!t || status === todoStatus(t)) return;
+  if (status === 'waiting' || status === 'blocked') {
+    openEditTodo(id);
+    g('td-status').value = status;
+    todoStatusFieldsChange();
+    setTimeout(function(){ var target = status === 'waiting' ? g('td-owner') : g('td-blocker'); if (target) target.focus(); }, 60);
+    return;
+  }
+  if (status === 'done') { toggleTodo(id, true); return; }
+  var before = cloneData(t);
+  t.status = status; t.done = false; t.completedAt = null; todoTouch(t);
+  pushUndo({ sec:'todos', type:'EDIT', path:currentTodosPath(), id:t.id, before:before, after:cloneData(t), label:'change to-do status — ' + t.text });
+  logActivity('todos','edit','Changed to-do status — ' + t.text,'Status: ' + todoStatusLabel(status));
+  scheduleSave(); renderTodos(); updateBadges(); renderDash();
+}
 function deleteTodo(id) {
+  if (todoReadOnlyView()) { toast('This team member\'s list is read-only'); return; }
   var todos = getCurrentTodos();
   var t = todos.find(function (x) { return x.id === id; });
   if (t) {
@@ -9332,13 +9570,14 @@ function deleteTodo(id) {
   scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Removed');
 }
 async function clearDoneTodos() {
-  var moved = getCurrentTodos().filter(function (t) { return t.done; });
+  if (todoReadOnlyView()) { toast('This team member\'s list is read-only'); return; }
+  var moved = getCurrentTodos().filter(function (t) { return t.done && (t.workType || 'task') !== 'project'; });
   if (!moved.length) { toast('No completed to-dos to archive'); return; }
   if (!await confirmModal('Archive ' + moved.length + ' completed to-do(s)? They stay viewable under the Done tab.')) return;
   var listBefore = cloneData(getCurrentTodos());
   var archBefore = cloneData(getCurrentArchivedTodos());
   var now = Date.now();
-  var keep = getCurrentTodos().filter(function (t) { return !t.done; });
+  var keep = getCurrentTodos().filter(function (t) { return !t.done || (t.workType || 'task') === 'project'; });
   var arch = getCurrentArchivedTodos();
   moved.forEach(function (t) { var c = cloneData(t); c.archivedAt = now; arch.push(c); });
   setCurrentTodos(keep);
@@ -9350,6 +9589,7 @@ async function clearDoneTodos() {
   scheduleSave(); renderTodos(); updateBadges(); renderDash(); toast('Archived ' + moved.length + ' — see Done tab');
 }
 function restoreArchivedTodo(id) {
+  if (todoReadOnlyView()) { toast('This team member\'s list is read-only'); return; }
   var arch = getCurrentArchivedTodos();
   var t = arch.find(function (x) { return x.id === id; });
   if (!t) return;
@@ -9374,7 +9614,7 @@ var lafFilter = 'all', lafSearch = '';
 function filterLAF(f, item) { lafFilter = f; document.querySelectorAll('#section-laf .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderLAF(); }
 function searchLAF(val) { lafSearch = val.toLowerCase().trim(); renderLAF(); }
 function saveLAF() {
-  var desc = g('lf-desc').value.trim(); if (!desc) { toast('Enter item description'); return; }
+  var desc = g('lf-desc').value.trim(); if (!requireFields([[g('lf-desc'),!!desc,'Describe the item']])) return;
   if (editingLAFId) {
     var item = (state.laf||[]).find(function(x){return x.id===editingLAFId;}); if(!item) return;
     var _lb = Object.assign({}, item);
@@ -9418,7 +9658,7 @@ function renderLAF() {
 }
 var claimingLAFId = null;
 function claimLAF(id) { claimingLAFId = id; g('laf-claim-by').value = ''; g('laf-claim-unit').value = ''; openModal('modal-laf-claim'); setTimeout(function(){ var f=g('laf-claim-by'); if(f) f.focus(); }, 80); }
-function saveClaimLAF() { var item = (state.laf || []).find(function(x){ return x.id === claimingLAFId; }); if (!item) return; var by = g('laf-claim-by').value.trim(); if (!by) { toast('Enter who is claiming the item'); return; } var _clb = { claimedBy: item.claimedBy, claimedUnit: item.claimedUnit, claimedAt: item.claimedAt }; item.claimedBy = by; item.claimedUnit = g('laf-claim-unit').value.trim(); item.claimedAt = Date.now(); pushUndo({ sec: 'laf', type: 'EDIT', id: item.id, before: _clb, after: { claimedBy: item.claimedBy, claimedUnit: item.claimedUnit, claimedAt: item.claimedAt }, label: 'L&F claimed — ' + item.desc }); logActivity('laf','edit','L&F item claimed — '+item.desc+' · by '+by+(item.claimedUnit?' Unit '+item.claimedUnit:'')); claimingLAFId = null; scheduleSave(); closeModal('modal-laf-claim'); renderLAF(); updateBadges(); toast('Marked as claimed'); }
+function saveClaimLAF() { var item = (state.laf || []).find(function(x){ return x.id === claimingLAFId; }); if (!item) return; var by = g('laf-claim-by').value.trim(); if (!requireFields([[g('laf-claim-by'),!!by,'Enter who is claiming the item']])) return; var _clb = { claimedBy: item.claimedBy, claimedUnit: item.claimedUnit, claimedAt: item.claimedAt }; item.claimedBy = by; item.claimedUnit = g('laf-claim-unit').value.trim(); item.claimedAt = Date.now(); pushUndo({ sec: 'laf', type: 'EDIT', id: item.id, before: _clb, after: { claimedBy: item.claimedBy, claimedUnit: item.claimedUnit, claimedAt: item.claimedAt }, label: 'L&F claimed — ' + item.desc }); logActivity('laf','edit','L&F item claimed — '+item.desc+' · by '+by+(item.claimedUnit?' Unit '+item.claimedUnit:'')); claimingLAFId = null; scheduleSave(); closeModal('modal-laf-claim'); renderLAF(); updateBadges(); toast('Marked as claimed'); }
 function toggleLAFPassdown(id) { var item = (state.laf || []).find(function(x){ return x.id === id; }); if (!item) return; item.flaggedForPassdown = !item.flaggedForPassdown; scheduleSave(); renderLAF(); toast(item.flaggedForPassdown ? 'Flagged for passdown' : 'Removed from passdown'); }
 async function deleteLAF(id) { if (!await confirmModal('Remove?')) return; var lx=(state.laf||[]).find(function(x){return x.id===id;}); if (lx) pushUndo({ sec: 'laf', type: 'DELETE', id: id, data: Object.assign({}, lx), label: 'delete L&F — ' + lx.desc }); logActivity('laf','delete','Removed L&F item'+(lx?' — '+lx.desc:'')); state.laf = (state.laf || []).filter(function (i) { return i.id !== id; }); scheduleSave(); renderLAF(); updateBadges(); toast('Removed'); }
 
@@ -10233,7 +10473,7 @@ function pdInShift(timeStr, shift) {
   if (mins < 0) return true; // no time set — always include
   if (shift === 'AM') return mins >= 7*60 && mins < 15*60+30;       // 7:00–3:30pm
   if (shift === 'PM') return mins >= 15*60+30 && mins < 23*60+30;   // 3:30–11:30pm
-  return mins >= 23*60+30 || mins < 7*60+30;                        // Overnight: 11:30pm–7:30am
+  return mins >= 23*60+30 || mins < 7*60;                           // Overnight: 11:30pm–7:00am
 }
 
 function pdGetSummary() { var el = g('pd-summary'); return el ? el.value.trim() : ''; }
@@ -11151,7 +11391,8 @@ function savePassdownRecord(status) {
     createdAt: nowTs,
     status: status || 'draft',
     sentAt: status === 'sent' ? nowTs : null,
-    recipients: status === 'sent' ? getPassdownRecipientString() : '',
+    deliveryStartedAt: (status === 'ready' || status === 'gmail-opened') ? nowTs : null,
+    recipients: status === 'draft' ? '' : getPassdownRecipientString(),
     acknowledgedBy: {}
   };
   state.userPassdowns[uid2].unshift(rec);
@@ -11198,26 +11439,25 @@ function copyMarkSent() {
   if (!pdGuardStaffFreeItems()) return;
   var shift = g('pd-shift') ? g('pd-shift').value.toUpperCase() : 'AM';
   pdCopyToClipboard(preview).then(function () {
-    logActivity('passdown', 'sent', 'Copied & marked ' + shift + ' passdown sent');
-    savePassdownRecord('sent');
-    clearShiftLog();
-    renderDash();
-    toast('Copied — marked as sent');
-  }).catch(function () { toast('Copy failed — not marked sent'); });
+    logActivity('passdown', 'prepared', 'Copied ' + shift + ' passdown for delivery');
+    savePassdownRecord('ready');
+    toast('Copied — confirm “Sent” after you deliver it');
+  }).catch(function () { toast('Copy failed — delivery status unchanged'); });
 }
 function sendPassdownGmail() {
   var shiftEl = g('pd-shift'); var shift = shiftEl ? shiftEl.value.toUpperCase() : 'AM';
   var preview = g('pd-preview').value;
   if (!preview || !preview.trim()) { toast('Generate the passdown first, then send'); return; }
-  logActivity('passdown', 'sent', 'Sent ' + shift + ' passdown via Gmail');
-  var sentRecord = savePassdownRecord('sent');
-  clearShiftLog(); renderDash();
   var d = new Date(); var dateStr = (d.getMonth()+1)+'.'+d.getDate()+'.'+d.getFullYear();
   var to = encodeURIComponent(getPassdownRecipientString());
   var subject = encodeURIComponent(dateStr + ' ' + shift + ' Front Desk Passdown');
   var body = encodeURIComponent(preview);
-  window.open('https://mail.google.com/mail/?view=cm&to=' + to + '&su=' + subject + '&body=' + body, '_blank');
-  toast(sentRecord ? 'Saved as sent — Gmail opened' : 'Gmail opened');
+  var compose = window.open('https://mail.google.com/mail/?view=cm&to=' + to + '&su=' + subject + '&body=' + body, '_blank');
+  if (!compose) { toast('Gmail was blocked — allow pop-ups and try again'); return; }
+  try { compose.opener = null; } catch (e) {}
+  logActivity('passdown', 'compose', 'Opened ' + shift + ' passdown in Gmail');
+  savePassdownRecord('gmail-opened');
+  toast('Gmail opened — confirm “Sent” here after sending');
 }
 
 function reviewBeforeSend() {
@@ -11372,42 +11612,53 @@ function renderPassdownHistory() {
   var html = '';
   pds.forEach(function (p) {
     var canDelete = isAdmin || (currentUser && p.authorId === currentUser.id);
-    var authorBadge = p.authorName ? '<span class="by-tag" style="margin-left:6px">by ' + p.authorName + '</span>' : '';
+    var authorBadge = p.authorName ? '<span class="by-tag" style="margin-left:6px">by ' + esc(p.authorName) + '</span>' : '';
     var statusBadge = p.status === 'sent'
       ? '<span class="by-tag" style="margin-left:6px;background:rgba(34,197,94,0.12);color:#166534">Sent</span>'
-      : '<span class="by-tag" style="margin-left:6px;background:rgba(100,116,139,0.10);color:#475569">Draft</span>';
+      : p.status === 'gmail-opened'
+        ? '<span class="by-tag" style="margin-left:6px;background:var(--amber-light);color:var(--amber)">Gmail opened</span>'
+        : p.status === 'ready'
+          ? '<span class="by-tag" style="margin-left:6px;background:var(--amber-light);color:var(--amber)">Ready to send</span>'
+          : '<span class="by-tag" style="margin-left:6px;background:rgba(100,116,139,0.10);color:#475569">Draft</span>';
     var ackObj = p.acknowledgedBy || {};
     var ackCount = Object.keys(ackObj).length;
     var ackBadge = p.status === 'sent'
       ? '<span class="by-tag" style="margin-left:6px;background:rgba(59,130,246,0.08);color:#1e40af">Read ' + ackCount + '</span>'
       : '';
     html += '<div class="phi"><div class="phi-hdr" onclick="this.parentElement.classList.toggle(\'open\')">'
-      + '<span class="font-600">' + fmtShort(p.date) + ' - ' + p.shift + '</span>' + authorBadge + statusBadge + ackBadge
+      + '<span class="font-600">' + fmtShort(p.date) + ' - ' + esc(p.shift) + '</span>' + authorBadge + statusBadge + ackBadge
       + '<div class="flex gap-4" style="margin-left:auto">'
+      + (canDelete && p.status !== 'sent' && p.status !== 'draft' ? '<button class="btn btn-primary btn-xs" onclick="event.stopPropagation();confirmPassdownSent(\'' + esc(p.id) + '\')">Confirm sent</button>' : '')
       + '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();copyPD(\'' + p.id + '\')">Copy</button>'
       + (canDelete ? '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();editPD(\'' + p.id + '\')">Edit</button>' : '')
       + (canDelete ? '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="event.stopPropagation();deletePD(\'' + p.id + '\',\'' + (p.authorId||'') + '\')">&#x2715;</button>' : '')
-      + '</div></div><div class="phi-body">' + p.text + '</div></div>';
+      + '</div></div><div class="phi-body">' + esc(p.text) + '</div></div>';
   });
   histEl.innerHTML = html;
 }
 function markPassdownSent(id) {
-  var found = null, up = state.userPassdowns || {};
-  Object.keys(up).forEach(function (uid) { (up[uid] || []).forEach(function (p) { if (p.id === id) found = p; }); });
+  var found = null, foundAuthor = null, up = state.userPassdowns || {};
+  Object.keys(up).forEach(function (uid) { (up[uid] || []).forEach(function (p) { if (p.id === id) { found = p; foundAuthor = uid; } }); });
   (state.passdowns || []).forEach(function (p) { if (p.id === id) found = p; });
   if (!found) return false;
   found.status = 'sent';
   if (!found.sentAt) found.sentAt = Date.now();
   if (!found.recipients) found.recipients = getPassdownRecipientString();
+  logActivity('passdown', 'sent', 'Confirmed ' + (found.shift || '') + ' passdown sent');
+  if (currentUser && foundAuthor === currentUser.id && found.date === today()) clearShiftLog();
   scheduleSave(); renderPassdownHistory();
   return true;
+}
+async function confirmPassdownSent(id) {
+  if (!await confirmModal('Confirm only after the passdown was actually sent to its recipients.', { danger:false, okLabel:'Confirm sent', cancelLabel:'Not yet' })) return;
+  if (markPassdownSent(id)) toast('Passdown marked sent');
 }
 async function copyPD(id) {
   var all = getAllPassdowns(); var p = all.find(function(x){return x.id===id;}); if (!p) return;
   try { await navigator.clipboard.writeText(p.text); toast('Copied'); } catch (e) { toast('Copy failed'); return; }
   // Copying from history is how the team actually delivers a passdown — offer to reflect that in its status.
   if (p.status !== 'sent') {
-    if (await confirmModal('Mark this passdown as sent? You just copied it to share.', { danger: false, okLabel: 'Mark sent', cancelLabel: 'Just copy' })) {
+    if (await confirmModal('Was this passdown actually delivered to its recipients?', { danger: false, okLabel: 'Yes, mark sent', cancelLabel: 'No, just copied' })) {
       markPassdownSent(id);
       toast('Marked as sent');
     }
@@ -11590,6 +11841,8 @@ function openAddTodoModal(dateStr, textStr, priorityStr, categoryStr) {
   g('td-date').value = dateStr || ''; g('td-priority').value = priorityStr || 'normal';
   g('td-category').value = categoryStr || ''; g('td-unit').value = '';
   g('td-status').value = 'open'; g('td-owner').value = ''; g('td-staledays').value = '';
+  g('td-followup-date').value = ''; g('td-last-contact').value = ''; g('td-blocker').value = '';
+  var wt = g('td-worktype'); if (wt) wt.value = 'task';
   var sh = g('td-shift'); if (sh) sh.value = '';
   var aw = g('td-assign-wrap'), as = g('td-assign');
   if (aw && as) {
@@ -11602,10 +11855,13 @@ function openAddTodoModal(dateStr, textStr, priorityStr, categoryStr) {
       aw.style.display = 'none';
     }
   }
+  var workWrap = g('td-worktype-wrap'); if (workWrap) workWrap.style.display = (currentUser && currentUser.role === 'admin') ? '' : 'none';
+  todoStatusFieldsChange();
   openModal('modal-todo');
   if (textStr) { setTimeout(function(){ var n=g('td-note'); if(n) n.focus(); }, 80); }
 }
 function openEditTodo(id) {
+  if (todoReadOnlyView()) { toast('This team member\'s list is read-only'); return; }
   var t = getCurrentTodos().find(function (x) { return x.id === id; }); if (!t) return;
   editingTodoId = id;
   fillTodoCategorySelects();
@@ -11616,10 +11872,22 @@ function openEditTodo(id) {
   g('td-category').value = t.category || ''; g('td-unit').value = t.linkedUnit || '';
   g('td-status').value = todoStatus(t); g('td-owner').value = t.owner || '';
   g('td-staledays').value = t.staleDays || '';
+  g('td-followup-date').value = t.followUpDate || ''; g('td-last-contact').value = t.lastContactNote || ''; g('td-blocker').value = t.blockerNote || '';
+  var wt = g('td-worktype'); if (wt) wt.value = t.workType || 'task';
   var sh = g('td-shift'); if (sh) sh.value = t.dueShift || '';
   var aw = g('td-assign-wrap'); if (aw) aw.style.display = 'none'; // no reassignment on edit — take back + reassign instead
+  var workWrap = g('td-worktype-wrap'); if (workWrap) workWrap.style.display = (currentUser && currentUser.role === 'admin') ? '' : 'none';
   var delBtnE = g('modal-todo-delete-btn'); if (delBtnE) delBtnE.style.display = '';
+  todoStatusFieldsChange();
   openModal('modal-todo');
+}
+function todoStatusFieldsChange() {
+  var status = (g('td-status') || {}).value || 'open';
+  var follow = g('td-followup-fields'), blocker = g('td-blocker-wrap'), ownerLabel = g('td-owner-label');
+  var needsFollow = status === 'waiting' || status === 'blocked';
+  if (follow) follow.style.display = needsFollow ? '' : 'none';
+  if (blocker) blocker.style.display = status === 'blocked' ? '' : 'none';
+  if (ownerLabel) ownerLabel.innerHTML = status === 'waiting' ? 'Waiting On <span style="font-weight:400;color:var(--text3)">(required)</span>' : status === 'blocked' ? 'Dependency Owner <span style="font-weight:400;color:var(--text3)">(optional)</span>' : 'Owner <span style="font-weight:400;color:var(--text3)">(optional)</span>';
 }
 function deleteTodoFromModal() {
   if (!editingTodoId) return;
@@ -11628,7 +11896,7 @@ function deleteTodoFromModal() {
   deleteTodo(id);
 }
 function saveTodoModal() {
-  var text = g('td-text').value.trim(); if (!text) { toast('Enter a task first'); return; }
+  var text = g('td-text').value.trim(); if (!requireFields([[g('td-text'),!!text,'Enter a task']])) return;
   var note = g('td-note').value.trim() || null;
   var dueDate = g('td-date').value || null;
   var dueShift = (g('td-shift') && g('td-shift').value) || null;
@@ -11637,6 +11905,14 @@ function saveTodoModal() {
   var linkedUnit = g('td-unit').value.trim() || '';
   var owner = g('td-owner').value.trim() || '';
   var status = g('td-status').value || 'open';
+  var followUpDate = g('td-followup-date').value || null;
+  var lastContactNote = g('td-last-contact').value.trim() || null;
+  var blockerNote = g('td-blocker').value.trim() || null;
+  var workType = (currentUser && currentUser.role === 'admin' && g('td-worktype')) ? g('td-worktype').value : 'task';
+  if (status === 'waiting' && !requireFields([[g('td-owner'),!!owner,'Enter who you are waiting on'],[g('td-followup-date'),!!followUpDate,'Choose a follow-up date']])) return;
+  if (status === 'blocked' && !requireFields([[g('td-blocker'),!!blockerNote,'Describe what is blocking this task']])) return;
+  if (status !== 'waiting' && status !== 'blocked') { followUpDate = null; lastContactNote = null; blockerNote = null; }
+  else if (status === 'waiting') blockerNote = null;
   var staleDays = g('td-staledays').value ? parseInt(g('td-staledays').value, 10) : null;
   var assignedName = null;
   if (editingTodoId) {
@@ -11644,17 +11920,18 @@ function saveTodoModal() {
     if (t) {
       var before = cloneData(t);
       t.text = text; t.note = note; t.dueDate = dueDate; t.dueShift = dueShift; t.priority = priority;
-      t.category = category; t.linkedUnit = linkedUnit; t.owner = owner; t.staleDays = staleDays;
+      t.category = category; t.linkedUnit = linkedUnit; t.owner = owner; t.staleDays = staleDays; t.followUpDate = followUpDate; t.lastContactNote = lastContactNote; t.blockerNote = blockerNote; t.workType = workType;
       t.status = status; t.done = (status === 'done'); t.completedAt = (status === 'done') ? (t.completedAt || Date.now()) : null;
       todoTouch(t);
       pushUndo({ sec: 'todos', type: 'EDIT', path: currentTodosPath(), id: t.id, before: before, after: cloneData(t), label: 'edit to-do — ' + text });
-      var afterDiff = { text: t.text, note: t.note, dueDate: t.dueDate, priority: t.priority, category: t.category, status: t.status, owner: t.owner, linkedUnit: t.linkedUnit };
-      logActivity('todos', 'edit', 'Updated to-do — ' + text, activityFields(before, afterDiff, { text: 'Task', note: 'Note', dueDate: 'Due date', priority: 'Priority', category: 'Category', status: 'Status', owner: 'Owner', linkedUnit: 'Unit' }));
+      var afterDiff = { text: t.text, note: t.note, dueDate: t.dueDate, priority: t.priority, category: t.category, status: t.status, owner: t.owner, linkedUnit: t.linkedUnit, followUpDate: t.followUpDate, lastContactNote: t.lastContactNote, blockerNote: t.blockerNote, workType: t.workType };
+      logActivity('todos', 'edit', 'Updated to-do — ' + text, activityFields(before, afterDiff, { text: 'Task', note: 'Note', dueDate: 'Due date', priority: 'Priority', category: 'Category', status: 'Status', owner: 'Owner', linkedUnit: 'Unit', followUpDate: 'Follow-up date', lastContactNote: 'Last contact', blockerNote: 'Blocker', workType: 'Work type' }));
     }
   } else {
-    var todo = { id: uid(), text: text, note: note, priority: priority, dueDate: dueDate, dueShift: dueShift, category: category, linkedUnit: linkedUnit, owner: owner, staleDays: staleDays, status: status, done: (status === 'done'), createdAt: Date.now(), lastUpdated: Date.now() };
+    var todo = { id: uid(), text: text, note: note, priority: priority, dueDate: dueDate, dueShift: dueShift, category: category, linkedUnit: linkedUnit, owner: owner, staleDays: staleDays, followUpDate: followUpDate, lastContactNote: lastContactNote, blockerNote: blockerNote, workType: workType, status: status, done: (status === 'done'), createdAt: Date.now(), lastUpdated: Date.now() };
     var aw = g('td-assign-wrap'), as = g('td-assign');
     var assigneeId = (aw && as && aw.style.display !== 'none') ? as.value : '';
+    if (assigneeId && workType === 'project') { toast('Admin Projects stay on your list. Choose Front Desk Task before assigning.'); return; }
     if (assigneeId && currentUser && currentUser.role === 'admin' && assigneeId !== currentUser.id) {
       var acct = (state.accounts || []).find(function (a) { return a.id === assigneeId; });
       if (!state.userTodos) state.userTodos = {};
@@ -11821,7 +12098,7 @@ function applyImport(type, rows) {
       } else {
         var customIn = state.customInTasks || DEFAULT_IN_TASKS;
         var customOut = state.customOutTasks || DEFAULT_OUT_TASKS;
-        var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null, paymentTask: t.paymentTask || false }; });
+        var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null, paymentTask: t.paymentTask || false, automationId: getTaskAutomationId(t) || null }; });
         state.moves.push({ id: uid(), unit: unit, resident: resident||'', date: date, type: moveType, time: time, total: total, elevator: elevator||'no', notes: notes, tasks: tasks, archivedAt: null, createdAt: Date.now() });
         added++; preview.push({ action:'added', label: (resident||unit) + ' Unit ' + unit + ' ' + date });
       }
@@ -11897,7 +12174,7 @@ function showImportPreview(prefix, preview) {
   var html = '<div style="font-size:12px;max-height:160px;overflow-y:auto;background:var(--bg);border-radius:var(--radius);padding:8px 12px;border:1px solid var(--border)">';
   show.forEach(function (p) {
     var color = p.action === 'added' ? 'var(--green)' : 'var(--amber)';
-    html += '<div style="padding:2px 0;color:var(--text2)"><span style="color:' + color + ';font-weight:600;margin-right:6px;font-size:10px;text-transform:uppercase">' + p.action + '</span>' + p.label + '</div>';
+    html += '<div style="padding:2px 0;color:var(--text2)"><span style="color:' + color + ';font-weight:600;margin-right:6px;font-size:10px;text-transform:uppercase">' + esc(p.action) + '</span>' + esc(p.label) + '</div>';
   });
   if (preview.length > 12) html += '<div style="color:var(--text3);margin-top:4px;font-size:11px">...and ' + (preview.length - 12) + ' more</div>';
   html += '</div>';
@@ -11916,6 +12193,7 @@ function updateClaudePrompt() {
   var type = g('img-import-type') ? g('img-import-type').value : 'tours';
   var el = g('claude-prompt-display');
   if (el) el.textContent = IMG_PROMPTS[type] || IMG_PROMPTS.tours;
+  resetJsonImportPreview();
 }
 
 function copyClaudePrompt() {
@@ -11924,6 +12202,28 @@ function copyClaudePrompt() {
   navigator.clipboard.writeText(prompt).then(function () { toast('Prompt copied'); }).catch(function () { toast('Copy failed'); });
 }
 
+var _pendingJsonImport = null;
+function resetJsonImportPreview() {
+  _pendingJsonImport = null;
+  var btn = g('img-import-btn'); if (btn) btn.innerHTML = '&#8679; Review JSON';
+  var preview = g('img-import-preview'); if (preview) { preview.style.display = 'none'; preview.innerHTML = ''; }
+}
+function importRequiredFields(type, row) {
+  var missing = [];
+  function need(label, aliases, normalize) { var value = getField(row, aliases); if (normalize) value = normalize(value); if (!value) missing.push(label); }
+  if (type === 'tours') { need('name',['name','prospectname','prospect','guestname','residentname','tenant']); need('date',['date','tourdate','scheduleddate','appointmentdate','startdate'],normalizeDate); }
+  else if (type === 'moves') { need('unit',['unit','unitnumber','unitnum','apt','apartment']); need('date',['date','movedate','moveindate','moveoutdate','scheduleddate'],normalizeDate); }
+  else if (type === 'maintenance') { need('unit/location',['unit','unitnumber','location','apt']); need('issue',['issue','issuetype','type','category','problem']); }
+  else if (type === 'amenities') { need('space',['space','amenity','amenityspace','room','location']); need('date',['date','bookingdate','eventdate','reservationdate'],normalizeDate); }
+  return missing;
+}
+function importRowLabel(type, row, index) {
+  if (type === 'tours') return (getField(row,['name','prospectname','prospect']) || 'Tour') + ' · ' + normalizeDate(getField(row,['date','tourdate','scheduleddate']));
+  if (type === 'moves') return 'Unit ' + getField(row,['unit','unitnumber','apt']) + ' · ' + (getField(row,['resident','residentname','name']) || 'Resident not listed') + ' · ' + normalizeDate(getField(row,['date','movedate','moveindate','moveoutdate']));
+  if (type === 'maintenance') return 'Unit ' + getField(row,['unit','unitnumber','location','apt']) + ' · ' + getField(row,['issue','issuetype','type','problem']);
+  if (type === 'amenities') return (getField(row,['space','amenity','room']) || 'Amenity') + ' · ' + normalizeDate(getField(row,['date','bookingdate','eventdate'])) + ' · Unit ' + getField(row,['unit','unitnumber','apt']);
+  return 'Record ' + (index + 1);
+}
 function importFromPastedJSON() {
   var raw = (g('img-import-json').value || '').trim();
   var type = g('img-import-type').value;
@@ -11948,11 +12248,32 @@ function importFromPastedJSON() {
     else { statusEl.style.color = 'var(--red)'; statusEl.textContent = 'Expected a JSON array. Copy the full response from Claude.'; return; }
   }
   if (!rows.length) { statusEl.style.color = 'var(--amber)'; statusEl.textContent = 'Array was empty — nothing to import.'; return; }
+  var invalid = [];
+  rows.forEach(function(row, index) {
+    if (!row || typeof row !== 'object' || Array.isArray(row)) invalid.push('Row ' + (index + 1) + ': expected an object');
+    else { var missing = importRequiredFields(type, row); if (missing.length) invalid.push('Row ' + (index + 1) + ': missing ' + missing.join(', ')); }
+  });
+  if (invalid.length) {
+    _pendingJsonImport = null;
+    statusEl.style.color = 'var(--red)';
+    statusEl.textContent = 'Nothing imported. Fix ' + invalid.length + ' invalid row' + (invalid.length === 1 ? '' : 's') + ': ' + invalid.slice(0,4).join(' · ') + (invalid.length > 4 ? ' · …' : '');
+    return;
+  }
+  if (!_pendingJsonImport || _pendingJsonImport.raw !== raw || _pendingJsonImport.type !== type) {
+    _pendingJsonImport = { raw:raw, type:type, rows:rows };
+    statusEl.style.color = 'var(--amber)';
+    statusEl.textContent = 'Validated ' + rows.length + ' record' + (rows.length === 1 ? '' : 's') + '. Review the preview, then confirm the import.';
+    showImportPreview('img', rows.map(function(row,index){ return { action:'review', label:importRowLabel(type,row,index) }; }));
+    var reviewBtn = g('img-import-btn'); if (reviewBtn) reviewBtn.textContent = 'Confirm Import (' + rows.length + ')';
+    return;
+  }
   var result = applyImport(type, rows);
   statusEl.style.color = 'var(--green)';
   statusEl.textContent = 'Done: ' + result.msg;
   showImportPreview('img', result.preview);
   g('img-import-json').value = '';
+  _pendingJsonImport = null;
+  var btn = g('img-import-btn'); if (btn) btn.innerHTML = '&#8679; Review JSON';
   scheduleSave(); renderAll();
 }
 
@@ -12200,7 +12521,7 @@ var GUIDE_DATA = [
     html:'<h4>Welcome to the Front Desk Dashboard</h4><p>This is the Chorus SF Front Desk Hub — your central tool for managing everything that happens at the front desk during your shift. Whether it\'s your first day or you just need a quick refresher, this card covers the basics.</p><h4>What the Dashboard Does</h4><p>The dashboard keeps track of everything happening in the building in real time. Everything you log during your shift feeds directly into your end-of-shift passdown — so the more you log as you go, the less you have to write at the end.</p><h4>Sections at a Glance</h4><ul><li><strong>Dashboard</strong> — live overview of everything active in the building</li><li><strong>Calendar</strong> — all moves, bookings, and tours in one view</li><li><strong>Moves</strong> — move-in and move-out checklists and task tracking</li><li><strong>Key Tracker</strong> — keys issued, returned, and overdue</li><li><strong>Amenity Bookings</strong> — rooftop, party room, service elevator reservations</li><li><strong>Logbook</strong> — resident requests, concerns, and incidents in one place</li><li><strong>Lost &amp; Found</strong> — items logged and claimed</li><li><strong>Unit Tracker</strong> — per-unit keys, parking credentials, and WiFi info</li><li><strong>Passdown</strong> — build and send your end-of-shift passdown</li><li><strong>To-Do List</strong> — your personal task list, private to your account</li></ul><div class="guide-tip">💡 Every section feeds the Passdown builder. Log items as they happen and your passdown will mostly build itself by end of shift.</div><h4>Logging In</h4><ul><li>Click your name on the login screen and enter your 4-digit PIN</li><li>No account yet? Ask the Front Desk Lead to set one up before your shift begins</li><li>Forgot your PIN? The Lead can reset it in Settings → Team Accounts</li></ul><h4>Your Role</h4><ul><li><strong>Staff (Associate)</strong> — access to all day-to-day sections. Can check off move tasks but cannot add or edit move entries</li><li><strong>Admin / Lead</strong> — full access including Settings, Team Tracker, and staff visibility controls</li></ul><div class="guide-note">📌 All changes save automatically. No Save button needed for most actions.</div>' },
 
   { id:'g-passdown-how', icon:'📝', title:'How to Use the Passdown Builder', keywords:'passdown builder how to use step by step guide update next step shift summary generate send am pm overnight tone auto block log items',
-    html:'<h4>Overview</h4><p>The Passdown builder auto-fills from what you log during your shift. Your job is to review it, add context, and send it.</p><h4>Step 1 — Log items during your shift</h4><p>Use the right section as things happen — don\'t wait until the end:</p><ul><li>Keys issued → <strong>Key Tracker</strong></li><li>Anything logged at the desk → <strong>Logbook</strong></li><li>Amenity setup or follow-up → note in <strong>This Shift</strong> in the builder</li><li>Work order submitted or maintenance issue carrying to next shift → note in <strong>This Shift</strong> in the builder</li></ul><h4>Step 2 — Open the builder</h4><p>Click <strong>Passdown</strong> in the sidebar. Select your shift (AM / PM / Overnight) from the dropdown at the top.</p><h4>Step 3 — Write your shift summary</h4><p>Write 1–3 sentences in the Shift Summary field — what happened, who came in, anything the next shift should know the moment they start.</p><h4>Step 4 — Review the auto-blocks</h4><p>The builder pulls in live data automatically — moves, keys, amenities, concierge requests, incidents. For each item:</p><ul><li>Fill in the <strong>Update / Next Step</strong> field with what the incoming shift needs to know or do</li><li>Click <strong>–</strong> to exclude anything that was resolved during your shift</li></ul><div class="guide-note">📌 Incidents and Concierge Requests only appear in the passdown if you add an Update / Next Step note. Leave it blank to exclude them.</div><h4>Step 5 — Generate</h4><p>Click <strong>Generate</strong>. Read the full preview — check that unit numbers and names are correct, every open item has a clear Update / Next Step, and nothing resolved is still listed as active. Fix anything and generate again if needed.</p><h4>Step 6 — Send</h4><p>Click <strong>Review &amp; Send → Send via Gmail →</strong>. Gmail opens with the recipient, subject, and body pre-filled. Add your signature and send.</p><div class="guide-tip">💡 Use <strong>Save Draft</strong> at any point to save your progress. Your draft is tied to your account and stays until you send or clear it.</div><div class="guide-note" style="margin-top:8px;background:rgba(220,38,38,0.06);border-color:rgba(220,38,38,0.2)">⚠️ Your passdown must reflect your shift. Do not copy or reuse another associate\'s passdown. The dashboard logs all passdowns by author and date — if yours matches a previous shift\'s, it is visible to everyone.</div>' },
+    html:'<h4>Overview</h4><p>The Passdown builder auto-fills from what you log during your shift. Your job is to review it, add context, and send it.</p><h4>Step 1 — Log items during your shift</h4><p>Use the right section as things happen — don\'t wait until the end:</p><ul><li>Keys issued → <strong>Key Tracker</strong></li><li>Anything logged at the desk → <strong>Logbook</strong></li><li>Amenity setup or follow-up → note in <strong>This Shift</strong> in the builder</li><li>Work order submitted or maintenance issue carrying to next shift → note in <strong>This Shift</strong> in the builder</li></ul><h4>Step 2 — Open the builder</h4><p>Click <strong>Passdown</strong> in the sidebar. Select your shift (AM / PM / Overnight) from the dropdown at the top.</p><h4>Step 3 — Write your shift summary</h4><p>Write 1–3 sentences in the Shift Summary field — what happened, who came in, anything the next shift should know the moment they start.</p><h4>Step 4 — Review the auto-blocks</h4><p>The builder pulls in live data automatically — moves, keys, amenities, concierge requests, incidents. For each item:</p><ul><li>Fill in the <strong>Update / Next Step</strong> field with what the incoming shift needs to know or do</li><li>Click <strong>–</strong> to exclude anything that was resolved during your shift</li></ul><div class="guide-note">📌 Incidents and Concierge Requests only appear in the passdown if you add an Update / Next Step note. Leave it blank to exclude them.</div><h4>Step 5 — Generate</h4><p>Click <strong>Generate</strong>. Read the full preview — check that unit numbers and names are correct, every open item has a clear Update / Next Step, and nothing resolved is still listed as active. Fix anything and generate again if needed.</p><h4>Step 6 — Send and confirm</h4><p>Click <strong>Review &amp; Send → Send via Gmail →</strong>. Gmail opens with the recipient, subject, and body pre-filled. Send it in Gmail, then return to Passdown History and click <strong>Confirm sent</strong>. Opening Gmail alone does not mark it sent.</p><div class="guide-tip">💡 Use <strong>Save Draft</strong> at any point to save your progress. Your draft is tied to your account and stays until you clear it.</div><div class="guide-note" style="margin-top:8px;background:rgba(220,38,38,0.06);border-color:rgba(220,38,38,0.2)">⚠️ Your passdown must reflect your shift. Do not copy or reuse another associate\'s passdown. The dashboard logs all passdowns by author and date — if yours matches a previous shift\'s, it is visible to everyone.</div>' },
 
   { id:'g-dashboard', icon:'📊', title:'Dashboard', keywords:'dashboard home overview stats badges search greeting quick counts active',
     html:'<h4>Overview Cards</h4><p>The dashboard shows live counts of active items across all sections: pending moves, open maintenance, guests checked in, keys out, upcoming amenity bookings, open L&amp;F items, upcoming tours, and open concierge requests. Click any card to jump to that section.</p><h4>Quick Search</h4><p>Type any unit number, resident name, or keyword in the search bar to instantly find matching entries across moves, maintenance, guests, keys, amenities, and more. Click any result to navigate directly to that section.</p><h4>Greeting</h4><p>The greeting uses your logged-in name and adjusts based on the time of day. The date and building name are displayed at the top of the sidebar.</p>' },
@@ -12242,8 +12563,8 @@ var GUIDE_DATA = [
   { id:'g-passdown', icon:'📋', title:'Daily Passdown', keywords:'passdown shift generate preview save copy history build draft am pm overnight lead staff next step move key amenity concierge edit exclude override',
     html:'<h4>Overview</h4><p>The Daily Passdown section lets you build, preview, and save shift handoff notes. The left column is the <strong>Build</strong> panel; the right column is <strong>Passdown History</strong>.</p><h4>Selecting a Shift</h4><p>Choose AM, PM, or Overnight from the Shift dropdown. This filters auto-populated items to only show entries relevant to that shift\'s time window.</p><h4>Auto-Populated Blocks</h4><p>These pull live data automatically — no manual entry needed:</p><ul><li>🗝 <strong>One-Time Keys Still Out</strong> — any keys currently in "issued" status</li><li>🗝 <strong>Outstanding Key Returns</strong> — move-outs whose lease has ended and key collection task is still unchecked</li><li>🚛 <strong>Move-Ins</strong> — today\'s move-ins for this shift (admins also see upcoming days)</li><li>📦 <strong>Move-Outs</strong> — today\'s move-outs for this shift (admins also see upcoming)</li><li>🎉 <strong>Amenity Bookings</strong> — today\'s bookings during the selected shift window</li><li>📓 <strong>Open Logbook Entries</strong> — all open and in-progress logbook entries regardless of shift</li><li>📦 <strong>L&amp;F Follow Up</strong> — lost &amp; found items manually flagged for passdown</li><li>💳 <strong>Charges to Add to Ledger</strong> — replacement key cards ($100) and unreturned one-time keys ($25) with outstanding fees</li></ul><p>Completed moves (appointment passed + all main tasks done) show a green <strong>✓ Completed</strong> badge automatically.</p><h4>Editing Next Steps in the Draft</h4><p>Every auto-block item has an editable <strong>Next step…</strong> field below it. The field is pre-filled with a smart default. Click it and type to override — your custom text carries into the generated passdown when you click Generate. Leave it as-is to use the default.</p><h4>Excluding Items</h4><p>Click the <strong>–</strong> button on any item to exclude it from the passdown. The item grays out with a strikethrough. Click <strong>＋</strong> to re-include it. Exclusions persist while the draft is active.</p><h4>Look Ahead <span style="font-size:10px;font-weight:400;color:var(--text3)">(admin only)</span></h4><p>Set to "Today + Tomorrow" or "Today + 2 days" to pull upcoming moves and amenities into the passdown for advance notice.</p><h4>Free-Entry Sections</h4><p>These sections are for items you add manually:</p><ul><li><strong>Admin users:</strong> 🔑 Keys / Access, 🅿️ Parking, 👤 Resident Matters, 📢 Policy Reminders</li><li><strong>Staff users:</strong> 📝 Shift Notes</li></ul><p>Click <strong>+ Add Item</strong> in any section, fill in the form (unit, resident, description, next step), and save. Items appear as cards and can be removed with ×.</p><h4>Generating</h4><p>Click <strong>Generate</strong> to build the formatted passdown text in the Preview area. The preview is a fully editable textarea — type freely to add context, adjust wording, or remove anything before saving.</p><h4>Saving &amp; Sending</h4><ul><li><strong>Save Draft</strong> — saves the passdown to History as a draft, attributed to your account</li><li><strong>Review &amp; Send</strong> — runs quality checks, saves the passdown as sent, and opens Gmail with default recipients</li><li><strong>Copy</strong> — copies the text to your clipboard for pasting elsewhere</li><li><strong>Clear draft</strong> — resets all build blocks and clears the preview</li></ul><h4>Passdown History</h4><p>Passdowns appear on the right with Draft/Sent and read-count badges. Admins see all staff passdowns; staff see the last 48 hours. Each entry can be expanded, copied, edited (loads it back into the preview for revision), or deleted (author or admin only).</p><div class="guide-tip">💡 Clicking <strong>Passdown</strong> from the Move Ins / Outs section jumps here with today\'s moves already loaded.</div>' },
 
-  { id:'g-todos', icon:'✅', title:'To-Do List', keywords:'todo to do task personal list pending done completed admin view all team switch user',
-    html:'<h4>Personal To-Dos</h4><p>Each logged-in user has their own private to-do list. Other staff cannot see your items — only admins can view all lists.</p><h4>Adding an Item</h4><p>Click <strong>+ Add To-Do</strong>, type the task, and save. The badge on the nav item shows your pending count.</p><h4>Completing Items</h4><p>Check the checkbox next to any item to mark it done. Click <strong>Clear Completed</strong> to remove all done items at once.</p><h4>Admin: View All <span style="font-size:10px;font-weight:400;color:var(--text3)">(admin only)</span></h4><p>A user-switcher dropdown appears at the top of the To-Do List for admins. Switch to any team member to view (but not edit) their list — useful for shift coverage and handoffs.</p>' },
+  { id:'g-todos', icon:'✅', title:'To-Do List', keywords:'todo to do task personal list shift top three waiting follow up assigned completed admin project board search',
+    html:'<h4>Capture First</h4><p>Type a task in the capture bar and press Enter. Open <strong>Options</strong> for a category, due date, or priority, or choose <strong>More details</strong> for notes, status, ownership, follow-up information, assignment, or an admin project.</p><h4>Workspaces</h4><ul><li><strong>This Shift</strong> — urgency-based Do now, Scheduled, Waiting, and Someday groups plus a strict Top 3</li><li><strong>All Tasks</strong> — searchable list or status board with category and status filters</li><li><strong>Follow-Ups</strong> — Waiting and Blocked tasks with an owner, follow-up date, last contact, and blocker details</li><li><strong>Assigned</strong> — work assigned to you and, for admins, delegated work</li><li><strong>Completed</strong> — completion history, including archived tasks</li><li><strong>Admin Projects</strong> — longer dashboard, documentation, security, and improvement work kept out of the shift queue</li></ul><h4>Changing Status</h4><p>Use the status menu on any list or board card. Waiting requires an owner and follow-up date; Blocked requires a blocker note. Completing a task frees its Top 3 slot automatically.</p><h4>Privacy &amp; Oversight</h4><p>Each user has a personal list. Admins can switch to another team member for coverage and review.</p>' },
 
   { id:'g-team', icon:'👥', title:'Team Tracker', keywords:'team tracker staff log activity pin lead admin only note shift roster',
     admin:true,
@@ -13278,7 +13599,8 @@ function renderTaskList(type) {
     });
     var catSel = '<select class="stask-cat ie-sel" onchange="updateDefaultTask(\'' + type + '\',' + i + ',\'cat\',this.value)">' + catOpts + '</select>';
     var safeVal = t.text.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-    var textInput = '<input type="text" class="stask-text" value="' + safeVal + '" onblur="updateDefaultTask(\'' + type + '\',' + i + ',\'text\',this.value)" style="">';
+    var linked = getTaskAutomationId(t) ? '<span title="Connected workflow — safe to rename" aria-label="Connected workflow" style="color:var(--accent);font-size:11px">&#128279;</span>' : '';
+    var textInput = linked + '<input type="text" class="stask-text" value="' + safeVal + '" onblur="updateDefaultTask(\'' + type + '\',' + i + ',\'text\',this.value)" style="">';
     html += '<div class="stask-row"><div class="stask-arrows">' + upBtn + dnBtn + '</div>' + textInput + catSel + rmBtn + '</div>';
   });
   el2.innerHTML = html;
@@ -13286,9 +13608,9 @@ function renderTaskList(type) {
 
 function ensureCustomTasks(type) {
   if (type === 'in') {
-    if (!isValidTaskList(state.customInTasks)) state.customInTasks = DEFAULT_IN_TASKS.map(function(t){ return {text:t.text,cat:t.cat,hint:t.hint||null}; });
+    if (!isValidTaskList(state.customInTasks)) state.customInTasks = DEFAULT_IN_TASKS.map(function(t){ return {text:t.text,cat:t.cat,hint:t.hint||null,paymentTask:!!t.paymentTask,automationId:getTaskAutomationId(t)||null}; });
   } else {
-    if (!isValidTaskList(state.customOutTasks)) state.customOutTasks = DEFAULT_OUT_TASKS.map(function(t){ return {text:t.text,cat:t.cat,hint:t.hint||null}; });
+    if (!isValidTaskList(state.customOutTasks)) state.customOutTasks = DEFAULT_OUT_TASKS.map(function(t){ return {text:t.text,cat:t.cat,hint:t.hint||null,paymentTask:!!t.paymentTask,automationId:getTaskAutomationId(t)||null}; });
   }
 }
 
@@ -13333,7 +13655,7 @@ async function resetTasksToDefaults(type) {
   var label = type === 'in' ? 'move-in' : 'move-out';
   if (!await confirmModal('Replace your current ' + label + ' task list with the updated defaults? This cannot be undone.')) return;
   var defaults = type === 'in' ? DEFAULT_IN_TASKS : DEFAULT_OUT_TASKS;
-  var copy = defaults.map(function(t){ return {text:t.text, cat:t.cat, hint:t.hint||null}; });
+  var copy = defaults.map(function(t){ return {text:t.text, cat:t.cat, hint:t.hint||null, paymentTask:!!t.paymentTask, automationId:getTaskAutomationId(t)||null}; });
   if (type === 'in') state.customInTasks = copy;
   else state.customOutTasks = copy;
   scheduleSave(); renderTaskList(type);
@@ -13448,6 +13770,21 @@ function migrateTaskUpdatesV3() {
   scheduleSave();
 }
 
+function migrateTaskAutomationIdsV1() {
+  if (state.taskAutomationIdsV1) return;
+  [state.customInTasks || [], state.customOutTasks || []].forEach(function(list) {
+    list.forEach(function(t) { var id = getTaskAutomationId(t); if (id) t.automationId = id; });
+  });
+  (state.moves || []).forEach(function(m) {
+    (m.tasks || []).forEach(function(t) { var id = getTaskAutomationId(t); if (id) t.automationId = id; });
+  });
+  (state.keys || []).forEach(function(k) {
+    if (!k.srcAutomationId && k.srcTaskText && TASK_AUTOMATION_BY_TEXT[k.srcTaskText]) k.srcAutomationId = TASK_AUTOMATION_BY_TEXT[k.srcTaskText];
+  });
+  state.taskAutomationIdsV1 = true;
+  scheduleSave();
+}
+
 // ─── LOGIN ───
 function showLogin() {
   var ov = g('login-overlay'); if (!ov) return;
@@ -13467,13 +13804,13 @@ function hideLogin() {
   startSessionTimer();
   if (typeof npLoad === 'function') npLoad();
   if (currentUser) logActivity('session', 'login', currentUser.name + ' logged in');
-  // Daily focus nudge: no 1-2-3 picked yet today and Do-now items are waiting
+  // Daily focus nudge: no Top 3 picked yet today and Do-now items are waiting
   try {
     var fp = getFocusPicks();
-    if (!(fp.big.length + fp.med.length + fp.small.length)) {
+    if (!fp.top.length) {
       var fu = focusTodayMoveUnits();
       var fn = getCurrentTodos().filter(function (t) { return todoFocusQuadrant(t, fu) === 'now'; }).length;
-      if (fn) toast('★ ' + fn + ' item' + (fn > 1 ? 's' : '') + ' in Do now — pick your 1-2-3 (To-Dos › Focus)');
+      if (fn) toast('★ ' + fn + ' item' + (fn > 1 ? 's' : '') + ' in Do now — choose today\'s Top 3 (To-Dos › This Shift)');
     }
   } catch (e) {}
 }
@@ -13697,7 +14034,8 @@ function closeWelcomeModal(fromButton) {
       try { localStorage.setItem('welcome_seen_' + currentUser.id, '1'); } catch(e) {}
     }
     closeModal('modal-welcome');
-    nav('guide');
+    var guideNavEl = document.querySelector('.nav-item[data-sec="guide"]') || document.querySelector('.mn-item[data-sec="guide"]');
+    if (guideNavEl) nav(guideNavEl);
   } else {
     closeModal('modal-welcome');
   }
@@ -13977,9 +14315,10 @@ async function init() {
   seedRoutinesV2();
   migrateTaskUpdatesV2();
   migrateTaskUpdatesV3();
+  migrateTaskAutomationIdsV1();
   migrateMovePhaseCats();
   migrateTodosV1();
-  seedLoopTrackerTodosV1();
+  migrateTodosV2();
   await mergeTodoInbox();
   seedDefaultTemplates();
   seedUnitRecords();
@@ -14016,7 +14355,7 @@ function getCurrentShiftLabel() {
   var d = new Date(), mins = d.getHours()*60 + d.getMinutes();
   if (mins >= 7*60 && mins < 15*60+30) return 'AM';      // 7:00–3:30pm
   if (mins >= 15*60+30 && mins < 23*60+30) return 'PM';  // 3:30–11:30pm
-  return 'Overnight';                                      // 11:30pm–7:30am
+  return 'Overnight';                                      // 11:30pm–7:00am
 }
 function getShiftIdForTs(ts) {
   // Local dates only — toISOString() is UTC and flips the date at 5pm PDT, splitting one shift in two.
