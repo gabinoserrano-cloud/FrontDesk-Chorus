@@ -1,6 +1,7 @@
 # Local-only files — never commit to the public repo
 AUDIT.md
 .claude/
+.agents/
 .DS_Store
 report.html
 
