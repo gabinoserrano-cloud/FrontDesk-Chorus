@@ -2767,14 +2767,47 @@ async function hashPin(pin, salt) {
   } catch(e) { return String(pin); }
 }
 function isPinHashed(pin) { return typeof pin === 'string' && pin.length === 64 && /^[0-9a-f]+$/.test(pin); }
+// PBKDF2-HMAC-SHA256 (OWASP 2023 default iteration count) — stronger than plain SHA-256 against
+// offline brute-force of the 4-8 digit PIN space if the synced payload is ever dumped. Stored as
+// 'pbkdf2$<iterations>$<hex>' so it's distinguishable from a legacy 64-char SHA-256 hex hash.
+var PBKDF2_ITERATIONS = 210000;
+async function hashPinPBKDF2(pin, salt, iterations) {
+  iterations = iterations || PBKDF2_ITERATIONS;
+  try {
+    var enc = new TextEncoder();
+    var keyMaterial = await crypto.subtle.importKey('raw', enc.encode(String(pin)), { name: 'PBKDF2' }, false, ['deriveBits']);
+    var bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: enc.encode(String(salt)), iterations: iterations, hash: 'SHA-256' }, keyMaterial, 256);
+    var hex = Array.from(new Uint8Array(bits)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+    return 'pbkdf2$' + iterations + '$' + hex;
+  } catch(e) { return await hashPin(pin, salt); }
+}
+function isPinPBKDF2(pin) { return typeof pin === 'string' && pin.indexOf('pbkdf2$') === 0; }
+async function verifyPinPBKDF2(entered, stored, salt) {
+  var parts = String(stored).split('$');
+  var iterations = parseInt(parts[1], 10) || PBKDF2_ITERATIONS;
+  return (await hashPinPBKDF2(entered, salt, iterations)) === stored;
+}
 // Fixed per-field salts for the two singleton section PINs (no per-record id to salt with, unlike accounts).
 var TEAMPIN_SALT = 'chorus-teampin-v1';
 var PATROLPIN_SALT = 'chorus-patrolpin-v1';
-// Verify a typed section PIN against the stored value: hashed compare post-migration, plaintext fallback pre-migration.
-async function verifySectionPin(entered, stored, salt) {
+// Verify a typed section PIN against the stored value: PBKDF2 (current), legacy SHA-256, or
+// plaintext (pre-migration fallback). On a successful legacy/plaintext match, transparently
+// upgrades to PBKDF2 via onUpgrade(newHash) — we can only do this at verify time since a stored
+// hash can't be strengthened without the plaintext PIN the user just typed.
+async function verifySectionPin(entered, stored, salt, onUpgrade) {
   if (!stored) return false;
-  if (isPinHashed(stored)) return (await hashPin(entered, salt)) === stored;
-  return String(entered) === String(stored);
+  if (isPinPBKDF2(stored)) return await verifyPinPBKDF2(entered, stored, salt);
+  var ok = isPinHashed(stored) ? ((await hashPin(entered, salt)) === stored) : (String(entered) === String(stored));
+  if (ok && onUpgrade) { try { onUpgrade(await hashPinPBKDF2(entered, salt)); } catch(e) {} }
+  return ok;
+}
+// Same idea, scoped to an account record (upgrades acct.pin in place + persists on success).
+async function verifyAccountPin(entered, acct) {
+  if (!acct || !acct.pin) return false;
+  if (isPinPBKDF2(acct.pin)) return await verifyPinPBKDF2(entered, acct.pin, acct.id);
+  var ok = isPinHashed(acct.pin) ? ((await hashPin(entered, acct.id)) === acct.pin) : (String(entered) === String(acct.pin));
+  if (ok) { try { acct.pin = await hashPinPBKDF2(entered, acct.id); scheduleSave(); } catch(e) {} }
+  return ok;
 }
 async function migratePinsToHashed() {
   var changed = false;
@@ -3255,7 +3288,7 @@ async function loadTestData() {
   var hasTestAcct = state.accounts.some(function(a){ return a.name === 'Test Staff'; });
   if (!hasTestAcct) {
     var testId = uid();
-    var testPinHash = await hashPin('0000', testId);
+    var testPinHash = await hashPinPBKDF2('0000', testId);
     state.accounts.push({ id: testId, name: 'Test Staff', role: 'staff', pin: testPinHash, createdAt: now });
   }
 
@@ -8470,7 +8503,7 @@ function showScanOverlay(checkpointId) {
     var pinInp = g('patrol-pin-inp');
     var pinBtn = g('patrol-pin-btn');
     async function tryPin() {
-      if (await verifySectionPin(pinInp.value, pin, PATROLPIN_SALT)) {
+      if (await verifySectionPin(pinInp.value, pin, PATROLPIN_SALT, function(h){ state.patrolPin = h; scheduleSave(); })) {
         window._patrolPinVerified = true;
         showScanOverlay(checkpointId);
       } else {
@@ -8605,13 +8638,13 @@ function showScanPinPrompt(checkpointId, staffName, cpName) {
     var entered = inp ? inp.value : '';
     function finishScan() { if (logScan(checkpointId, staffName, false)) showScanSuccess(cpName); else showScanError('The checkpoint could not be found, so no patrol entry was saved.'); }
     if (acct) {
-      if ((await hashPin(entered, acct.id)) === acct.pin) { finishScan(); }
+      if (await verifyAccountPin(entered, acct)) { finishScan(); }
       else { toast('Incorrect PIN'); if (inp) { inp.value = ''; inp.focus(); } }
     } else {
       // No account found — require patrol PIN if set, else allow
       var pp = state.patrolPin || '';
       if (pp) {
-        if (await verifySectionPin(entered, pp, PATROLPIN_SALT)) { finishScan(); }
+        if (await verifySectionPin(entered, pp, PATROLPIN_SALT, function(h){ state.patrolPin = h; scheduleSave(); })) { finishScan(); }
         else { toast('Incorrect PIN'); if (inp) { inp.value = ''; inp.focus(); } }
       } else {
         finishScan();
@@ -12643,7 +12676,7 @@ function renderTeam() {
       var cp = g('team-pin-confirm').value.trim();
       if (!np || np.length < 4) { toast('PIN must be at least 4 digits'); return; }
       if (np !== cp) { toast('PINs do not match'); return; }
-      state.teampin = await hashPin(np, TEAMPIN_SALT); teamUnlocked = true; scheduleSave(); renderTeam();
+      state.teampin = await hashPinPBKDF2(np, TEAMPIN_SALT); teamUnlocked = true; scheduleSave(); renderTeam();
     });
     return;
   }
@@ -12658,7 +12691,7 @@ function renderTeam() {
       + '</div>';
     var inp = g('team-pin-input');
     g('team-unlock-btn').addEventListener('click', async function () {
-      if (await verifySectionPin(inp.value, state.teampin, TEAMPIN_SALT)) { teamUnlocked = true; renderTeam(); }
+      if (await verifySectionPin(inp.value, state.teampin, TEAMPIN_SALT, function(h){ state.teampin = h; scheduleSave(); })) { teamUnlocked = true; renderTeam(); }
       else { toast('Incorrect PIN'); inp.value = ''; inp.focus(); }
     });
     inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') g('team-unlock-btn').click(); });
@@ -13370,7 +13403,7 @@ async function setPatrolPin() {
   var cp = (g('pp-confirm') ? g('pp-confirm').value.trim() : '');
   if (!np || np.length < 4) { toast('PIN must be at least 4 digits'); return; }
   if (np !== cp) { toast('PINs do not match'); return; }
-  state.patrolPin = await hashPin(np, PATROLPIN_SALT); scheduleSave(); renderPatrolPinSettings(); toast('Patrol PIN set');
+  state.patrolPin = await hashPinPBKDF2(np, PATROLPIN_SALT); scheduleSave(); renderPatrolPinSettings(); toast('Patrol PIN set');
 }
 async function changePatrolPin() {
   var cur = (g('pp-cur') ? g('pp-cur').value : '');
@@ -13379,7 +13412,7 @@ async function changePatrolPin() {
   if (!(await verifySectionPin(cur, state.patrolPin, PATROLPIN_SALT))) { toast('Current PIN is incorrect'); return; }
   if (!np || np.length < 4) { toast('New PIN must be at least 4 digits'); return; }
   if (np !== cp) { toast('PINs do not match'); return; }
-  state.patrolPin = await hashPin(np, PATROLPIN_SALT); scheduleSave(); renderPatrolPinSettings(); toast('Patrol PIN updated');
+  state.patrolPin = await hashPinPBKDF2(np, PATROLPIN_SALT); scheduleSave(); renderPatrolPinSettings(); toast('Patrol PIN updated');
 }
 async function removePatrolPin() {
   var cur = (g('pp-cur') ? g('pp-cur').value : '');
@@ -13485,7 +13518,7 @@ async function setTeamPin() {
   if (!np || np.length < 4) { toast('PIN must be at least 4 digits'); return; }
   if (!/^\d+$/.test(np)) { toast('PIN must be numbers only'); return; }
   if (np !== cp) { toast('PINs do not match'); return; }
-  state.teampin = await hashPin(np, TEAMPIN_SALT); scheduleSave(); renderTeamPinSettings(); toast('Team Tracker PIN set');
+  state.teampin = await hashPinPBKDF2(np, TEAMPIN_SALT); scheduleSave(); renderTeamPinSettings(); toast('Team Tracker PIN set');
 }
 async function changeTeamPin() {
   var cur = (g('tp-current') ? g('tp-current').value : '');
@@ -13496,7 +13529,7 @@ async function changeTeamPin() {
   if (!np || np.length < 4) { toast('New PIN must be at least 4 digits'); return; }
   if (!/^\d+$/.test(np)) { toast('PIN must be numbers only'); return; }
   if (np !== cp) { toast('New PINs do not match'); return; }
-  state.teampin = await hashPin(np, TEAMPIN_SALT); scheduleSave(); renderTeamPinSettings(); toast('Team Tracker PIN updated');
+  state.teampin = await hashPinPBKDF2(np, TEAMPIN_SALT); scheduleSave(); renderTeamPinSettings(); toast('Team Tracker PIN updated');
 }
 async function removeTeamPin() {
   var cur = (g('tp-current') ? g('tp-current').value : '');
@@ -13990,13 +14023,12 @@ async function submitChangePin() {
   var confirmPin = (g('pin-confirm').value || '').trim();
   var acct = (state.accounts || []).find(function(a){ return a.id === currentUser.id; });
   if (!acct) return;
-  var currentHash = await hashPin(current, acct.id);
-  var pinMatch = isPinHashed(acct.pin) ? (currentHash === acct.pin) : (current === acct.pin);
+  var pinMatch = await verifyAccountPin(current, acct);
   if (!pinMatch) { toast('Current PIN is incorrect'); return; }
   if (newPin.length < 4) { toast('PIN must be 4-8 digits'); return; }
   if (!/^\d+$/.test(newPin)) { toast('PIN must be numbers only'); return; }
   if (newPin !== confirmPin) { toast('New PINs do not match'); return; }
-  acct.pin = await hashPin(newPin, acct.id);
+  acct.pin = await hashPinPBKDF2(newPin, acct.id);
   scheduleSave();
   closeModal('modal-change-pin');
   toast('PIN updated successfully');
@@ -14053,8 +14085,7 @@ async function submitPin() {
     loginPinEntry = '';
     return;
   }
-  var enteredHash = await hashPin(loginPinEntry, acct.id);
-  var match = isPinHashed(acct.pin) ? (enteredHash === acct.pin) : (loginPinEntry === acct.pin);
+  var match = await verifyAccountPin(loginPinEntry, acct);
   if (match) {
     sessionStorage.removeItem(failKey);
     sessionStorage.removeItem(lockKey);
@@ -14133,7 +14164,7 @@ async function saveAdminSetup() {
   if (pin !== pin2) { toast('PINs do not match'); return; }
   if (!state.accounts) state.accounts = [];
   var adminId = uid();
-  var pinHash = await hashPin(pin, adminId);
+  var pinHash = await hashPinPBKDF2(pin, adminId);
   state.accounts.push({ id: adminId, name: name, role: 'admin', pin: pinHash, createdAt: Date.now() });
   if (!state.teamstaff) state.teamstaff = [];
   if (state.teamstaff.indexOf(name) === -1) state.teamstaff.push(name);
@@ -14247,7 +14278,7 @@ async function saveNewAccount() {
   if (pin !== pin2) { toast('PINs do not match'); return; }
   if (!state.accounts) state.accounts = [];
   var newId = uid();
-  var pinHash = await hashPin(pin, newId);
+  var pinHash = await hashPinPBKDF2(pin, newId);
   state.accounts.push({ id: newId, name: name, role: role, pin: pinHash, createdAt: Date.now() });
   if (!state.teamstaff) state.teamstaff = [];
   if (state.teamstaff.indexOf(name) === -1) state.teamstaff.push(name);
@@ -14274,7 +14305,7 @@ async function submitResetPin(id) {
   if (np.length > 8) { toast('PIN cannot exceed 8 digits'); return; }
   if (!/^\d+$/.test(np)) { toast('PIN must be numbers only'); return; }
   if (np !== cp) { toast('PINs do not match'); return; }
-  acct.pin = await hashPin(np, acct.id);
+  acct.pin = await hashPinPBKDF2(np, acct.id);
   sessionStorage.removeItem('pin_fails_' + acct.id);
   sessionStorage.removeItem('pin_locked_until_' + acct.id);
   scheduleSave(); closeModal('modal-reset-pin'); toast('PIN reset for ' + acct.name);
