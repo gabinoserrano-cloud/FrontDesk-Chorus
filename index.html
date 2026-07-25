@@ -7622,7 +7622,7 @@ var PK_CAT_COLORS = {
 function pkCategoryBadge(cat) {
   if (!cat || cat === 'Resident') return '';
   var c = PK_CAT_COLORS[cat] || PK_CAT_COLORS['CBSF'];
-  return ' <span style="background:' + c[0] + ';color:' + c[1] + ';font-size:10px;font-weight:600;border-radius:4px;padding:1px 6px">' + esc(cat) + '</span>';
+  return ' <span style="background:' + c[0] + ';color:' + c[1] + ';font-size:10px;font-weight:600;border-radius:4px;padding:1px 6px;white-space:nowrap">' + esc(cat) + '</span>';
 }
 function renderParking() {
   var all = state.parking||[];
@@ -7652,10 +7652,10 @@ function renderParking() {
       return '<span style="font-size:11px;font-weight:600;color:var(--accent)">✓</span>' + (c.num ? '<span style="font-size:11px;color:var(--text2);margin-left:4px">#' + c.num + '</span>' : '');
     }
     var byTag = fmtByTag(p.addedBy, p.createdAt);
-    var preexistingBadge = p.preexisting ? ' <span style="background:rgba(107,114,128,0.12);color:var(--text3);font-size:10px;font-weight:600;border-radius:4px;padding:1px 6px;border:1px solid rgba(107,114,128,0.25)" title="Registered before the March 2026 transponder bundle — added from the TEZ registrant list, not part of the Credentials stock ledger">Pre-existing</span>' : '';
-    var flagBadge = p.flaggedDeparted ? ' <span style="background:rgba(192,53,53,0.12);color:var(--red);font-size:10px;font-weight:600;border-radius:4px;padding:1px 6px;border:1px solid rgba(192,53,53,0.3)" title="Flagged — may be a past resident or former employee, needs review">🚩 Flagged</span>' : '';
+    var preexistingBadge = p.preexisting ? ' <span style="background:rgba(107,114,128,0.12);color:var(--text3);font-size:10px;font-weight:600;border-radius:4px;padding:1px 6px;border:1px solid rgba(107,114,128,0.25);white-space:nowrap" title="Registered before the March 2026 transponder bundle — added from the TEZ registrant list, not part of the Credentials stock ledger">Pre-existing</span>' : '';
+    var flagBadge = p.flaggedDeparted ? ' <span style="background:rgba(192,53,53,0.12);color:var(--red);font-size:10px;font-weight:600;border-radius:4px;padding:1px 6px;border:1px solid rgba(192,53,53,0.3);white-space:nowrap" title="Flagged — may be a past resident or former employee, needs review">🚩 Flagged</span>' : '';
     html += '<tr style="' + rowOpacity + '">';
-    html += '<td class="mono font-600">' + (p.unit ? esc(p.unit) : '<span style="color:var(--text3);font-weight:400">—</span>') + '</td>';
+    html += '<td class="mono font-600" style="white-space:nowrap">' + (p.unit ? esc(p.unit) : '<span style="color:var(--text3);font-weight:400">—</span>') + '</td>';
     html += '<td>' + esc(p.resident) + pkCategoryBadge(p.category) + preexistingBadge + flagBadge + byTag + '</td>';
     html += '<td>' + credCell(p.transponder) + '</td>';
     html += '<td>' + credCell(p.keyTag) + '</td>';

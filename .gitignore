@@ -20,3 +20,7 @@ serve.py
 
 # Stale browser-save artifacts (extracted copies of index.html's inline JS)
 script_*.js
+
+# Word docs (reports/reconciliations) — routinely contain resident/staff PII, never publish
+*.docx
+~$*.doc*
