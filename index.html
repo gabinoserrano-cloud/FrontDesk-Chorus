@@ -12449,7 +12449,18 @@ function renderWeekCal() {
   days.forEach(function (d) { var ds = localDateStr(d); html += '<th class="' + (ds === todayStr ? 'today-hdr' : '') + '">' + d.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' + d.getDate() + '</th>'; });
   html += '</tr></thead><tbody>';
   if (!units.length) html += '<tr><td colspan="8" class="tbl-empty">No moves scheduled.</td></tr>';
-  else units.forEach(function (unit) { html += '<tr><td class="unit-lbl">' + unit + '</td>'; days.forEach(function (d) { var ds = localDateStr(d); html += '<td class="' + (ds === todayStr ? 'today-col' : '') + '">' + getChips(ds, unit, 'week') + '</td>'; }); html += '</tr>'; });
+  else {
+    var visibleUnitRows = 0;
+    units.forEach(function (unit) {
+      var rowChips = days.map(function (d) { return getChips(localDateStr(d), unit, 'week'); });
+      if (!rowChips.some(function (c) { return c; })) return; // no events this unit this week — skip the row
+      visibleUnitRows++;
+      html += '<tr><td class="unit-lbl">' + unit + '</td>';
+      days.forEach(function (d, i) { var ds = localDateStr(d); html += '<td class="' + (ds === todayStr ? 'today-col' : '') + '">' + rowChips[i] + '</td>'; });
+      html += '</tr>';
+    });
+    if (!visibleUnitRows) html += '<tr><td colspan="8" class="tbl-empty">No moves scheduled this week.</td></tr>';
+  }
   var hasTodos = getCurrentTodos().some(function (t) { return t.dueDate; });
   var hasAmenities = (state.amenities || []).length > 0;
   var hasTaskDates = (state.moves || []).some(function (m) { return (m.tasks || []).some(function (t) { return t.dueDate; }); });
