@@ -1317,6 +1317,12 @@
           <div class="card-hdr"><span class="set-ico" data-icon="mappin"></span><span class="card-title">Walkthrough Floors &amp; Areas</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddWTFloor()">+ Add Floor</button></div>
           <div id="settings-wt-floors" style="padding:0"></div>
         </div>
+        <div class="set-group-lbl">Card &amp; Key Pools</div>
+        <div class="card mb-12">
+          <div class="card-hdr"><span class="set-ico" data-icon="key"></span><span class="card-title">Starting Counts</span></div>
+          <p class="set-desc" style="padding:0 14px 8px">How many of each physical card/key you actually have. Leave blank if you haven't counted yet — "Reconcile" logs a physical count against what the dashboard expects, so drift gets caught early instead of surprising you months later.</p>
+          <div id="settings-card-pools" style="padding:0"></div>
+        </div>
         <div class="set-group-lbl">Security Patrols</div>
         <div class="card mb-12">
           <div class="card-hdr"><span class="set-ico" data-icon="shield"></span><span class="card-title">Patrol Alert Threshold</span></div>
@@ -2927,7 +2933,7 @@ function cloneData(obj) {
   try { return JSON.parse(JSON.stringify(obj)); }
   catch (e) { return obj; }
 }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, archivedTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], transponders: { startingInventory: 100, log: [], counts: [] }, security: [], logbook: [], propertyConfig: {}, recurringReminders: [], pushLog: [] }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, archivedTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], transponders: { startingInventory: 100, log: [], counts: [] }, security: [], logbook: [], propertyConfig: {}, recurringReminders: [], pushLog: [], cardPools: { oneTime: { startingCount: 40, counts: [] }, vendor: { startingCount: null, counts: [] }, sgt: { startingCount: null, counts: [] } } }; }
 
 // ─── SHIFT LOG ───
 function getShiftLog() {
@@ -6158,8 +6164,90 @@ function renderKeysSection() {
   filterKeys(keyFilter, activeTab);
 }
 
-// ─── CARD DRAWER ───────────────────────────────────────────────────────────────
-var CARD_DRAWER_COUNT = 40;
+// ─── CARD & KEY POOLS (One-Time Card Drawer, Vendor Cards, SGT Tour Keys) ───────
+// Each pool has a configurable startingCount (null = "not yet counted") + a log of physical
+// reconcile counts, mirroring the Transponder/Credentials starting-inventory pattern. This
+// replaces a hardcoded CARD_DRAWER_COUNT=40 that couldn't reflect real stock changes (the SGT
+// key count grew 14→18 in practice but had nowhere to be recorded — see 2026-07-23 shift note).
+var CARD_POOL_LABELS = { oneTime: 'One-Time Card Drawer', vendor: 'Vendor Cards', sgt: 'Self-Guided Tour Keys' };
+function cardPools() { if (!state.cardPools) state.cardPools = { oneTime: { startingCount: 40, counts: [] }, vendor: { startingCount: null, counts: [] }, sgt: { startingCount: null, counts: [] } }; return state.cardPools; }
+function migrateCardPoolsV1() {
+  if (state.cardPoolsSeedV1) return;
+  var p = cardPools();
+  p.oneTime.startingCount = (typeof CARD_DRAWER_COUNT !== 'undefined') ? CARD_DRAWER_COUNT : 40;
+  // Real count as of the 7/23 shift note ("grew from 14 to 18") — seeds the field that never existed before.
+  if (p.sgt.startingCount == null) p.sgt.startingCount = 18;
+  state.cardPoolsSeedV1 = true;
+  scheduleSave();
+}
+function oneTimeDrawerSize() { return cardPools().oneTime.startingCount || 40; }
+function cardPoolIssued(poolKey) {
+  if (poolKey === 'oneTime') return (state.keys || []).filter(function (k) { return k.type === 'one-time' && k.status === 'issued'; }).length;
+  if (poolKey === 'vendor') return (state.keys || []).filter(function (k) { return k.type === 'vendor' && k.status === 'issued'; }).length;
+  if (poolKey === 'sgt') { var s = (state.supplies || []).find(function (x) { return x.name === 'Self-Guided Tour Keys – Active'; }); return s ? (s.qty || 0) : 0; }
+  return 0;
+}
+function cardPoolRemaining(poolKey) {
+  var p = cardPools()[poolKey];
+  if (!p || p.startingCount == null) return null;
+  return p.startingCount - cardPoolIssued(poolKey);
+}
+function saveCardPoolStart(poolKey, val) {
+  var n = String(val).trim() === '' ? null : parseInt(val, 10);
+  if (n != null && isNaN(n)) return;
+  cardPools()[poolKey].startingCount = n;
+  scheduleSave(); renderCardDrawer(); renderCardPoolSettings();
+  toast('Saved');
+}
+function openCardPoolReconcile(poolKey) {
+  var ov = g('modal-cardpool-reconcile');
+  if (!ov) { ov = document.createElement('div'); ov.className = 'modal-ov'; ov.id = 'modal-cardpool-reconcile'; document.body.appendChild(ov); }
+  var expected = cardPoolRemaining(poolKey);
+  ov.innerHTML = '<div class="modal" style="max-width:380px">'
+    + '<div class="modal-hdr"><span class="modal-title">Reconcile — ' + esc(CARD_POOL_LABELS[poolKey]) + '</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-cardpool-reconcile\')">&#x2715;</button></div>'
+    + '<div class="modal-bdy">'
+    + (expected == null
+        ? '<div class="set-hint" style="margin-bottom:10px">No starting count set yet — set one in Settings first, or just log this physical count as the starting point.</div>'
+        : '<div class="set-hint" style="margin-bottom:10px">Dashboard expects <strong>' + expected + '</strong> in stock right now.</div>')
+    + '<div class="fg"><label>Physical count</label><input type="number" id="cpr-physical" min="0" placeholder="Count what\'s actually there"></div>'
+    + '</div>'
+    + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-cardpool-reconcile\')">Cancel</button><button class="btn btn-primary" onclick="saveCardPoolCount(\'' + poolKey + '\')">Save Count</button></div>'
+    + '</div>';
+  openModal('modal-cardpool-reconcile');
+}
+function saveCardPoolCount(poolKey) {
+  var inp = g('cpr-physical');
+  var physical = inp ? parseInt(inp.value, 10) : NaN;
+  if (isNaN(physical) || physical < 0) { toast('Enter the physical count'); return; }
+  var expected = cardPoolRemaining(poolKey);
+  var p = cardPools()[poolKey];
+  p.counts.push({ date: today(), physical: physical, expected: expected, diff: expected == null ? null : physical - expected, by: currentUser ? currentUser.name : '', ts: Date.now() });
+  if (p.counts.length > 60) p.counts = p.counts.slice(-60);
+  // If there was no starting count yet, treat this first physical count as it.
+  if (p.startingCount == null) p.startingCount = physical + cardPoolIssued(poolKey);
+  scheduleSave();
+  closeModal('modal-cardpool-reconcile');
+  renderCardDrawer(); renderCardPoolSettings();
+  var diff = p.counts[p.counts.length - 1].diff;
+  toast(diff == null ? 'Count saved' : diff === 0 ? 'Count matches — all good' : (diff > 0 ? '+' + diff : diff) + ' vs. expected — logged');
+}
+function renderCardPoolSettings() {
+  var el = g('settings-card-pools'); if (!el) return;
+  var html = '';
+  ['oneTime', 'vendor', 'sgt'].forEach(function (key) {
+    var p = cardPools()[key];
+    var remaining = cardPoolRemaining(key);
+    var lastCount = p.counts.length ? p.counts[p.counts.length - 1] : null;
+    html += '<div class="set-row">'
+      + '<div><div class="set-lbl">' + esc(CARD_POOL_LABELS[key]) + '</div>'
+      + '<div class="set-hint">' + (remaining == null ? 'Not yet counted' : remaining + ' in stock (' + cardPoolIssued(key) + ' out of ' + p.startingCount + ')') + (lastCount ? ' · last physical count ' + fmtShort(lastCount.date) + (lastCount.diff ? ' (' + (lastCount.diff > 0 ? '+' : '') + lastCount.diff + ' vs. expected)' : '') : '') + '</div></div>'
+      + '<div class="flex gap-8 items-center">'
+      + '<input type="number" min="0" style="width:76px" value="' + (p.startingCount != null ? p.startingCount : '') + '" placeholder="—" onchange="saveCardPoolStart(\'' + key + '\',this.value)">'
+      + '<button class="btn btn-ghost btn-sm" onclick="openCardPoolReconcile(\'' + key + '\')">&#128290; Reconcile</button>'
+      + '</div></div>';
+  });
+  el.innerHTML = html;
+}
 var _quickKeyCardNum = null;
 
 function renderCardDrawer() {
@@ -6168,10 +6256,11 @@ function renderCardDrawer() {
   var issuedMap = {};
   issued.forEach(function(k) { if (k.fob) issuedMap[String(k.fob).trim()] = k; });
   var cntEl = g('drawer-count');
-  if (cntEl) cntEl.textContent = (CARD_DRAWER_COUNT - issued.length) + ' in drawer · ' + issued.length + ' out';
+  var drawerSize = oneTimeDrawerSize();
+  if (cntEl) cntEl.textContent = (drawerSize - issued.length) + ' in drawer · ' + issued.length + ' out';
   var now = Date.now();
   var html = '<div style="display:flex;flex-wrap:wrap;gap:8px">';
-  for (var i = 1; i <= CARD_DRAWER_COUNT; i++) {
+  for (var i = 1; i <= drawerSize; i++) {
     var cn = String(i), k = issuedMap[cn];
     if (k) {
       var overdue = k.issuedAt && (now - k.issuedAt) >= 2 * 3600000;
@@ -13196,6 +13285,27 @@ function seedRoutinesV2() {
   state.routinesSeedV2 = true;
   scheduleSave();
 }
+// Added separately (not folded into V2) since it needs its own guard — V2 already ran on real
+// devices and won't re-seed. The Reconcile button existed but the weekly habit never stuck.
+function seedReconcileRoutineV1() {
+  if (state.reconcileRoutineSeedV1) return;
+  var owner = rrDefaultOwnerId();
+  if (!owner) return;
+  var list = rrData();
+  var label = 'Reconcile Master List against dashboard moves';
+  if (!list.some(function (r) { return r.label === label; })) {
+    var r = {
+      id: uid(), label: label, schedule: { type: 'weekly', days: [1] }, intervalDays: 0,
+      requireValue: false, valueLabel: '', targetSupplyName: '', dueShift: '',
+      assignToId: owner, autoTodo: true, lastCompletedAt: null, lastCompletedBy: '',
+      lastGeneratedFor: '', dueDate: null, createdAt: Date.now()
+    };
+    r.dueDate = rrNextDue(r, _isoAddDays(today(), -1));
+    list.push(r);
+  }
+  state.reconcileRoutineSeedV1 = true;
+  scheduleSave();
+}
 // Completing a routine's to-do rolls the schedule forward.
 function completeRoutineFromTodo(td) {
   var r = rrData().find(function (x) { return x.id === td.routineId; });
@@ -13393,6 +13503,7 @@ function renderSettings() {
   renderStaffNavVisibilitySettings();
   renderPatrolPinSettings();
   renderTeamPinSettings();
+  renderCardPoolSettings();
   var ph = g('patrol-alert-hours');
   if (ph) ph.value = (state.patrolSettings && state.patrolSettings.alertHours) || 4;
   var lx = g('laf-expiry-days');
@@ -14398,7 +14509,9 @@ async function init() {
   checkUnreturnedKeyFees();
   seedRecurringRemindersV1();
   migrateRoutinesV1();
+  migrateCardPoolsV1();
   seedRoutinesV2();
+  seedReconcileRoutineV1();
   migrateTaskUpdatesV2();
   migrateTaskUpdatesV3();
   migrateTaskAutomationIdsV1();
