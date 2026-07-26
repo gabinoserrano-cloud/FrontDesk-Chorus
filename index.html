@@ -2369,6 +2369,9 @@ var loginPinEntry = '';
 var loginSelectedAccount = null;
 var todosViewingId = null;
 var STAFF_HIDDEN = ['team', 'activity', 'import'];
+// Read-only role: sees Dashboard/Moves/Calendar only, no add/edit/delete/checklist-toggle anywhere.
+var VIEWER_ALLOWED_SECS = ['dashboard', 'moves', 'calendar'];
+function isViewerUser() { return !!(currentUser && currentUser.role === 'viewer'); }
 
 // ─── SESSION TIMEOUT ───
 var _lastActivity = Date.now();
@@ -2519,6 +2522,32 @@ function syncDrops(prev, next) {
   SYNC_WATCH.forEach(function (k) { var o = prev[k] || 0, n = next[k] || 0; if (o >= 5 && n < o * 0.5) drops.push(k + ' ' + o + '→' + n); });
   return drops;
 }
+// Per-device id (persists in this browser's localStorage) + a human-readable guess at what it
+// is, so a future bad push can be traced to a device — the exact "which device did this" gap
+// from the 7/9 wipe incident, where identifying the culprit needed a manual backup diff.
+function getDeviceId() {
+  try {
+    var id = localStorage.getItem('chorus-device-id');
+    if (!id) { id = uid(); localStorage.setItem('chorus-device-id', id); }
+    return id;
+  } catch (e) { return 'unknown'; }
+}
+function getDeviceLabel() {
+  try {
+    var ua = navigator.userAgent || '';
+    var platform = /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Mac/.test(ua) ? 'Mac' : /Win/.test(ua) ? 'Windows' : 'Device';
+    var browser = /Edg\//.test(ua) ? 'Edge' : /Chrome/.test(ua) ? 'Chrome' : /Firefox/.test(ua) ? 'Firefox' : (/Safari/.test(ua) ? 'Safari' : '');
+    return browser ? (platform + ' · ' + browser) : platform;
+  } catch (e) { return 'Unknown device'; }
+}
+// Ring buffer of recent pushes (device + who + when + collection counts at push time), capped so
+// it doesn't grow the payload — a quick way to answer "which device/session pushed this" after an
+// incident without diffing dated backups.
+function recordDevicePush() {
+  if (!Array.isArray(state.pushLog)) state.pushLog = [];
+  state.pushLog.push({ deviceId: getDeviceId(), deviceLabel: getDeviceLabel(), by: currentUser ? currentUser.name : '', ts: Date.now(), counts: stateCounts(state) });
+  if (state.pushLog.length > 30) state.pushLog = state.pushLog.slice(-30);
+}
 async function pushCloud() {
   if (isSyncing) return;
   if (!cloudPullOk) { setSyncStatus('error', 'Sync paused — refresh to reconnect'); return; }
@@ -2530,6 +2559,7 @@ async function pushCloud() {
   }
   isSyncing = true; setSyncStatus('syncing', 'Saving...');
   try {
+    recordDevicePush();
     await supaPush(state);
     lastSyncTs = Date.now(); localDirty = false; _allowRiskyPush = false;
     lastGoodCounts = stateCounts(state);
@@ -2897,7 +2927,7 @@ function cloneData(obj) {
   try { return JSON.parse(JSON.stringify(obj)); }
   catch (e) { return obj; }
 }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, archivedTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], transponders: { startingInventory: 100, log: [], counts: [] }, security: [], logbook: [], propertyConfig: {}, recurringReminders: [] }; }
+function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, archivedTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], transponders: { startingInventory: 100, log: [], counts: [] }, security: [], logbook: [], propertyConfig: {}, recurringReminders: [], pushLog: [] }; }
 
 // ─── SHIFT LOG ───
 function getShiftLog() {
@@ -3188,6 +3218,7 @@ var SEC_HELP = { dashboard:'g-dashboard', moves:'g-moves', maintenance:'g-maint'
 var STAFF_NO_ADD = ['moves', 'templates'];
 function getSecActions(sec) {
   var isStaff = currentUser && currentUser.role === 'staff';
+  if (isViewerUser()) return helpBtn(sec);
   if (isStaff && STAFF_NO_ADD.indexOf(sec) !== -1) return helpBtn(sec);
   var base = SEC_ACTIONS[sec] || '';
   return base + helpBtn(sec);
@@ -3221,7 +3252,8 @@ document.addEventListener('click', function (e) {
 function nav(item) {
   var sec = item.dataset.sec;
   var staffBlocked = currentUser && currentUser.role === 'staff' && (STAFF_HIDDEN.indexOf(sec) !== -1 || (state.staffHiddenSections||[]).indexOf(sec) !== -1);
-  if (staffBlocked) {
+  var viewerBlocked = isViewerUser() && VIEWER_ALLOWED_SECS.indexOf(sec) === -1;
+  if (staffBlocked || viewerBlocked) {
     var dash = document.querySelector('.nav-item[data-sec="dashboard"]');
     if (dash) nav(dash); return;
   }
@@ -3239,6 +3271,7 @@ function nav(item) {
 function mobNav(item) {
   var sec = item.dataset.sec;
   if (currentUser && currentUser.role === 'staff' && (STAFF_HIDDEN.indexOf(sec) !== -1 || (state.staffHiddenSections||[]).indexOf(sec) !== -1)) return;
+  if (isViewerUser() && VIEWER_ALLOWED_SECS.indexOf(sec) === -1) return;
   var previousSec = curSec;
   stopDashVisualEffects();
   document.querySelectorAll('.mn-item').forEach(function (n) { n.classList.remove('active'); });
@@ -3686,11 +3719,13 @@ function renderDash() {
   var greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   var greetName = currentUser ? currentUser.name.split(' ')[0] : 'Gabino';
   var html = '<div class="dash-greeting-wrap"><canvas id="dash-bg-canvas"></canvas><div class="dash-greeting-content"><div style="font-size:18px;font-weight:600;letter-spacing:-.3px">' + greeting + ', ' + greetName + '.</div><div style="font-size:12px;color:var(--text3);margin-top:2px;font-family:var(--mono)">' + new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) + ' &nbsp;&middot;&nbsp; Front Desk</div></div></div>';
-  html += '<div class="flex gap-8" style="margin:0 0 14px;flex-wrap:wrap;align-items:center">'
-    + '<button class="btn btn-primary" onclick="openAddLogbook()" title="Visitor issues, resident concerns, incidents, notes — everything you log feeds your passdown">&#128211; Log it</button>'
-    + '<button class="btn btn-secondary" onclick="openAddLAF()">Found item</button>'
-    + '<span style="font-size:11.5px;color:var(--text3)">Anything that happens at the desk goes here — it feeds your passdown automatically.</span>'
-    + '</div>';
+  if (!isViewerUser()) {
+    html += '<div class="flex gap-8" style="margin:0 0 14px;flex-wrap:wrap;align-items:center">'
+      + '<button class="btn btn-primary" onclick="openAddLogbook()" title="Visitor issues, resident concerns, incidents, notes — everything you log feeds your passdown">&#128211; Log it</button>'
+      + '<button class="btn btn-secondary" onclick="openAddLAF()">Found item</button>'
+      + '<span style="font-size:11.5px;color:var(--text3)">Anything that happens at the desk goes here — it feeds your passdown automatically.</span>'
+      + '</div>';
+  }
   // Turnover ready count: move-outs with all tasks done
   var turnoverReady = active.filter(function (m) {
     if (m.type !== 'out') return false;
@@ -4112,7 +4147,7 @@ function boardTaskRefresh(moveId) {
 function renderMovesBoard() {
   var el = g('moves-board'); if (!el) return;
   var t = today();
-  var isStaffUser = currentUser && currentUser.role === 'staff';
+  var isStaffUser = (currentUser && currentUser.role === 'staff') || isViewerUser(); // staff or viewer — both read-only for move actions
   var active = (state.moves || []).filter(function (m) { return !m.archivedAt; });
   var ins = active.filter(function (m) { return m.type === 'in'; });
   var outs = active.filter(function (m) { return m.type === 'out'; });
@@ -4751,7 +4786,7 @@ function buildCL(m, filterCat) {
       }
     }
     html += '<div class="cl-item' + (isParkingTask ? ' cl-item-parking' : '') + '" onclick="event.stopPropagation()">';
-    html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTask(\'' + m.id + '\',\'' + t.id + '\',this.checked)">';
+    html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + (isViewerUser() ? ' disabled' : '') + ' onchange="toggleTask(\'' + m.id + '\',\'' + t.id + '\',this.checked)">';
     if (getTaskAutomationId(t)) html += '<span title="Connected task: renaming it will not break its workflow" aria-label="Connected task" style="font-size:10px;color:var(--accent);flex-shrink:0">&#128279;</span>';
     // Editable task text
     html += '<input type="text" class="cl-text-input ' + (t.done ? 'done' : '') + '" value="' + (t.text || t.label || '').replace(/"/g, '&quot;') + '" onblur="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'text\',this.value)" onclick="event.stopPropagation()">';
@@ -4878,9 +4913,9 @@ function toggleTaskExtra(btn) {
 
 function renderMoves() {
   var t = today();
-  var isStaffUser = currentUser && currentUser.role === 'staff';
+  var isStaffUser = (currentUser && currentUser.role === 'staff') || isViewerUser(); // staff or viewer — both read-only for move actions
   var maa = g('moves-admin-actions');
-  if (maa) maa.style.display = (currentUser && currentUser.role === 'staff') ? 'none' : '';
+  if (maa) maa.style.display = (currentUser && currentUser.role === 'staff') || isViewerUser() ? 'none' : '';
   // Board ⇄ table view switching
   var isBoardView = movesView === 'board';
   var vtT = g('mv-vt-table'), vtB = g('mv-vt-board');
@@ -5035,7 +5070,7 @@ function renderMoves() {
         var pct = tot ? Math.round(dn / tot * 100) : 0;
         var bc = pct < 30 ? 'var(--red)' : pct < 70 ? 'var(--amber)' : 'var(--green)';
         var isOpen = m.id === openMoveId;
-        var isStaffUser = currentUser && currentUser.role === 'staff';
+        var isStaffUser = (currentUser && currentUser.role === 'staff') || isViewerUser(); // staff or viewer — both read-only for move actions
         var isToday = moveIsToday(m, t);
         rows += '<tr class="move-row ' + (isOpen ? 'sel ' : '') + (m.archivedAt ? 'archive-row ' : '') + (isToday ? 'today-move ' : '') + '" data-id="' + m.id + '" onclick="toggleCL(\'' + m.id + '\')">';
         var apptBadge = '';
@@ -5172,6 +5207,7 @@ function toggleCL(id) {
   }
 }
 async function toggleTask(moveId, taskId, checked) {
+  if (isViewerUser()) return;
   var m = (state.moves || []).find(function (x) { return x.id === moveId; }); if (!m) return;
   var t = (m.tasks || []).find(function (x) { return x.id === taskId; }); if (!t) return;
   var automationId = getTaskAutomationId(t);
@@ -9351,7 +9387,7 @@ function renderTodos() {
       var t = entry.task, m = entry.move;
       var due = '<span class="todo-due">Due: ' + fmtShort(t.dueDate) + '</span>';
       html += '<div class="todo-item ' + (t.done ? 'done' : '') + '">';
-      html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTask(\'' + m.id + '\',\'' + t.id + '\',this.checked);renderTodos()">';
+      html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + (isViewerUser() ? ' disabled' : '') + ' onchange="toggleTask(\'' + m.id + '\',\'' + t.id + '\',this.checked);renderTodos()">';
       html += '<div style="flex:1;min-width:0">';
       html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + esc(t.text) + '</div>';
       html += '<div class="todo-meta">' + due + '<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:4px;padding:1px 5px">'
@@ -12362,6 +12398,7 @@ function openCalPop(dateStr, evt) {
     });
   }
 
+  if (!isViewerUser()) {
   html += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">';
   html += '<div style="font-size:11px;color:var(--text3);margin-bottom:6px">Quick add:</div>';
   html += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
@@ -12369,6 +12406,7 @@ function openCalPop(dateStr, evt) {
   html += '<button class="btn btn-secondary btn-xs" onclick="closeCalPop();openAddAmenityForDate(\'' + dateStr + '\')">+ Booking</button>';
   html += '<button class="btn btn-secondary btn-xs" onclick="closeCalPop();openAddTourForDate(\'' + dateStr + '\')">+ Tour</button>';
   html += '</div></div>';
+  }
 
   g('cal-pop-body').innerHTML = html;
 
@@ -12499,7 +12537,7 @@ function renderAgendaCal() {
   var daysInM = new Date(year, month + 1, 0).getDate();
   var todayStr = today();
   g('cal-title').textContent = 'Agenda \u2014 ' + now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  var html = '<div style="display:flex;gap:6px;align-items:center;margin-bottom:14px">'
+  var html = isViewerUser() ? '' : '<div style="display:flex;gap:6px;align-items:center;margin-bottom:14px">'
     + '<span style="font-size:12px;color:var(--text3)">Quick add:</span>'
     + '<button class="btn btn-secondary btn-xs" onclick="openCalQuickTodo(\'\')">+ To-Do</button>'
     + '<button class="btn btn-secondary btn-xs" onclick="openAddAmenityForDate(\'\')">+ Booking</button>'
@@ -12904,11 +12942,13 @@ function renderNavVisibility() {
   var hidden = state.hiddenSections || [];
   var staffHidden = state.staffHiddenSections || [];
   var isStaff = currentUser && currentUser.role === 'staff';
+  var isViewer = isViewerUser();
   TOGGLEABLE_SECTIONS.forEach(function (s) {
     var el = document.querySelector('.nav-item[data-sec="' + s.id + '"]');
     if (el) {
       var staffBlocked = isStaff && (STAFF_HIDDEN.indexOf(s.id) !== -1 || staffHidden.indexOf(s.id) !== -1);
-      el.style.display = (hidden.indexOf(s.id) !== -1 || staffBlocked) ? 'none' : '';
+      var viewerBlocked = isViewer && VIEWER_ALLOWED_SECS.indexOf(s.id) === -1;
+      el.style.display = (hidden.indexOf(s.id) !== -1 || staffBlocked || viewerBlocked) ? 'none' : '';
     }
   });
   document.querySelectorAll('.nav-group').forEach(function (group) {
@@ -12916,6 +12956,12 @@ function renderNavVisibility() {
     var anyVisible = Array.prototype.some.call(items, function (el) { return el.style.display !== 'none'; });
     var label = group.querySelector('.nav-label');
     if (label) label.style.display = anyVisible ? '' : 'none';
+  });
+  // Mobile bottom-nav bar is a fixed curated set (Home/Moves/Passdown/To-Do/Keys), not a mirror
+  // of the sidebar — only the viewer allowlist applies here (none of its items are staff-hidden).
+  document.querySelectorAll('.mn-item[data-sec]').forEach(function (el) {
+    var sec = el.dataset.sec;
+    el.style.display = (isViewer && VIEWER_ALLOWED_SECS.indexOf(sec) === -1) ? 'none' : '';
   });
 }
 
@@ -13872,7 +13918,7 @@ function renderLoginScreen() {
     var initials = esc(a.name.split(/\s+/).map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2));
     html += '<button class="acct-btn" onclick="selectAccount(\'' + esc(a.id) + '\')">'
       + '<div class="acct-avatar">' + initials + '</div>'
-      + '<div><div>' + esc(a.name) + '</div><div class="acct-role-tag">' + (a.role==='admin'?'&#128737; Admin':'Staff') + '</div></div>'
+      + '<div><div>' + esc(a.name) + '</div><div class="acct-role-tag">' + (a.role==='admin'?'&#128737; Admin':a.role==='viewer'?'Viewer':'Staff') + '</div></div>'
       + '</button>';
   });
   g('login-body').innerHTML = html;
@@ -14149,7 +14195,7 @@ function updateSidebarForRole() {
   if (uin && currentUser) uin.textContent = currentUser.name;
   var footerBtns = ['footer-export','footer-import','footer-reset','footer-testdata'];
   footerBtns.forEach(function(id) {
-    var el = g(id); if (el) el.style.display = isStaff ? 'none' : '';
+    var el = g(id); if (el) el.style.display = (isStaff || isViewerUser()) ? 'none' : '';
   });
   _applyPatrolTabVisibility();
 }
@@ -14203,7 +14249,7 @@ function renderTeamAccounts() {
       + '</div>'
       + '<div class="acct-avatar" style="width:32px;height:32px;font-size:12px">' + initials + '</div>'
       + '<div style="flex:1"><div class="font-600 text-sm">' + esc(a.name) + '</div>'
-      + '<div style="font-size:11px;color:var(--text3)">' + (a.role==='admin'?'&#128737; Admin':'Staff') + (isMe?' &nbsp;·&nbsp; <em>you</em>':'') + '</div></div>'
+      + '<div style="font-size:11px;color:var(--text3)">' + (a.role==='admin'?'&#128737; Admin':a.role==='viewer'?'Viewer':'Staff') + (isMe?' &nbsp;·&nbsp; <em>you</em>':'') + '</div></div>'
       + '<button class="btn btn-ghost btn-xs" onclick="editAccount(\'' + esc(a.id) + '\')" title="Edit">&#9998;</button>'
       + '<button class="btn btn-ghost btn-xs" onclick="resetAccountPin(\'' + esc(a.id) + '\')" title="Reset PIN">PIN</button>'
       + (!isMe ? '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteAccount(\'' + esc(a.id) + '\')" title="Remove">&#x2715;</button>' : '')
@@ -14224,7 +14270,7 @@ function editAccount(id) {
   var acct = (state.accounts||[]).find(function(a){return a.id===id;}); if (!acct) return;
   var isMe = acct.id === currentUser.id;
   var bdy = '<div class="fg"><label>Name</label><input type="text" id="ea-name" value="' + esc(acct.name) + '" style="width:100%"></div>'
-    + '<div class="fg"><label>Role</label><select id="ea-role" style="width:100%"' + (isMe?' disabled title="Cannot change your own role"':'') + '><option value="staff"' + (acct.role==='staff'?' selected':'') + '>Staff</option><option value="admin"' + (acct.role==='admin'?' selected':'') + '>Admin</option></select></div>'
+    + '<div class="fg"><label>Role</label><select id="ea-role" style="width:100%"' + (isMe?' disabled title="Cannot change your own role"':'') + '><option value="staff"' + (acct.role==='staff'?' selected':'') + '>Staff</option><option value="admin"' + (acct.role==='admin'?' selected':'') + '>Admin</option><option value="viewer"' + (acct.role==='viewer'?' selected':'') + '>Viewer (read-only)</option></select></div>'
     + (isMe ? '<p style="font-size:12px;color:var(--text3);margin-top:4px">You cannot change your own role.</p>' : '')
     + '<div class="fg"><label>Job Title <span style="font-weight:400;color:var(--text3)">(sign-off)</span></label><input type="text" id="ea-title" value="' + esc(acct.jobTitle||'') + '" placeholder="e.g. Front Desk Associate | Chorus – SF" style="width:100%"></div>'
     + '<div class="fg"><label>Work Email <span style="font-weight:400;color:var(--text3)">(sign-off)</span></label><input type="text" id="ea-email" value="' + esc(acct.workEmail||'') + '" placeholder="e.g. name@alignrealestate.com" style="width:100%"></div>';
@@ -14263,7 +14309,7 @@ function saveEditAccount(id) {
 }
 function openAddAccount() {
   var bdy = '<div class="fg"><label>Name</label><input type="text" id="na-name" placeholder="e.g. Maria" style="width:100%"></div>'
-    + '<div class="fg"><label>Role</label><select id="na-role" style="width:100%"><option value="staff">Staff</option><option value="admin">Admin</option></select></div>'
+    + '<div class="fg"><label>Role</label><select id="na-role" style="width:100%"><option value="staff">Staff</option><option value="admin">Admin</option><option value="viewer">Viewer (read-only)</option></select></div>'
     + '<div class="fg"><label>PIN (4–8 digits)</label><input type="password" id="na-pin" maxlength="8" inputmode="numeric" placeholder="e.g. 5678" style="width:100%"></div>'
     + '<div class="fg"><label>Confirm PIN</label><input type="password" id="na-pin2" maxlength="8" inputmode="numeric" placeholder="Repeat PIN" style="width:100%"></div>';
   var ov = g('modal-add-account');
