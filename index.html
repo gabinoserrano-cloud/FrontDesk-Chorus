@@ -2848,14 +2848,14 @@ async function migratePinsToHashed() {
   var accounts = state.accounts || [];
   for (var i = 0; i < accounts.length; i++) {
     var a = accounts[i];
-    if (a.pin && !isPinHashed(a.pin)) {
+    if (a.pin && !isPinHashed(a.pin) && !isPinPBKDF2(a.pin)) {
       a.pin = await hashPin(a.pin, a.id);
       changed = true;
     }
   }
   // Section PINs (Team Tracker + Patrol QR): hash in place, same treatment as account PINs.
-  if (state.teampin && !isPinHashed(state.teampin)) { state.teampin = await hashPin(state.teampin, TEAMPIN_SALT); changed = true; }
-  if (state.patrolPin && !isPinHashed(state.patrolPin)) { state.patrolPin = await hashPin(state.patrolPin, PATROLPIN_SALT); changed = true; }
+  if (state.teampin && !isPinHashed(state.teampin) && !isPinPBKDF2(state.teampin)) { state.teampin = await hashPin(state.teampin, TEAMPIN_SALT); changed = true; }
+  if (state.patrolPin && !isPinHashed(state.patrolPin) && !isPinPBKDF2(state.patrolPin)) { state.patrolPin = await hashPin(state.patrolPin, PATROLPIN_SALT); changed = true; }
   if (changed) scheduleSave();
 }
 // One-time switch (2026-07-12): Key Cards – Blank Stock stopped being auto-tracked because
