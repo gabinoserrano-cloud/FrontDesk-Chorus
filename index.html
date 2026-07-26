@@ -1894,6 +1894,16 @@
   </div>
 </div></div>
 
+<!-- Inventory Count Modal -->
+<div class="modal-ov" id="modal-invcount"><div class="modal" style="max-width:640px">
+  <div class="modal-hdr"><span class="modal-title">&#128203; Inventory Count</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-invcount')">&#x2715;</button></div>
+  <div class="modal-bdy" style="max-height:60vh;overflow-y:auto">
+    <p style="font-size:12.5px;color:var(--text2);margin-bottom:10px;line-height:1.5">Type in what you actually counted for each item, then hit Save. Anything that changed gets logged to that item's history with today's date and your name — leave a field blank to skip an item.</p>
+    <div id="invc-body"></div>
+  </div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-invcount')">Cancel</button><button class="btn btn-primary" onclick="saveInventoryCount()">Save Count</button></div>
+</div></div>
+
 <div class="modal-ov" id="modal-template"><div class="modal" style="max-width:520px">
   <div class="modal-hdr"><span class="modal-title" id="modal-template-title">Add Template</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-template')">&#x2715;</button></div>
   <div class="modal-bdy">
@@ -10107,7 +10117,8 @@ function renderSupplies() {
   var html = '<div class="sub-tabs" id="supplies-tabs" style="margin-bottom:14px">'
     + '<div class="sub-tab ' + (suppliesView==='overview'?'active':'') + '" onclick="filterSupplies(\'overview\',this)">Overview</div>'
     + '<div class="sub-tab ' + (suppliesView==='list'?'active':'') + '" onclick="filterSupplies(\'list\',this)">List</div>'
-    + (isAdmin ? '<button class="btn btn-primary btn-sm ml-auto" onclick="openAddSupply()">+ Add Item</button>' : '')
+    + (isAdmin ? '<button class="btn btn-secondary btn-sm ml-auto" onclick="openInventoryCount()">&#128203; Inventory Count</button>' : '')
+    + (isAdmin ? '<button class="btn btn-primary btn-sm" onclick="openAddSupply()">+ Add Item</button>' : '')
     + '</div>';
 
   if (suppliesView === 'overview') {
@@ -10285,9 +10296,19 @@ function saveSupply() {
   if (!state.supplies) state.supplies = [];
   if (editingSupplyId) {
     var s = state.supplies.find(function(x){ return x.id === editingSupplyId; });
-    if (s) { var _spb = Object.assign({}, s); s.name = name; s.cat = cat; s.unit = unit; s.qty = qty; s.startQty = startQty; s.startDate = startDate; s.lowAt = lowAt; s.notes = notes; s.updatedAt = Date.now(); s.updatedBy = by; pushUndo({ sec: 'supplies', type: 'EDIT', id: s.id, before: _spb, after: Object.assign({}, s), label: 'supply edit — ' + name }); }
+    if (s) {
+      var _spb = Object.assign({}, s);
+      var _prevQty = s.qty == null ? 0 : s.qty;
+      s.name = name; s.cat = cat; s.unit = unit; s.qty = qty; s.startQty = startQty; s.startDate = startDate; s.lowAt = lowAt; s.notes = notes; s.updatedAt = Date.now(); s.updatedBy = by;
+      if (qty !== _prevQty) {
+        if (!s.log) s.log = [];
+        s.log.push({ ts: Date.now(), by: by, delta: qty - _prevQty, prevQty: _prevQty, newQty: qty, note: 'Edited via item details' });
+        s.lastCountedAt = Date.now();
+      }
+      pushUndo({ sec: 'supplies', type: 'EDIT', id: s.id, before: _spb, after: Object.assign({}, s), label: 'supply edit — ' + name });
+    }
   } else {
-    var _snew2 = { id: uid(), name: name, cat: cat, unit: unit, qty: qty, startQty: startQty, startDate: startDate, lowAt: lowAt, notes: notes, updatedAt: Date.now(), updatedBy: by };
+    var _snew2 = { id: uid(), name: name, cat: cat, unit: unit, qty: qty, startQty: startQty, startDate: startDate, lowAt: lowAt, notes: notes, log: [], lastCountedAt: null, updatedAt: Date.now(), updatedBy: by };
     state.supplies.push(_snew2);
     pushUndo({ sec: 'supplies', type: 'ADD', id: _snew2.id, data: Object.assign({}, _snew2), label: 'add supply — ' + name });
   }
@@ -10419,6 +10440,61 @@ function setSupplyQtyPrompt(id) {
   var s = (state.supplies || []).find(function(x){ return x.id === id; });
   if (!s) return;
   openQuickAdj(id, 0);  // open at current qty, let user +/- to desired value
+}
+
+function openInventoryCount() {
+  if (currentUser && currentUser.role !== 'admin') { toast('Admin access required'); return; }
+  if (!state.supplies) state.supplies = [];
+  var cats = ['Office Supplies', 'Printer & Paper', 'Key Cards & Access', 'Other'];
+  var html = '';
+  cats.forEach(function(cat) {
+    var items = state.supplies.filter(function(s){ return s.cat === cat; });
+    if (!items.length) return;
+    html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin:14px 0 8px">' + esc(cat) + '</div>';
+    items.forEach(function(s) {
+      var curDisplay = s.qty == null ? 'not yet counted' : (s.qty + ' ' + (s.unit || ''));
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border2)">'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:13px;font-weight:600">' + esc(s.name) + '</div>'
+        + '<div style="font-size:11px;color:var(--text3)">Currently: ' + esc(curDisplay) + '</div>'
+        + '</div>'
+        + '<input type="number" min="0" inputmode="numeric" data-supply-id="' + s.id + '" value="' + (s.qty != null ? s.qty : '') + '" placeholder="count" style="width:92px;text-align:center;font-family:var(--font-mono);font-size:15px;padding:6px 4px;border:1px solid var(--border);border-radius:var(--radius)">'
+        + '</div>';
+    });
+  });
+  g('invc-body').innerHTML = html || '<div style="font-size:12px;color:var(--text3)">No supply items yet — add some first.</div>';
+  openModal('modal-invcount');
+  setTimeout(function(){ var first = document.querySelector('#invc-body input'); if (first) { first.focus(); first.select(); } }, 120);
+}
+
+function saveInventoryCount() {
+  if (currentUser && currentUser.role !== 'admin') { toast('Admin access required'); return; }
+  var by = currentUser ? currentUser.name : '';
+  var inputs = document.querySelectorAll('#invc-body input[data-supply-id]');
+  var now = Date.now();
+  var changedCount = 0, confirmedCount = 0;
+  inputs.forEach(function(inp) {
+    var raw = (inp.value || '').trim();
+    if (raw === '') return; // left blank — skip this item
+    var id = inp.getAttribute('data-supply-id');
+    var s = state.supplies.find(function(x){ return x.id === id; });
+    if (!s) return;
+    var newQty = Math.max(0, parseInt(raw) || 0);
+    var prevQty = s.qty == null ? 0 : s.qty;
+    confirmedCount++;
+    s.lastCountedAt = now;
+    if (s.qty == null || newQty !== prevQty) {
+      if (!s.log) s.log = [];
+      s.log.push({ ts: now, by: by, delta: newQty - prevQty, prevQty: prevQty, newQty: newQty, note: 'Physical inventory count' });
+      s.qty = newQty;
+      s.updatedAt = now; s.updatedBy = by;
+      changedCount++;
+    }
+  });
+  if (!confirmedCount) { toast('Enter at least one count'); return; }
+  checkSupplyLowStockTodos(); scheduleSave(); closeModal('modal-invcount'); renderSupplies(); updateBadges(); renderDash(); if (curSec === 'todos') renderTodos();
+  logActivity('supplies', 'edit', 'Inventory count — ' + confirmedCount + ' item(s) counted, ' + changedCount + ' updated');
+  toast('Inventory count saved — ' + changedCount + ' item(s) updated');
 }
 
 
