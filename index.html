@@ -1809,18 +1809,22 @@
       </div>
     </div>
     <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
-      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">&#128664; Parking Credentials</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px">&#128664; Parking Credentials</div>
+        <button type="button" id="ur-manage-parking-btn" class="btn btn-secondary btn-xs" onclick="manageUnitParking(editingUnitRecordId ? _urCurrentUnit : (g('ur-unit-num')?g('ur-unit-num').value.trim():''))">Manage in Parking tab &rarr;</button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin:-4px 0 10px">Transponder / Xpress / Key Tag are set from the Parking tab, not here &mdash; this just shows what's on file.</div>
       <div style="display:flex;flex-direction:column;gap:10px">
         <div style="display:flex;align-items:center;gap:12px">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;min-width:180px"><input type="checkbox" id="ur-transponder"> Garage Transponder</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;min-width:180px;opacity:.75"><input type="checkbox" id="ur-transponder" disabled> Garage Transponder</label>
           <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)">Replacements: <input id="ur-transponder-repl" type="number" min="0" value="0" style="width:54px;font-size:12px"></div>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;min-width:180px"><input type="checkbox" id="ur-xpress"> Xpress Sticker</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;min-width:180px;opacity:.75"><input type="checkbox" id="ur-xpress" disabled> Xpress Sticker</label>
           <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)">Replacements: <input id="ur-xpress-repl" type="number" min="0" value="0" style="width:54px;font-size:12px"></div>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;min-width:180px"><input type="checkbox" id="ur-keytag"> Key Tag</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;min-width:180px;opacity:.75"><input type="checkbox" id="ur-keytag" disabled> Key Tag</label>
           <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)">Replacements: <input id="ur-keytag-repl" type="number" min="0" value="0" style="width:54px;font-size:12px"></div>
         </div>
         <div>
@@ -3519,9 +3523,9 @@ function closeModal(id) {
   }
 }
 // Guarded close for the "accidental" paths (overlay click / Escape): warn if the form has unsaved edits.
-function attemptCloseModalOv(ov) {
+async function attemptCloseModalOv(ov) {
   if (!ov || !ov.classList.contains('open')) return;
-  if (ov.dataset.dirty === '1' && !confirm('Discard your changes to this form?')) return;
+  if (ov.dataset.dirty === '1' && !await confirmModal('Discard your changes to this form?')) return;
   closeModal(ov.id);
 }
 // Any edit inside an open modal marks it dirty, so the close-guard knows there's something to lose.
@@ -7023,6 +7027,48 @@ function syncParkingToCredentials(p) {
   return { sec: 'transponders', path: ['transponders', 'log'], type: 'ADD', id: newE.id, data: cloneData(newE), label: 'parking sync — Unit ' + p.unit };
 }
 
+// Unit Tracker's 3 parking badges (transponder/xpress/keytag) are computed from the
+// Parking tab, not independently stored — same "single source of truth" fix as
+// syncParkingToCredentials, applied one layer up so Unit Tracker can't drift from Parking.
+function unitParkingIssued(unit) {
+  var recs = (state.parking || []).filter(function(p) { return (p.category || 'Resident') === 'Resident' && p.unit === unit; });
+  return {
+    transponder: recs.some(function(p) { return p.transponder && p.transponder.issued; }),
+    xpressSticker: recs.some(function(p) { return p.valetSticker && p.valetSticker.issued; }),
+    keyTag: recs.some(function(p) { return p.keyTag && p.keyTag.issued; })
+  };
+}
+// One-time migration: any unit whose old independently-editable checkbox was checked
+// but has no matching Parking record gets one auto-created, so switching the badge to
+// computed-from-Parking doesn't silently drop anything that was only ever checked here.
+function migrateUnitParkingToParkingTab() {
+  if (state.unitParkingMigratedV1) return;
+  if (!state.parking) state.parking = [];
+  (state.unitRecords || []).forEach(function(r) {
+    if (!r.unit || !(r.transponder || r.xpressSticker || r.keyTag)) return;
+    var already = state.parking.some(function(p) { return (p.category || 'Resident') === 'Resident' && p.unit === r.unit; });
+    if (already) return;
+    state.parking.push({
+      id: uid(), category: 'Resident', unit: r.unit, resident: r.leaseholder || '',
+      monthlyFee: '', startDate: '', notes: 'Auto-created from Unit Tracker’s parking checkboxes — verify details',
+      transponder: { issued: !!r.transponder, num: '' },
+      keyTag: { issued: !!r.keyTag, num: '' },
+      valetSticker: { issued: !!r.xpressSticker, num: '' },
+      addedBy: 'Migration', createdAt: Date.now()
+    });
+  });
+  state.unitParkingMigratedV1 = true;
+}
+function manageUnitParking(unit) {
+  closeModal('modal-unit-record');
+  navToSec('keys');
+  setTimeout(function() {
+    filterKeys('parking', document.querySelector('[onclick*="filterKeys(\'parking\'"]'));
+    var s = g('pk-search'); if (s) s.value = unit || '';
+    renderParking();
+  }, 150);
+}
+
 // ─── TRANSPONDER INVENTORY TRACKER ───
 // Garage transponder stock: starting inventory − active issuances (+ returns) = calculated balance.
 // Physical counts logged via Reconcile flag any discrepancy against the calculated balance.
@@ -9829,7 +9875,7 @@ function toggleLAFPassdown(id) { var item = (state.laf || []).find(function(x){ 
 async function deleteLAF(id) { if (!await confirmModal('Remove?')) return; var lx=(state.laf||[]).find(function(x){return x.id===id;}); if (lx) pushUndo({ sec: 'laf', type: 'DELETE', id: id, data: Object.assign({}, lx), label: 'delete L&F — ' + lx.desc }); logActivity('laf','delete','Removed L&F item'+(lx?' — '+lx.desc:'')); state.laf = (state.laf || []).filter(function (i) { return i.id !== id; }); scheduleSave(); renderLAF(); updateBadges(); toast('Removed'); }
 
 // ─── UNIT TRACKER ───
-var utFilter = 'all', utSearch = '', utFloor = 'all', utView = 'list', editingUnitRecordId = null;
+var utFilter = 'all', utSearch = '', utFloor = 'all', utView = 'list', editingUnitRecordId = null, _urCurrentUnit = '';
 function setUtView(v) {
   utView = v;
   var mapBtn = g('ut-view-map');
@@ -9869,12 +9915,15 @@ function openEditUnitRecord(id) {
   g('ur-mailbox-keys-issued').value = r.mailboxKeysIssued || 0;
   g('ur-unit-keys-replacement').value = r.unitKeysReplacement || 0;
   g('ur-mailbox-keys-replacement').value = r.mailboxKeysReplacement || 0;
-  g('ur-transponder').checked = !!r.transponder;
+  _urCurrentUnit = r.unit;
+  var urPk = unitParkingIssued(r.unit);
+  g('ur-transponder').checked = urPk.transponder;
   var trEl = g('ur-transponder-repl'); if (trEl) trEl.value = r.transponderReplacement || 0;
-  g('ur-xpress').checked = !!r.xpressSticker;
+  g('ur-xpress').checked = urPk.xpressSticker;
   var xrEl = g('ur-xpress-repl'); if (xrEl) xrEl.value = r.xpressReplacement || 0;
-  g('ur-keytag').checked = !!r.keyTag;
+  g('ur-keytag').checked = urPk.keyTag;
   var krEl = g('ur-keytag-repl'); if (krEl) krEl.value = r.keyTagReplacement || 0;
+  var mpBtn = g('ur-manage-parking-btn'); if (mpBtn) mpBtn.style.display = '';
   var bikeEl = g('ur-bike'); if (bikeEl) bikeEl.checked = !!r.hasBike;
   var bsEl = g('ur-bike-sticker'); if (bsEl) bsEl.value = r.bikeSticker || '';
   var bsWrap = g('ur-bike-sticker-wrap'); if (bsWrap) bsWrap.style.display = r.hasBike ? '' : 'none';
@@ -9904,12 +9953,14 @@ function openAddUnitRecord() {
   g('ur-mailbox-keys-issued').value = 0;
   g('ur-unit-keys-replacement').value = 0;
   g('ur-mailbox-keys-replacement').value = 0;
+  _urCurrentUnit = '';
   g('ur-transponder').checked = false;
   var trEl = g('ur-transponder-repl'); if (trEl) trEl.value = 0;
   g('ur-xpress').checked = false;
   var xrEl = g('ur-xpress-repl'); if (xrEl) xrEl.value = 0;
   g('ur-keytag').checked = false;
   var krEl = g('ur-keytag-repl'); if (krEl) krEl.value = 0;
+  var mpBtn = g('ur-manage-parking-btn'); if (mpBtn) mpBtn.style.display = 'none';
   var bikeEl = g('ur-bike'); if (bikeEl) bikeEl.checked = false;
   var bsEl = g('ur-bike-sticker'); if (bsEl) bsEl.value = '';
   var bsWrap = g('ur-bike-sticker-wrap'); if (bsWrap) bsWrap.style.display = 'none';
@@ -9924,7 +9975,7 @@ function saveUnitRecord() {
   if (!editingUnitRecordId) {
     var unit = g('ur-unit-num') ? g('ur-unit-num').value.trim() : '';
     if (!unit) { toast('Unit # is required'); return; }
-    var newR = { id: uid(), unit: unit, unitType: g('ur-unit-type')?g('ur-unit-type').value:'', leaseholder: g('ur-leaseholder').value.trim(), pte: g('ur-pte')?g('ur-pte').value:'not-set', roommates: g('ur-roommates').value.trim(), unitKeysIssued: parseInt(g('ur-unit-keys-issued').value)||0, mailboxKeysIssued: parseInt(g('ur-mailbox-keys-issued').value)||0, unitKeysReplacement: parseInt(g('ur-unit-keys-replacement').value)||0, mailboxKeysReplacement: parseInt(g('ur-mailbox-keys-replacement').value)||0, transponder: g('ur-transponder').checked, transponderReplacement: parseInt(g('ur-transponder-repl')?g('ur-transponder-repl').value:0)||0, xpressSticker: g('ur-xpress').checked, xpressReplacement: parseInt(g('ur-xpress-repl')?g('ur-xpress-repl').value:0)||0, keyTag: g('ur-keytag').checked, keyTagReplacement: parseInt(g('ur-keytag-repl')?g('ur-keytag-repl').value:0)||0, hasBike: !!(g('ur-bike')&&g('ur-bike').checked), bikeSticker: g('ur-bike-sticker')?g('ur-bike-sticker').value.trim():'', blueground: g('ur-blueground') ? g('ur-blueground').checked : false, wifiExpiry: g('ur-wifi-expiry').value||'', notes: g('ur-notes').value.trim(), createdAt: Date.now() };
+    var newR = { id: uid(), unit: unit, unitType: g('ur-unit-type')?g('ur-unit-type').value:'', leaseholder: g('ur-leaseholder').value.trim(), pte: g('ur-pte')?g('ur-pte').value:'not-set', roommates: g('ur-roommates').value.trim(), unitKeysIssued: parseInt(g('ur-unit-keys-issued').value)||0, mailboxKeysIssued: parseInt(g('ur-mailbox-keys-issued').value)||0, unitKeysReplacement: parseInt(g('ur-unit-keys-replacement').value)||0, mailboxKeysReplacement: parseInt(g('ur-mailbox-keys-replacement').value)||0, transponderReplacement: parseInt(g('ur-transponder-repl')?g('ur-transponder-repl').value:0)||0, xpressReplacement: parseInt(g('ur-xpress-repl')?g('ur-xpress-repl').value:0)||0, keyTagReplacement: parseInt(g('ur-keytag-repl')?g('ur-keytag-repl').value:0)||0, hasBike: !!(g('ur-bike')&&g('ur-bike').checked), bikeSticker: g('ur-bike-sticker')?g('ur-bike-sticker').value.trim():'', blueground: g('ur-blueground') ? g('ur-blueground').checked : false, wifiExpiry: g('ur-wifi-expiry').value||'', notes: g('ur-notes').value.trim(), createdAt: Date.now() };
     if (!state.unitRecords) state.unitRecords = [];
     state.unitRecords.push(newR);
     pushUndo({ sec: 'residents', type: 'ADD', id: newR.id, data: newR, label: 'add unit record — Unit ' + unit });
@@ -9944,11 +9995,8 @@ function saveUnitRecord() {
   r.unitType = g('ur-unit-type') ? g('ur-unit-type').value : (r.unitType || '');
   r.leaseholder = g('ur-leaseholder').value.trim();
   r.pte = g('ur-pte') ? g('ur-pte').value : (r.pte || 'not-set');
-  r.transponder = g('ur-transponder').checked;
   r.transponderReplacement = parseInt(g('ur-transponder-repl')?g('ur-transponder-repl').value:0)||0;
-  r.xpressSticker = g('ur-xpress').checked;
   r.xpressReplacement = parseInt(g('ur-xpress-repl')?g('ur-xpress-repl').value:0)||0;
-  r.keyTag = g('ur-keytag').checked;
   r.keyTagReplacement = parseInt(g('ur-keytag-repl')?g('ur-keytag-repl').value:0)||0;
   r.hasBike = !!(g('ur-bike')&&g('ur-bike').checked);
   r.bikeSticker = g('ur-bike-sticker') ? g('ur-bike-sticker').value.trim() : '';
@@ -10080,6 +10128,28 @@ function filterSupplies(view, el) {
 }
 
 // ===== [SUPPLIES] ============================================================
+// Supplies items that mirror a real tracked system (Transponders / Card & Key Pools) — their
+// displayed qty is always computed live from that system, never independently typed, so they
+// can't quietly drift the way the manual number did before (Transponders showed 127 while the
+// dedicated tracker's calculated balance said 100). Self-Guided Tour Keys is deliberately left
+// out: it's the actual input cardPoolIssued('sgt') reads from, not a duplicate of it.
+var SUPPLY_COMPUTED_MAP = {
+  'Transponders': { kind: 'tp', comp: 0 },
+  'Key Tags': { kind: 'tp', comp: 1 },
+  'Xpress Stickers': { kind: 'tp', comp: 2 },
+  'One-Time Cards – Active Issued': { kind: 'pool', pool: 'oneTime' },
+  'Vendor Cards – Active Issued': { kind: 'pool', pool: 'vendor' }
+};
+function computedSupplyQty(name) {
+  var m = SUPPLY_COMPUTED_MAP[name];
+  if (!m) return null;
+  return m.kind === 'tp' ? tpCompRemaining(TP_COMPS[m.comp]) : cardPoolIssued(m.pool);
+}
+function openSupplyReconcile(name) {
+  var m = SUPPLY_COMPUTED_MAP[name];
+  if (!m) return;
+  if (m.kind === 'tp') openTpReconcile(); else openCardPoolReconcile(m.pool);
+}
 function renderSupplies() {
   if (!state.deletedDefaultSupplies) state.deletedDefaultSupplies = [];
   var deletedNames = state.deletedDefaultSupplies;
@@ -10104,6 +10174,12 @@ function renderSupplies() {
     });
     if (migrated) scheduleSave();
   }
+  // Keep the synced items' persisted qty fresh from their real source on every render —
+  // covers low-stock stat counts, badges, and anything else that reads s.qty directly.
+  state.supplies.forEach(function(s) {
+    var cq = computedSupplyQty(s.name);
+    if (cq != null) s.qty = cq;
+  });
   var el = g('supplies-body'); if (!el) return;
   var isAdmin = !currentUser || currentUser.role === 'admin';
   var supplies = state.supplies;
@@ -10139,6 +10215,7 @@ function renderSupplies() {
         + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:10px">' + cat + '</div>'
         + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px">';
       items.forEach(function(s) {
+        var isSynced = !!SUPPLY_COMPUTED_MAP[s.name];
         var accentColor, statusLabel, cardBg;
         if (s.qty == null) {
           accentColor = 'var(--text3)'; statusLabel = 'Not yet counted'; cardBg = 'var(--surface2)';
@@ -10151,11 +10228,11 @@ function renderSupplies() {
         } else {
           accentColor = 'var(--green)'; statusLabel = 'In stock'; cardBg = 'var(--surface)';
         }
-        // Last log entry for overview card
+        // Last log entry for overview card (not meaningful for synced items — they don't log here)
         var log = s.log || [];
         var lastLog = log.length ? log[log.length - 1] : null;
         var lastLogLine = '';
-        if (lastLog) {
+        if (lastLog && !isSynced) {
           var lld = new Date(lastLog.ts);
           var llTime = lld.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' · ' + lld.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
           var llDelta = (lastLog.delta > 0 ? '+' : '') + lastLog.delta;
@@ -10164,7 +10241,9 @@ function renderSupplies() {
             + ' ' + (lastLog.note || '') + '<br>' + llTime + (lastLog.by ? ' · ' + lastLog.by.split(' ')[0] : '') + '</div>';
         }
         var startLine = '';
-        if (s.qty != null && s.startQty != null && s.startDate) {
+        if (isSynced) {
+          startLine = '<div class="sup-start-info">Synced live from ' + (SUPPLY_COMPUTED_MAP[s.name].kind === 'tp' ? 'Credentials tracker' : 'Card & Key Pools') + '</div>';
+        } else if (s.qty != null && s.startQty != null && s.startDate) {
           var usedAmt = (s.startQty || 0) - (s.qty || 0);
           startLine = '<div class="sup-start-info">Started: ' + s.startQty + ' · ' + fmtShort(s.startDate) + (usedAmt !== 0 ? ' · ' + (usedAmt > 0 ? usedAmt + ' used' : Math.abs(usedAmt) + ' added') : '') + '</div>';
         }
@@ -10176,11 +10255,13 @@ function renderSupplies() {
           + qtyDisplay
           + '<div style="font-size:11px;font-weight:600;color:' + accentColor + '">' + statusLabel + '</div>'
           + startLine
-          + (isAdmin ? '<div style="display:flex;gap:6px;margin-top:6px">'
+          + (isAdmin ? (isSynced
+          ? '<div style="margin-top:6px"><button class="btn btn-secondary btn-xs" style="width:100%" onclick="openSupplyReconcile(\'' + esc(s.name) + '\')">&#128290; Reconcile</button></div>'
+          : '<div style="display:flex;gap:6px;margin-top:6px">'
           + '<button class="sup-qty-btn" style="flex:1" onclick="adjustSupply(\'' + s.id + '\',-1)">&#8722;</button>'
           + '<button class="sup-qty-btn" style="flex:1" onclick="adjustSupply(\'' + s.id + '\',1)">&#43;</button>'
           + '<button class="btn btn-ghost btn-xs" onclick="openEditSupply(\'' + s.id + '\')" title="Edit" style="padding:2px 6px">&#9998;</button>'
-          + '</div>' : '')
+          + '</div>') : '')
           + lastLogLine
           + '</div>';
       });
@@ -10194,6 +10275,7 @@ function renderSupplies() {
       if (!items.length) return;
       html += '<div class="card" style="margin-bottom:14px"><div class="card-hdr"><span class="card-title">' + cat + '</span><span class="card-count">' + items.length + ' item' + (items.length !== 1 ? 's' : '') + '</span></div>';
       items.forEach(function(s) {
+        var isSynced = !!SUPPLY_COMPUTED_MAP[s.name];
         var statusBadge;
         if (s.qty == null) {
           statusBadge = '<span class="pill" style="background:var(--surface2);color:var(--text3);font-size:10px">Not counted</span>';
@@ -10223,17 +10305,27 @@ function renderSupplies() {
             + '<span style="color:var(--text3);white-space:nowrap">' + edStr + (e.by ? ' · ' + esc(e.by) : '') + '</span>'
             + '</div>';
         }).join('');
-        var listStartInfo = (s.startQty != null && s.startDate) ? '<span class="sup-start-info" style="display:block">Started: ' + s.startQty + ' · ' + fmtShort(s.startDate) + '</span>' : '';
+        var listStartInfo = isSynced
+          ? '<span class="sup-start-info" style="display:block">Synced live &mdash; not independently counted</span>'
+          : (s.startQty != null && s.startDate) ? '<span class="sup-start-info" style="display:block">Started: ' + s.startQty + ' · ' + fmtShort(s.startDate) + '</span>' : '';
         html += '<div class="supply-row">'
           + '<span class="sup-name">' + s.name + listStartInfo + '</span>'
           + statusBadge
-          + (isAdmin ? '<button class="sup-qty-btn" onclick="adjustSupply(\'' + s.id + '\',-1)">&#8722;</button>' : '')
-          + '<span class="sup-qty-num"' + (isAdmin ? ' onclick="setSupplyQtyPrompt(\'' + s.id + '\')" title="Click to set exact qty"' : '') + '>' + (s.qty == null ? '—' : s.qty) + '</span>'
-          + (isAdmin ? '<button class="sup-qty-btn" onclick="adjustSupply(\'' + s.id + '\',1)">&#43;</button>' : '')
+          + (isSynced
+          ? ''
+          : (isAdmin ? '<button class="sup-qty-btn" onclick="adjustSupply(\'' + s.id + '\',-1)">&#8722;</button>' : ''))
+          + (isSynced
+          ? '<span class="sup-qty-num">' + (s.qty == null ? '—' : s.qty) + '</span>'
+          : '<span class="sup-qty-num"' + (isAdmin ? ' onclick="setSupplyQtyPrompt(\'' + s.id + '\')" title="Click to set exact qty"' : '') + '>' + (s.qty == null ? '—' : s.qty) + '</span>')
+          + (isSynced
+          ? ''
+          : (isAdmin ? '<button class="sup-qty-btn" onclick="adjustSupply(\'' + s.id + '\',1)">&#43;</button>' : ''))
           + '<span class="sup-unit">' + s.unit + '</span>'
           + updTag + logBtn
-          + (isAdmin ? '<button class="btn btn-ghost btn-xs" onclick="openEditSupply(\'' + s.id + '\')" title="Edit" style="padding:2px 5px">&#9998;</button>' : '')
-          + (isAdmin ? '<button class="btn btn-ghost btn-xs" onclick="deleteSupply(\'' + s.id + '\')" title="Remove" style="padding:2px 5px;color:var(--red)">&#x2715;</button>' : '')
+          + (isSynced
+          ? (isAdmin ? '<button class="btn btn-secondary btn-xs" onclick="openSupplyReconcile(\'' + esc(s.name) + '\')">&#128290; Reconcile</button>' : '')
+          : (isAdmin ? '<button class="btn btn-ghost btn-xs" onclick="openEditSupply(\'' + s.id + '\')" title="Edit" style="padding:2px 5px">&#9998;</button>' : '')
+          + (isAdmin ? '<button class="btn btn-ghost btn-xs" onclick="deleteSupply(\'' + s.id + '\')" title="Remove" style="padding:2px 5px;color:var(--red)">&#x2715;</button>' : ''))
           + '</div>'
           + '<div id="suplog-' + s.id + '" style="display:none;background:var(--surface2);border-bottom:1px solid var(--border2)">' + (logRows || '<div style="padding:6px 14px;font-size:12px;color:var(--text3)">No activity yet.</div>') + '</div>';
       });
@@ -10287,6 +10379,10 @@ function saveSupply() {
   var cat = g('sup-cat').value;
   var unit = g('sup-unit').value.trim() || 'units';
   var qty = parseInt(g('sup-qty').value) || 0;
+  // Synced items (see SUPPLY_COMPUTED_MAP) never take a typed qty, even via this modal —
+  // it always reflects the real tracker (Transponders / Card & Key Pools), reconciled there.
+  var computedQty = computedSupplyQty(name);
+  if (computedQty != null) qty = computedQty;
   var startQty = g('sup-startqty').value !== '' ? parseInt(g('sup-startqty').value) : qty;
   var startDate = g('sup-startdate').value || today();
   var lowRaw = g('sup-low').value.trim();
@@ -10401,6 +10497,7 @@ function openQuickAdj(id, delta) {
   if (currentUser && currentUser.role !== 'admin') { toast('Admin access required'); return; }
   var s = (state.supplies || []).find(function(x){ return x.id === id; });
   if (!s) return;
+  if (SUPPLY_COMPUTED_MAP[s.name]) { openSupplyReconcile(s.name); return; }
   _qaSupplyId = id;
   _qaNewQty = Math.max(0, (s.qty || 0) + (delta || 0));
   var title = g('qa-title'); if (title) title.textContent = 'Adjust — ' + s.name;
@@ -10445,6 +10542,7 @@ function setSupplyQtyPrompt(id) {
 function openInventoryCount() {
   if (currentUser && currentUser.role !== 'admin') { toast('Admin access required'); return; }
   if (!state.supplies) state.supplies = [];
+  state.supplies.forEach(function(s) { var cq = computedSupplyQty(s.name); if (cq != null) s.qty = cq; });
   var cats = ['Office Supplies', 'Printer & Paper', 'Key Cards & Access', 'Other'];
   var html = '';
   cats.forEach(function(cat) {
@@ -10452,13 +10550,16 @@ function openInventoryCount() {
     if (!items.length) return;
     html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin:14px 0 8px">' + esc(cat) + '</div>';
     items.forEach(function(s) {
+      var isSynced = !!SUPPLY_COMPUTED_MAP[s.name];
       var curDisplay = s.qty == null ? 'not yet counted' : (s.qty + ' ' + (s.unit || ''));
       html += '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border2)">'
         + '<div style="flex:1;min-width:0">'
         + '<div style="font-size:13px;font-weight:600">' + esc(s.name) + '</div>'
-        + '<div style="font-size:11px;color:var(--text3)">Currently: ' + esc(curDisplay) + '</div>'
+        + '<div style="font-size:11px;color:var(--text3)">' + (isSynced ? 'Synced live: ' : 'Currently: ') + esc(curDisplay) + '</div>'
         + '</div>'
-        + '<input type="number" min="0" inputmode="numeric" data-supply-id="' + s.id + '" value="' + (s.qty != null ? s.qty : '') + '" placeholder="count" style="width:92px;text-align:center;font-family:var(--font-mono);font-size:15px;padding:6px 4px;border:1px solid var(--border);border-radius:var(--radius)">'
+        + (isSynced
+          ? '<button type="button" class="btn btn-secondary btn-xs" onclick="openSupplyReconcile(\'' + esc(s.name) + '\')">&#128290; Reconcile</button>'
+          : '<input type="number" min="0" inputmode="numeric" data-supply-id="' + s.id + '" value="' + (s.qty != null ? s.qty : '') + '" placeholder="count" style="width:92px;text-align:center;font-family:var(--font-mono);font-size:15px;padding:6px 4px;border:1px solid var(--border);border-radius:var(--radius)">')
         + '</div>';
     });
   });
@@ -10565,7 +10666,7 @@ function renderResidents() {
   // Stats
   var bgCount = allRecs.filter(function(r){ return r.blueground; }).length;
   var unassignedCount = allRecs.filter(function(r){ return !r.leaseholder && !r.blueground; }).length;
-  var parkCount = allRecs.filter(function(r){ return r.transponder||r.xpressSticker||r.keyTag; }).length;
+  var parkCount = allRecs.filter(function(r){ var pk = unitParkingIssued(r.unit); return pk.transponder||pk.xpressSticker||pk.keyTag; }).length;
   var wifiCount = allRecs.filter(function(r){ return r.wifiExpiry; }).length;
   var statsEl = g('ut-stats');
   if (statsEl) statsEl.innerHTML = '<div class="stat-card stat-clickable" onclick="filterUnitRecords(\'all\',g(\'ut-filter-all\'))"><div class="stat-num">'+allRecs.length+'</div><div class="stat-lbl">Total Units</div></div><div class="stat-card stat-clickable" style="border-left:3px solid #3b82f6" onclick="filterUnitRecords(\'blueground\',g(\'ut-filter-bg\'))"><div class="stat-num">'+bgCount+'</div><div class="stat-lbl">Blueground</div></div><div class="stat-card stat-clickable" onclick="filterUnitRecords(\'unassigned\',g(\'ut-filter-unassigned\'))"><div class="stat-num">'+unassignedCount+'</div><div class="stat-lbl">Vacant</div></div><div class="stat-card green"><div class="stat-num">'+parkCount+'</div><div class="stat-lbl">Parking Issued</div></div><div class="stat-card stat-clickable" onclick="filterUnitRecords(\'wifi\',g(\'ut-filter-wifi\'))"><div class="stat-num">'+wifiCount+'</div><div class="stat-lbl">WiFi Tracked</div></div>';
@@ -10655,11 +10756,12 @@ function renderResidents() {
     var unitTotal = (r.unitKeysIssued||0)+(r.unitKeysReplacement||0);
     var mailTotal = (r.mailboxKeysIssued||0)+(r.mailboxKeysReplacement||0);
     if (unitTotal || mailTotal) html += '<div style="font-size:12px;color:var(--text2);margin-bottom:6px">&#128273; Unit: <strong>'+unitTotal+'</strong>'+(r.unitKeysReplacement?'<span style="font-size:10px;color:#92400e"> (+'+r.unitKeysReplacement+' repl)</span>':'')+' &nbsp;&middot;&nbsp; &#128236; Mailbox: <strong>'+mailTotal+'</strong>'+(r.mailboxKeysReplacement?'<span style="font-size:10px;color:#92400e"> (+'+r.mailboxKeysReplacement+' repl)</span>':'')+'</div>';
-    // Parking
+    // Parking (computed from the Parking tab — see unitParkingIssued)
     var parkBits = [];
-    if (r.transponder) parkBits.push('Transponder'+(r.transponderReplacement?'<span style="font-size:9px;opacity:.7"> +'+r.transponderReplacement+'r</span>':''));
-    if (r.xpressSticker) parkBits.push('Xpress'+(r.xpressReplacement?'<span style="font-size:9px;opacity:.7"> +'+r.xpressReplacement+'r</span>':''));
-    if (r.keyTag) parkBits.push('Key Tag'+(r.keyTagReplacement?'<span style="font-size:9px;opacity:.7"> +'+r.keyTagReplacement+'r</span>':''));
+    var rPk = unitParkingIssued(r.unit);
+    if (rPk.transponder) parkBits.push('Transponder'+(r.transponderReplacement?'<span style="font-size:9px;opacity:.7"> +'+r.transponderReplacement+'r</span>':''));
+    if (rPk.xpressSticker) parkBits.push('Xpress'+(r.xpressReplacement?'<span style="font-size:9px;opacity:.7"> +'+r.xpressReplacement+'r</span>':''));
+    if (rPk.keyTag) parkBits.push('Key Tag'+(r.keyTagReplacement?'<span style="font-size:9px;opacity:.7"> +'+r.keyTagReplacement+'r</span>':''));
     if (r.hasBike) parkBits.push('&#128690; Bike'+(r.bikeSticker?' #'+esc(r.bikeSticker):''));
     if (parkBits.length) html += '<div style="margin-bottom:6px"><span style="font-size:11px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:2px 7px;font-weight:600">&#128664; '+parkBits.join(' &middot; ')+'</span></div>';
     // WiFi
@@ -14604,6 +14706,7 @@ async function init() {
   applyTransponderCorrectionsV1();
   backfillParkingCredentialLinks();
   seedPreexistingParkingFromTEZ();
+  migrateUnitParkingToParkingTab();
   wireTransponderInputs();
   wireParkingInputs();
   refreshUnitDatalist();
@@ -15202,7 +15305,7 @@ async function deleteTemplate(id) {
 Drag the header to move · Drag corner to resize."></textarea>
   <div id="notepad-ftr">
     <span id="np-status">Synced</span>
-    <button onclick="if(confirm('Clear all notes?')){document.getElementById('notepad-txt').value='';npSave();}">Clear</button>
+    <button onclick="confirmModal('Clear all notes?').then(function(ok){if(ok){document.getElementById('notepad-txt').value='';npSave();}})">Clear</button>
   </div>
   <div id="notepad-resize" title="Resize" style="position:absolute;right:0;bottom:0;width:18px;height:18px;cursor:se-resize;display:flex;align-items:flex-end;justify-content:flex-end;padding:3px;opacity:0.4">
     <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M9 1L1 9M9 5L5 9M9 9L9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
