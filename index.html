@@ -892,7 +892,7 @@
       <div class="card"><div class="card-hdr"><span class="card-title">Guest &amp; Visitor Log</span><span class="card-count" id="guests-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddGuest()">+ Log Guest</button></div><div class="tbl-wrap"><table><thead><tr><th>Guest</th><th>Unit</th><th>Host</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody id="guests-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-keys">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterKeys('drawer',this)">🗝 Card Drawer</div><div class="sub-tab" onclick="filterKeys('issued',this)">Currently Out</div><div class="sub-tab" onclick="filterKeys('fobs',this)">Resident Fobs</div><div class="sub-tab" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('parking',this)">🚗 Parking</div><div class="sub-tab" onclick="filterKeys('transponders',this)">📡 Credentials</div></div>
+      <div class="sub-tabs"><div class="sub-tab active" onclick="filterKeys('drawer',this)">🗝 Card Drawer</div><div class="sub-tab" onclick="filterKeys('sgt',this)">🏠 Tour Keys</div><div class="sub-tab" onclick="filterKeys('issued',this)">Currently Out</div><div class="sub-tab" onclick="filterKeys('fobs',this)">Resident Fobs</div><div class="sub-tab" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('parking',this)">🚗 Parking</div><div class="sub-tab" onclick="filterKeys('transponders',this)">📡 Credentials</div></div>
       <div id="keys-dupe-banner" style="display:none"></div>
       <div class="key-stat-row" id="keys-stats" style="display:none"></div>
       <div id="keys-sort-bar" style="display:none;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
@@ -909,7 +909,14 @@
       <div class="card" id="keys-log-card"><div class="card-hdr"><span class="card-title" id="keys-log-title">Key Log</span><span class="card-count" id="keys-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddKey()">+ Log Key</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident / Guest</th><th>Type</th><th>Key #</th><th>Time Out</th><th>Status</th><th></th></tr></thead><tbody id="keys-tbody"></tbody></table></div></div>
       <!-- Card Drawer view -->
       <div id="card-drawer-view">
-        <div class="card"><div class="card-hdr"><span class="card-title">One-Time Card Drawer</span><span class="card-count" id="drawer-count"></span></div><div class="card-body" id="drawer-body" style="padding:14px"></div></div>
+        <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">Stock by Pool</span><span class="card-count" id="cardpool-hint"></span><button class="btn btn-ghost btn-sm ml-auto" onclick="openCardPoolBaselines()" title="Edit starting counts for each pool">&#9998; Baselines</button></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Pool</th><th>Starting</th><th>Issued Out</th><th>In Stock (calc)</th><th>Last Count</th><th>Unaccounted</th><th></th></tr></thead><tbody id="cardpool-tbody"></tbody></table></div></div>
+        <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">One-Time Card Drawer</span><span class="card-count" id="drawer-count"></span></div><div class="card-body" id="drawer-body" style="padding:14px"></div></div>
+        <div class="card"><div class="card-hdr"><span class="card-title">Vendor Cards</span><span class="card-count" id="vendor-drawer-count"></span></div><div class="card-body" id="vendor-drawer-body" style="padding:14px"></div></div>
+      </div>
+      <!-- Self-Guided Tour keys: unit-owned pairs, labeled with the unit number -->
+      <div id="sgt-view" style="display:none">
+        <div class="card"><div class="card-hdr"><span class="card-title">Self-Guided Tour Keys</span><span class="card-count" id="sgt-count"></span><button class="btn btn-secondary btn-sm ml-auto" onclick="openSgtRoster()">&#9881; Manage Units</button></div><div class="card-body" id="sgt-body" style="padding:14px"></div></div>
       </div>
       <div id="parking-view" style="display:none">
         <div class="card"><div class="card-hdr"><span class="card-title">Parking Credentials</span><span class="card-count" id="parking-count">0 credentials</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddParking()">+ Add Credential</button></div>
@@ -1635,6 +1642,27 @@
     <div class="fg"><label>Notes</label><textarea id="pk-notes" rows="2" placeholder="e.g. 2 spots, special instructions..."></textarea></div>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-parking')">Cancel</button><button class="btn btn-primary" id="modal-parking-savebtn" onclick="saveParking()">Save</button></div>
+</div></div>
+
+<div class="modal-ov" id="modal-sgt-issue"><div class="modal" style="max-width:420px">
+  <div class="modal-hdr"><span class="modal-title" id="sgt-issue-title">Issue Tour Key</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-sgt-issue')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Key</span><span id="sgt-issue-badge" style="font-family:var(--font-mono);font-size:15px;font-weight:700;color:var(--accent);background:var(--accent-light);border-radius:5px;padding:3px 9px"></span></div>
+    <div class="fg"><label>Prospect Name</label><input id="sgt-prospect" type="text" placeholder="Who is taking the tour"></div>
+    <div class="fr"><div class="fg"><label>Phone <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="sgt-phone" type="text"></div><div class="fg"><label>Expected Back <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="sgt-back" type="time"></div></div>
+    <div class="fg"><label>Notes</label><textarea id="sgt-notes" rows="2" placeholder="e.g. showing 530 + 620"></textarea></div>
+  </div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-sgt-issue')">Cancel</button><button class="btn btn-primary" onclick="saveSgtIssue()">Issue Key</button></div>
+</div></div>
+
+<div class="modal-ov" id="modal-sgt-roster"><div class="modal" style="max-width:460px">
+  <div class="modal-hdr"><span class="modal-title">Tour Key Units</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-sgt-roster')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <p class="set-hint" style="margin-bottom:10px">Which units currently have self-guided tour keys, and how many of each. Keys are labeled by unit (e.g. <strong>530-1</strong>, <strong>530-2</strong>) to match your printed labels. Removing a unit here only stops tracking it &mdash; it never deletes issue history.</p>
+    <div id="sgt-roster-rows"></div>
+    <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addSgtRosterRow()">+ Add Unit</button>
+  </div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-sgt-roster')">Cancel</button><button class="btn btn-primary" onclick="saveSgtRoster()">Save</button></div>
 </div></div>
 
 <div class="modal-ov" id="modal-transponder"><div class="modal" style="max-width:520px">
@@ -3316,7 +3344,7 @@ var SECTION_VOLATILE = {
   dashboard:['dash-body','dash-results'],
   moves:['moves-stats','moves-board','moves-tbody','moves-cards','tight-body'],
   maintenance:['maint-stats','maint-tbody'], guests:['guests-stats','guests-tbody'],
-  keys:['keys-stats','keys-tbody','keys-otk-cards','parking-tbody','tp-tbody','tp-history-tbody'],
+  keys:['keys-stats','keys-tbody','keys-otk-cards','parking-tbody','tp-tbody','tp-history-tbody','drawer-body','vendor-drawer-body','sgt-body','cardpool-tbody'],
   amenities:['amenities-tbody'], tours:['tours-stats','tours-tbody'],
   walkthrough:['patrol-body'], todos:['todo-list','todo-board'], laf:['laf-tbody'],
   team:['team-body'], activity:['activity-tbody'], logbook:['logbook-body'], supplies:['supplies-body']
@@ -6142,10 +6170,16 @@ function filterKeys(f, item) {
     document.querySelectorAll('#section-keys .sub-tab').forEach(function (t) { t.classList.remove('active'); });
     item.classList.add('active');
   }
-  var parkingView = g('parking-view'), keyCard = g('keys-log-card'), statRow = g('keys-stats'), otkSec = g('keys-otk-section'), drawerView = g('card-drawer-view'), sortBar = g('keys-sort-bar'), tpView = g('transponder-view');
+  var parkingView = g('parking-view'), keyCard = g('keys-log-card'), statRow = g('keys-stats'), otkSec = g('keys-otk-section'), drawerView = g('card-drawer-view'), sortBar = g('keys-sort-bar'), tpView = g('transponder-view'), sgtView = g('sgt-view');
   // hide all views first
-  [parkingView, keyCard, drawerView, tpView].forEach(function(el) { if (el) el.style.display = 'none'; });
-  if (f === 'parking') {
+  [parkingView, keyCard, drawerView, tpView, sgtView].forEach(function(el) { if (el) el.style.display = 'none'; });
+  if (f === 'sgt') {
+    if (sgtView) sgtView.style.display = '';
+    if (statRow) statRow.style.display = 'none';
+    if (otkSec) otkSec.style.display = 'none';
+    if (sortBar) sortBar.style.display = 'none';
+    renderSgtKeys();
+  } else if (f === 'parking') {
     if (parkingView) parkingView.style.display = '';
     if (statRow) statRow.style.display = 'none';
     if (otkSec) otkSec.style.display = 'none';
@@ -6198,14 +6232,36 @@ function oneTimeDrawerSize() { return cardPools().oneTime.startingCount || 40; }
 function cardPoolIssued(poolKey) {
   if (poolKey === 'oneTime') return (state.keys || []).filter(function (k) { return k.type === 'one-time' && k.status === 'issued'; }).length;
   if (poolKey === 'vendor') return (state.keys || []).filter(function (k) { return k.type === 'vendor' && k.status === 'issued'; }).length;
-  if (poolKey === 'sgt') { var s = (state.supplies || []).find(function (x) { return x.name === 'Self-Guided Tour Keys – Active'; }); return s ? (s.qty || 0) : 0; }
+  // SGT: once a unit roster exists, "issued" is counted from real per-key records like the other
+  // pools. Before that there is nothing tracking individual keys, so nothing is known to be out —
+  // 0, not the Supplies tile. (That tile holds how many tour keys EXIST, which the old code read
+  // as "issued" and so reported 18 out / 0 in stock when all 18 were actually on the hook.)
+  if (poolKey === 'sgt') return sgtUnits().length ? sgtIssuedKeys().length : 0;
   return 0;
 }
-function cardPoolRemaining(poolKey) {
+// SGT's starting count is derived from the unit roster (sum of each unit's key count) rather than
+// typed separately — the roster is the source of truth, so the two can't drift apart.
+function cardPoolStarting(poolKey) {
+  if (poolKey === 'sgt' && sgtUnits().length) return sgtTotalKeys();
   var p = cardPools()[poolKey];
-  if (!p || p.startingCount == null) return null;
-  return p.startingCount - cardPoolIssued(poolKey);
+  return p ? p.startingCount : null;
 }
+function cardPoolRemaining(poolKey) {
+  var start = cardPoolStarting(poolKey);
+  if (start == null) return null;
+  return start - cardPoolIssued(poolKey);
+}
+
+// ─── SELF-GUIDED TOUR KEYS (unit-owned) ────────────────────────────────────────
+// Unlike one-time/vendor cards (interchangeable, drawn from a numbered pool), each tour key
+// physically belongs to one unit and carries a printed label with that unit number. So identity
+// is unit + slot ("530-1"), and the roster of which units have keys is editable — tour units and
+// their key counts change often. Issued keys live in state.keys (type 'sgt') so they inherit the
+// existing return flow, Currently Out tab, undo, and activity logging.
+function sgtUnits() { if (!Array.isArray(state.sgtUnits)) state.sgtUnits = []; return state.sgtUnits; }
+function sgtTotalKeys() { return sgtUnits().reduce(function (s, u) { return s + (parseInt(u.keys, 10) || 0); }, 0); }
+function sgtIssuedKeys() { return (state.keys || []).filter(function (k) { return k.type === 'sgt' && k.status === 'issued'; }); }
+function sgtKeyLabel(unit, slot) { return unit + '-' + slot; }
 function saveCardPoolStart(poolKey, val) {
   var n = String(val).trim() === '' ? null : parseInt(val, 10);
   if (n != null && isNaN(n)) return;
@@ -6217,6 +6273,9 @@ function openCardPoolReconcile(poolKey) {
   var ov = g('modal-cardpool-reconcile');
   if (!ov) { ov = document.createElement('div'); ov.className = 'modal-ov'; ov.id = 'modal-cardpool-reconcile'; document.body.appendChild(ov); }
   var expected = cardPoolRemaining(poolKey);
+  var prevCounts = cardPools()[poolKey].counts || [];
+  var prevNote = null;
+  for (var pi = prevCounts.length - 1; pi >= 0; pi--) { if (prevCounts[pi].note) { prevNote = prevCounts[pi]; break; } }
   ov.innerHTML = '<div class="modal" style="max-width:380px">'
     + '<div class="modal-hdr"><span class="modal-title">Reconcile — ' + esc(CARD_POOL_LABELS[poolKey]) + '</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-cardpool-reconcile\')">&#x2715;</button></div>'
     + '<div class="modal-bdy">'
@@ -6224,10 +6283,257 @@ function openCardPoolReconcile(poolKey) {
         ? '<div class="set-hint" style="margin-bottom:10px">No starting count set yet — set one in Settings first, or just log this physical count as the starting point.</div>'
         : '<div class="set-hint" style="margin-bottom:10px">Dashboard expects <strong>' + expected + '</strong> in stock right now.</div>')
     + '<div class="fg"><label>Physical count</label><input type="number" id="cpr-physical" min="0" placeholder="Count what\'s actually there"></div>'
+    + '<div class="fg" style="margin-bottom:0"><label>Reason for any gap <span style="font-weight:400;color:var(--text3)">(optional)</span></label>'
+    + '<input type="text" id="cpr-note" placeholder="e.g. issued on paper, not logged here yet" value="' + esc(prevNote && prevNote.note ? prevNote.note : '') + '">'
+    + (prevNote ? '<div class="set-hint" style="margin-top:5px">Carried over from the ' + fmtShort(prevNote.date) + ' count &mdash; edit or clear it if the reason has changed.</div>' : '')
+    + '<div class="set-hint" style="margin-top:5px">A gap usually means cards are out but unlogged, not lost &mdash; noting why keeps the next person from reading it as missing stock.</div></div>'
     + '</div>'
     + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-cardpool-reconcile\')">Cancel</button><button class="btn btn-primary" onclick="saveCardPoolCount(\'' + poolKey + '\')">Save Count</button></div>'
     + '</div>';
   openModal('modal-cardpool-reconcile');
+}
+// ── SGT rendering + issue/return ──
+function renderSgtKeys() {
+  var body = g('sgt-body'); if (!body) return;
+  var roster = sgtUnits();
+  var issued = sgtIssuedKeys();
+  var issuedMap = {};
+  issued.forEach(function (k) { if (k.fob) issuedMap[String(k.fob).trim()] = k; });
+  var cnt = g('sgt-count');
+  if (cnt) cnt.textContent = roster.length ? (sgtTotalKeys() - issued.length) + ' available · ' + issued.length + ' out' : 'no units set up yet';
+  if (!roster.length) {
+    body.innerHTML = '<div style="font-size:12.5px;color:var(--text2);line-height:1.6;padding:6px 2px">No tour-key units set up yet. Click <strong>&#9881; Manage Units</strong> to add the units that currently have self-guided tour keys and how many each has.<br><span style="color:var(--text3);font-size:11.5px">Keys are labeled by unit (530-1, 530-2) so they match the labels you print.</span></div>';
+    return;
+  }
+  var now = Date.now();
+  var html = '';
+  roster.slice().sort(function (a, b) { return String(a.unit).localeCompare(String(b.unit), undefined, { numeric: true }); }).forEach(function (u) {
+    var n = parseInt(u.keys, 10) || 0;
+    html += '<div style="margin-bottom:14px">'
+      + '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Unit ' + esc(String(u.unit)) + '</div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+    for (var i = 1; i <= n; i++) {
+      var lbl = sgtKeyLabel(u.unit, i), k = issuedMap[lbl];
+      if (k) {
+        var ms = k.issuedAt ? now - k.issuedAt : 0;
+        var overdue = ms >= 3 * 3600000; // a self-guided tour running 3h+ is worth a look
+        var nc = overdue ? 'var(--red)' : 'var(--amber)';
+        html += '<div style="width:88px;min-height:78px;background:' + (overdue ? 'rgba(192,53,53,0.08)' : 'rgba(181,112,32,0.07)') + ';border:1.5px solid ' + (overdue ? 'rgba(192,53,53,0.4)' : 'rgba(181,112,32,0.35)') + ';border-radius:6px;padding:7px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative" onclick="dashReturnKey(\'' + k.id + '\')" title="' + esc(lbl) + ' — out to ' + esc(k.name || '') + '\nClick to mark returned">'
+          + (overdue ? '<span style="position:absolute;top:3px;right:4px;font-size:9px;color:var(--red)">&#9888;</span>' : '')
+          + '<span style="font-size:13px;font-weight:700;font-family:var(--font-mono);color:' + nc + '">' + esc(lbl) + '</span>'
+          + '<span style="font-size:9px;font-weight:600;color:' + nc + ';text-align:center;line-height:1.3;word-break:break-word">' + esc((k.name || '—').split(' ')[0]) + '</span>'
+          + '<span style="font-size:8px;color:' + (overdue ? 'var(--red)' : 'var(--text3)') + ';margin-top:1px">' + fmtDurOut(ms) + ' out</span>'
+          + '<span style="font-size:8px;color:var(--accent);margin-top:2px;font-weight:600">&#8617; return</span>'
+          + '</div>';
+      } else {
+        html += '<div style="width:88px;min-height:78px;background:var(--surface);border:1.5px solid var(--border);border-radius:6px;padding:7px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:border-color .12s,background .12s" onclick="openSgtIssue(\'' + esc(String(u.unit)) + '\',' + i + ')" title="' + esc(lbl) + ' — available. Click to issue." onmouseover="this.style.borderColor=\'var(--accent)\';this.style.background=\'var(--accent-light)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.background=\'var(--surface)\'">'
+          + '<span style="font-size:13px;font-weight:700;font-family:var(--font-mono);color:var(--text3)">' + esc(lbl) + '</span>'
+          + '<span style="font-size:8px;color:var(--text3)">available</span>'
+          + '</div>';
+      }
+    }
+    html += '</div></div>';
+  });
+  body.innerHTML = html;
+}
+var _sgtIssueKey = null;
+function openSgtIssue(unit, slot) {
+  _sgtIssueKey = { unit: unit, slot: slot };
+  var lbl = sgtKeyLabel(unit, slot);
+  var t = g('sgt-issue-title'); if (t) t.textContent = 'Issue Tour Key ' + lbl;
+  var b = g('sgt-issue-badge'); if (b) b.textContent = lbl;
+  ['sgt-prospect', 'sgt-phone', 'sgt-back', 'sgt-notes'].forEach(function (id) { var el = g(id); if (el) el.value = ''; });
+  openModal('modal-sgt-issue');
+  setTimeout(function () { var p = g('sgt-prospect'); if (p) p.focus(); }, 130);
+}
+function saveSgtIssue() {
+  if (!_sgtIssueKey) return;
+  var name = g('sgt-prospect') ? g('sgt-prospect').value.trim() : '';
+  if (!name) { toast('Enter the prospect name'); g('sgt-prospect').focus(); return; }
+  var lbl = sgtKeyLabel(_sgtIssueKey.unit, _sgtIssueKey.slot);
+  if ((state.keys || []).some(function (k) { return k.type === 'sgt' && k.fob === lbl && k.status === 'issued'; })) { toast(lbl + ' is already logged as out — check the key log'); return; }
+  var back = g('sgt-back') ? g('sgt-back').value : '';
+  var notes = g('sgt-notes') ? g('sgt-notes').value.trim() : '';
+  if (back) notes = (notes ? notes + ' · ' : '') + 'Expected back ' + fmtTime(back);
+  if (!state.keys) state.keys = [];
+  var k = { id: uid(), unit: String(_sgtIssueKey.unit), name: name, guest: '', phone: (g('sgt-phone') ? g('sgt-phone').value.trim() : ''), fob: lbl, type: 'sgt', status: 'issued', issuedAt: Date.now(), notes: notes, addedBy: currentUser ? currentUser.name : '', createdAt: Date.now(), returnedAt: null };
+  state.keys.push(k);
+  pushUndo({ sec: 'keys', type: 'ADD', id: k.id, data: Object.assign({}, k), label: 'issue tour key ' + lbl });
+  logActivity('keys', 'create', 'Issued self-guided tour key ' + lbl + ' — ' + name, 'Unit ' + k.unit + (back ? ' · Expected back ' + fmtTime(back) : ''));
+  scheduleSave(); closeModal('modal-sgt-issue'); renderSgtKeys(); renderKeys(); updateBadges(); renderDash(); renderSupplies();
+  toast('Tour key ' + lbl + ' issued');
+  _sgtIssueKey = null;
+}
+// ── SGT roster editor ──
+function openSgtRoster() {
+  if (currentUser && currentUser.role !== 'admin') { toast('Admin access required'); return; }
+  var wrap = g('sgt-roster-rows'); if (!wrap) return;
+  wrap.innerHTML = '';
+  var roster = sgtUnits();
+  if (!roster.length) { addSgtRosterRow(); }
+  else roster.forEach(function (u) { addSgtRosterRow(u.unit, u.keys); });
+  openModal('modal-sgt-roster');
+}
+function addSgtRosterRow(unit, keys) {
+  var wrap = g('sgt-roster-rows'); if (!wrap) return;
+  var row = document.createElement('div');
+  row.className = 'sgt-roster-row';
+  row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:7px';
+  row.innerHTML = '<input type="text" class="sgt-r-unit" list="unit-options" placeholder="Unit #" value="' + esc(unit != null ? String(unit) : '') + '" style="flex:1;font-size:13px;padding:6px 8px">'
+    + '<input type="number" class="sgt-r-keys" min="0" placeholder="# keys" value="' + (keys != null ? parseInt(keys, 10) : 2) + '" style="width:88px;font-size:13px;padding:6px 8px;text-align:center;font-family:var(--font-mono)">'
+    + '<button type="button" class="btn btn-ghost btn-xs" onclick="this.parentNode.remove()" title="Remove" style="padding:4px 8px;color:var(--red)">&#10005;</button>';
+  wrap.appendChild(row);
+}
+function saveSgtRoster() {
+  if (currentUser && currentUser.role !== 'admin') { toast('Admin access required'); return; }
+  var rows = document.querySelectorAll('#sgt-roster-rows .sgt-roster-row');
+  var next = [], seen = {};
+  for (var i = 0; i < rows.length; i++) {
+    var unit = (rows[i].querySelector('.sgt-r-unit').value || '').trim();
+    var n = parseInt(rows[i].querySelector('.sgt-r-keys').value, 10);
+    if (!unit) continue;
+    if (isNaN(n) || n < 0) { toast('Enter a valid key count for unit ' + unit); return; }
+    if (seen[unit]) { toast('Unit ' + unit + ' is listed twice — combine those rows'); return; }
+    seen[unit] = true;
+    next.push({ unit: unit, keys: n });
+  }
+  // A key that's currently out can't have its slot removed from under it — the physical key exists
+  // and still needs somewhere to be returned to.
+  var orphan = sgtIssuedKeys().filter(function (k) {
+    var m = next.find(function (u) { return u.unit === String(k.unit); });
+    if (!m) return true;
+    var slot = parseInt(String(k.fob).split('-').pop(), 10);
+    return !(slot >= 1 && slot <= (parseInt(m.keys, 10) || 0));
+  });
+  if (orphan.length) { toast('Return ' + orphan.map(function (k) { return k.fob; }).join(', ') + ' first — still logged out'); return; }
+  var before = cloneData(sgtUnits());
+  state.sgtUnits = next;
+  pushSetUndo('keys', ['sgtUnits'], before, cloneData(next), 'tour key units');
+  logActivity('keys', 'edit', 'Updated tour key units — ' + next.length + ' unit(s), ' + sgtTotalKeys() + ' key(s) total');
+  scheduleSave(); closeModal('modal-sgt-roster'); renderSgtKeys(); renderSupplies(); updateBadges();
+  toast('Tour key units saved');
+}
+// ── Vendor card grid (mirrors the one-time drawer; pool size comes from its baseline) ──
+function renderVendorDrawer() {
+  var body = g('vendor-drawer-body'); if (!body) return;
+  var issued = (state.keys || []).filter(function (k) { return k.type === 'vendor' && k.status === 'issued'; });
+  var size = cardPoolStarting('vendor');
+  var cnt = g('vendor-drawer-count');
+  // Vendor fobs are entered free-form ('V-03', '3', 'V3') — match on the numeric part so an
+  // existing record lines up with its slot regardless of how it was typed.
+  var issuedMap = {};
+  issued.forEach(function (k) { var n = parseInt(String(k.fob || '').replace(/\D/g, ''), 10); if (!isNaN(n)) issuedMap[n] = k; });
+  if (size == null) {
+    if (cnt) cnt.textContent = issued.length + ' out · pool size not set';
+    body.innerHTML = '<div style="font-size:12.5px;color:var(--text2);line-height:1.6;padding:6px 2px">No vendor card pool size set yet — click <strong>&#9998; Baselines</strong> above to enter how many vendor cards exist in total, and they\'ll show up here as a grid.</div>';
+    return;
+  }
+  if (cnt) cnt.textContent = (size - issued.length) + ' available · ' + issued.length + ' out';
+  var now = Date.now();
+  var html = '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+  for (var i = 1; i <= size; i++) {
+    var k = issuedMap[i], lbl = 'V-' + (i < 10 ? '0' + i : i);
+    if (k) {
+      var ms = k.issuedAt ? now - k.issuedAt : 0;
+      var overdue = ms >= 8 * 3600000; // vendor cards are day-use; 8h+ means it likely never came back
+      var nc = overdue ? 'var(--red)' : 'var(--amber)';
+      html += '<div style="width:84px;min-height:78px;background:' + (overdue ? 'rgba(192,53,53,0.08)' : 'rgba(181,112,32,0.07)') + ';border:1.5px solid ' + (overdue ? 'rgba(192,53,53,0.4)' : 'rgba(181,112,32,0.35)') + ';border-radius:6px;padding:7px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative" onclick="dashReturnKey(\'' + k.id + '\')" title="' + esc(lbl) + ' — ' + esc(k.company || k.name || '') + '\nClick to mark returned">'
+        + (overdue ? '<span style="position:absolute;top:3px;right:4px;font-size:9px;color:var(--red)">&#9888;</span>' : '')
+        + '<span style="font-size:13px;font-weight:700;font-family:var(--font-mono);color:' + nc + '">' + esc(lbl) + '</span>'
+        + '<span style="font-size:9px;font-weight:600;color:' + nc + ';text-align:center;line-height:1.3;word-break:break-word">' + esc((k.company || k.name || '—').split(' ')[0]) + '</span>'
+        + '<span style="font-size:8px;color:' + (overdue ? 'var(--red)' : 'var(--text3)') + ';margin-top:1px">' + fmtDurOut(ms) + ' out</span>'
+        + '<span style="font-size:8px;color:var(--accent);margin-top:2px;font-weight:600">&#8617; return</span>'
+        + '</div>';
+    } else {
+      html += '<div style="width:84px;min-height:78px;background:var(--surface);border:1.5px solid var(--border);border-radius:6px;padding:7px 5px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">'
+        + '<span style="font-size:13px;font-weight:700;font-family:var(--font-mono);color:var(--text3)">' + lbl + '</span>'
+        + '<span style="font-size:8px;color:var(--text3)">available</span>'
+        + '</div>';
+    }
+  }
+  html += '</div><div style="font-size:11px;color:var(--text3);margin-top:10px">Vendor cards are issued from the Key Log (<strong>+ Log Key</strong> &rarr; Vendor Card) so the company, work area, and expected return time get captured. Click an issued card here to return it.</div>';
+  body.innerHTML = html;
+}
+// ── Stock by Pool table (same shape as Credentials' Stock by Component) ──
+function renderCardPoolTable() {
+  var tb = g('cardpool-tbody'); if (!tb) return;
+  var rows = '';
+  ['oneTime', 'vendor', 'sgt'].forEach(function (key) {
+    var p = cardPools()[key];
+    var start = cardPoolStarting(key), out = cardPoolIssued(key), rem = cardPoolRemaining(key);
+    var last = p.counts && p.counts.length ? p.counts[p.counts.length - 1] : null;
+    var unacc = (last && last.physical != null && rem != null) ? (rem - last.physical) : null;
+    var sgtUnset = key === 'sgt' && !sgtUnits().length;
+    var startCell = start == null ? '<span style="color:var(--text3)">not set</span>'
+      : start + (key === 'sgt' && sgtUnits().length ? ' <span style="font-size:10px;color:var(--text3)">from roster</span>' : '');
+    if (sgtUnset) {
+      rows += '<tr>'
+        + '<td style="font-weight:600">' + esc(CARD_POOL_LABELS[key]) + '</td>'
+        + '<td>' + startCell + '</td>'
+        + '<td colspan="4" style="color:var(--text3);font-size:11.5px">Not tracked per key yet &mdash; add units in <strong>Tour Keys &rarr; Manage Units</strong> to see what\'s out.</td>'
+        + '<td style="text-align:right"><button class="btn btn-ghost btn-xs" onclick="filterKeys(\'sgt\',document.querySelector(\'[onclick*=&quot;filterKeys(\\\'sgt\\\'&quot;]\'))">Set up</button></td>'
+        + '</tr>';
+      return;
+    }
+    rows += '<tr>'
+      + '<td style="font-weight:600">' + esc(CARD_POOL_LABELS[key]) + '</td>'
+      + '<td>' + startCell + '</td>'
+      + '<td>' + out + '</td>'
+      + '<td style="font-weight:700">' + (rem == null ? '—' : rem) + '</td>'
+      + '<td>' + (last ? last.physical + ' <span style="font-size:10px;color:var(--text3)">' + fmtShort(last.date) + '</span>' : '<span style="color:var(--text3)">never</span>') + '</td>'
+      // A gap with a logged reason is accounted for — show it in amber as "unlogged" rather than
+      // red "missing", so a known paper-trail backlog doesn't read as lost stock every time.
+      + '<td>' + (unacc == null ? '—'
+        : unacc === 0 ? '<span style="color:var(--green);font-weight:700">&#10003; match</span>'
+        : (last && last.note
+          ? '<span style="color:var(--amber);font-weight:700">' + (unacc > 0 ? unacc + ' unlogged' : Math.abs(unacc) + ' over') + '</span><div style="font-size:10px;color:var(--text3);line-height:1.35;margin-top:2px;max-width:200px">' + esc(last.note) + '</div>'
+          : '<span style="color:var(--red);font-weight:700">' + (unacc > 0 ? unacc + ' missing' : Math.abs(unacc) + ' over') + '</span>')) + '</td>'
+      + '<td style="text-align:right"><button class="btn btn-ghost btn-xs" onclick="openCardPoolReconcile(\'' + key + '\')">&#128290; Reconcile</button></td>'
+      + '</tr>';
+  });
+  tb.innerHTML = rows;
+  var hint = g('cardpool-hint');
+  if (hint) hint.textContent = 'physical counts vs. calculated';
+}
+// ── Baselines editor for all three pools (mirrors openTpStart for credentials) ──
+function openCardPoolBaselines() {
+  if (currentUser && currentUser.role !== 'admin') { toast('Admin access required'); return; }
+  var ov = g('modal-cardpool-baselines');
+  if (!ov) { ov = document.createElement('div'); ov.className = 'modal-ov'; ov.id = 'modal-cardpool-baselines'; document.body.appendChild(ov); }
+  var rows = ['oneTime', 'vendor'].map(function (key) {
+    var p = cardPools()[key];
+    return '<div class="fg"><label>' + esc(CARD_POOL_LABELS[key]) + '</label>'
+      + '<input type="number" min="0" id="cpb-' + key + '" value="' + (p.startingCount != null ? p.startingCount : '') + '" placeholder="total cards that exist"></div>';
+  }).join('');
+  ov.innerHTML = '<div class="modal" style="max-width:400px">'
+    + '<div class="modal-hdr"><span class="modal-title">Starting Counts</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-cardpool-baselines\')">&#x2715;</button></div>'
+    + '<div class="modal-bdy">'
+    + '<p class="set-hint" style="margin-bottom:10px">How many of each exist in total &mdash; not how many are on hand right now. In-stock is calculated as starting minus what\'s currently issued.</p>'
+    + rows
+    + '<div class="set-hint" style="margin-top:4px"><strong>' + esc(CARD_POOL_LABELS.sgt) + ':</strong> ' + (sgtUnits().length ? sgtTotalKeys() + ' keys across ' + sgtUnits().length + ' unit(s) — set in Tour Keys &rarr; Manage Units.' : 'set up units in the Tour Keys tab.') + '</div>'
+    + '</div>'
+    + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-cardpool-baselines\')">Cancel</button><button class="btn btn-primary" onclick="saveCardPoolBaselines()">Save</button></div>'
+    + '</div>';
+  openModal('modal-cardpool-baselines');
+}
+function saveCardPoolBaselines() {
+  var before = cloneData(cardPools());
+  var changed = false;
+  ['oneTime', 'vendor'].forEach(function (key) {
+    var el = g('cpb-' + key); if (!el) return;
+    var raw = String(el.value).trim();
+    var n = raw === '' ? null : parseInt(raw, 10);
+    if (n != null && (isNaN(n) || n < 0)) return;
+    if (cardPools()[key].startingCount !== n) { cardPools()[key].startingCount = n; changed = true; }
+  });
+  if (changed) {
+    pushSetUndo('keys', ['cardPools'], before, cloneData(cardPools()), 'card pool baselines');
+    logActivity('keys', 'edit', 'Updated card pool starting counts', ['oneTime', 'vendor'].map(function (k) { return CARD_POOL_LABELS[k] + ': ' + (cardPools()[k].startingCount != null ? cardPools()[k].startingCount : 'not set'); }).join(' · '));
+    scheduleSave();
+  }
+  closeModal('modal-cardpool-baselines');
+  renderCardDrawer(); renderCardPoolSettings(); renderSupplies();
+  if (changed) toast('Starting counts saved');
 }
 function saveCardPoolCount(poolKey) {
   var inp = g('cpr-physical');
@@ -6235,13 +6541,18 @@ function saveCardPoolCount(poolKey) {
   if (isNaN(physical) || physical < 0) { toast('Enter the physical count'); return; }
   var expected = cardPoolRemaining(poolKey);
   var p = cardPools()[poolKey];
-  p.counts.push({ date: today(), physical: physical, expected: expected, diff: expected == null ? null : physical - expected, by: currentUser ? currentUser.name : '', ts: Date.now() });
+  var noteEl = g('cpr-note');
+  var note = noteEl ? noteEl.value.trim() : '';
+  p.counts.push({ date: today(), physical: physical, expected: expected, diff: expected == null ? null : physical - expected, note: note || null, by: currentUser ? currentUser.name : '', ts: Date.now() });
   if (p.counts.length > 60) p.counts = p.counts.slice(-60);
-  // If there was no starting count yet, treat this first physical count as it.
-  if (p.startingCount == null) p.startingCount = physical + cardPoolIssued(poolKey);
+  // If there was no starting count yet, treat this first physical count as it. Never for SGT —
+  // its starting count is derived from the unit roster, so writing one here would be ignored at
+  // best and misleading at worst.
+  if (p.startingCount == null && !(poolKey === 'sgt' && sgtUnits().length)) p.startingCount = physical + cardPoolIssued(poolKey);
+  logActivity('keys', 'edit', 'Physical count logged — ' + CARD_POOL_LABELS[poolKey], physical + ' counted' + (expected != null ? ' vs. ' + expected + ' calculated' : ''));
   scheduleSave();
   closeModal('modal-cardpool-reconcile');
-  renderCardDrawer(); renderCardPoolSettings();
+  renderCardDrawer(); renderCardPoolSettings(); renderSupplies();
   var diff = p.counts[p.counts.length - 1].diff;
   toast(diff == null ? 'Count saved' : diff === 0 ? 'Count matches — all good' : (diff > 0 ? '+' + diff : diff) + ' vs. expected — logged');
 }
@@ -6250,13 +6561,17 @@ function renderCardPoolSettings() {
   var html = '';
   ['oneTime', 'vendor', 'sgt'].forEach(function (key) {
     var p = cardPools()[key];
+    var starting = cardPoolStarting(key);
     var remaining = cardPoolRemaining(key);
     var lastCount = p.counts.length ? p.counts[p.counts.length - 1] : null;
+    var rosterDriven = key === 'sgt' && sgtUnits().length > 0;
     html += '<div class="set-row">'
       + '<div><div class="set-lbl">' + esc(CARD_POOL_LABELS[key]) + '</div>'
-      + '<div class="set-hint">' + (remaining == null ? 'Not yet counted' : remaining + ' in stock (' + cardPoolIssued(key) + ' out of ' + p.startingCount + ')') + (lastCount ? ' · last physical count ' + fmtShort(lastCount.date) + (lastCount.diff ? ' (' + (lastCount.diff > 0 ? '+' : '') + lastCount.diff + ' vs. expected)' : '') : '') + '</div></div>'
+      + '<div class="set-hint">' + (remaining == null ? 'Not yet counted' : remaining + ' in stock (' + cardPoolIssued(key) + ' out of ' + starting + ')') + (rosterDriven ? ' · from the unit roster in Key Tracker &rarr; Tour Keys' : '') + (lastCount ? ' · last physical count ' + fmtShort(lastCount.date) + (lastCount.diff ? ' (' + (lastCount.diff > 0 ? '+' : '') + lastCount.diff + ' vs. expected)' : '') : '') + '</div></div>'
       + '<div class="flex gap-8 items-center">'
-      + '<input type="number" min="0" style="width:76px" value="' + (p.startingCount != null ? p.startingCount : '') + '" placeholder="—" onchange="saveCardPoolStart(\'' + key + '\',this.value)">'
+      + (rosterDriven
+        ? '<span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--text2);width:76px;text-align:center">' + starting + '</span>'
+        : '<input type="number" min="0" style="width:76px" value="' + (p.startingCount != null ? p.startingCount : '') + '" placeholder="—" onchange="saveCardPoolStart(\'' + key + '\',this.value)">')
       + '<button class="btn btn-ghost btn-sm" onclick="openCardPoolReconcile(\'' + key + '\')">&#128290; Reconcile</button>'
       + '</div></div>';
   });
@@ -6300,6 +6615,8 @@ function renderCardDrawer() {
   }
   html += '</div>';
   body.innerHTML = html;
+  renderVendorDrawer();
+  renderCardPoolTable();
 }
 
 function openQuickKeyIssue(cardNum) {
@@ -6361,6 +6678,7 @@ function confirmKeyReturn() {
   logKeyReturn(_krId);
   closeModal('modal-key-return');
   if (keyFilter === 'drawer') renderCardDrawer();
+  if (keyFilter === 'sgt') renderSgtKeys();
   toast((k.fob ? 'Card #' + k.fob : 'Key') + ' returned' + (_krCondition === 'damaged' ? ' — damage noted' : ''));
   _krId = null;
 }
@@ -6468,7 +6786,7 @@ function renderKeys() {
     return b.createdAt - a.createdAt;
   });
   var allK = state.keys || [];
-  var stats = [{ label: 'Resident Fobs', val: allK.filter(function (k) { return k.type === 'resident' && k.status === 'issued'; }).length }, { label: 'Joiner Keys Out', val: allK.filter(function (k) { return k.type === 'joiner' && k.status === 'issued'; }).length }, { label: 'One-Time Out', val: allK.filter(function (k) { return k.type === 'one-time' && k.status === 'issued'; }).length }, { label: 'Vendor Cards Out', val: allK.filter(function (k) { return k.type === 'vendor' && k.status === 'issued'; }).length }, { label: 'Mobile Active', val: allK.filter(function (k) { return k.type === 'mobile' && k.status === 'issued'; }).length }];
+  var stats = [{ label: 'Resident Fobs', val: allK.filter(function (k) { return k.type === 'resident' && k.status === 'issued'; }).length }, { label: 'Joiner Keys Out', val: allK.filter(function (k) { return k.type === 'joiner' && k.status === 'issued'; }).length }, { label: 'One-Time Out', val: allK.filter(function (k) { return k.type === 'one-time' && k.status === 'issued'; }).length }, { label: 'Vendor Cards Out', val: allK.filter(function (k) { return k.type === 'vendor' && k.status === 'issued'; }).length }, { label: 'Tour Keys Out', val: allK.filter(function (k) { return k.type === 'sgt' && k.status === 'issued'; }).length }, { label: 'Mobile Active', val: allK.filter(function (k) { return k.type === 'mobile' && k.status === 'issued'; }).length }];
   g('keys-stats').innerHTML = stats.map(function (s) { return '<div class="key-stat"><div class="key-stat-num">' + s.val + '</div><div class="key-stat-lbl">' + s.label + '</div></div>'; }).join('');
   var tbody = g('keys-tbody'), cnt = g('keys-count');
   var now = Date.now();
@@ -10138,17 +10456,39 @@ var SUPPLY_COMPUTED_MAP = {
   'Key Tags': { kind: 'tp', comp: 1 },
   'Xpress Stickers': { kind: 'tp', comp: 2 },
   'One-Time Cards – Active Issued': { kind: 'pool', pool: 'oneTime' },
-  'Vendor Cards – Active Issued': { kind: 'pool', pool: 'vendor' }
+  'Vendor Cards – Active Issued': { kind: 'pool', pool: 'vendor' },
+  // SGT is only synced once its unit roster exists (see supplyComputedFor) — before that there's
+  // nothing to compute from and the tile stays manually counted. It also tracks keys ON HAND, not
+  // issued: unlike the two "Active Issued" tiles above, this one has always meant "how many tour
+  // keys do we have" (it went 14→18 as keys were added) and carries a low-stock threshold, so
+  // showing the issued count here would read as "out of stock" whenever every key is on the hook.
+  'Self-Guided Tour Keys – Active': { kind: 'pool', pool: 'sgt', use: 'remaining', onlyIf: function () { return sgtUnits().length > 0; } }
 };
-function computedSupplyQty(name) {
+function supplyComputedFor(name) {
   var m = SUPPLY_COMPUTED_MAP[name];
   if (!m) return null;
-  return m.kind === 'tp' ? tpCompRemaining(TP_COMPS[m.comp]) : cardPoolIssued(m.pool);
+  if (m.onlyIf && !m.onlyIf()) return null;
+  return m;
+}
+function computedSupplyQty(name) {
+  var m = supplyComputedFor(name);
+  if (!m) return null;
+  if (m.kind === 'tp') return tpCompRemaining(TP_COMPS[m.comp]);
+  return m.use === 'remaining' ? cardPoolRemaining(m.pool) : cardPoolIssued(m.pool);
 }
 function openSupplyReconcile(name) {
-  var m = SUPPLY_COMPUTED_MAP[name];
+  var m = supplyComputedFor(name);
   if (!m) return;
   if (m.kind === 'tp') openTpReconcile(); else openCardPoolReconcile(m.pool);
+}
+// Jump straight from a Supplies tile to whichever baseline editor owns that number, so the
+// starting count doesn't have to be hunted down in Settings or the Key Tracker.
+function openSupplyBaseline(name) {
+  var m = supplyComputedFor(name);
+  if (!m) return;
+  if (m.kind === 'tp') { openTpStart(); return; }
+  if (m.pool === 'sgt') { navToSec('keys'); setTimeout(function () { filterKeys('sgt', document.querySelector('[onclick*="filterKeys(\'sgt\'"]')); openSgtRoster(); }, 150); return; }
+  openCardPoolBaselines();
 }
 function renderSupplies() {
   if (!state.deletedDefaultSupplies) state.deletedDefaultSupplies = [];
@@ -10215,7 +10555,7 @@ function renderSupplies() {
         + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:10px">' + cat + '</div>'
         + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px">';
       items.forEach(function(s) {
-        var isSynced = !!SUPPLY_COMPUTED_MAP[s.name];
+        var isSynced = !!supplyComputedFor(s.name);
         var accentColor, statusLabel, cardBg;
         if (s.qty == null) {
           accentColor = 'var(--text3)'; statusLabel = 'Not yet counted'; cardBg = 'var(--surface2)';
@@ -10242,7 +10582,7 @@ function renderSupplies() {
         }
         var startLine = '';
         if (isSynced) {
-          startLine = '<div class="sup-start-info">Synced live from ' + (SUPPLY_COMPUTED_MAP[s.name].kind === 'tp' ? 'Credentials tracker' : 'Card & Key Pools') + '</div>';
+          startLine = '<div class="sup-start-info">Synced live from ' + (supplyComputedFor(s.name).kind === 'tp' ? 'Credentials tracker' : 'Card & Key Pools') + '</div>';
         } else if (s.qty != null && s.startQty != null && s.startDate) {
           var usedAmt = (s.startQty || 0) - (s.qty || 0);
           startLine = '<div class="sup-start-info">Started: ' + s.startQty + ' · ' + fmtShort(s.startDate) + (usedAmt !== 0 ? ' · ' + (usedAmt > 0 ? usedAmt + ' used' : Math.abs(usedAmt) + ' added') : '') + '</div>';
@@ -10256,7 +10596,10 @@ function renderSupplies() {
           + '<div style="font-size:11px;font-weight:600;color:' + accentColor + '">' + statusLabel + '</div>'
           + startLine
           + (isAdmin ? (isSynced
-          ? '<div style="margin-top:6px"><button class="btn btn-secondary btn-xs" style="width:100%" onclick="openSupplyReconcile(\'' + esc(s.name) + '\')">&#128290; Reconcile</button></div>'
+          ? '<div style="display:flex;gap:5px;margin-top:6px">'
+            + '<button class="btn btn-secondary btn-xs" style="flex:1" onclick="openSupplyReconcile(\'' + esc(s.name) + '\')">&#128290; Reconcile</button>'
+            + '<button class="btn btn-ghost btn-xs" onclick="openSupplyBaseline(\'' + esc(s.name) + '\')" title="Edit the starting count this is calculated from" style="padding:2px 6px">&#9998;</button>'
+            + '</div>'
           : '<div style="display:flex;gap:6px;margin-top:6px">'
           + '<button class="sup-qty-btn" style="flex:1" onclick="adjustSupply(\'' + s.id + '\',-1)">&#8722;</button>'
           + '<button class="sup-qty-btn" style="flex:1" onclick="adjustSupply(\'' + s.id + '\',1)">&#43;</button>'
@@ -10275,7 +10618,7 @@ function renderSupplies() {
       if (!items.length) return;
       html += '<div class="card" style="margin-bottom:14px"><div class="card-hdr"><span class="card-title">' + cat + '</span><span class="card-count">' + items.length + ' item' + (items.length !== 1 ? 's' : '') + '</span></div>';
       items.forEach(function(s) {
-        var isSynced = !!SUPPLY_COMPUTED_MAP[s.name];
+        var isSynced = !!supplyComputedFor(s.name);
         var statusBadge;
         if (s.qty == null) {
           statusBadge = '<span class="pill" style="background:var(--surface2);color:var(--text3);font-size:10px">Not counted</span>';
@@ -10323,7 +10666,7 @@ function renderSupplies() {
           + '<span class="sup-unit">' + s.unit + '</span>'
           + updTag + logBtn
           + (isSynced
-          ? (isAdmin ? '<button class="btn btn-secondary btn-xs" onclick="openSupplyReconcile(\'' + esc(s.name) + '\')">&#128290; Reconcile</button>' : '')
+          ? (isAdmin ? '<button class="btn btn-secondary btn-xs" onclick="openSupplyReconcile(\'' + esc(s.name) + '\')">&#128290; Reconcile</button> <button class="btn btn-ghost btn-xs" onclick="openSupplyBaseline(\'' + esc(s.name) + '\')" title="Edit starting count">&#9998;</button>' : '')
           : (isAdmin ? '<button class="btn btn-ghost btn-xs" onclick="openEditSupply(\'' + s.id + '\')" title="Edit" style="padding:2px 5px">&#9998;</button>' : '')
           + (isAdmin ? '<button class="btn btn-ghost btn-xs" onclick="deleteSupply(\'' + s.id + '\')" title="Remove" style="padding:2px 5px;color:var(--red)">&#x2715;</button>' : ''))
           + '</div>'
@@ -10497,7 +10840,7 @@ function openQuickAdj(id, delta) {
   if (currentUser && currentUser.role !== 'admin') { toast('Admin access required'); return; }
   var s = (state.supplies || []).find(function(x){ return x.id === id; });
   if (!s) return;
-  if (SUPPLY_COMPUTED_MAP[s.name]) { openSupplyReconcile(s.name); return; }
+  if (supplyComputedFor(s.name)) { openSupplyReconcile(s.name); return; }
   _qaSupplyId = id;
   _qaNewQty = Math.max(0, (s.qty || 0) + (delta || 0));
   var title = g('qa-title'); if (title) title.textContent = 'Adjust — ' + s.name;
@@ -10550,7 +10893,7 @@ function openInventoryCount() {
     if (!items.length) return;
     html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin:14px 0 8px">' + esc(cat) + '</div>';
     items.forEach(function(s) {
-      var isSynced = !!SUPPLY_COMPUTED_MAP[s.name];
+      var isSynced = !!supplyComputedFor(s.name);
       var curDisplay = s.qty == null ? 'not yet counted' : (s.qty + ' ' + (s.unit || ''));
       html += '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border2)">'
         + '<div style="flex:1;min-width:0">'
@@ -14983,13 +15326,13 @@ var DEFAULT_TEMPLATES = [
 
   // ── MOVE IN / OUT ─────────────────────────────────────────────────────────
   { title: 'Move-In – Welcome / What to Expect', category: 'Move In / Out',
-    body: "Hi [Name],\n\nWe’re so excited to welcome you to Chorus! Here’s what to take care of before move-in day:\n\n🔑 Key Pickup — Ready at the front desk on move-in day. Please bring a valid ID.\n\n🛗 Service Elevator — Must be reserved via the RiseIO app (Services → Elevator Reservation) at least 72 hours before your lease start date. Available 8:00 AM – 6:00 PM.\n\n📋 COI Required — Your moving company must submit a Certificate of Insurance to members@rentchorus.com before move-in day. Movers will NOT be permitted to enter without a valid COI on file.\nCOI requirements: Additional Insured: Otis Property Owner, LLC (30 Otis St, SF, CA 94103) · Liability: $1,000,000 min · Workers’ Comp: $500,000 min · Truck: max 24 ft, no detached beds\n\n💵 Move-In Total — Due at move-in via Cashier’s Check or Money Order payable to Otis Property Owner, LLC. See the first page of your Lease Agreement for the amount.\n\n⚡ PG&E — An active PG&E account is required before you receive your keys.\n\n🏠 Renter’s Insurance — Proof must be uploaded to ePremium before or on move-in day.\n\n📱 RiseIO App — Download and activate your profile before arriving.\n\nOur team is here every step of the way. Call us anytime at (415) 707-3030. We look forward to welcoming you home!\n\nBest,\nFront Desk Associate | Chorus" },
+    body: "Hi [Name],\n\nWe’re so excited to welcome you to Chorus! Here’s what to take care of before move-in day:\n\n🔑 Key Pickup — Ready at the front desk on move-in day. Please bring a valid ID.\n\n🛗 Service Elevator — Must be reserved via the RiseIO app (Community → Services → Experience tab → “Move In + Out | Service Elevator”) at least 72 hours before your lease start date. Available 8:00 AM – 6:00 PM.\n\n📋 COI Required — Your moving company must submit a Certificate of Insurance to members@rentchorus.com before move-in day. Movers will NOT be permitted to enter without a valid COI on file.\nCOI requirements: Additional Insured: Otis Property Owner, LLC (30 Otis St, SF, CA 94103) · Liability: $1,000,000 min · Workers’ Comp: $500,000 min · Truck: max 24 ft, no detached beds\n\n💵 Move-In Total — Due at move-in via Cashier’s Check or Money Order payable to Otis Property Owner, LLC. See the first page of your Lease Agreement for the amount.\n\n⚡ PG&E — An active PG&E account is required before you receive your keys.\n\n🏠 Renter’s Insurance — Proof must be uploaded to ePremium before or on move-in day.\n\n📱 RiseIO App — Download and activate your profile before arriving.\n\nOur team is here every step of the way. Call us anytime at (415) 707-3030. We look forward to welcoming you home!\n\nBest,\nFront Desk Associate | Chorus" },
 
   { title: 'Move-In – RiseIO App Setup', category: 'Move In / Out',
-    body: "Hi [Name],\n\nHere’s how to get started with the RiseIO Resident App:\n\nDownload from the App Store, Google Play, or directly through the activation link we sent you.\n\n1. Open your activation email and click the link\n2. Set up your account password\n3. Sign in with your email and new password\n\nOnce you’re in, you’ll be able to:\n- Reserve your move-in time slot (Services → Elevator Reservation) — must be booked at least 72 hours before your lease start date\n- Reserve amenity spaces\n- Call your vehicle (if parking is included)\n- Manage your guest and visitor list\n- Submit maintenance work orders and more\n\nReach out at (415) 707-3030 if you need any help getting set up.\n\nBest,\nFront Desk Associate | Chorus" },
+    body: "Hi [Name],\n\nHere’s how to get started with the RiseIO Resident App:\n\nDownload from the App Store, Google Play, or directly through the activation link we sent you.\n\n1. Open your activation email and click the link\n2. Set up your account password\n3. Sign in with your email and new password\n\nOnce you’re in, you’ll be able to:\n- Reserve your move-in time slot (Community → Services → Experience tab → “Move In + Out | Service Elevator”) — must be booked at least 72 hours before your lease start date\n- Reserve amenity spaces\n- Call your vehicle (if parking is included)\n- Manage your guest and visitor list\n- Submit maintenance work orders and more\n\nReach out at (415) 707-3030 if you need any help getting set up.\n\nBest,\nFront Desk Associate | Chorus" },
 
   { title: 'Move-In – Book Your Time Slot & Submit COI', category: 'Move In / Out',
-    body: "Hi [Name],\n\nWith your lease start date approaching, please make sure these two things are taken care of as soon as possible:\n\n1. Reserve your move-in time slot via the RiseIO app (Services → Elevator Reservation). This must be secured at least 72 hours before your lease start date. The service elevator is available 8:00 AM – 6:00 PM.\n\n2. Have your moving company submit a Certificate of Insurance (COI) to members@rentchorus.com before move-in day. Movers will NOT be permitted to enter the building without a valid COI on file.\n\nCOI requirements for your movers:\n- Additional Insured: Otis Property Owner, LLC (30 Otis St, San Francisco, CA 94103)\n- Liability Coverage: $1,000,000 minimum\n- Workers’ Compensation: $500,000 minimum\n- Moving Truck: Max 24 feet long — no detached truck beds\n\nWe can’t wait to welcome you to Chorus! Reach out at (415) 707-3030 with any questions.\n\nBest,\nFront Desk Associate | Chorus" },
+    body: "Hi [Name],\n\nWith your lease start date approaching, please make sure these two things are taken care of as soon as possible:\n\n1. Reserve your move-in time slot via the RiseIO app (Community → Services → Experience tab → “Move In + Out | Service Elevator”). This must be secured at least 72 hours before your lease start date. The service elevator is available 8:00 AM – 6:00 PM.\n\n2. Have your moving company submit a Certificate of Insurance (COI) to members@rentchorus.com before move-in day. Movers will NOT be permitted to enter the building without a valid COI on file.\n\nCOI requirements for your movers:\n- Additional Insured: Otis Property Owner, LLC (30 Otis St, San Francisco, CA 94103)\n- Liability Coverage: $1,000,000 minimum\n- Workers’ Compensation: $500,000 minimum\n- Moving Truck: Max 24 feet long — no detached truck beds\n\nWe can’t wait to welcome you to Chorus! Reach out at (415) 707-3030 with any questions.\n\nBest,\nFront Desk Associate | Chorus" },
 
   { title: 'Move-Out – Key Return Reminder', category: 'Move In / Out',
     body: "Hi [Name],\n\nAs your move-out date approaches, please remember to return all keys and access items to the front desk:\n\n- Unit key(s)\n- Fob(s)\n- Mail key\n- Parking credentials (transponder, key tag, valet sticker — if applicable)\n\nAll items must be returned on or before your scheduled move-out date. Unreturned keys may result in replacement charges.\n\nPlease reach out to the leasing team or stop by the front desk if you have any questions.\n\nBest,\nFront Desk Associate | Chorus" },
@@ -15004,10 +15347,10 @@ var DEFAULT_TEMPLATES = [
     body: "Call script — Post move-in call (3 days after lease start)\n\n\"Hi [Name], this is [Your Name] from the Chorus front desk. I'm just calling to check in and see how the move went and how you're settling in!\"\n\nQuick agenda (2-3 min):\n✓ How did the move go?\n✓ Any issues or anything we should follow up on?\n✓ Is everything working in the unit?\n✓ Any questions about the building, amenities, or next steps?\n✓ Remind them front desk is always available at (415) 707-3030\n\nAfter the call: log as completed in the move checklist. If any issues were mentioned, add to passdown and/or log a maintenance or concierge item." },
 
   { title: 'Move-Out – Full Reminder (All Steps)', category: 'Move In / Out',
-    body: "Hi [Name],\n\nWith your move-out date approaching, here's everything you'll need to take care — please disregard any items already completed:\n\n🗓 Book your move-out time slot\nReserve your service elevator and loading dock time via the RiseIO app (Services → Elevator Reservation). Available 8:00 AM – 6:00 PM.\n\n🔍 Schedule your move-out inspection\nSubmit a move-out inspection work order through the RiseIO app (Work Orders → + icon). Our maintenance team will coordinate with you directly.\n\n🔑 Return all keys and access credentials to the front desk\nPlease make sure to return the following on or before your move-out date:\n- Unit key(s)\n- Mail key\n- Fob(s)\n- Parking credentials (transponder, key tag, Xpress sticker — if applicable)\n\nUnreturned keys or credentials may result in replacement charges.\n\nPlease don't hesitate to reach out if you have any questions — we're here at (415) 707-3030.\n\nBest,\nFront Desk Associate | Chorus" },
+    body: "Hi [Name],\n\nWith your move-out date approaching, here's everything you'll need to take care — please disregard any items already completed:\n\n🗓 Book your move-out time slot\nReserve your service elevator and loading dock time via the RiseIO app (Community → Services → Experience tab → “Move In + Out | Service Elevator”). Available 8:00 AM – 6:00 PM.\n\n🔍 Schedule your move-out inspection\nSubmit a move-out inspection work order through the RiseIO app (Work Orders → + icon). Our maintenance team will coordinate with you directly.\n\n🔑 Return all keys and access credentials to the front desk\nPlease make sure to return the following on or before your move-out date:\n- Unit key(s)\n- Mail key\n- Fob(s)\n- Parking credentials (transponder, key tag, Xpress sticker — if applicable)\n\nUnreturned keys or credentials may result in replacement charges.\n\nPlease don't hesitate to reach out if you have any questions — we're here at (415) 707-3030.\n\nBest,\nFront Desk Associate | Chorus" },
 
   { title: 'Move-Out – Book Inspection & Time Slot', category: 'Move In / Out',
-    body: "Hi [Name],\n\nAs your move-out date approaches, please make sure you’ve taken care of the following — you can disregard if already done:\n\n1. Submit a move-out inspection work order through the RiseIO app (Work Orders → + icon). Select the appropriate category, add any relevant notes, and submit.\n\n2. Reserve your move-out time slot via the RiseIO app (Services → Elevator Reservation). The service elevator is available 8:00 AM – 6:00 PM.\n\nPlease don’t hesitate to reach out if you have any questions!\n\nBest,\nFront Desk Associate | Chorus" },
+    body: "Hi [Name],\n\nAs your move-out date approaches, please make sure you’ve taken care of the following — you can disregard if already done:\n\n1. Submit a move-out inspection work order through the RiseIO app (Work Orders → + icon). Select the appropriate category, add any relevant notes, and submit.\n\n2. Reserve your move-out time slot via the RiseIO app (Community → Services → Experience tab → “Move In + Out | Service Elevator”). The service elevator is available 8:00 AM – 6:00 PM.\n\nPlease don’t hesitate to reach out if you have any questions!\n\nBest,\nFront Desk Associate | Chorus" },
 
   { title: 'PG&E Setup', category: 'Move In / Out',
     body: "Hi [Name],\n\nAn active PG&E account is required before you can receive your keys on move-in day. Here’s how to get set up:\n\nCall PG&E at 1-800-743-5000 or visit pge.com to start your electricity service.\n\nA few things to note:\n- No meter number is needed\n- No separate gas account needed — PG&E covers both gas and electric under one account\n- Electricity charges begin on your move-in date\n- Once your account is active, please send a screenshot of your account number with your Chorus address to the leasing team at alex@align-real-estate-resident.com\n\nIf PG&E service is not set up, the account remains in the building’s name and all usage will be billed back to you.\n\nBest,\nFront Desk Associate | Chorus" },
