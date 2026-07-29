@@ -893,7 +893,7 @@
       <div class="card"><div class="card-hdr"><span class="card-title">Guest &amp; Visitor Log</span><span class="card-count" id="guests-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddGuest()">+ Log Guest</button></div><div class="tbl-wrap"><table><thead><tr><th>Guest</th><th>Unit</th><th>Host</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody id="guests-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-keys">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterKeys('drawer',this)">🗝 Card Drawer</div><div class="sub-tab" onclick="filterKeys('sgt',this)">🏠 Tour Keys</div><div class="sub-tab" onclick="filterKeys('issued',this)">Currently Out</div><div class="sub-tab" onclick="filterKeys('fobs',this)">Resident Fobs</div><div class="sub-tab" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('parking',this)">🚗 Parking</div><div class="sub-tab" onclick="filterKeys('transponders',this)">📡 Credentials</div></div>
+      <div class="sub-tabs"><div class="sub-tab active" onclick="filterKeys('drawer',this)">🗝 Card Drawer</div><div class="sub-tab" onclick="filterKeys('issued',this)">Currently Out</div><div class="sub-tab" onclick="filterKeys('fobs',this)">Resident Fobs</div><div class="sub-tab" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('parking',this)">🚗 Parking</div><div class="sub-tab" onclick="filterKeys('transponders',this)">📡 Credentials</div></div>
       <div id="keys-dupe-banner" style="display:none"></div>
       <div class="key-stat-row" id="keys-stats" style="display:none"></div>
       <div id="keys-sort-bar" style="display:none;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
@@ -913,11 +913,9 @@
         <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">Stock by Pool</span><span class="card-count" id="cardpool-hint"></span><button class="btn btn-ghost btn-sm ml-auto" onclick="openCardPoolBaselines()" title="Edit starting counts for each pool">&#9998; Baselines</button></div>
         <div class="tbl-wrap"><table><thead><tr><th>Pool</th><th>Starting</th><th>Issued Out</th><th>In Stock (calc)</th><th>Last Count</th><th>Unaccounted</th><th></th></tr></thead><tbody id="cardpool-tbody"></tbody></table></div></div>
         <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">One-Time Card Drawer</span><span class="card-count" id="drawer-count"></span></div><div class="card-body" id="drawer-body" style="padding:14px"></div></div>
+        <!-- Self-Guided Tour keys: unit-owned pairs, labeled with the unit number -->
+        <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">Self-Guided Tour Keys</span><span class="card-count" id="sgt-count"></span><button class="btn btn-secondary btn-sm ml-auto" onclick="openSgtRoster()">&#9881; Manage Units</button></div><div class="card-body" id="sgt-body" style="padding:14px"></div></div>
         <div class="card"><div class="card-hdr"><span class="card-title">Vendor Cards</span><span class="card-count" id="vendor-drawer-count"></span></div><div class="card-body" id="vendor-drawer-body" style="padding:14px"></div></div>
-      </div>
-      <!-- Self-Guided Tour keys: unit-owned pairs, labeled with the unit number -->
-      <div id="sgt-view" style="display:none">
-        <div class="card"><div class="card-hdr"><span class="card-title">Self-Guided Tour Keys</span><span class="card-count" id="sgt-count"></span><button class="btn btn-secondary btn-sm ml-auto" onclick="openSgtRoster()">&#9881; Manage Units</button></div><div class="card-body" id="sgt-body" style="padding:14px"></div></div>
       </div>
       <div id="parking-view" style="display:none">
         <div class="card"><div class="card-hdr"><span class="card-title">Parking Credentials</span><span class="card-count" id="parking-count">0 credentials</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddParking()">+ Add Credential</button></div>
@@ -6174,16 +6172,10 @@ function filterKeys(f, item) {
     document.querySelectorAll('#section-keys .sub-tab').forEach(function (t) { t.classList.remove('active'); });
     item.classList.add('active');
   }
-  var parkingView = g('parking-view'), keyCard = g('keys-log-card'), statRow = g('keys-stats'), otkSec = g('keys-otk-section'), drawerView = g('card-drawer-view'), sortBar = g('keys-sort-bar'), tpView = g('transponder-view'), sgtView = g('sgt-view');
+  var parkingView = g('parking-view'), keyCard = g('keys-log-card'), statRow = g('keys-stats'), otkSec = g('keys-otk-section'), drawerView = g('card-drawer-view'), sortBar = g('keys-sort-bar'), tpView = g('transponder-view');
   // hide all views first
-  [parkingView, keyCard, drawerView, tpView, sgtView].forEach(function(el) { if (el) el.style.display = 'none'; });
-  if (f === 'sgt') {
-    if (sgtView) sgtView.style.display = '';
-    if (statRow) statRow.style.display = 'none';
-    if (otkSec) otkSec.style.display = 'none';
-    if (sortBar) sortBar.style.display = 'none';
-    renderSgtKeys();
-  } else if (f === 'parking') {
+  [parkingView, keyCard, drawerView, tpView].forEach(function(el) { if (el) el.style.display = 'none'; });
+  if (f === 'parking') {
     if (parkingView) parkingView.style.display = '';
     if (statRow) statRow.style.display = 'none';
     if (otkSec) otkSec.style.display = 'none';
@@ -6195,12 +6187,13 @@ function filterKeys(f, item) {
     if (otkSec) otkSec.style.display = 'none';
     if (sortBar) sortBar.style.display = 'none';
     renderTransponders();
-  } else if (f === 'drawer') {
+  } else if (f === 'drawer' || f === 'sgt') {
     if (drawerView) drawerView.style.display = '';
     if (statRow) statRow.style.display = 'none';
     if (otkSec) otkSec.style.display = 'none';
     if (sortBar) sortBar.style.display = 'none';
     renderCardDrawer();
+    renderSgtKeys();
   } else {
     if (keyCard) keyCard.style.display = '';
     if (statRow) statRow.style.display = '';
@@ -6474,8 +6467,8 @@ function renderCardPoolTable() {
       rows += '<tr>'
         + '<td style="font-weight:600">' + esc(CARD_POOL_LABELS[key]) + '</td>'
         + '<td>' + startCell + '</td>'
-        + '<td colspan="4" style="color:var(--text3);font-size:11.5px">Not tracked per key yet &mdash; add units in <strong>Tour Keys &rarr; Manage Units</strong> to see what\'s out.</td>'
-        + '<td style="text-align:right"><button class="btn btn-ghost btn-xs" onclick="filterKeys(\'sgt\',document.querySelector(\'[onclick*=&quot;filterKeys(\\\'sgt\\\'&quot;]\'))">Set up</button></td>'
+        + '<td colspan="4" style="color:var(--text3);font-size:11.5px">Not tracked per key yet &mdash; add units below via <strong>Manage Units</strong> to see what\'s out.</td>'
+        + '<td style="text-align:right"><button class="btn btn-ghost btn-xs" onclick="openSgtRoster()">Set up</button></td>'
         + '</tr>';
       return;
     }
@@ -6514,7 +6507,7 @@ function openCardPoolBaselines() {
     + '<div class="modal-bdy">'
     + '<p class="set-hint" style="margin-bottom:10px">How many of each exist in total &mdash; not how many are on hand right now. In-stock is calculated as starting minus what\'s currently issued.</p>'
     + rows
-    + '<div class="set-hint" style="margin-top:4px"><strong>' + esc(CARD_POOL_LABELS.sgt) + ':</strong> ' + (sgtUnits().length ? sgtTotalKeys() + ' keys across ' + sgtUnits().length + ' unit(s) — set in Tour Keys &rarr; Manage Units.' : 'set up units in the Tour Keys tab.') + '</div>'
+    + '<div class="set-hint" style="margin-top:4px"><strong>' + esc(CARD_POOL_LABELS.sgt) + ':</strong> ' + (sgtUnits().length ? sgtTotalKeys() + ' keys across ' + sgtUnits().length + ' unit(s) — set via Manage Units in the Self-Guided Tour Keys section.' : 'set up units via Manage Units in the Self-Guided Tour Keys section.') + '</div>'
     + '</div>'
     + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-cardpool-baselines\')">Cancel</button><button class="btn btn-primary" onclick="saveCardPoolBaselines()">Save</button></div>'
     + '</div>';
@@ -6571,7 +6564,7 @@ function renderCardPoolSettings() {
     var rosterDriven = key === 'sgt' && sgtUnits().length > 0;
     html += '<div class="set-row">'
       + '<div><div class="set-lbl">' + esc(CARD_POOL_LABELS[key]) + '</div>'
-      + '<div class="set-hint">' + (remaining == null ? 'Not yet counted' : remaining + ' in stock (' + cardPoolIssued(key) + ' out of ' + starting + ')') + (rosterDriven ? ' · from the unit roster in Key Tracker &rarr; Tour Keys' : '') + (lastCount ? ' · last physical count ' + fmtShort(lastCount.date) + (lastCount.diff ? ' (' + (lastCount.diff > 0 ? '+' : '') + lastCount.diff + ' vs. expected)' : '') : '') + '</div></div>'
+      + '<div class="set-hint">' + (remaining == null ? 'Not yet counted' : remaining + ' in stock (' + cardPoolIssued(key) + ' out of ' + starting + ')') + (rosterDriven ? ' · from the unit roster in Key Tracker &rarr; Card Drawer' : '') + (lastCount ? ' · last physical count ' + fmtShort(lastCount.date) + (lastCount.diff ? ' (' + (lastCount.diff > 0 ? '+' : '') + lastCount.diff + ' vs. expected)' : '') : '') + '</div></div>'
       + '<div class="flex gap-8 items-center">'
       + (rosterDriven
         ? '<span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--text2);width:76px;text-align:center">' + starting + '</span>'
@@ -6681,8 +6674,7 @@ function confirmKeyReturn() {
   if (_krCondition === 'damaged') k.notes = (k.notes ? k.notes + '\n' : '') + 'Returned damaged — noted by ' + (currentUser ? currentUser.name : 'staff') + ' on ' + new Date().toLocaleDateString();
   logKeyReturn(_krId);
   closeModal('modal-key-return');
-  if (keyFilter === 'drawer') renderCardDrawer();
-  if (keyFilter === 'sgt') renderSgtKeys();
+  if (keyFilter === 'drawer' || keyFilter === 'sgt') { renderCardDrawer(); renderSgtKeys(); }
   toast((k.fob ? 'Card #' + k.fob : 'Key') + ' returned' + (_krCondition === 'damaged' ? ' — damage noted' : ''));
   _krId = null;
 }
@@ -10494,7 +10486,7 @@ function openSupplyBaseline(name) {
   var m = supplyComputedFor(name);
   if (!m) return;
   if (m.kind === 'tp') { openTpStart(); return; }
-  if (m.pool === 'sgt') { navToSec('keys'); setTimeout(function () { filterKeys('sgt', document.querySelector('[onclick*="filterKeys(\'sgt\'"]')); openSgtRoster(); }, 150); return; }
+  if (m.pool === 'sgt') { navToSec('keys'); setTimeout(function () { filterKeys('drawer', document.querySelector('[onclick*="filterKeys(\'drawer\'"]')); openSgtRoster(); }, 150); return; }
   openCardPoolBaselines();
 }
 function renderSupplies() {
