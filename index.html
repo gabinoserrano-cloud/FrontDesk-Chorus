@@ -665,6 +665,7 @@
   .td-bcard-text{font-size:13px;font-weight:600;line-height:1.35}
   .td-bcard-meta{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
   .td-bcard-owner{font-size:11px;color:var(--text3);margin-top:5px}
+  .td-bcard input[type=checkbox]{width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:var(--accent);cursor:pointer}
   @media(max-width:650px){.td-board-cols{display:flex;overflow-x:auto;padding-bottom:4px;grid-template-columns:none}.td-board-col{flex:0 0 200px}}
   /* This Shift view — computed urgency quadrants + today's Top 3 */
   .focus-grid{display:grid;gap:8px;grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -9920,14 +9921,16 @@ function renderTodosBoard(sorted) {
     html += '<div class="td-board-col"><div class="td-board-col-hdr"><span>' + st.label + '</span><span>' + (col.length || '') + '</span></div>';
     col.forEach(function (t) {
       var stale = todoIsStale(t);
-      html += '<div class="td-bcard' + (stale ? ' stale' : '') + '"' + (readOnly ? '' : ' onclick="openEditTodo(\'' + t.id + '\')"') + '>';
+      html += '<div class="td-bcard' + (stale ? ' stale' : '') + '" style="display:flex;gap:8px;align-items:flex-start;cursor:default">';
+      html += (readOnly ? '' : '<input type="checkbox" title="Mark done"' + (t.done ? ' checked' : '') + ' onchange="event.stopPropagation();toggleTodo(\'' + t.id + '\',this.checked)">');
+      html += '<div style="flex:1;min-width:0;cursor:pointer"' + (readOnly ? '' : ' onclick="openEditTodo(\'' + t.id + '\')"') + '>';
       html += '<div class="td-bcard-text">' + (t.priority === 'urgent' && !t.done ? '<span style="color:var(--red)">! </span>' : '') + esc(t.text) + '</div>';
       if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:3px">' + esc(t.note) + '</div>';
       html += '<div class="td-bcard-meta">' + todoPickChip(t) + todoCatChip(t) + todoFromChip(t) + todoAckChip(t) + todoUnitChip(t) + (t.dueDate ? '<span class="pill" style="background:var(--surface2);color:var(--text2)">Due ' + fmtShort(t.dueDate) + '</span>' : '') + todoFollowUpChip(t) + todoShiftChip(t) + todoStaleChip(t) + '</div>';
       if (t.owner) html += '<div class="td-bcard-owner">&#128100; ' + esc(t.owner) + '</div>';
       if (t.lastContactNote) html += '<div class="todo-followup-note"><strong>Last contact:</strong> ' + esc(t.lastContactNote) + '</div>';
       html += readOnly ? '<div class="td-bcard-meta">' + todoStatusChip(t) + '</div>' : '<div style="margin-top:7px" onclick="event.stopPropagation()">' + todoStatusQuickSelect(t) + '</div>';
-      html += '</div>';
+      html += '</div></div>';
     });
     html += '</div>';
   });
@@ -10039,6 +10042,7 @@ function renderTodosFocus(sorted) {
       var tier = focusPickTier(t);
       var flare = qd.key === 'now' && (todoStatus(t) === 'waiting' || todoStatus(t) === 'blocked');
       html += '<div class="td-bcard" style="display:flex;gap:8px;align-items:flex-start;cursor:default">'
+        + (readOnly ? '' : '<input type="checkbox" title="Mark done" onchange="toggleTodo(\'' + t.id + '\',this.checked)">')
         + '<div style="flex:1;min-width:0;cursor:pointer" onclick="openEditTodo(\'' + t.id + '\')">'
         + '<div class="td-bcard-text">' + (t.priority === 'urgent' ? '<span style="color:var(--red)">! </span>' : '') + esc(t.text) + '</div>'
         + '<div class="td-bcard-meta">'
