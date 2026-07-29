@@ -1144,6 +1144,7 @@
               <option value="moves">Move Ins / Move Outs</option>
               <option value="maintenance">Maintenance Issues</option>
               <option value="amenities">Amenity Bookings</option>
+              <option value="wifi">WiFi / Zentro Service</option>
             </select>
           </div>
           <div class="fg">
@@ -1167,8 +1168,10 @@
           <code style="font-family:var(--mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">unit, resident, date, type (in/out), time, total, elevator (yes/no), notes</code></div>
           <div style="margin-bottom:12px"><strong style="color:var(--text)">Maintenance CSV columns:</strong><br>
           <code style="font-family:var(--mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">unit, issue, description, priority (high/medium/low), status (open/in-progress/resolved), reporter</code></div>
-          <div><strong style="color:var(--text)">Amenity Bookings CSV columns:</strong><br>
+          <div style="margin-bottom:12px"><strong style="color:var(--text)">Amenity Bookings CSV columns:</strong><br>
           <code style="font-family:var(--mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">resident, unit, space, date, start, end, type (reservation/event), fee, notes</code></div>
+          <div><strong style="color:var(--text)">WiFi / Zentro Service CSV columns:</strong><br>
+          <code style="font-family:var(--mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">Unit, Name, Service End</code> &mdash; upload Zentro's export as-is. Matches units already in Unit Tracker and updates their WiFi expiry (drives the Dashboard's WiFi Renewals banner); "N/A" clears the expiry. Units not yet in Unit Tracker are added.</div>
           <div style="margin-top:12px;padding:10px 12px;background:var(--accent-light);border-radius:var(--radius);color:var(--accent);font-size:12px">
             <strong>Tip:</strong> Column names are flexible &mdash; the importer matches common variations (e.g. "Prospect Name", "prospect_name", "Name" all map to <em>name</em>).
           </div>
@@ -12831,6 +12834,25 @@ function applyImport(type, rows) {
       } else {
         state.amenities.push({ id: uid(), resident: resident, unit: unit, space: space, date: date, start: start, end: end, type: bookType, fee: fee, notes: notes, createdAt: Date.now() });
         added++; preview.push({ action:'added', label: (resident||unit) + ' - ' + space + ' ' + date });
+      }
+    });
+
+  } else if (type === 'wifi') {
+    if (!state.unitRecords) state.unitRecords = [];
+    rows.forEach(function (row) {
+      var unit = getField(row, ['unit','unitnumber','apt','apartment']);
+      var name = getField(row, ['name','residentname','leaseholder','tenant']);
+      var endRaw = getField(row, ['serviceend','end','expiry','expirationdate','wifiexpiry']);
+      if (!unit) { skipped++; return; }
+      var dateMatch = endRaw.match(/^(\d{4}-\d{2}-\d{2})/);
+      var wifiExpiry = dateMatch ? dateMatch[1] : (endRaw && endRaw.toUpperCase() !== 'N/A' ? normalizeDate(endRaw) : '');
+      var existing = state.unitRecords.find(function (r) { return r.unit === unit; });
+      if (existing) {
+        existing.wifiExpiry = wifiExpiry;
+        updated++; preview.push({ action:'updated', label: 'Unit ' + unit + (wifiExpiry ? ' — WiFi exp. ' + wifiExpiry : ' — WiFi expiry cleared') });
+      } else {
+        state.unitRecords.push({ id: uid(), unit: unit, leaseholder: name||'', roommates: '', unitKeysIssued: 0, mailboxKeysIssued: 0, unitKeysReplacement: 0, mailboxKeysReplacement: 0, transponder: false, xpressSticker: false, keyTag: false, blueground: false, wifiExpiry: wifiExpiry, notes: '', createdAt: Date.now() });
+        added++; preview.push({ action:'added', label: 'Unit ' + unit + (wifiExpiry ? ' — WiFi exp. ' + wifiExpiry : '') });
       }
     });
   }
