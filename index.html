@@ -6353,12 +6353,42 @@ function saveSgtIssue() {
   var notes = g('sgt-notes') ? g('sgt-notes').value.trim() : '';
   if (back) notes = (notes ? notes + ' · ' : '') + 'Expected back ' + fmtTime(back);
   if (!state.keys) state.keys = [];
-  var k = { id: uid(), unit: String(_sgtIssueKey.unit), name: name, guest: '', phone: (g('sgt-phone') ? g('sgt-phone').value.trim() : ''), fob: lbl, type: 'sgt', status: 'issued', issuedAt: Date.now(), notes: notes, addedBy: currentUser ? currentUser.name : '', createdAt: Date.now(), returnedAt: null };
+  var phone = g('sgt-phone') ? g('sgt-phone').value.trim() : '';
+  var unit = String(_sgtIssueKey.unit);
+  var normName = name.toLowerCase().trim();
+  // If this prospect already has another tour key out right now, this checkout is the same tour
+  // visiting a second unit, not a new visit — fold it into their existing open Tour Log row so
+  // "units shown" reflects the whole tour instead of splitting into duplicate entries.
+  var alreadyTouring = (state.keys || []).some(function (ok) { return ok.type === 'sgt' && ok.status === 'issued' && ok.name.toLowerCase().trim() === normName; });
+  var k = { id: uid(), unit: unit, name: name, guest: '', phone: phone, fob: lbl, type: 'sgt', status: 'issued', issuedAt: Date.now(), notes: notes, addedBy: currentUser ? currentUser.name : '', createdAt: Date.now(), returnedAt: null };
   state.keys.push(k);
-  pushUndo({ sec: 'keys', type: 'ADD', id: k.id, data: Object.assign({}, k), label: 'issue tour key ' + lbl });
+  var sgtCmds = [{ sec: 'keys', type: 'ADD', id: k.id, data: Object.assign({}, k), label: 'issue tour key ' + lbl }];
   logActivity('keys', 'create', 'Issued self-guided tour key ' + lbl + ' — ' + name, 'Unit ' + k.unit + (back ? ' · Expected back ' + fmtTime(back) : ''));
-  scheduleSave(); closeModal('modal-sgt-issue'); renderSgtKeys(); renderKeys(); updateBadges(); renderDash(); renderSupplies();
-  toast('Tour key ' + lbl + ' issued');
+  // Auto-log to Tour Log so every key checkout leaves a traceable tour record (who showed it,
+  // unit, prospect) without a separate manual "+ Log Tour" step — this is what lets commission
+  // later be attributed back to whoever issued the key.
+  if (!state.tours) state.tours = [];
+  var openTour = alreadyTouring ? state.tours.filter(function (t) { return t.type === 'sgt' && t.date === today() && t.name.toLowerCase().trim() === normName; }).sort(function (a, b) { return b.createdAt - a.createdAt; })[0] : null;
+  if (openTour) {
+    var trBefore = { unit: openTour.unit, notes: openTour.notes, contact: openTour.contact };
+    var units = openTour.unit.split(',').map(function (u) { return u.trim(); }).filter(Boolean);
+    if (units.indexOf(unit) === -1) units.push(unit);
+    openTour.unit = units.join(', ');
+    openTour.notes = (openTour.notes ? openTour.notes + ' · ' : '') + 'Key ' + lbl + (notes ? ' — ' + notes : '');
+    if (!openTour.contact && phone) openTour.contact = phone;
+    var trAfter = { unit: openTour.unit, notes: openTour.notes, contact: openTour.contact };
+    sgtCmds.push({ sec: 'tours', type: 'EDIT', id: openTour.id, before: trBefore, after: trAfter, label: 'added unit ' + unit + ' to tour — ' + name });
+    logActivity('tours', 'edit', 'Added Unit ' + unit + ' to tour (auto — key issue) — ' + name);
+  } else {
+    var sgtNow = new Date();
+    var tr = { id: uid(), name: name, unit: unit, type: 'sgt', date: today(), time: ('0' + sgtNow.getHours()).slice(-2) + ':' + ('0' + sgtNow.getMinutes()).slice(-2), contact: phone, notes: 'Key ' + lbl + (notes ? ' — ' + notes : ''), addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
+    state.tours.push(tr);
+    sgtCmds.push({ sec: 'tours', type: 'ADD', id: tr.id, data: Object.assign({}, tr), label: 'auto-logged tour — ' + name });
+    logActivity('tours', 'create', 'Logged tour (auto — key issue) — ' + name + ' · Unit ' + tr.unit);
+  }
+  pushBatchUndo('keys', 'issue tour key ' + lbl, sgtCmds);
+  scheduleSave(); closeModal('modal-sgt-issue'); renderSgtKeys(); renderKeys(); renderTours(); updateBadges(); renderDash(); renderSupplies();
+  toast('Tour key ' + lbl + ' issued — ' + (openTour ? 'added to ' + name + '’s tour' : 'logged to Tour Log'));
   _sgtIssueKey = null;
 }
 // ── SGT roster editor ──
