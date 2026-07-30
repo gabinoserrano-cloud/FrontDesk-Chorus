@@ -582,6 +582,154 @@
     letter-spacing: 0.08em;
   }
 
+  /* ── WIFI WELCOME MODAL ── */
+  .wifi-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(28,26,22,0.75);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+
+  .wifi-modal-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .wifi-modal {
+    background: var(--dark);
+    border: 1px solid rgba(184,149,90,0.3);
+    border-radius: 4px;
+    max-width: 360px;
+    width: 100%;
+    padding: 36px 28px 28px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+    transform: translateY(12px);
+    transition: transform 0.4s ease;
+  }
+
+  .wifi-modal-overlay.show .wifi-modal { transform: translateY(0); }
+
+  .wifi-modal-close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: rgba(245,240,232,0.5);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  .wifi-modal-close:hover { color: var(--cream); }
+
+  .wifi-modal-eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+
+  .wifi-modal-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--cream);
+    margin-bottom: 8px;
+  }
+
+  .wifi-modal-sub {
+    font-size: 12.5px;
+    color: rgba(245,240,232,0.5);
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+
+  .wifi-modal-details {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(184,149,90,0.15);
+    border-radius: 3px;
+    padding: 16px 20px;
+    margin-bottom: 18px;
+  }
+
+  .wifi-modal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+  }
+
+  .wifi-modal-row + .wifi-modal-row {
+    border-top: 1px solid rgba(245,240,232,0.08);
+  }
+
+  .wifi-modal-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold-light);
+  }
+
+  .wifi-modal-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: var(--cream);
+    letter-spacing: 0.03em;
+  }
+
+  .wifi-modal-copy {
+    width: 100%;
+    background: none;
+    border: 1px solid rgba(184,149,90,0.4);
+    color: var(--gold-light);
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 12px;
+    border-radius: 2px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: all 0.2s;
+  }
+
+  .wifi-modal-copy:hover { background: rgba(184,149,90,0.15); }
+
+  .wifi-modal-continue {
+    width: 100%;
+    background: var(--gold);
+    border: none;
+    color: var(--dark);
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 12px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .wifi-modal-continue:hover { background: var(--gold-light); }
+
+  @media (max-width: 480px) {
+    .wifi-modal { padding: 30px 22px 22px; }
+  }
+
   /* ── ANIMATIONS ── */
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(20px); }
@@ -612,6 +760,22 @@
 </style>
 </head>
 <body>
+
+<!-- WIFI WELCOME MODAL -->
+<div class="wifi-modal-overlay" id="wifiModalOverlay">
+  <div class="wifi-modal">
+    <button class="wifi-modal-close" onclick="closeWifiModal()" aria-label="Close">&times;</button>
+    <p class="wifi-modal-eyebrow">Welcome to Chorus</p>
+    <h3 class="wifi-modal-title">Join Guest Wi-Fi</h3>
+    <p class="wifi-modal-sub">Stay connected while you explore the building.</p>
+    <div class="wifi-modal-details">
+      <div class="wifi-modal-row"><span class="wifi-modal-label">Network</span><span class="wifi-modal-value">Chorus Guest</span></div>
+      <div class="wifi-modal-row"><span class="wifi-modal-label">Password</span><span class="wifi-modal-value" id="wifiModalPw">guest@30o</span></div>
+    </div>
+    <button class="wifi-modal-copy" onclick="copyWifiModal(this)">⎘ Copy Password</button>
+    <button class="wifi-modal-continue" onclick="closeWifiModal()">Continue to Tour →</button>
+  </div>
+</div>
 
 <!-- HERO -->
 <section class="hero">
@@ -771,8 +935,8 @@
     </div>
     <div class="service-card">
       <div class="service-icon">📡</div>
-      <div class="service-title">Rover Internet</div>
-      <p class="service-desc">First-of-its-kind <strong>Rover Internet</strong> on your own private mesh network — anywhere throughout the community.</p>
+      <div class="service-title">Zentro Internet</div>
+      <p class="service-desc">High-speed <strong>Zentro</strong> internet included throughout the building — activate your account and manage Wi-Fi through the Zentro portal.</p>
     </div>
     <div class="service-card">
       <div class="service-icon">🏠</div>
@@ -807,7 +971,7 @@
       <div class="fee-item">
         <div class="fee-name">Monthly Internet Fee</div>
         <div class="fee-amount">$65</div>
-        <div class="fee-desc">Mandatory fee for high-speed internet (private mesh network).</div>
+        <div class="fee-desc">Mandatory fee for high-speed internet via Zentro.</div>
       </div>
       <div class="fee-item">
         <div class="fee-name">Monthly Package Concierge</div>
@@ -845,14 +1009,14 @@
   <p class="contact-address">30 Otis St., San Francisco, CA 94103</p>
   <div class="footer-wifi">
     <p class="footer-wifi-label">Guest Wi-Fi</p>
-    <p class="footer-wifi-pw">Network: <span>Chorus Guest Wi-Fi</span></p>
-    <p class="footer-wifi-pw">Password: <span>guest@chorus</span> <button onclick="copyWifi(this)">Copy</button></p>
+    <p class="footer-wifi-pw">Network: <span>Chorus Guest</span></p>
+    <p class="footer-wifi-pw">Password: <span>guest@30o</span> <button onclick="copyWifi(this)">Copy</button></p>
   </div>
 </footer>
 
 <script>
   function copyWifi(btn) {
-    navigator.clipboard.writeText('guest@chorus').then(() => {
+    navigator.clipboard.writeText('guest@30o').then(() => {
       btn.textContent = '✓ Copied!';
       setTimeout(() => btn.textContent = '⎘ Copy password', 2000);
     });
@@ -864,6 +1028,25 @@
       document.querySelector('.hero').classList.add('text-visible');
     }, 1200);
   }
+
+  function showWifiModal() {
+    document.getElementById('wifiModalOverlay').classList.add('show');
+  }
+
+  function closeWifiModal() {
+    document.getElementById('wifiModalOverlay').classList.remove('show');
+  }
+
+  function copyWifiModal(btn) {
+    navigator.clipboard.writeText('guest@30o').then(() => {
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => btn.textContent = '⎘ Copy Password', 2000);
+    });
+  }
+
+  window.addEventListener('load', function() {
+    setTimeout(showWifiModal, 1200);
+  });
 </script>
 
 
