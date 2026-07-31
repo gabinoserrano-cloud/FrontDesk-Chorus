@@ -2193,7 +2193,10 @@ async function mergeTodoInbox() {
       if (!state.userTodos) state.userTodos = {};
       if (!state.userTodos[r.acctId]) state.userTodos[r.acctId] = [];
       var list = state.userTodos[r.acctId];
-      var dup = list.some(function (t) { return t.id === item.id || (item.srcThread && t.srcThread === item.srcThread); });
+      // A shared srcThread alone isn't enough to call two items duplicates — one passdown
+      // or digest email routinely produces several distinct to-dos. Require the text to
+      // match too, so only a genuine re-push of the same item gets deduped.
+      var dup = list.some(function (t) { return t.id === item.id || (item.srcThread && t.srcThread === item.srcThread && t.text === item.text); });
       if (dup) return;
       list.push({
         id: item.id || uid(), text: String(item.text), note: item.note || null,
@@ -2250,7 +2253,9 @@ async function mergeTodoInbox() {
         if (!state.userTodos) state.userTodos = {};
         if (!state.userTodos[gabAcct.id]) state.userTodos[gabAcct.id] = [];
         var glist = state.userTodos[gabAcct.id];
-        var mdup = glist.some(function (t) { return (mu.srcThread && t.srcThread === mu.srcThread); });
+        // Same fix as the to-do drain above: shared srcThread alone can't mean duplicate,
+        // since one email can reference more than one unit — require the unit to match too.
+        var mdup = glist.some(function (t) { return (mu.srcThread && t.srcThread === mu.srcThread && t.linkedUnit === String(mu.unit)); });
         if (mdup) return;
         var bits = [];
         if (mu.primaryName) bits.push(mu.primaryName + '(?)');
