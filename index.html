@@ -2162,7 +2162,10 @@ async function supaPush(d) {
 // editing the main state row — no race with a live dashboard session. The app drains
 // that row here: merge into the target account's list (dedupe by id + srcThread),
 // then clear the row. All-or-nothing: if any item's account can't be resolved yet,
-// nothing is merged and the row is left for the next attempt.
+// nothing is merged and the row is left for the next attempt. logbookEntries follow
+// the same drain (dedupe via a stamp inside notes instead, since a logbook entry
+// isn't tied to one account) and land in state.logbook, surfacing in the passdown's
+// Logbook section once a nextAction is present to seed pdNotes.
 async function mergeTodoInbox() {
   if (!cloudPullOk) return;
   try {
@@ -2174,7 +2177,8 @@ async function mergeTodoInbox() {
     var inbox = Array.isArray(rowData.todos) ? rowData.todos : [];
     var moveUpdates = Array.isArray(rowData.moveUpdates) ? rowData.moveUpdates : [];
     var amenityUpdates = Array.isArray(rowData.amenityUpdates) ? rowData.amenityUpdates : [];
-    if (!inbox.length && !moveUpdates.length && !amenityUpdates.length) return;
+    var logbookEntries = Array.isArray(rowData.logbookEntries) ? rowData.logbookEntries : [];
+    if (!inbox.length && !moveUpdates.length && !amenityUpdates.length && !logbookEntries.length) return;
     var resolved = [];
     for (var i = 0; i < inbox.length; i++) {
       var item = inbox[i];
@@ -2326,7 +2330,37 @@ async function mergeTodoInbox() {
       }
       amenitiesTouched++;
     });
-    var merged = added + movesTouched + amenitiesTouched;
+    // Apply queued logbook entries: always a fresh state.logbook entry — logbook
+    // items are discrete records (an incident, a resident request), not a per-unit
+    // profile to fill blanks on like moves/amenities. Dedupe is stamp-based: the
+    // stamp lives inside notes (mirrors the moveUpdates/amenityUpdates "already
+    // applied" check) so an overlapping triage window can't double-log the same item.
+    var logsTouched = 0;
+    logbookEntries.forEach(function (le) {
+      if (!le || !le.notes) return;
+      var stamp = 'triage:' + (le.srcThread || le.id || '');
+      if (!state.logbook) state.logbook = [];
+      if (state.logbook.some(function (e) { return (e.notes || '').indexOf(stamp) !== -1; })) return; // already applied
+      var noteLines = [String(le.notes), '[' + stamp + ']'];
+      state.logbook.push({
+        id: le.id || uid(),
+        category: le.category || 'request',
+        type: le.type || 'Triage Note',
+        unit: le.unit || '',
+        resident: le.resident || '',
+        location: le.location || '',
+        notes: noteLines.join('\n'),
+        status: ['open', 'in-progress', 'resolved'].indexOf(le.status) !== -1 ? le.status : 'open',
+        handledBy: le.handledBy || 'Front Desk',
+        addedBy: le.addedBy || 'Email Triage',
+        createdAt: Date.now(),
+        nextAction: le.nextAction || '',
+        log: []
+      });
+      logActivity('logbook', 'create', 'Added logbook entry from email triage — ' + (le.unit ? 'Unit ' + le.unit : (le.location || 'common area')) + (le.type ? ' · ' + le.type : ''), le.addedBy || 'Email Triage');
+      logsTouched++;
+    });
+    var merged = added + movesTouched + amenitiesTouched + logsTouched;
     if (merged) {
       if (added) logActivity('todos', 'create', 'Imported ' + added + ' to-do(s) from email triage inbox', (resolved.length + moveUpdates.length + amenityUpdates.length - merged) ? 'duplicates skipped' : '');
       scheduleSave();
@@ -2336,21 +2370,24 @@ async function mergeTodoInbox() {
       if (movesTouched && typeof curSec !== 'undefined' && curSec === 'moves') renderMoves();
       if (amenitiesTouched && typeof curSec !== 'undefined' && curSec === 'amenities') renderAmenities();
       if (amenitiesTouched && typeof renderCalendar === 'function') renderCalendar();
+      if (logsTouched && typeof curSec !== 'undefined' && curSec === 'logbook' && typeof renderLogbook === 'function') renderLogbook();
       updateBadges();
       var parts = [];
       if (added) parts.push(added + ' to-do' + (added > 1 ? 's' : ''));
       if (movesTouched) parts.push(movesTouched + ' move card(s) updated');
       if (amenitiesTouched) parts.push(amenitiesTouched + ' amenity booking(s)');
+      if (logsTouched) parts.push(logsTouched + ' logbook entry(ies)');
       toast(parts.join(' + ') + ' from email triage');
     }
     // Clear only the items we actually processed above. Re-read the row fresh
     // right before clearing (rather than blanking from the stale rowData snapshot)
     // so anything a concurrent inbox_push.py run appended while we were merging/
     // saving survives instead of being silently wiped by this PATCH.
-    var seenTodoIds = {}, seenMoveIds = {}, seenAmenIds = {};
+    var seenTodoIds = {}, seenMoveIds = {}, seenAmenIds = {}, seenLogIds = {};
     inbox.forEach(function (t) { if (t && t.id) seenTodoIds[t.id] = true; });
     moveUpdates.forEach(function (m) { if (m && m.id) seenMoveIds[m.id] = true; });
     amenityUpdates.forEach(function (a) { if (a && a.id) seenAmenIds[a.id] = true; });
+    logbookEntries.forEach(function (le) { if (le && le.id) seenLogIds[le.id] = true; });
     var freshRowData = rowData;
     try {
       var freshRes = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox&select=data', { headers: await getSupaHdr() });
@@ -2362,7 +2399,8 @@ async function mergeTodoInbox() {
     var remainTodos = (Array.isArray(freshRowData.todos) ? freshRowData.todos : []).filter(function (t) { return !(t && seenTodoIds[t.id]); });
     var remainMoves = (Array.isArray(freshRowData.moveUpdates) ? freshRowData.moveUpdates : []).filter(function (m) { return !(m && seenMoveIds[m.id]); });
     var remainAmens = (Array.isArray(freshRowData.amenityUpdates) ? freshRowData.amenityUpdates : []).filter(function (a) { return !(a && seenAmenIds[a.id]); });
-    var cleared = Object.assign({}, freshRowData, { todos: remainTodos, moveUpdates: remainMoves, amenityUpdates: remainAmens });
+    var remainLogs = (Array.isArray(freshRowData.logbookEntries) ? freshRowData.logbookEntries : []).filter(function (le) { return !(le && seenLogIds[le.id]); });
+    var cleared = Object.assign({}, freshRowData, { todos: remainTodos, moveUpdates: remainMoves, amenityUpdates: remainAmens, logbookEntries: remainLogs });
     await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox', {
       method: 'PATCH',
       headers: await getSupaHdr({ 'Prefer': 'return=minimal' }),
