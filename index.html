@@ -378,8 +378,9 @@
   .unit-detail-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
   .unit-det{font-size:11px;color:var(--text3);background:var(--bg);border-radius:4px;padding:2px 6px}
   .pte-badge{font-size:11px;font-weight:600;border-radius:4px;padding:2px 7px;display:inline-block}
-  .pte-granted{background:var(--green-light);color:var(--green)}
-  .pte-denied{background:var(--red-light);color:var(--red)}
+  .pte-inside{background:var(--green-light);color:var(--green)}
+  .pte-outside{background:var(--amber-light);color:var(--amber)}
+  .pte-package-room{background:var(--purple-light);color:var(--purple)}
   .pte-not-set{background:var(--bg);color:var(--text3)}
 
   /* TWO COL */
@@ -536,8 +537,7 @@
   .tight-alert{background:#FBF0DC;border-color:rgba(78,138,112,0.50)}
   .needs-appt-alert{background:#FBF0DC;border-color:rgba(78,138,112,0.50)}
   /* PTE badges warmer */
-  .pte-granted{background:#ECF2DC;color:#3E6B1F}
-  .pte-denied{background:#FAEBEB;color:#8B2222}
+  .pte-inside{background:#ECF2DC;color:#3E6B1F}
   /* Passdown preview */
   .pd-preview{background:#F7F5F0;border-color:rgba(26,24,20,0.09)}
   /* ── Stale key row ── */
@@ -577,8 +577,7 @@
   body.dark-mode .stat-card.red{background:var(--red-light);border-color:rgba(192,53,53,0.55)}
   body.dark-mode .cal-chip-amenity{background:var(--amber-light);color:#E0A55E}
   body.dark-mode .pill-reservation{background:rgba(78,138,112,0.25);color:#8FC7AC}
-  body.dark-mode .pte-granted{background:rgba(62,107,31,0.3);color:#A5CE7F}
-  body.dark-mode .pte-denied{background:rgba(139,34,34,0.3);color:#E89A9A}
+  body.dark-mode .pte-inside{background:rgba(62,107,31,0.3);color:#A5CE7F}
   body.dark-mode .guide-tip{color:#9CC5B3}
   body.dark-mode .cal-week-tbl td.today-col{background:rgba(55,138,221,0.10)}
   body.dark-mode .pd-preview{background:var(--surface2);border-color:var(--border)}
@@ -1826,7 +1825,7 @@
     <div class="fg"><label>Unit Type</label><select id="ur-unit-type"><option value="">— Select —</option><option value="studio">Studio</option><option value="1br">1 Bedroom</option><option value="2br">2 Bedroom</option><option value="3br">3 Bedroom</option><option value="other">Other</option></select></div>
     <div class="fg"><label>Leaseholder</label><input id="ur-leaseholder" type="text" placeholder="Primary resident name"></div>
     <div class="fg"><label>Roommates <span style="font-size:10px;color:var(--text3);font-weight:400">(comma-separated)</span></label><input id="ur-roommates" type="text" placeholder="Additional residents&#8230;"></div>
-    <div class="fg"><label>&#128230; PTE — Permission to Enter</label><select id="ur-pte"><option value="not-set">Not Set</option><option value="granted">Granted — OK to enter for package delivery</option><option value="denied">Denied — Do NOT enter unit</option></select></div>
+    <div class="fg"><label>&#128230; Package Delivery Preference</label><select id="ur-pte"><option value="not-set">Not Set</option><option value="inside">Leave Inside (PTE) — OK to enter for package delivery</option><option value="outside">Leave Outside — leave at the unit door</option><option value="package-room">Leave in Package Room</option></select></div>
     <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
       <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">&#128273; Keys</div>
       <div class="fr">
@@ -5694,7 +5693,7 @@ function renderConcierge() {
     html += '<tr>';
     html += '<td class="mono font-600">' + esc(c.unit) + '</td>';
     var cRec = (state.unitRecords||[]).find(function(r){ return r.unit===c.unit; });
-    var cPte = cRec && cRec.pte==='granted' ? ' <span style="font-size:9px;background:#dcfce7;color:#166534;border-radius:3px;padding:1px 5px;font-weight:600;vertical-align:middle">PTE ✓</span>' : cRec && cRec.pte==='denied' ? ' <span style="font-size:9px;background:var(--red-light);color:var(--red);border-radius:3px;padding:1px 5px;font-weight:600;vertical-align:middle">NO PTE</span>' : '';
+    var cPte = cRec && cRec.pte && cRec.pte !== 'not-set' ? ' ' + pteBadgeHtml(cRec.pte, 'font-size:9px;padding:1px 5px;vertical-align:middle') : '';
     html += '<td>' + esc(c.resident) + cPte + byTag + '</td>';
     html += '<td><span class="pill" style="background:var(--accent-light);color:var(--accent);font-size:10px">' + esc(c.type) + '</span></td>';
     html += '<td style="max-width:160px;white-space:normal;font-size:12px;color:var(--text2)">' + (c.notes ? esc(c.notes) : '—') + '</td>';
@@ -10265,6 +10264,11 @@ function toggleLAFPassdown(id) { var item = (state.laf || []).find(function(x){ 
 async function deleteLAF(id) { if (!await confirmModal('Remove?')) return; var lx=(state.laf||[]).find(function(x){return x.id===id;}); if (lx) pushUndo({ sec: 'laf', type: 'DELETE', id: id, data: Object.assign({}, lx), label: 'delete L&F — ' + lx.desc }); logActivity('laf','delete','Removed L&F item'+(lx?' — '+lx.desc:'')); state.laf = (state.laf || []).filter(function (i) { return i.id !== id; }); scheduleSave(); renderLAF(); updateBadges(); toast('Removed'); }
 
 // ─── UNIT TRACKER ───
+var PTE_LABELS = { inside: '&#127968; Leave Inside (PTE)', outside: '&#128682; Leave Outside', 'package-room': '&#128230; Package Room' };
+function pteBadgeHtml(pte, extraStyle) {
+  if (!pte || pte === 'not-set' || !PTE_LABELS[pte]) return '';
+  return '<span class="pte-badge pte-' + pte + '"' + (extraStyle ? ' style="' + extraStyle + '"' : '') + '>' + PTE_LABELS[pte] + '</span>';
+}
 var utFilter = 'all', utSearch = '', utFloor = 'all', utView = 'list', editingUnitRecordId = null, _urCurrentUnit = '';
 function setUtView(v) {
   utView = v;
@@ -10423,7 +10427,7 @@ function openUnitView(unit) {
   html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">';
   html += '<span class="unit-num" style="font-size:15px">Unit ' + esc(unit) + '</span>';
   if (rec) {
-    if (rec.pte && rec.pte !== 'not-set') html += '<span class="pte-badge ' + (rec.pte==='granted'?'pte-granted':'pte-denied') + '">' + (rec.pte==='granted'?'&#9989; PTE Granted':'&#128683; PTE Denied') + '</span>';
+    html += pteBadgeHtml(rec.pte);
     if (rec.blueground) html += '<span style="font-size:10px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600">&#128309; Blueground</span>';
     html += '<button class="btn btn-primary btn-xs ml-auto" onclick="closeModal(\'modal-unit-view\');openEditUnitRecord(\'' + rec.id + '\')">&#9998; Edit</button>';
   }
@@ -11165,7 +11169,7 @@ function renderResidents() {
     html += '</div>';
     // Leaseholder + roommates
     if (r.leaseholder) html += '<div style="font-size:13px;font-weight:600;margin-bottom:2px">'+esc(r.leaseholder)+'</div>';
-    if (r.pte && r.pte !== 'not-set') { var pteCls = r.pte==='granted'?'pte-granted':'pte-denied'; html += '<span class="pte-badge '+pteCls+'" style="font-size:10px;margin-bottom:6px;display:inline-block">'+(r.pte==='granted'?'&#9989; PTE Granted':'&#128683; PTE Denied')+'</span>'; }
+    if (r.pte && r.pte !== 'not-set') html += pteBadgeHtml(r.pte, 'font-size:10px;margin-bottom:6px;display:inline-block');
     if (r.roommates) html += '<div style="font-size:11px;color:var(--text3);margin-bottom:8px">&#43; '+esc(r.roommates)+'</div>';
     // Keys (only when set)
     var unitTotal = (r.unitKeysIssued||0)+(r.unitKeysReplacement||0);
