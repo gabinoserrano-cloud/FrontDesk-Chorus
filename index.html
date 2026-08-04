@@ -911,10 +911,10 @@
       <div id="card-drawer-view">
         <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">Stock by Pool</span><span class="card-count" id="cardpool-hint"></span><button class="btn btn-ghost btn-sm ml-auto" onclick="openCardPoolBaselines()" title="Edit starting counts for each pool">&#9998; Baselines</button></div>
         <div class="tbl-wrap"><table><thead><tr><th>Pool</th><th>Starting</th><th>Issued Out</th><th>In Stock (calc)</th><th>Last Count</th><th>Unaccounted</th><th></th></tr></thead><tbody id="cardpool-tbody"></tbody></table></div></div>
-        <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">One-Time Card Drawer</span><span class="card-count" id="drawer-count"></span></div><div class="card-body" id="drawer-body" style="padding:14px"></div></div>
+        <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">One-Time Card Drawer</span><span class="card-count" id="drawer-count"></span><button class="btn btn-secondary btn-sm ml-auto" onclick="printCardPoolLabels('oneTime')">&#128424; Print Labels</button></div><div class="card-body" id="drawer-body" style="padding:14px"></div></div>
         <!-- Self-Guided Tour keys: unit-owned pairs, labeled with the unit number -->
         <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">Self-Guided Tour Keys</span><span class="card-count" id="sgt-count"></span><button class="btn btn-secondary btn-sm ml-auto" onclick="printSgtLabels()">&#128424; Print Labels</button><button class="btn btn-secondary btn-sm" onclick="openSgtRoster()">&#9881; Manage Units</button></div><div class="card-body" id="sgt-body" style="padding:14px"></div></div>
-        <div class="card"><div class="card-hdr"><span class="card-title">Vendor Cards</span><span class="card-count" id="vendor-drawer-count"></span></div><div class="card-body" id="vendor-drawer-body" style="padding:14px"></div></div>
+        <div class="card"><div class="card-hdr"><span class="card-title">Vendor Cards</span><span class="card-count" id="vendor-drawer-count"></span><button class="btn btn-secondary btn-sm ml-auto" onclick="printCardPoolLabels('vendor')">&#128424; Print Labels</button></div><div class="card-body" id="vendor-drawer-body" style="padding:14px"></div></div>
       </div>
       <div id="parking-view" style="display:none">
         <div class="card"><div class="card-hdr"><span class="card-title">Parking Credentials</span><span class="card-count" id="parking-count">0 credentials</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddParking()">+ Add Credential</button></div>
@@ -6304,6 +6304,25 @@ function sgtUnits() { if (!Array.isArray(state.sgtUnits)) state.sgtUnits = []; r
 function sgtTotalKeys() { return sgtUnits().reduce(function (s, u) { return s + (parseInt(u.keys, 10) || 0); }, 0); }
 function sgtIssuedKeys() { return (state.keys || []).filter(function (k) { return k.type === 'sgt' && k.status === 'issued'; }); }
 function sgtKeyLabel(unit, slot) { return unit + '-' + slot; }
+// Sort/group order: Studio, then 1 Bed, 2 Bed, 3 Bed... (by leading digit), then unit # within
+// each exact bed-type string ("2 Bed" before "2 Bed + Den" — kept as distinct groups rather than
+// merged, since they're genuinely different unit types). Shared by the on-screen roster and the
+// printed label sheet so both present units in the same grouped order.
+function sgtBedRank(bed) {
+  var s = String(bed || '').toLowerCase();
+  if (s.indexOf('studio') !== -1) return 0;
+  var m = s.match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : 99;
+}
+function sgtSortRoster(roster) {
+  return roster.slice().sort(function (a, b) {
+    var ra = sgtBedRank(a.bed), rb = sgtBedRank(b.bed);
+    if (ra !== rb) return ra - rb;
+    var ba = String(a.bed || ''), bb = String(b.bed || '');
+    if (ba !== bb) return ba.localeCompare(bb);
+    return String(a.unit).localeCompare(String(b.unit), undefined, { numeric: true });
+  });
+}
 // Roster rows used to bundle unit + bed type into one free-text string ("2707-Studio", "333-1B") —
 // fine for the on-screen grid, but the printed Avery 8460 label needs unit/bed/sqft as separate
 // fields. One-time split of the old combined string into { unit, bed, sqft }, seeded with the real
@@ -6384,35 +6403,46 @@ function renderSgtKeys() {
     return;
   }
   var now = Date.now();
-  var html = '';
-  roster.slice().sort(function (a, b) { return String(a.unit).localeCompare(String(b.unit), undefined, { numeric: true }); }).forEach(function (u) {
+  // Compact grid: unit-cards flow multiple-per-row instead of one full-width row per unit — a
+  // roster of a dozen units used to run 1400px+ tall for 2 small key-chips each. Bed-type group
+  // headers span the full grid width (grid-column:1/-1), which breaks the row and lets cards
+  // resume filling from column 1 — no per-group sub-containers needed.
+  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px">';
+  var lastBed = null, firstGroup = true;
+  sgtSortRoster(roster).forEach(function (u) {
+    var bedLabel = String(u.bed || '').trim() || 'Other';
+    if (bedLabel !== lastBed) {
+      html += '<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px' + (firstGroup ? '' : ';margin-top:6px;padding-top:10px;border-top:1px solid var(--border)') + '">' + esc(bedLabel) + '</div>';
+      lastBed = bedLabel; firstGroup = false;
+    }
     var n = parseInt(u.keys, 10) || 0;
-    var meta = [u.bed, (u.sqft != null && u.sqft !== '') ? (parseInt(u.sqft, 10) + ' SF') : null].filter(Boolean).join(' · ');
-    html += '<div style="margin-bottom:14px">'
-      + '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Unit ' + esc(String(u.unit)) + (meta ? ' <span style="font-weight:600;opacity:.7">· ' + esc(meta) + '</span>' : '') + '</div>'
-      + '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+    var sqftLbl = (u.sqft != null && u.sqft !== '') ? (parseInt(u.sqft, 10) + ' SF') : '';
+    html += '<div style="border:1px solid var(--border);border-radius:8px;padding:8px;background:var(--surface)">'
+      + '<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px">Unit ' + esc(String(u.unit)) + (sqftLbl ? ' <span style="font-weight:500;color:var(--text3);opacity:.7">· ' + sqftLbl + '</span>' : '') + '</div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:5px">';
     for (var i = 1; i <= n; i++) {
       var lbl = sgtKeyLabel(u.unit, i), k = issuedMap[lbl];
       if (k) {
         var ms = k.issuedAt ? now - k.issuedAt : 0;
         var overdue = ms >= 3 * 3600000; // a self-guided tour running 3h+ is worth a look
         var nc = overdue ? 'var(--red)' : 'var(--amber)';
-        html += '<div style="width:88px;min-height:78px;background:' + (overdue ? 'rgba(192,53,53,0.08)' : 'rgba(181,112,32,0.07)') + ';border:1.5px solid ' + (overdue ? 'rgba(192,53,53,0.4)' : 'rgba(181,112,32,0.35)') + ';border-radius:6px;padding:7px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative" onclick="dashReturnKey(\'' + k.id + '\')" title="' + esc(lbl) + ' — out to ' + esc(k.name || '') + '\nClick to mark returned">'
-          + (overdue ? '<span style="position:absolute;top:3px;right:4px;font-size:9px;color:var(--red)">&#9888;</span>' : '')
-          + '<span style="font-size:13px;font-weight:700;font-family:var(--font-mono);color:' + nc + '">' + esc(lbl) + '</span>'
-          + '<span style="font-size:9px;font-weight:600;color:' + nc + ';text-align:center;line-height:1.3;word-break:break-word">' + esc((k.name || '—').split(' ')[0]) + '</span>'
-          + '<span style="font-size:8px;color:' + (overdue ? 'var(--red)' : 'var(--text3)') + ';margin-top:1px">' + fmtDurOut(ms) + ' out</span>'
-          + '<span style="font-size:8px;color:var(--accent);margin-top:2px;font-weight:600">&#8617; return</span>'
+        html += '<div style="width:74px;min-height:68px;background:' + (overdue ? 'rgba(192,53,53,0.08)' : 'rgba(181,112,32,0.07)') + ';border:1.5px solid ' + (overdue ? 'rgba(192,53,53,0.4)' : 'rgba(181,112,32,0.35)') + ';border-radius:6px;padding:5px 3px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;position:relative" onclick="dashReturnKey(\'' + k.id + '\')" title="' + esc(lbl) + ' — out to ' + esc(k.name || '') + '\nClick to mark returned">'
+          + (overdue ? '<span style="position:absolute;top:2px;right:3px;font-size:8px;color:var(--red)">&#9888;</span>' : '')
+          + '<span style="font-size:11px;font-weight:700;font-family:var(--font-mono);color:' + nc + '">' + esc(lbl) + '</span>'
+          + '<span style="font-size:8px;font-weight:600;color:' + nc + ';text-align:center;line-height:1.2;word-break:break-word">' + esc((k.name || '—').split(' ')[0]) + '</span>'
+          + '<span style="font-size:7px;color:' + (overdue ? 'var(--red)' : 'var(--text3)') + '">' + fmtDurOut(ms) + '</span>'
+          + '<span style="font-size:7px;color:var(--accent);font-weight:600">&#8617; return</span>'
           + '</div>';
       } else {
-        html += '<div style="width:88px;min-height:78px;background:var(--surface);border:1.5px solid var(--border);border-radius:6px;padding:7px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:border-color .12s,background .12s" onclick="openSgtIssue(\'' + esc(String(u.unit)) + '\',' + i + ')" title="' + esc(lbl) + ' — available. Click to issue." onmouseover="this.style.borderColor=\'var(--accent)\';this.style.background=\'var(--accent-light)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.background=\'var(--surface)\'">'
-          + '<span style="font-size:13px;font-weight:700;font-family:var(--font-mono);color:var(--text3)">' + esc(lbl) + '</span>'
-          + '<span style="font-size:8px;color:var(--text3)">available</span>'
+        html += '<div style="width:74px;min-height:68px;background:var(--surface);border:1.5px solid var(--border);border-radius:6px;padding:5px 3px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transition:border-color .12s,background .12s" onclick="openSgtIssue(\'' + esc(String(u.unit)) + '\',' + i + ')" title="' + esc(lbl) + ' — available. Click to issue." onmouseover="this.style.borderColor=\'var(--accent)\';this.style.background=\'var(--accent-light)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.background=\'var(--surface)\'">'
+          + '<span style="font-size:11px;font-weight:700;font-family:var(--font-mono);color:var(--text3)">' + esc(lbl) + '</span>'
+          + '<span style="font-size:7.5px;color:var(--text3)">available</span>'
           + '</div>';
       }
     }
     html += '</div></div>';
   });
+  html += '</div>';
   body.innerHTML = html;
 }
 var _sgtIssueKey = null;
@@ -6528,54 +6558,33 @@ function saveSgtRoster() {
   scheduleSave(); closeModal('modal-sgt-roster'); renderSgtKeys(); renderSupplies(); updateBadges();
   toast('Tour key units saved');
 }
-// ── Print SGT key labels (Avery 8460 / 5160-compatible: 2.625in x 1in, 3 cols x 10 rows) ──
-// Same layout as the standalone sgt-tour-key-labels-avery8460.html sheet, generated live from the
-// roster instead of a hand-edited unit list, and printing one label per physical key (a unit with
-// 3 keys gets 3 labels) rather than a fixed copy count. Paginates across multiple 30-label sheets.
-function printSgtLabels() {
-  var roster = sgtUnits().slice().sort(function (a, b) { return String(a.unit).localeCompare(String(b.unit), undefined, { numeric: true }); });
-  if (!roster.length) { toast('No tour-key units set up yet — add units via Manage Units first'); return; }
-  var labels = [];
-  roster.forEach(function (u) {
-    var copies = parseInt(u.keys, 10) || 0;
-    for (var c = 0; c < copies; c++) labels.push(u);
-  });
-  if (!labels.length) { toast('No keys to print — check key counts in Manage Units'); return; }
+// ── Shared Avery 8460 label-sheet builder (2.625in x 1in, 3 cols x 10 rows) ──
+// Used by SGT tour-key labels and vendor/one-time card labels — same physical sheet, same
+// Concept F visual design (icon + gold kicker, serif hero, navy footer), different content per
+// label. `cellHtml(item)` returns one label's inner markup; geometry + pagination are shared so
+// all three label types stay visually identical without hand-syncing three copies of the CSS.
+function labelCellHtml(kicker, iconUrl, hero, meta) {
+  return '<div class="lbl-top"><div class="lbl-kicker">' + kicker + '</div><img class="lbl-seal" src="' + iconUrl + '"></div>'
+    + '<div class="lbl-hero-wrap"><div class="lbl-hero"><div class="lbl-unit">' + hero + '</div>'
+    + (meta ? '<div class="lbl-meta">' + meta + '</div>' : '') + '</div></div>'
+    + '<div class="lbl-footer"><span class="lbl-f1">RETURN TO FRONT DESK</span><span class="lbl-f2">(415) 707-3030</span></div>';
+}
+function openLabelSheet(titleText, items, cellHtml) {
   var COLS = 3, ROWS = 10, PER_SHEET = COLS * ROWS;
   var LEFT_MARGIN = 0.1875, TOP_MARGIN = 0.5, H_PITCH = 2.75, V_PITCH = 1;
-  var sheetCount = Math.ceil(labels.length / PER_SHEET);
-  // Resolved to an absolute URL so it still loads once written into a blank window
-  // (a relative path would otherwise resolve against about:blank, not this page).
-  var iconUrl = new URL('Binder/Icon-Navy.png', location.href).href;
+  var sheetCount = Math.ceil(items.length / PER_SHEET);
   var sheetsHtml = '';
   for (var s = 0; s < sheetCount; s++) {
     sheetsHtml += '<div class="sheet"' + (s < sheetCount - 1 ? ' style="page-break-after:always"' : '') + '>';
-    for (var i = s * PER_SHEET; i < Math.min((s + 1) * PER_SHEET, labels.length); i++) {
-      var u = labels[i];
+    for (var i = s * PER_SHEET; i < Math.min((s + 1) * PER_SHEET, items.length); i++) {
       var idx = i - s * PER_SHEET;
       var row = Math.floor(idx / COLS), col = idx % COLS;
       var left = LEFT_MARGIN + col * H_PITCH, top = TOP_MARGIN + row * V_PITCH;
-      var bedLine = String(u.bed || '').trim();
-      var sqftLine = (u.sqft != null && u.sqft !== '') ? (parseInt(u.sqft, 10) + ' SF') : '';
-      var metaLine = [bedLine, sqftLine].filter(Boolean).join(' &middot; ');
-      sheetsHtml += '<div class="label" style="left:' + left + 'in;top:' + top + 'in">'
-        + '<div class="lbl-top">'
-        + '<div class="lbl-kicker">Self-Guided Tour</div>'
-        + '<img class="lbl-seal" src="' + iconUrl + '">'
-        + '</div>'
-        + '<div class="lbl-hero-wrap"><div class="lbl-hero">'
-        + '<div class="lbl-unit">' + esc(String(u.unit)) + '</div>'
-        + (metaLine ? '<div class="lbl-meta">' + metaLine + '</div>' : '')
-        + '</div></div>'
-        + '<div class="lbl-footer">'
-        + '<span class="lbl-f1">RETURN TO FRONT DESK</span>'
-        + '<span class="lbl-f2">(415) 707-3030</span>'
-        + '</div>'
-        + '</div>';
+      sheetsHtml += '<div class="label" style="left:' + left + 'in;top:' + top + 'in">' + cellHtml(items[i]) + '</div>';
     }
     sheetsHtml += '</div>';
   }
-  var doc = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>SGT Tour Key Labels &mdash; Avery 8460</title>'
+  var doc = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + esc(titleText) + '</title>'
     + '<link rel="preconnect" href="https://fonts.googleapis.com">'
     + '<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">'
     + '<style>'
@@ -6597,11 +6606,53 @@ function printSgtLabels() {
     + '.print-bar button{font-size:13px;padding:7px 16px;border-radius:6px;border:none;background:#111;color:#fff;cursor:pointer;margin-left:10px}'
     + '@media print{.print-bar{display:none}}'
     + '</style></head><body>'
-    + '<div class="print-bar">' + labels.length + ' label(s) across ' + sheetCount + ' sheet(s) of Avery 8460<button onclick="window.print()">Print</button></div>'
+    + '<div class="print-bar">' + items.length + ' label(s) across ' + sheetCount + ' sheet(s) of Avery 8460<button onclick="window.print()">Print</button></div>'
     + sheetsHtml + '</body></html>';
   var win = window.open('', '_blank');
   if (!win) { toast('Pop-up blocked — allow pop-ups for this site to print labels'); return; }
   win.document.open(); win.document.write(doc); win.document.close();
+}
+// ── Print SGT key labels (Avery 8460 / 5160-compatible: 2.625in x 1in, 3 cols x 10 rows) ──
+// Same layout as the standalone sgt-tour-key-labels-avery8460.html sheet, generated live from the
+// roster instead of a hand-edited unit list, and printing one label per physical key (a unit with
+// 3 keys gets 3 labels) rather than a fixed copy count. Paginates across multiple 30-label sheets.
+function printSgtLabels() {
+  var roster = sgtSortRoster(sgtUnits());
+  if (!roster.length) { toast('No tour-key units set up yet — add units via Manage Units first'); return; }
+  var labels = [];
+  roster.forEach(function (u) {
+    var copies = parseInt(u.keys, 10) || 0;
+    for (var c = 0; c < copies; c++) labels.push(u);
+  });
+  if (!labels.length) { toast('No keys to print — check key counts in Manage Units'); return; }
+  // Resolved to an absolute URL so it still loads once written into a blank window
+  // (a relative path would otherwise resolve against about:blank, not this page).
+  var iconUrl = new URL('Binder/Icon-Navy.png', location.href).href;
+  openLabelSheet('SGT Tour Key Labels — Avery 8460', labels, function (u) {
+    var bedLine = String(u.bed || '').trim();
+    var sqftLine = (u.sqft != null && u.sqft !== '') ? (parseInt(u.sqft, 10) + ' SF') : '';
+    var metaLine = [bedLine, sqftLine].filter(Boolean).join(' &middot; ');
+    return labelCellHtml('Self-Guided Tour', iconUrl, esc(String(u.unit)), metaLine);
+  });
+}
+// ── Print vendor/one-time card labels (same Avery 8460 sheet + Concept F design as SGT) ──
+// Vendor/one-time cards are pool-based, not unit-owned (see the SGT block's comment above), so
+// the label identifies the card by its pool number — "V-01", "#7" — matching the number already
+// shown in the Vendor Cards / Card Drawer grids so a returned card is easy to match back to its slot.
+var CARD_LABEL_META = {
+  oneTime: { kicker: 'One-Time Card', meta: 'Guest Access', numFmt: function (i) { return '#' + i; } },
+  vendor: { kicker: 'Vendor Card', meta: 'Vendor Access', numFmt: function (i) { return 'V-' + (i < 10 ? '0' + i : i); } }
+};
+function printCardPoolLabels(poolKey) {
+  var size = cardPoolStarting(poolKey);
+  if (!size) { toast('No pool size set for ' + CARD_POOL_LABELS[poolKey] + ' — set it via Baselines first'); return; }
+  var meta = CARD_LABEL_META[poolKey];
+  var nums = [];
+  for (var i = 1; i <= size; i++) nums.push(meta.numFmt(i));
+  var iconUrl = new URL('Binder/Icon-Navy.png', location.href).href;
+  openLabelSheet(CARD_POOL_LABELS[poolKey] + ' Labels — Avery 8460', nums, function (num) {
+    return labelCellHtml(meta.kicker, iconUrl, esc(num), meta.meta);
+  });
 }
 // ── Vendor card grid (mirrors the one-time drawer; pool size comes from its baseline) ──
 function renderVendorDrawer() {
