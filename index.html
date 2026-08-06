@@ -2180,7 +2180,8 @@ async function mergeTodoInbox() {
     var moveUpdates = Array.isArray(rowData.moveUpdates) ? rowData.moveUpdates : [];
     var amenityUpdates = Array.isArray(rowData.amenityUpdates) ? rowData.amenityUpdates : [];
     var logbookEntries = Array.isArray(rowData.logbookEntries) ? rowData.logbookEntries : [];
-    if (!inbox.length && !moveUpdates.length && !amenityUpdates.length && !logbookEntries.length) return;
+    var keyEntries = Array.isArray(rowData.keyEntries) ? rowData.keyEntries : [];
+    if (!inbox.length && !moveUpdates.length && !amenityUpdates.length && !logbookEntries.length && !keyEntries.length) return;
     var resolved = [];
     for (var i = 0; i < inbox.length; i++) {
       var item = inbox[i];
@@ -2344,6 +2345,9 @@ async function mergeTodoInbox() {
       if (!state.logbook) state.logbook = [];
       if (state.logbook.some(function (e) { return (e.notes || '').indexOf(stamp) !== -1; })) return; // already applied
       var noteLines = [String(le.notes), '[' + stamp + ']'];
+    // The stamp above is a dedupe marker only (checked via indexOf against stored
+    // notes) — it must stay in the stored string, but display code should never
+    // show it to a human. See stripTriageStamp(), used wherever notes are rendered.
       state.logbook.push({
         id: le.id || uid(),
         category: le.category || 'request',
@@ -2362,7 +2366,32 @@ async function mergeTodoInbox() {
       logActivity('logbook', 'create', 'Added logbook entry from email triage — ' + (le.unit ? 'Unit ' + le.unit : (le.location || 'common area')) + (le.type ? ' · ' + le.type : ''), le.addedBy || 'Email Triage');
       logsTouched++;
     });
-    var merged = added + movesTouched + amenitiesTouched + logsTouched;
+    // Apply queued one-time key entries: always a fresh state.keys record — a
+    // physical card is a discrete item, not a per-unit profile to fill blanks on.
+    // Dedupe is stamp-based inside notes, same pattern as logbookEntries. Does NOT
+    // touch the "One-Time Cards - Active Issued" supply count — these cards were
+    // already pulled from stock before this backfill, so bumping that counter here
+    // would double-count a shortage that's reconciled by physical recount instead.
+    var keysTouched = 0;
+    keyEntries.forEach(function (ke) {
+      if (!ke || !ke.unit) return;
+      var stamp = 'triage:' + (ke.srcThread || ke.id || '');
+      if (!state.keys) state.keys = [];
+      if (state.keys.some(function (k) { return (k.notes || '').indexOf(stamp) !== -1; })) return; // already applied
+      var noteLines = [String(ke.notes || ''), '[' + stamp + ']'].filter(Boolean);
+      state.keys.push({
+        id: ke.id || uid(), unit: String(ke.unit), name: ke.name || 'Guest', guest: '',
+        fob: ke.fob || '', type: 'one-time',
+        status: ['issued', 'returned'].indexOf(ke.status) !== -1 ? ke.status : 'issued',
+        issuedAt: ke.issuedAt || Date.now(), timeout: '', notes: noteLines.join('\n'),
+        reachedOut: false, reachedOutAt: null, contacts: [],
+        feeAddedToLedger: false, feeWaived: false, feeAddedAt: null, feeAddedBy: '',
+        addedBy: ke.addedBy || 'Email Triage', createdAt: Date.now(), returnedAt: null
+      });
+      logActivity('keys', 'create', 'Added one-time key from card-audit outreach — Unit ' + ke.unit + (ke.fob ? ' · Card #' + ke.fob : ''), ke.addedBy || 'Email Triage');
+      keysTouched++;
+    });
+    var merged = added + movesTouched + amenitiesTouched + logsTouched + keysTouched;
     if (merged) {
       if (added) logActivity('todos', 'create', 'Imported ' + added + ' to-do(s) from email triage inbox', (resolved.length + moveUpdates.length + amenityUpdates.length - merged) ? 'duplicates skipped' : '');
       scheduleSave();
@@ -2373,23 +2402,26 @@ async function mergeTodoInbox() {
       if (amenitiesTouched && typeof curSec !== 'undefined' && curSec === 'amenities') renderAmenities();
       if (amenitiesTouched && typeof renderCalendar === 'function') renderCalendar();
       if (logsTouched && typeof curSec !== 'undefined' && curSec === 'logbook' && typeof renderLogbook === 'function') renderLogbook();
+      if (keysTouched) { if (typeof renderCardDrawer === 'function') renderCardDrawer(); if (typeof curSec !== 'undefined' && curSec === 'keys' && typeof renderKeys === 'function') renderKeys(); }
       updateBadges();
       var parts = [];
       if (added) parts.push(added + ' to-do' + (added > 1 ? 's' : ''));
       if (movesTouched) parts.push(movesTouched + ' move card(s) updated');
       if (amenitiesTouched) parts.push(amenitiesTouched + ' amenity booking(s)');
       if (logsTouched) parts.push(logsTouched + ' logbook entry(ies)');
+      if (keysTouched) parts.push(keysTouched + ' key entry(ies)');
       toast(parts.join(' + ') + ' from email triage');
     }
     // Clear only the items we actually processed above. Re-read the row fresh
     // right before clearing (rather than blanking from the stale rowData snapshot)
     // so anything a concurrent inbox_push.py run appended while we were merging/
     // saving survives instead of being silently wiped by this PATCH.
-    var seenTodoIds = {}, seenMoveIds = {}, seenAmenIds = {}, seenLogIds = {};
+    var seenTodoIds = {}, seenMoveIds = {}, seenAmenIds = {}, seenLogIds = {}, seenKeyIds = {};
     inbox.forEach(function (t) { if (t && t.id) seenTodoIds[t.id] = true; });
     moveUpdates.forEach(function (m) { if (m && m.id) seenMoveIds[m.id] = true; });
     amenityUpdates.forEach(function (a) { if (a && a.id) seenAmenIds[a.id] = true; });
     logbookEntries.forEach(function (le) { if (le && le.id) seenLogIds[le.id] = true; });
+    keyEntries.forEach(function (ke) { if (ke && ke.id) seenKeyIds[ke.id] = true; });
     var freshRowData = rowData;
     try {
       var freshRes = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox&select=data', { headers: await getSupaHdr() });
@@ -2402,7 +2434,8 @@ async function mergeTodoInbox() {
     var remainMoves = (Array.isArray(freshRowData.moveUpdates) ? freshRowData.moveUpdates : []).filter(function (m) { return !(m && seenMoveIds[m.id]); });
     var remainAmens = (Array.isArray(freshRowData.amenityUpdates) ? freshRowData.amenityUpdates : []).filter(function (a) { return !(a && seenAmenIds[a.id]); });
     var remainLogs = (Array.isArray(freshRowData.logbookEntries) ? freshRowData.logbookEntries : []).filter(function (le) { return !(le && seenLogIds[le.id]); });
-    var cleared = Object.assign({}, freshRowData, { todos: remainTodos, moveUpdates: remainMoves, amenityUpdates: remainAmens, logbookEntries: remainLogs });
+    var remainKeys = (Array.isArray(freshRowData.keyEntries) ? freshRowData.keyEntries : []).filter(function (ke) { return !(ke && seenKeyIds[ke.id]); });
+    var cleared = Object.assign({}, freshRowData, { todos: remainTodos, moveUpdates: remainMoves, amenityUpdates: remainAmens, logbookEntries: remainLogs, keyEntries: remainKeys });
     await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox', {
       method: 'PATCH',
       headers: await getSupaHdr({ 'Prefer': 'return=minimal' }),
@@ -2882,6 +2915,11 @@ async function resetData() {
 // ===== [CORE UTILITIES] ======================================================
 function uid() { try { return crypto.randomUUID(); } catch(e) { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); } }
 function esc(s) { return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+// mergeTodoInbox() appends a trailing "\n[triage:<id>]" line to a logbook entry's notes as its
+// dedupe marker (checked via indexOf against the stored string, so it can't be moved to its own
+// field without breaking that check) — strip it wherever notes are shown to a human: the Logbook
+// table and the passdown's Logbook block.
+function stripTriageStamp(notes) { return (notes || '').replace(/\n\[triage:[^\]]*\]\s*$/, ''); }
 async function hashPin(pin, salt) {
   try {
     var data = new TextEncoder().encode(String(pin) + ':' + String(salt));
@@ -6016,7 +6054,7 @@ function renderLogbook() {
     html += '<td>'+dateCell+byTag+'</td>';
     html += '<td>'+pill+fuHtml+flagRow+'</td>';
     html += '<td style="font-size:12px">'+who+'</td>';
-    html += '<td style="max-width:160px;white-space:normal;font-size:12px;color:var(--text2)">'+(e.notes?esc(e.notes):'—')+'</td>';
+    html += '<td style="max-width:160px;white-space:normal;font-size:12px;color:var(--text2)">'+(e.notes?esc(stripTriageStamp(e.notes)):'—')+'</td>';
     html += '<td style="max-width:180px">'+naCell+'</td>';
     html += '<td>'+statusSel+'</td>';
     html += '<td class="text-xs text-2">'+(e.handledBy||'—')+'</td>';
@@ -7045,13 +7083,11 @@ function renderKeys() {
         var kyBy2 = fmtByTag(k.addedBy, k.createdAt);
         var overdueMs2 = k.issuedAt ? now - k.issuedAt : 0;
         var isOverdue2 = overdueMs2 >= 2 * 3600000;
-        var overdueHrs2 = overdueMs2 > 0 ? Math.floor(overdueMs2 / 3600000) : 0;
-        var overdueMin2 = overdueMs2 > 0 ? Math.floor((overdueMs2 % 3600000) / 60000) : 0;
         var isStale2 = !(k.shiftNotes || []).some(function(n){ return n.shiftId === curShiftId; });
         var staleCount2 = isStale2 ? countStaleShifts(k) : 0;
         var contacts2 = k.contacts || (k.reachedOut ? [{ts: k.reachedOutAt || k.issuedAt || now, by: 'Previous'}] : []);
         var contactCount2 = contacts2.length;
-        var overdueTag2 = isOverdue2 ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + overdueHrs2 + 'h ' + overdueMin2 + 'm OUT</span>' : '';
+        var overdueTag2 = isOverdue2 ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + fmtOverdueDuration(overdueMs2) + ' OUT</span>' : '';
         var staleTag2 = isStale2 ? '<span class="stale-badge">&#9888; Stale &mdash; ' + staleCount2 + ' shift' + (staleCount2 !== 1 ? 's' : '') + '</span>' : '';
         var feeBadge2 = keyFeeBadgesHtml(k);
         var oneTimeFee2 = '';
@@ -7150,8 +7186,6 @@ function renderKeys() {
     var isIssued = k.status === 'issued';
     var overdueMs = isIssued && isOneTime && k.issuedAt ? now - k.issuedAt : 0;
     var isOverdue = overdueMs >= 2 * 3600000;
-    var overdueHrs = overdueMs > 0 ? Math.floor(overdueMs / 3600000) : 0;
-    var overdueMin = overdueMs > 0 ? Math.floor((overdueMs % 3600000) / 60000) : 0;
     // Stale detection: one-time issued keys with no shift note this shift
     var isStale = isOneTime && isIssued && !(k.shiftNotes || []).some(function (n) { return n.shiftId === curShiftId; });
     var staleCount = isStale ? countStaleShifts(k) : 0;
@@ -7161,7 +7195,7 @@ function renderKeys() {
     var rowClass = (isStale ? ' key-stale-row' : '') + (isOverdue ? ' key-overdue-row' : '');
     var rowBg = isOverdue ? 'background:var(--red-light)' : '';
     var rowStyle = rowBg ? ' style="' + rowBg + '"' : '';
-    var overdueTag = isOverdue ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + overdueHrs + 'h ' + overdueMin + 'm OUT</span>' : '';
+    var overdueTag = isOverdue ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + fmtOverdueDuration(overdueMs) + ' OUT</span>' : '';
     var staleTag = isStale ? '<span class="stale-badge">&#9888; Stale &mdash; ' + staleCount + ' shift' + (staleCount !== 1 ? 's' : '') + '</span>' : '';
     var isVendor = k.type === 'vendor';
     var vendorLine = isVendor && k.company ? '<div style="font-size:11px;color:var(--text3)">' + esc(k.company) + (k.workArea ? ' · ' + esc(k.workArea) : '') + '</div>' : '';
@@ -7188,7 +7222,7 @@ function renderKeys() {
     var isVendorIssued = isVendor && isIssued;
     var vendorOverdueMs = isVendorIssued && k.issuedAt ? now - k.issuedAt : 0;
     var vendorOverdue = vendorOverdueMs >= 8*3600000; // 8h for vendor
-    var vendorOverdueTag = vendorOverdue ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 5px;margin-left:4px">⚠ ' + Math.floor(vendorOverdueMs/3600000) + 'h OUT</span>' : '';
+    var vendorOverdueTag = vendorOverdue ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 5px;margin-left:4px">⚠ ' + fmtOverdueDuration(vendorOverdueMs) + ' OUT</span>' : '';
     var timeOutCell = (isOneTime && k.timeout) ? '<span class="mono text-xs">' + fmtTime(k.timeout) + '</span>' : (isOneTime && k.issuedAt ? '<span class="mono text-xs text-3">' + new Date(k.issuedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + '</span>' : (isVendor && k.vendorReturn ? '<span class="mono text-xs">Back by ' + fmtTime(k.vendorReturn) + '</span>' : '<span class="text-xs text-3">-</span>'));
     html += '<tr class="' + rowClass + '"' + (isVendorIssued ? ' style="background:rgba(55,138,221,0.10)"' : rowStyle ? rowStyle : '') + '>';
     html += '<td class="mono font-600">' + esc(k.unit) + '</td>';
@@ -11806,7 +11840,7 @@ function renderPdAutoBlocks(isLead) {
   if (!openLb.length) html += '<div style="color:var(--text3)">None open</div>';
   else openLb.forEach(function(e) {
     var who = e.resident ? 'Unit ' + esc(e.unit) + ' – ' + esc(e.resident) : (e.location || '');
-    var content = '<strong>' + esc(e.type) + '</strong>' + pdYouBadge(e) + (who ? ' — ' + who : '') + (e.notes ? ': ' + esc(e.notes) : '');
+    var content = '<strong>' + esc(e.type) + '</strong>' + pdYouBadge(e) + (who ? ' — ' + who : '') + (e.notes ? ': ' + esc(stripTriageStamp(e.notes)) : '');
     if (e.status==='in-progress') content += ' <span style="font-size:10px;background:rgba(217,119,6,0.12);color:var(--amber);border-radius:3px;padding:1px 5px;font-weight:600">In Progress</span>';
     var defNs = e.nextAction || 'Follow up and update status once resolved.';
     var lbKey = 'lb_' + e.id;
@@ -12173,9 +12207,12 @@ function generatePassdown() {
       if (lbIdx) out += '\n';
       var who = e.resident ? 'Unit ' + e.unit + ' – ' + e.resident : (e.location || '');
       var defNsLb = e.nextAction || 'Follow up and update status once resolved.';
-      out += e.type + (who ? ' — ' + who : '') + (e.status==='in-progress' ? ' (In Progress)' : '') + '\n';
-      if (e.notes) out += e.notes + '\n';
-      out += 'Next Step: ' + pdNote('lb_'+e.id, defNsLb) + '\n';
+      // Lead with a status dot + unit/who, not the category label — skimming for "which
+      // unit, what state" matters more than the category when scanning several entries.
+      var statusDot = e.status === 'in-progress' ? '🟡' : '🔴';
+      out += statusDot + ' ' + (who || e.type) + (who ? ' — ' + e.type : '') + (e.status==='in-progress' ? ' (In Progress)' : '') + '\n';
+      if (e.notes) out += stripTriageStamp(e.notes) + '\n';
+      out += '→ Next: ' + pdNote('lb_'+e.id, defNsLb) + '\n';
     });
   }
 
@@ -15374,6 +15411,17 @@ function getShiftIdForTs(ts) {
   return dateStr + '-' + shift;
 }
 function getCurrentShiftId() { return getShiftIdForTs(Date.now()); }
+// Overdue duration for the Key Tracker's "OUT" badge — switches to a day-based
+// format past 24h so week-old outstanding cards read as "8d 9h" instead of an
+// unreadable "201h 56m".
+function fmtOverdueDuration(ms) {
+  if (ms <= 0) return '0h 0m';
+  var totalMin = Math.floor(ms / 60000);
+  var days = Math.floor(totalMin / 1440);
+  var hrs = Math.floor((totalMin % 1440) / 60);
+  var min = totalMin % 60;
+  return days > 0 ? (days + 'd ' + hrs + 'h') : (hrs + 'h ' + min + 'm');
+}
 function countStaleShifts(k) {
   var fromTs;
   if (k.shiftNotes && k.shiftNotes.length) { fromTs = k.shiftNotes[k.shiftNotes.length - 1].ts; }
