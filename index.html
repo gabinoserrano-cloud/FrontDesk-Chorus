@@ -11,10 +11,15 @@
     --bg:#F4F0EA;--surface:#FFFFFF;--surface2:#EDE8E1;--border:rgba(26,20,10,0.12);--border2:rgba(26,20,10,0.06);
     --text:#1A2632;--text2:#455D6E;--text3:#526B7B;
     --accent:#1A5C3E;--accent-light:rgba(26,92,62,0.10);--accent2:#155030;--primary:#1A5C3E;
+    /* Sage family — the interactive/tint greens layered over --accent by the theme rules below.
+       Distinct values, not shades of one: --accent-fill is the AA-contrast button/tab fill,
+       --accent-soft the lighter border+tint base, --accent-deep readable text on those tints. */
+    --accent-fill:#3E7A5E;--accent-fill-hover:#2F614A;--accent-soft:#4E8A70;--accent-soft-rgb:78,138,112;
+    --accent-deep:#2A6050;--accent-on-dark:#8FC7AC;
     --green:#1A6640;--green-light:#E2EFE8;--red:#C03535;--red-light:#FAEBEB;
     --amber:#B57020;--amber-light:#FBF0DC;--purple:#6044B2;--purple-light:#ECEAFA;
     --sidebar-w:220px;--header-h:54px;--radius:6px;
-    --font-serif:'Cormorant Garamond',Georgia,serif;--font-mono:'DM Mono',monospace;
+    --font-serif:'Cormorant Garamond',Georgia,serif;--font-mono:'DM Mono',monospace;--font-sans:'DM Sans',sans-serif;
     --shadow:0 1px 4px rgba(26,24,20,0.07),0 1px 2px rgba(26,24,20,0.04);
     --shadow-md:0 4px 16px rgba(26,24,20,0.10),0 2px 4px rgba(26,24,20,0.06);
     --ease-out:cubic-bezier(0.23,1,0.32,1);
@@ -58,9 +63,9 @@
   .nav-label{font-size:9.5px;font-weight:600;color:rgba(148,185,215,0.70);text-transform:uppercase;letter-spacing:1px;padding:0 14px 4px;white-space:nowrap;overflow:hidden}
   .nav-item{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;color:rgba(255,255,255,0.46);font-size:13px;font-weight:400;border-left:2px solid transparent;transition:background 120ms ease-out,color 120ms ease-out,border-left-color 120ms ease-out;position:relative;user-select:none;white-space:nowrap}
   .nav-item:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.80)}
-  .nav-item.active{background:rgba(255,255,255,0.10);color:#FFFFFF;border-left-color:#1A5C3E;font-weight:500}
+  .nav-item.active{background:rgba(255,255,255,0.10);color:#FFFFFF;border-left-color:var(--accent);font-weight:500}
   .nav-item .icon{width:16px;text-align:center;font-size:14px;flex-shrink:0}
-  .badge{margin-left:auto;background:#1A5C3E;color:#FFFFFF;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;font-family:var(--font-mono);min-width:18px;text-align:center;display:none}
+  .badge{margin-left:auto;background:var(--accent);color:#FFFFFF;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;font-family:var(--font-mono);min-width:18px;text-align:center;display:none}
   .badge.vis{display:block}
   .badge.badge-red{background:var(--red);color:#fff}
   .sb-footer{margin-top:auto;padding:10px 10px 14px;border-top:0.5px solid rgba(255,255,255,0.09);display:flex;flex-direction:column;gap:4px}
@@ -68,7 +73,7 @@
   .footer-btn:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.75)}
   .save-status{font-size:10px;color:rgba(255,255,255,0.55);padding:0 8px 4px;font-family:var(--font-mono);white-space:nowrap;overflow:hidden}
   .sync-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;background:rgba(255,255,255,0.25)}
-  .sync-dot.synced{background:#6DBB5A}.sync-dot.syncing{background:#1A5C3E;animation:pulse 1s infinite}.sync-dot.error{background:#E05A5A}
+  .sync-dot.synced{background:#6DBB5A}.sync-dot.syncing{background:var(--accent);animation:pulse 1s infinite}.sync-dot.error{background:#E05A5A}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
   #sidebar-wrap{position:relative;display:flex;flex-shrink:0}
   #collapse-btn{position:absolute;top:16px;right:-13px;width:26px;height:26px;border-radius:50%;background:#0D1B2A;border:0.5px solid rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:201;box-shadow:0 2px 8px rgba(0,0,0,0.35);font-size:11px;color:rgba(255,255,255,0.50);transition:transform .22s;flex-shrink:0}
@@ -141,7 +146,7 @@
   #notepad-hdr .np-title{font-size:12px;font-weight:700;letter-spacing:.4px;color:var(--accent);flex:1}
   #notepad-hdr .np-close{background:none;border:none;cursor:pointer;color:#666;font-size:15px;line-height:1;padding:0 0 0 8px;transition:color .12s}
   #notepad-hdr .np-close:hover{color:var(--accent)}
-  #notepad-txt{width:100%;height:260px;border:none;outline:none;resize:none;background:var(--surface);padding:12px 14px;font-size:13px;line-height:1.7;color:var(--text);font-family:var(--mono)}
+  #notepad-txt{width:100%;height:260px;border:none;outline:none;resize:none;background:var(--surface);padding:12px 14px;font-size:13px;line-height:1.7;color:var(--text);font-family:var(--font-mono)}
   #notepad-txt::placeholder{color:var(--text3)}
   #notepad-ftr{padding:6px 12px;background:var(--bg);border-top:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
   #notepad-ftr span{font-size:10px;color:var(--text3)}
@@ -271,14 +276,8 @@
   .cl-text{font-size:13px;flex:1}.cl-text.done{text-decoration:line-through;color:var(--text3)}
   .cl-cat{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;flex-shrink:0}
   .cl-due{font-size:10px;color:var(--accent);font-family:'DM Mono',monospace;flex-shrink:0}
-  .cl-text-input{flex:1;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);padding:2px 4px;border-radius:4px;outline:none;min-width:0}
-  .cl-text-input:hover,.cl-text-input:focus{background:var(--accent-light)}
-  .cl-text-input.done{text-decoration:line-through;color:var(--text2);opacity:0.6}
-  .cl-due-input{width:110px;flex-shrink:0;border:none;background:transparent;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);padding:2px 4px;border-radius:4px;outline:none;cursor:pointer}
-  .cl-due-input:hover,.cl-due-input:focus{background:var(--accent-light)}
-  .cl-due-input::-webkit-calendar-picker-indicator{opacity:0.5;cursor:pointer}
-  .cl-cat-input{flex-shrink:0;border:none;background:transparent;font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);padding:2px 4px;border-radius:4px;outline:none;cursor:pointer;max-width:90px}
-  .cl-cat-input:hover,.cl-cat-input:focus{background:var(--bg)}
+  /* .cl-text-input / .cl-due-input / .cl-cat-input are defined once, under TASK INLINE EDIT
+     INPUTS below — a second copy used to live here and was fully overridden by it. */
 
   /* MOBILE MOVE CARDS */
   @media(max-width:700px){.moves-tbl-wrap{display:none}#moves-cards{display:block}}
@@ -500,42 +499,42 @@
   /* Hairline card borders + warm shadow */
   .card{border-color:rgba(26,24,20,0.09);box-shadow:0 1px 4px rgba(26,24,20,0.06),0 1px 2px rgba(26,24,20,0.03)}
   /* Primary button — sage green */
-  .btn-primary{background:#3E7A5E;color:#fff;border-color:#3E7A5E}
-  .btn-primary:hover{background:#2F614A;color:#fff}
-  /* Active tab — gold */
-  .sub-tab.active{background:#3E7A5E;color:#fff;border-color:#3E7A5E;font-weight:600}
+  .btn-primary{background:var(--accent-fill);color:#fff;border-color:var(--accent-fill)}
+  .btn-primary:hover{background:var(--accent-fill-hover);color:#fff}
+  /* Active tab — sage fill */
+  .sub-tab.active{background:var(--accent-fill);color:#fff;border-color:var(--accent-fill);font-weight:600}
   .sub-tab:hover{background:var(--surface2)}
-  /* Gold focus rings */
-  input:focus,select:focus,textarea:focus{border-color:#3E7A5E;box-shadow:0 0 0 2px rgba(62,122,94,0.40)}
+  /* Focus rings — sage */
+  input:focus,select:focus,textarea:focus{border-color:var(--accent-fill);box-shadow:0 0 0 2px rgba(62,122,94,0.40)}
   /* Contrast (AA): darker amber pill text on light, lighter on dark */
   .pill-medium,.pill-inprogress{color:#8A5510}
   body.dark-mode .pill-medium,body.dark-mode .pill-inprogress{color:#E0A55E}
   /* Global keyboard focus ring — every interactive element gets a visible focus state */
-  a:focus-visible,button:focus-visible,[role="button"]:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.nav-item:focus-visible,.sub-tab:focus-visible,.mn-item:focus-visible,.stat-clickable:focus-visible{outline:2px solid #3E7A5E;outline-offset:2px;border-radius:4px}
-  .nav-item:focus-visible,.mn-item:focus-visible{outline-color:#8FC7AC;outline-offset:-2px}
+  a:focus-visible,button:focus-visible,[role="button"]:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.nav-item:focus-visible,.sub-tab:focus-visible,.mn-item:focus-visible,.stat-clickable:focus-visible{outline:2px solid var(--accent-fill);outline-offset:2px;border-radius:4px}
+  .nav-item:focus-visible,.mn-item:focus-visible{outline-color:var(--accent-on-dark);outline-offset:-2px}
   /* Mobile nav — dark */
-  #mob-nav{background:#141C1C;border-top:0.5px solid rgba(78,138,112,0.18)}
+  #mob-nav{background:#141C1C;border-top:0.5px solid rgba(var(--accent-soft-rgb),0.18)}
   .mn-item{color:rgba(255,255,255,0.46)}
   .mn-item.active{color:#7FBEA0}
   /* Move row selected */
-  .move-row.sel>td{background:rgba(78,138,112,0.08)!important}
-  .cl-text-input:hover,.cl-text-input:focus{background:rgba(78,138,112,0.09)}
-  .cl-due-input:hover,.cl-due-input:focus{border-color:#4E8A70;background:rgba(78,138,112,0.09)}
-  /* Calendar today gold */
-  .cal-week-tbl th.today-hdr{background:rgba(78,138,112,0.13);color:#2A6050}
-  .cal-week-tbl td.today-col{background:rgba(78,138,112,0.05)}
-  .cal-month-day.today{border-color:#4E8A70;background:rgba(78,138,112,0.05)}
-  .cal-month-day.today .cal-day-num{color:#4E8A70}
-  .cal-pop-goto{border-color:rgba(78,138,112,0.28);background:rgba(78,138,112,0.07);color:#2A6050}
-  .cal-pop-goto:hover{background:#3E7A5E;color:#fff}
-  /* Guide tip gold */
-  .guide-tip{background:rgba(78,138,112,0.09);border-left-color:#4E8A70;color:#2A6050}
-  .guide-card-meta{background:#3E7A5E;color:#fff}
-  /* Import tab active gold */
-  .import-tab.active{background:#3E7A5E;color:#fff}
+  .move-row.sel>td{background:rgba(var(--accent-soft-rgb),0.08)!important}
+  .cl-text-input:hover,.cl-text-input:focus{background:rgba(var(--accent-soft-rgb),0.09)}
+  .cl-due-input:hover,.cl-due-input:focus{border-color:var(--accent-soft);background:rgba(var(--accent-soft-rgb),0.09)}
+  /* Calendar today — sage tint */
+  .cal-week-tbl th.today-hdr{background:rgba(var(--accent-soft-rgb),0.13);color:var(--accent-deep)}
+  .cal-week-tbl td.today-col{background:rgba(var(--accent-soft-rgb),0.05)}
+  .cal-month-day.today{border-color:var(--accent-soft);background:rgba(var(--accent-soft-rgb),0.05)}
+  .cal-month-day.today .cal-day-num{color:var(--accent-soft)}
+  .cal-pop-goto{border-color:rgba(var(--accent-soft-rgb),0.28);background:rgba(var(--accent-soft-rgb),0.07);color:var(--accent-deep)}
+  .cal-pop-goto:hover{background:var(--accent-fill);color:#fff}
+  /* Guide tip — sage tint */
+  .guide-tip{background:rgba(var(--accent-soft-rgb),0.09);border-left-color:var(--accent-soft);color:var(--accent-deep)}
+  .guide-card-meta{background:var(--accent-fill);color:#fff}
+  /* Import tab active — sage fill */
+  .import-tab.active{background:var(--accent-fill);color:#fff}
   /* Alert banners warm */
-  .tight-alert{background:#FBF0DC;border-color:rgba(78,138,112,0.50)}
-  .needs-appt-alert{background:#FBF0DC;border-color:rgba(78,138,112,0.50)}
+  .tight-alert{background:#FBF0DC;border-color:rgba(var(--accent-soft-rgb),0.50)}
+  .needs-appt-alert{background:#FBF0DC;border-color:rgba(var(--accent-soft-rgb),0.50)}
   /* PTE badges warmer */
   .pte-inside{background:#ECF2DC;color:#3E6B1F}
   /* Passdown preview */
@@ -563,9 +562,9 @@
   .amenity-closeout-row td{padding:0;border-bottom:2px solid var(--amber)}
   .closeout-inner{padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .pending-closeout-badge{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:var(--amber);background:var(--amber-light);border-radius:4px;padding:2px 8px}
-  /* Pill reservation gold */
-  .pill-reservation{background:rgba(78,138,112,0.14);color:#2A6050}
-  /* Cal chip amenity warm gold */
+  /* Pill reservation — sage tint */
+  .pill-reservation{background:rgba(var(--accent-soft-rgb),0.14);color:var(--accent-deep)}
+  /* Cal chip amenity — warm amber */
   .cal-chip-amenity{background:#FBF0DC;color:#9E6300}
   .nav-item [style*="background:var(--accent)"]{color:#141C1C!important}
   /* Stat card tints */
@@ -576,7 +575,7 @@
   body.dark-mode .stat-card.green{background:var(--green-light);border-color:rgba(26,102,64,0.55)}
   body.dark-mode .stat-card.red{background:var(--red-light);border-color:rgba(192,53,53,0.55)}
   body.dark-mode .cal-chip-amenity{background:var(--amber-light);color:#E0A55E}
-  body.dark-mode .pill-reservation{background:rgba(78,138,112,0.25);color:#8FC7AC}
+  body.dark-mode .pill-reservation{background:rgba(var(--accent-soft-rgb),0.25);color:var(--accent-on-dark)}
   body.dark-mode .pte-inside{background:rgba(62,107,31,0.3);color:#A5CE7F}
   body.dark-mode .guide-tip{color:#9CC5B3}
   body.dark-mode .cal-week-tbl td.today-col{background:rgba(55,138,221,0.10)}
@@ -590,11 +589,11 @@
   .login-logo{font-family:var(--font-serif);font-size:22px;font-weight:600;color:#F0EBE0;letter-spacing:.4px}
   .login-sub{color:rgba(255,255,255,0.62)}
   .acct-btn{background:#122030;border:0.5px solid rgba(255,255,255,0.10);color:rgba(255,255,255,0.78)}
-  .acct-btn:hover{background:rgba(26,92,62,0.18);border-color:#1A5C3E;color:#7ECBA0}
+  .acct-btn:hover{background:rgba(26,92,62,0.18);border-color:var(--accent);color:#7ECBA0}
   .acct-avatar{background:rgba(26,92,62,0.22);color:#7ECBA0}
   .acct-role-tag{color:rgba(255,255,255,0.62)}
   .pin-dot{border-color:rgba(255,255,255,0.22)}
-  .pin-dot.filled{background:#1A5C3E;border-color:#1A5C3E}
+  .pin-dot.filled{background:var(--accent);border-color:var(--accent)}
   .pin-key{background:#122030;border:0.5px solid rgba(255,255,255,0.10);color:rgba(255,255,255,0.78)}
   .pin-key:hover{background:rgba(26,92,62,0.18);color:#7ECBA0}
   /* SECTION ENTRY STAGGER */
@@ -612,13 +611,13 @@
   .cal-view-btn:active{transform:scale(0.97)}
   body.dark-mode .cal-view-btn.active{box-shadow:0 1px 4px rgba(0,0,0,0.45)}
   .cal-month-day{min-height:82px;padding:6px 5px}
-  .cal-month-day.today{border-color:rgba(78,138,112,0.4)!important;background:rgba(78,138,112,0.04)!important}
-  .cal-month-day.today .cal-day-num{background:#3E7A5E;color:#fff!important;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;margin-bottom:3px}
+  .cal-month-day.today{border-color:rgba(var(--accent-soft-rgb),0.4)!important;background:rgba(var(--accent-soft-rgb),0.04)!important}
+  .cal-month-day.today .cal-day-num{background:var(--accent-fill);color:#fff!important;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;margin-bottom:3px}
   .cal-month-day.today .cal-chip-in{background:#bbf7d0;color:#14532d;font-weight:600}
   .cal-month-day.today .cal-chip-out{background:#fecaca;color:var(--red);font-weight:600}
   .cal-month-grid{gap:4px}
-  .cal-week-tbl th.today-hdr{background:rgba(78,138,112,0.18)!important;color:#2A6050!important;font-weight:700}
-  .cal-week-tbl td.today-col{background:rgba(78,138,112,0.07)!important}
+  .cal-week-tbl th.today-hdr{background:rgba(var(--accent-soft-rgb),0.18)!important;color:var(--accent-deep)!important;font-weight:700}
+  .cal-week-tbl td.today-col{background:rgba(var(--accent-soft-rgb),0.07)!important}
 
   /* ─── Moves section improvements ─── */
   .move-row.today-move>td:first-child{border-left:3px solid var(--accent)}
@@ -873,7 +872,7 @@
       <div id="moves-board" style="display:none"></div>
       <div class="card moves-tbl-wrap">
         <div class="card-hdr"><span class="card-title" id="moves-card-title">Scheduled Moves</span><span class="card-count" id="moves-count">0 entries</span>
-          <div class="ml-auto flex gap-8" id="moves-admin-actions"><button class="btn btn-ghost btn-sm" id="btn-move-logged" onclick="toggleMoveLogged()" title="Show/hide logged by column">Logged By</button><button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button></div>
+          <div class="ml-auto flex gap-8" id="moves-admin-actions"><button class="btn btn-ghost btn-sm" id="btn-move-logged" onclick="toggleMoveLogged()" title="Show/hide logged by column">Logged By</button></div>
         </div>
         <div class="tbl-wrap"><table><thead><tr id="moves-thead-row"><th class="th-sort" onclick="sortMoves('unit')">Unit</th><th class="th-sort" onclick="sortMoves('name')">Resident</th><th class="th-sort" onclick="sortMoves('date')">Lease Date</th><th class="th-sort" onclick="sortMoves('type')">Type</th><th class="th-sort" onclick="sortMoves('appt')">Reservation</th><th class="tar">Total</th><th>Notes</th><th id="moves-th-logged" style="display:none">Logged By</th><th></th></tr></thead><tbody id="moves-tbody"></tbody></table></div>
       </div>
@@ -1160,15 +1159,15 @@
         <div class="card-hdr"><span class="card-title">&#128196; CSV Format Guide</span></div>
         <div class="card-body" style="font-size:12.5px;color:var(--text2);line-height:1.9">
           <div style="margin-bottom:12px"><strong style="color:var(--text)">Tours CSV columns (any order):</strong><br>
-          <code style="font-family:var(--mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">name, date, time, unit, type (sgt/guided), contact, notes</code></div>
+          <code style="font-family:var(--font-mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">name, date, time, unit, type (sgt/guided), contact, notes</code></div>
           <div style="margin-bottom:12px"><strong style="color:var(--text)">Moves CSV columns:</strong><br>
-          <code style="font-family:var(--mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">unit, resident, date, type (in/out), time, total, elevator (yes/no), notes</code></div>
+          <code style="font-family:var(--font-mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">unit, resident, date, type (in/out), time, total, elevator (yes/no), notes</code></div>
           <div style="margin-bottom:12px"><strong style="color:var(--text)">Maintenance CSV columns:</strong><br>
-          <code style="font-family:var(--mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">unit, issue, description, priority (high/medium/low), status (open/in-progress/resolved), reporter</code></div>
+          <code style="font-family:var(--font-mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">unit, issue, description, priority (high/medium/low), status (open/in-progress/resolved), reporter</code></div>
           <div style="margin-bottom:12px"><strong style="color:var(--text)">Amenity Bookings CSV columns:</strong><br>
-          <code style="font-family:var(--mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">resident, unit, space, date, start, end, type (reservation/event), fee, notes</code></div>
+          <code style="font-family:var(--font-mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">resident, unit, space, date, start, end, type (reservation/event), fee, notes</code></div>
           <div><strong style="color:var(--text)">WiFi / Zentro Service CSV columns:</strong><br>
-          <code style="font-family:var(--mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">Unit, Name, Service End</code> &mdash; upload Zentro's export as-is. Matches units already in Unit Tracker and updates their WiFi expiry (drives the Dashboard's WiFi Renewals banner); "N/A" clears the expiry. Units not yet in Unit Tracker are added.</div>
+          <code style="font-family:var(--font-mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">Unit, Name, Service End</code> &mdash; upload Zentro's export as-is. Matches units already in Unit Tracker and updates their WiFi expiry (drives the Dashboard's WiFi Renewals banner); "N/A" clears the expiry. Units not yet in Unit Tracker are added.</div>
           <div style="margin-top:12px;padding:10px 12px;background:var(--accent-light);border-radius:var(--radius);color:var(--accent);font-size:12px">
             <strong>Tip:</strong> Column names are flexible &mdash; the importer matches common variations (e.g. "Prospect Name", "prospect_name", "Name" all map to <em>name</em>).
           </div>
@@ -3302,7 +3301,7 @@ function renderActivityLog() {
       html += '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'
         + '<span style="font-size:11px;color:var(--text3);min-width:58px;padding-top:1px">' + timeStr + '</span>'
         + '<div style="flex:1;min-width:0">'
-        + '<div style="font-size:13px;color:var(--text1)">' + esc(e.desc || '') + '</div>'
+        + '<div style="font-size:13px;color:var(--text)">' + esc(e.desc || '') + '</div>'
         + (e.details ? '<div style="font-size:11px;color:var(--text2);margin-top:2px;line-height:1.4">' + esc(e.details) + '</div>' : '')
         + '<div style="font-size:11px;color:var(--text3);margin-top:2px">'
         + '<span style="color:' + actionColor + ';font-weight:600;text-transform:capitalize">' + (e.action || '') + '</span>'
@@ -3851,7 +3850,7 @@ function renderDash() {
   var hour = new Date().getHours();
   var greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   var greetName = currentUser ? currentUser.name.split(' ')[0] : 'Gabino';
-  var html = '<div class="dash-greeting-wrap"><canvas id="dash-bg-canvas"></canvas><div class="dash-greeting-content"><div style="font-size:18px;font-weight:600;letter-spacing:-.3px">' + greeting + ', ' + greetName + '.</div><div style="font-size:12px;color:var(--text3);margin-top:2px;font-family:var(--mono)">' + new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) + ' &nbsp;&middot;&nbsp; Front Desk</div></div></div>';
+  var html = '<div class="dash-greeting-wrap"><canvas id="dash-bg-canvas"></canvas><div class="dash-greeting-content"><div style="font-size:18px;font-weight:600;letter-spacing:-.3px">' + greeting + ', ' + greetName + '.</div><div style="font-size:12px;color:var(--text3);margin-top:2px;font-family:var(--font-mono)">' + new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) + ' &nbsp;&middot;&nbsp; Front Desk</div></div></div>';
   if (!isViewerUser()) {
     html += '<div class="flex gap-8" style="margin:0 0 14px;flex-wrap:wrap;align-items:center">'
       + '<button class="btn btn-primary" onclick="openAddLogbook()" title="Visitor issues, resident concerns, incidents, notes — everything you log feeds your passdown">&#128211; Log it</button>'
@@ -3992,7 +3991,7 @@ function renderDash() {
   // ── Shift Log scratchpad ──
   var shiftEntries = getShiftLog();
   html += '<div class="card" style="margin-top:14px"><div class="card-hdr"><span class="card-title">📋 This Shift</span><span class="card-count" style="color:var(--text3)">' + (shiftEntries.length ? shiftEntries.length + ' note' + (shiftEntries.length > 1 ? 's' : '') : 'quick log') + '</span></div><div class="card-body" style="padding:10px 14px">';
-  html += '<div style="display:flex;gap:6px;margin-bottom:10px"><input type="text" id="shift-log-input" placeholder="Log what happened — press Enter to add" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text1);font-family:inherit;outline:none" onkeydown="if(event.key===\'Enter\'){var v=this.value.trim();if(v){addShiftEntry(v);this.value=\'\';}event.preventDefault();}"><button class="btn btn-primary btn-sm" onclick="var el=g(\'shift-log-input\');var v=el.value.trim();if(v){addShiftEntry(v);el.value=\'\';}el.focus()">Add</button></div>';
+  html += '<div style="display:flex;gap:6px;margin-bottom:10px"><input type="text" id="shift-log-input" placeholder="Log what happened — press Enter to add" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-family:inherit;outline:none" onkeydown="if(event.key===\'Enter\'){var v=this.value.trim();if(v){addShiftEntry(v);this.value=\'\';}event.preventDefault();}"><button class="btn btn-primary btn-sm" onclick="var el=g(\'shift-log-input\');var v=el.value.trim();if(v){addShiftEntry(v);el.value=\'\';}el.focus()">Add</button></div>';
   if (!shiftEntries.length) {
     html += '<div style="font-size:12px;color:var(--text3);padding:4px 0">Nothing logged yet. Jot things down as they happen — keys made, resident issues, incidents. These auto-fill into your passdown.</div>';
   } else {
@@ -4000,8 +3999,8 @@ function renderDash() {
       var d = new Date(e.ts);
       var timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
       html += '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border2)">'
-        + '<span style="font-size:11px;color:var(--text3);font-family:var(--mono);flex-shrink:0;margin-top:2px;white-space:nowrap">' + timeStr + '</span>'
-        + '<span style="flex:1;font-size:13px;color:var(--text1);line-height:1.4">' + esc(e.text) + '</span>'
+        + '<span style="font-size:11px;color:var(--text3);font-family:var(--font-mono);flex-shrink:0;margin-top:2px;white-space:nowrap">' + timeStr + '</span>'
+        + '<span style="flex:1;font-size:13px;color:var(--text);line-height:1.4">' + esc(e.text) + '</span>'
         + '<button onclick="deleteShiftEntry(' + i + ')" style="flex-shrink:0;font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0 2px;line-height:1" title="Remove">✕</button>'
         + '</div>';
     });
@@ -8448,7 +8447,7 @@ function renderParking() {
   list.forEach(function(p) {
     var isReturned = p.status==='returned';
     var rowOpacity = isReturned ? 'opacity:0.55;' : '';
-    var statusBadge = p.status==='active' ? '<span style="background:rgba(78,138,112,0.12);color:var(--accent);font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px;border:1px solid rgba(78,138,112,0.2)">Active</span>'
+    var statusBadge = p.status==='active' ? '<span style="background:rgba(var(--accent-soft-rgb),0.12);color:var(--accent);font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px;border:1px solid rgba(var(--accent-soft-rgb),0.2)">Active</span>'
       : p.status==='notice-given' ? '<span style="background:rgba(217,119,6,0.12);color:var(--amber);font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px;border:1px solid rgba(217,119,6,0.25)">⚠ Notice Given</span>'
       : '<span style="background:rgba(107,114,128,0.1);color:var(--text3);font-size:11px;font-weight:600;border-radius:4px;padding:2px 8px">Returned</span>';
     function credCell(c) {
@@ -12479,8 +12478,8 @@ function reviewBeforeSend() {
     }
     issues.forEach(function(issue) {
       var icon = issue.sev === 'info' ? '🔵' : (issue.sev === 'block' ? '🚫' : '⚠️');
-      var bg = issue.sev === 'info' ? 'rgba(78,138,112,0.08)' : (issue.sev === 'block' ? 'rgba(220,38,38,0.08)' : 'rgba(217,119,6,0.08)');
-      var bd = issue.sev === 'info' ? 'rgba(78,138,112,0.2)' : (issue.sev === 'block' ? 'rgba(220,38,38,0.2)' : 'rgba(217,119,6,0.2)');
+      var bg = issue.sev === 'info' ? 'rgba(var(--accent-soft-rgb),0.08)' : (issue.sev === 'block' ? 'rgba(220,38,38,0.08)' : 'rgba(217,119,6,0.08)');
+      var bd = issue.sev === 'info' ? 'rgba(var(--accent-soft-rgb),0.2)' : (issue.sev === 'block' ? 'rgba(220,38,38,0.2)' : 'rgba(217,119,6,0.2)');
       html += '<div style="display:flex;gap-8px;padding:7px 10px;margin-bottom:6px;border-radius:5px;background:' + bg + ';border:1px solid ' + bd + '">'
         + '<span style="flex-shrink:0;margin-right:8px">' + icon + '</span>'
         + '<span style="font-size:12px;color:var(--text)">' + issue.msg + '</span></div>';
@@ -12563,7 +12562,7 @@ function checkPassdownAcknowledgementOnLogin() {
   ov.innerHTML = '<div class="modal"><div class="modal-hdr"><span class="modal-title">Review Last Passdown</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-pd-ack\')">&#x2715;</button></div>'
     + '<div class="modal-bdy">'
     + '<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Sent by <strong>' + esc(pending.authorName || 'Front Desk') + '</strong> · ' + esc(pending.shift || '') + ' · ' + fmtShort(pending.date) + '</div>'
-    + '<pre style="white-space:pre-wrap;max-height:46vh;overflow:auto;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;font-family:var(--mono);font-size:11px;color:var(--text);line-height:1.45">' + esc(pending.text) + '</pre>'
+    + '<pre style="white-space:pre-wrap;max-height:46vh;overflow:auto;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;font-family:var(--font-mono);font-size:11px;color:var(--text);line-height:1.45">' + esc(pending.text) + '</pre>'
     + '</div><div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-pd-ack\')">Review later</button>'
     + '<button class="btn btn-primary" onclick="acknowledgePassdown(\'' + esc(pending.id) + '\',\'' + esc(pending.authorId || '') + '\')">Got it — I reviewed this</button></div></div>';
   openModal('modal-pd-ack');
@@ -13384,7 +13383,7 @@ function getChips(dateStr, unit, viewMode, maxShow) {
   }
   if (maxShow && items.length > maxShow) {
     var extra = items.length - maxShow;
-    return items.slice(0, maxShow).join('') + '<div class="cal-chip" style="background:var(--bg2);color:var(--text2);cursor:pointer;font-size:10px" onclick="openCalPop(\'' + dateStr + '\',event)">+' + extra + ' more</div>';
+    return items.slice(0, maxShow).join('') + '<div class="cal-chip" style="background:var(--surface2);color:var(--text2);cursor:pointer;font-size:10px" onclick="openCalPop(\'' + dateStr + '\',event)">+' + extra + ' more</div>';
   }
   return items.join('');
 }
