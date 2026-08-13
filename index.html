@@ -2180,8 +2180,9 @@ async function mergeTodoInbox() {
     var amenityUpdates = Array.isArray(rowData.amenityUpdates) ? rowData.amenityUpdates : [];
     var logbookEntries = Array.isArray(rowData.logbookEntries) ? rowData.logbookEntries : [];
     var keyEntries = Array.isArray(rowData.keyEntries) ? rowData.keyEntries : [];
+    var moveCreates = Array.isArray(rowData.moveCreates) ? rowData.moveCreates : [];
     var edits = Array.isArray(rowData.edits) ? rowData.edits : [];
-    if (!inbox.length && !moveUpdates.length && !amenityUpdates.length && !logbookEntries.length && !keyEntries.length && !edits.length) return;
+    if (!inbox.length && !moveUpdates.length && !amenityUpdates.length && !logbookEntries.length && !keyEntries.length && !moveCreates.length && !edits.length) return;
     var resolved = [];
     for (var i = 0; i < inbox.length; i++) {
       var item = inbox[i];
@@ -2391,6 +2392,61 @@ async function mergeTodoInbox() {
       logActivity('keys', 'create', 'Added one-time key from card-audit outreach — Unit ' + ke.unit + (ke.fob ? ' · Card #' + ke.fob : ''), ke.addedBy || 'Email Triage');
       keysTouched++;
     });
+    // Apply queued brand-new move cards (move-in or move-out) — the gap moveUpdates
+    // deliberately doesn't cover: moveUpdates only ever fills blanks on a card that
+    // already exists (or falls back to a to-do so Gabino decides), because deciding
+    // "is this really a new move" from a welcome letter/booking email alone is
+    // judgment-call territory. moveCreates is for the opposite case — Gabino has
+    // already confirmed in chat this is a real move (e.g. reconciled against a
+    // master list / CRM export) and just wants the card + its default checklist +
+    // follow-up to-do created, same as clicking "+ Add Move" would. Mirrors
+    // saveMove()'s new-move path so a triage-created card behaves identically to a
+    // manually-added one (same tasks template, same follow-up to-do generation).
+    // Dedup is a stamp inside notes (mirrors logbookEntries/keyEntries) so a retried
+    // push can't create the same card twice.
+    var movesCreated = 0;
+    moveCreates.forEach(function (mc) {
+      if (!mc || !mc.unit || !mc.resident || (mc.type !== 'in' && mc.type !== 'out') || !mc.date) return;
+      var stamp = 'created:' + (mc.srcThread || mc.id || '');
+      if (!state.moves) state.moves = [];
+      if (state.moves.some(function (m) { return (m.notes || '').indexOf(stamp) !== -1; })) return; // already applied
+      var customIn = state.customInTasks || DEFAULT_IN_TASKS;
+      var customOut = state.customOutTasks || DEFAULT_OUT_TASKS;
+      var tasks = (mc.type === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null, paymentTask: t.paymentTask || false, automationId: getTaskAutomationId(t) || null }; });
+      var noteLines = [];
+      if (mc.notes) noteLines.push(String(mc.notes));
+      noteLines.push('Added via confirmed triage request ' + today() + ' [' + stamp + ']');
+      var newMove = {
+        id: mc.id || uid(), unit: String(mc.unit), resident: mc.resident, date: mc.date, type: mc.type,
+        total: mc.total || '', notes: noteLines.join('\n'),
+        apptDate: mc.apptDate || '', apptTime: mc.apptTime || '', apptTbd: !!mc.apptTbd,
+        leaseStatus: (mc.type === 'in' ? (mc.leaseStatus || '') : ''),
+        tasks: tasks, archivedAt: null, createdAt: Date.now(), addedBy: mc.addedBy || 'Email Triage'
+      };
+      state.moves.push(newMove);
+      if (gabAcct) {
+        if (!state.userTodos) state.userTodos = {};
+        if (!state.userTodos[gabAcct.id]) state.userTodos[gabAcct.id] = [];
+        var glist2 = state.userTodos[gabAcct.id];
+        if (mc.type === 'out') {
+          var outReminderDate = '';
+          try { var dOut = new Date(); dOut.setDate(dOut.getDate() + 1); outReminderDate = dOut.getFullYear() + '-' + String(dOut.getMonth()+1).padStart(2,'0') + '-' + String(dOut.getDate()).padStart(2,'0'); } catch(e) {}
+          glist2.push({ id: uid(), text: 'Send move-out reminders — ' + mc.resident + ', Unit ' + mc.unit, dueDate: outReminderDate, priority: 'normal', done: false, status: 'open', category: 'resident', linkedUnit: String(mc.unit), note: 'Remind resident: book move-out time slot + inspection work order + return all keys & parking credentials to front desk', createdAt: Date.now(), lastUpdated: Date.now(), moveRef: newMove.id, srcThread: mc.srcThread || '', addedBy: mc.addedBy || 'Email Triage' });
+        } else {
+          var preCallDate = '', postCallDate = '';
+          try {
+            var dPre = new Date(mc.date + 'T12:00:00'); dPre.setDate(dPre.getDate() - 7);
+            preCallDate = dPre.getFullYear() + '-' + String(dPre.getMonth()+1).padStart(2,'0') + '-' + String(dPre.getDate()).padStart(2,'0');
+            var dPost = new Date(mc.date + 'T12:00:00'); dPost.setDate(dPost.getDate() + 3);
+            postCallDate = dPost.getFullYear() + '-' + String(dPost.getMonth()+1).padStart(2,'0') + '-' + String(dPost.getDate()).padStart(2,'0');
+          } catch(e) {}
+          glist2.push({ id: uid(), text: 'Pre-move call — ' + mc.resident + ', Unit ' + mc.unit, dueDate: preCallDate, priority: 'normal', done: false, status: 'open', category: 'resident', linkedUnit: String(mc.unit), note: '1 week before lease start — confirm everything is ready, any remaining tasks on their end', createdAt: Date.now(), lastUpdated: Date.now(), moveRef: newMove.id, srcThread: mc.srcThread || '', addedBy: mc.addedBy || 'Email Triage' });
+          glist2.push({ id: uid(), text: 'Post move-in call — ' + mc.resident + ', Unit ' + mc.unit, dueDate: postCallDate, priority: 'normal', done: false, status: 'open', category: 'resident', linkedUnit: String(mc.unit), note: '3 days after lease start — how did the move go? any questions?', createdAt: Date.now(), lastUpdated: Date.now(), moveRef: newMove.id, srcThread: mc.srcThread || '', addedBy: mc.addedBy || 'Email Triage' });
+        }
+      }
+      logActivity('moves', 'create', 'Added move via confirmed triage request — Unit ' + mc.unit + ' (' + (mc.type === 'in' ? 'Move In' : 'Move Out') + ') · ' + mc.resident, mc.addedBy || 'Email Triage');
+      movesCreated++;
+    });
     // Apply queued field-level edits to records that already exist — the one gap
     // the append-only queues above can't cover (a wrong unit number, a detail
     // that needs adding to an already-logged entry, etc). Same safety shape as
@@ -2431,14 +2487,14 @@ async function mergeTodoInbox() {
       editsByQueue[ed.queue]++;
       editsTouched++;
     });
-    var merged = added + movesTouched + amenitiesTouched + logsTouched + keysTouched + editsTouched;
+    var merged = added + movesTouched + amenitiesTouched + logsTouched + keysTouched + movesCreated + editsTouched;
     if (merged) {
       if (added) logActivity('todos', 'create', 'Imported ' + added + ' to-do(s) from email triage inbox', (resolved.length + moveUpdates.length + amenityUpdates.length - merged) ? 'duplicates skipped' : '');
       scheduleSave();
       await pushCloud();
       if (localDirty) return; // save didn't land — keep the inbox row so the next cycle retries (drain is idempotent)
       if ((added || editsByQueue.todos) && typeof curSec !== 'undefined' && curSec === 'todos') renderTodos();
-      if ((movesTouched || editsByQueue.moves) && typeof curSec !== 'undefined' && curSec === 'moves') renderMoves();
+      if ((movesTouched || movesCreated || editsByQueue.moves) && typeof curSec !== 'undefined' && curSec === 'moves') renderMoves();
       if ((amenitiesTouched || editsByQueue.amenities) && typeof curSec !== 'undefined' && curSec === 'amenities') renderAmenities();
       if (amenitiesTouched && typeof renderCalendar === 'function') renderCalendar();
       if ((logsTouched || editsByQueue.logbook) && typeof curSec !== 'undefined' && curSec === 'logbook' && typeof renderLogbook === 'function') renderLogbook();
@@ -2447,6 +2503,7 @@ async function mergeTodoInbox() {
       var parts = [];
       if (added) parts.push(added + ' to-do' + (added > 1 ? 's' : ''));
       if (movesTouched) parts.push(movesTouched + ' move card(s) updated');
+      if (movesCreated) parts.push(movesCreated + ' move card(s) added');
       if (amenitiesTouched) parts.push(amenitiesTouched + ' amenity booking(s)');
       if (logsTouched) parts.push(logsTouched + ' logbook entry(ies)');
       if (keysTouched) parts.push(keysTouched + ' key entry(ies)');
@@ -2457,12 +2514,13 @@ async function mergeTodoInbox() {
     // right before clearing (rather than blanking from the stale rowData snapshot)
     // so anything a concurrent inbox_push.py run appended while we were merging/
     // saving survives instead of being silently wiped by this PATCH.
-    var seenTodoIds = {}, seenMoveIds = {}, seenAmenIds = {}, seenLogIds = {}, seenKeyIds = {}, seenEditIds = {};
+    var seenTodoIds = {}, seenMoveIds = {}, seenAmenIds = {}, seenLogIds = {}, seenKeyIds = {}, seenMoveCreateIds = {}, seenEditIds = {};
     inbox.forEach(function (t) { if (t && t.id) seenTodoIds[t.id] = true; });
     moveUpdates.forEach(function (m) { if (m && m.id) seenMoveIds[m.id] = true; });
     amenityUpdates.forEach(function (a) { if (a && a.id) seenAmenIds[a.id] = true; });
     logbookEntries.forEach(function (le) { if (le && le.id) seenLogIds[le.id] = true; });
     keyEntries.forEach(function (ke) { if (ke && ke.id) seenKeyIds[ke.id] = true; });
+    moveCreates.forEach(function (mc) { if (mc && mc.id) seenMoveCreateIds[mc.id] = true; });
     edits.forEach(function (ed) { if (ed && ed.id) seenEditIds[ed.id] = true; });
     var freshRowData = rowData;
     try {
@@ -2477,8 +2535,9 @@ async function mergeTodoInbox() {
     var remainAmens = (Array.isArray(freshRowData.amenityUpdates) ? freshRowData.amenityUpdates : []).filter(function (a) { return !(a && seenAmenIds[a.id]); });
     var remainLogs = (Array.isArray(freshRowData.logbookEntries) ? freshRowData.logbookEntries : []).filter(function (le) { return !(le && seenLogIds[le.id]); });
     var remainKeys = (Array.isArray(freshRowData.keyEntries) ? freshRowData.keyEntries : []).filter(function (ke) { return !(ke && seenKeyIds[ke.id]); });
+    var remainMoveCreates = (Array.isArray(freshRowData.moveCreates) ? freshRowData.moveCreates : []).filter(function (mc) { return !(mc && seenMoveCreateIds[mc.id]); });
     var remainEdits = (Array.isArray(freshRowData.edits) ? freshRowData.edits : []).filter(function (ed) { return !(ed && seenEditIds[ed.id]); });
-    var cleared = Object.assign({}, freshRowData, { todos: remainTodos, moveUpdates: remainMoves, amenityUpdates: remainAmens, logbookEntries: remainLogs, keyEntries: remainKeys, edits: remainEdits });
+    var cleared = Object.assign({}, freshRowData, { todos: remainTodos, moveUpdates: remainMoves, amenityUpdates: remainAmens, logbookEntries: remainLogs, keyEntries: remainKeys, moveCreates: remainMoveCreates, edits: remainEdits });
     await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox', {
       method: 'PATCH',
       headers: await getSupaHdr({ 'Prefer': 'return=minimal' }),
