@@ -1799,7 +1799,7 @@
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Date Found</label><input id="lf-date" type="date"></div><div class="fg"><label>Time Found</label><input id="lf-time" type="time"></div></div>
     <div class="fr"><div class="fg"><label>Found By</label><input id="lf-foundby" type="text"></div><div class="fg"><label>Location</label><input id="lf-location" type="text" list="lf-location-list" autocomplete="off"><datalist id="lf-location-list"><option value="Lobby"></option><option value="Mail Room"></option><option value="Package Room"></option><option value="Elevator"></option><option value="Hallway"></option><option value="Stairwell"></option><option value="Front Desk"></option><option value="Laundry Room"></option><option value="Bike Room"></option><option value="Garage"></option><option value="Terrace"></option><option value="Roof Deck"></option><option value="Gym"></option><option value="Common Area"></option></datalist></div></div>
-    <div class="fg"><label>Condition</label><select id="lf-condition"><option>Good</option><option>Fair</option><option>Damaged</option><option>Unknown</option></select></div>
+    <div class="fr"><div class="fg"><label>Belongs to Unit <span style="font-weight:400;color:var(--text3)">(if known)</span></label><input id="lf-unit" type="text" placeholder="e.g. 804" autocomplete="off"></div><div class="fg"><label>Condition</label><select id="lf-condition"><option>Good</option><option>Fair</option><option>Damaged</option><option>Unknown</option></select></div></div>
     <div class="fg"><label>Item Description</label><textarea id="lf-desc" rows="3" placeholder="Describe item clearly"></textarea></div>
     <div class="fg"><label>Notes (optional)</label><textarea id="lf-notes" rows="3"></textarea></div>
   </div>
@@ -1876,7 +1876,7 @@
     </div>
     <div class="fg"><label>Notes</label><textarea id="ur-notes" rows="3" placeholder="Any front desk notes for this unit&#8230;"></textarea></div>
   </div>
-  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-unit-record')">Cancel</button><button class="btn btn-primary" onclick="saveUnitRecord()">Save</button></div>
+  <div class="modal-ftr"><button class="btn btn-danger" id="ur-delete-btn" style="display:none;margin-right:auto" onclick="deleteUnitRecord()">Delete Unit</button><button class="btn btn-secondary" onclick="closeModal('modal-unit-record')">Cancel</button><button class="btn btn-primary" onclick="saveUnitRecord()">Save</button></div>
 </div></div>
 
 <div class="modal-ov" id="modal-import"><div class="modal">
@@ -1916,11 +1916,12 @@
         <div style="font-size:12px;color:var(--text3);margin-top:2px">Current: <span id="qa-current" style="font-weight:600;font-family:var(--font-mono)"></span></div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <button class="sup-qty-btn" onclick="qaDelta(-1)">&#8722;</button>
-        <span id="qa-new-qty" style="font-size:18px;font-weight:700;min-width:36px;text-align:center;font-family:var(--font-mono)"></span>
-        <button class="sup-qty-btn" onclick="qaDelta(+1)">&#43;</button>
+        <button class="sup-qty-btn" onclick="qaDelta(-1)" aria-label="Decrease by one">&#8722;</button>
+        <input id="qa-new-qty" type="number" min="0" step="1" inputmode="numeric" aria-label="New quantity" oninput="qaSetQty(this.value)" style="font-size:18px;font-weight:700;width:64px;text-align:center;font-family:var(--font-mono);padding:4px 2px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);color:var(--text)">
+        <button class="sup-qty-btn" onclick="qaDelta(+1)" aria-label="Increase by one">&#43;</button>
       </div>
     </div>
+    <div style="font-size:11px;color:var(--text3);margin:-8px 0 12px">Type a number directly for a large restock, or use &minus; / &plus; to step.</div>
     <div class="fg"><label>Reason / Note <span style="font-weight:400;color:var(--text3)">(required)</span></label><textarea id="qa-reason" class="ta-auto" rows="2" placeholder="e.g. Issued to Unit 2204, new stock received, damaged…" autocomplete="off"></textarea></div>
   </div>
   <div class="modal-ftr">
@@ -3022,6 +3023,10 @@ function esc(s) { return (s == null ? '' : String(s)).replace(/&/g,'&amp;').repl
 // field without breaking that check) — strip it wherever notes are shown to a human: the Logbook
 // table and the passdown's Logbook block.
 function stripTriageStamp(notes) { return (notes || '').replace(/\n\[triage:[^\]]*\]\s*$/, ''); }
+// Returns the trailing stamp itself (or '') so an edit path can strip it for display and
+// re-attach it on save — without it the mergeTodoInbox indexOf() dedupe would stop matching
+// and the same triage item would land again on the next drain.
+function triageStampOf(notes) { var m = (notes || '').match(/\n\[triage:[^\]]*\]\s*$/); return m ? m[0] : ''; }
 async function hashPin(pin, salt) {
   try {
     var data = new TextEncoder().encode(String(pin) + ':' + String(salt));
@@ -3639,7 +3644,7 @@ async function loadTestData() {
 // ─── MODAL ───
 // ===== [MODAL & BADGE UTILITIES] =============================================
 // ── Unit-number autocomplete (Phase 2) ──
-var UNIT_AUTOCOMPLETE_IDS = ['mv-unit', 'mt-unit', 'gs-unit', 'ky-unit', 'qk-unit', 'sec-unit', 'pk-unit', 'tp-unit', 'am-unit', 'cr-unit', 'laf-claim-unit'];
+var UNIT_AUTOCOMPLETE_IDS = ['mv-unit', 'mt-unit', 'gs-unit', 'ky-unit', 'qk-unit', 'sec-unit', 'pk-unit', 'tp-unit', 'am-unit', 'cr-unit', 'laf-claim-unit', 'lf-unit'];
 var UNIT_RESIDENT_MAP = { 'mv-unit': 'mv-resident', 'gs-unit': 'gs-host', 'ky-unit': 'ky-name', 'qk-unit': 'qk-resident', 'pk-unit': 'pk-resident', 'tp-unit': 'tp-recipient', 'am-unit': 'am-resident', 'cr-unit': 'cr-resident', 'pdi-unit': 'pdi-resident' };
 function refreshUnitDatalist() {
   var dl = g('unit-options'); if (!dl) return;
@@ -5969,7 +5974,7 @@ function openEditLogbook(id) {
   var uEl = g('lb-unit'); if (uEl) uEl.value = e.unit || '';
   var rEl = g('lb-resident'); if (rEl) rEl.value = e.resident || '';
   var lEl = g('lb-location'); if (lEl) lEl.value = e.location || '';
-  var nEl = g('lb-notes'); if (nEl) nEl.value = e.notes || '';
+  var nEl = g('lb-notes'); if (nEl) nEl.value = stripTriageStamp(e.notes);
   var naEl = g('lb-nextaction'); if (naEl) naEl.value = e.nextAction || '';
   var sEl = g('lb-status'); if (sEl) sEl.value = e.status || 'open';
   var hEl = g('lb-handled'); if (hEl) hEl.value = e.handledBy || '';
@@ -6001,8 +6006,11 @@ function saveLogbook() {
   if (editingLogbookId) {
     var entry = (state.logbook||[]).find(function(x){ return x.id===editingLogbookId; }); if (!entry) return;
     var _before = Object.assign({}, entry);
+    // The edit form shows notes with the triage dedupe stamp stripped, so re-attach whatever
+    // stamp this entry already carried — otherwise saving an edit would silently un-dedupe it.
+    var _stamp = triageStampOf(entry.notes);
     entry.type = type; entry.category = category; entry.unit = unit; entry.resident = resident;
-    entry.location = location; entry.notes = notes; entry.nextAction = nextAction;
+    entry.location = location; entry.notes = notes + _stamp; entry.nextAction = nextAction;
     entry.status = status; entry.handledBy = handledBy; entry.time = timeVal;
     entry.managerNotified = managerNotified; entry.footagePreserved = footagePreserved; entry.incidentReport = incidentReport;
     pushUndo({ sec: 'logbook', type: 'EDIT', id: entry.id, before: _before, after: Object.assign({}, entry), label: 'logbook edit — ' + type });
@@ -10527,21 +10535,21 @@ function saveLAF() {
   if (editingLAFId) {
     var item = (state.laf||[]).find(function(x){return x.id===editingLAFId;}); if(!item) return;
     var _lb = Object.assign({}, item);
-    item.date=g('lf-date').value||today(); item.time=g('lf-time').value||''; item.foundBy=g('lf-foundby').value.trim(); item.location=g('lf-location').value.trim(); item.condition=g('lf-condition').value; item.desc=desc; item.notes=g('lf-notes').value.trim();
+    item.date=g('lf-date').value||today(); item.time=g('lf-time').value||''; item.foundBy=g('lf-foundby').value.trim(); item.location=g('lf-location').value.trim(); item.unit=g('lf-unit')?g('lf-unit').value.trim():(item.unit||''); item.condition=g('lf-condition').value; item.desc=desc; item.notes=g('lf-notes').value.trim();
     pushUndo({ sec: 'laf', type: 'EDIT', id: item.id, before: _lb, after: Object.assign({}, item), label: 'L&F edit — ' + desc });
     editingLAFId=null; logActivity('laf','edit','Updated L&F item — '+desc+' · '+item.location); scheduleSave(); closeModal('modal-laf'); renderLAF(); updateBadges(); toast('Item updated'); return;
   }
-  var item = { id: uid(), date: g('lf-date').value || today(), time: g('lf-time').value || '', foundBy: g('lf-foundby').value.trim(), location: g('lf-location').value.trim(), condition: g('lf-condition').value, desc: desc, notes: g('lf-notes').value.trim(), claimedAt: null, claimedBy: '', claimedUnit: '', addedBy: currentUser ? currentUser.name : '', loggedAt: Date.now() };
+  var item = { id: uid(), date: g('lf-date').value || today(), time: g('lf-time').value || '', foundBy: g('lf-foundby').value.trim(), location: g('lf-location').value.trim(), unit: g('lf-unit') ? g('lf-unit').value.trim() : '', condition: g('lf-condition').value, desc: desc, notes: g('lf-notes').value.trim(), claimedAt: null, claimedBy: '', claimedUnit: '', addedBy: currentUser ? currentUser.name : '', loggedAt: Date.now() };
   if (!state.laf) state.laf = [];
   state.laf.push(item); pushUndo({ sec: 'laf', type: 'ADD', id: item.id, data: Object.assign({}, item), label: 'add L&F — ' + desc }); logActivity('laf','create','Logged L&F item — '+desc+' · '+(item.location||'unknown location')); scheduleSave(); closeModal('modal-laf'); renderLAF(); updateBadges();
-  ['lf-foundby', 'lf-location', 'lf-desc', 'lf-notes', 'lf-time'].forEach(function (id) { g(id).value = ''; }); toast('Item logged');
+  ['lf-foundby', 'lf-location', 'lf-unit', 'lf-desc', 'lf-notes', 'lf-time'].forEach(function (id) { var el = g(id); if (el) el.value = ''; }); toast('Item logged');
 }
 // ===== [LOST & FOUND] ========================================================
 function renderLAF() {
   var list = (state.laf || []).slice();
   if (lafFilter === 'unclaimed') list = list.filter(function (i) { return !i.claimedAt; });
   else if (lafFilter === 'claimed') list = list.filter(function (i) { return !!i.claimedAt; });
-  if (lafSearch) list = list.filter(function(i){ var q = lafSearch; return (i.desc||'').toLowerCase().includes(q) || (i.location||'').toLowerCase().includes(q) || (i.foundBy||'').toLowerCase().includes(q) || (i.notes||'').toLowerCase().includes(q); });
+  if (lafSearch) list = list.filter(function(i){ var q = lafSearch; return (i.desc||'').toLowerCase().includes(q) || (i.location||'').toLowerCase().includes(q) || (i.foundBy||'').toLowerCase().includes(q) || (i.unit||'').toLowerCase().includes(q) || (i.notes||'').toLowerCase().includes(q); });
   list.sort(function (a, b) { return b.loggedAt - a.loggedAt; });
   var tbody = g('laf-tbody'), cnt = g('laf-count');
   var expiryDays = (state.lafSettings && state.lafSettings.expiryDays) || 30;
@@ -10557,8 +10565,9 @@ function renderLAF() {
     if (overdue) statusCell += ' <span style="background:var(--amber-light);color:var(--amber);font-size:10px;border-radius:4px;padding:1px 6px;margin-left:4px">Disposal ' + days + 'd</span>';
     html += '<tr ' + (i.claimedAt ? 'style="opacity:0.55"' : (overdue ? 'style="background:var(--amber-light)"' : '')) + '>';
     var lafBy = fmtByTag(i.addedBy, i.createdAt || i.loggedAt);
-    html += '<td class="mono text-sm">' + fmtShort(i.date) + '</td><td class="text-sm">' + (i.location || '-') + '</td><td class="font-600">' + i.desc + lafBy + '</td>';
-    html += '<td class="text-sm text-2">' + i.condition + '</td><td class="text-sm">' + (i.foundBy || '-') + '</td>';
+    var lafUnitTag = i.unit ? ' <span style="font-size:10px;background:var(--bg2);color:var(--text3);border:1px solid var(--border);border-radius:4px;padding:1px 5px;margin-left:4px">Unit ' + esc(i.unit) + '</span>' : '';
+    html += '<td class="mono text-sm">' + fmtShort(i.date) + '</td><td class="text-sm">' + esc(i.location || '-') + '</td><td class="font-600">' + esc(i.desc) + lafUnitTag + lafBy + '</td>';
+    html += '<td class="text-sm text-2">' + esc(i.condition || '') + '</td><td class="text-sm">' + esc(i.foundBy || '-') + '</td>';
     var pdBtn = !i.claimedAt ? (i.flaggedForPassdown ? '<button class="btn btn-ghost btn-xs" onclick="toggleLAFPassdown(\'' + i.id + '\')" title="Remove from passdown" style="color:var(--green)">&#10003; Passdown</button> ' : '<button class="btn btn-ghost btn-xs" onclick="toggleLAFPassdown(\'' + i.id + '\')" title="Flag for passdown" style="color:var(--text3)">+ Passdown</button> ') : '';
     html += '<td class="text-sm">' + statusCell + '</td><td>' + pdBtn + '<button class="btn btn-ghost btn-xs" onclick="openEditLAF(\'' + i.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteLAF(\'' + i.id + '\')">&#x2715;</button></td></tr>';
   });
@@ -10626,6 +10635,7 @@ function openEditUnitRecord(id) {
   g('ur-keytag').checked = urPk.keyTag;
   var krEl = g('ur-keytag-repl'); if (krEl) krEl.value = r.keyTagReplacement || 0;
   var mpBtn = g('ur-manage-parking-btn'); if (mpBtn) mpBtn.style.display = '';
+  var delBtn = g('ur-delete-btn'); if (delBtn) delBtn.style.display = (currentUser && currentUser.role === 'admin') ? '' : 'none';
   var bikeEl = g('ur-bike'); if (bikeEl) bikeEl.checked = !!r.hasBike;
   var bsEl = g('ur-bike-sticker'); if (bsEl) bsEl.value = r.bikeSticker || '';
   var bsWrap = g('ur-bike-sticker-wrap'); if (bsWrap) bsWrap.style.display = r.hasBike ? '' : 'none';
@@ -10663,6 +10673,7 @@ function openAddUnitRecord() {
   g('ur-keytag').checked = false;
   var krEl = g('ur-keytag-repl'); if (krEl) krEl.value = 0;
   var mpBtn = g('ur-manage-parking-btn'); if (mpBtn) mpBtn.style.display = 'none';
+  var delBtn = g('ur-delete-btn'); if (delBtn) delBtn.style.display = 'none';
   var bikeEl = g('ur-bike'); if (bikeEl) bikeEl.checked = false;
   var bsEl = g('ur-bike-sticker'); if (bsEl) bsEl.value = '';
   var bsWrap = g('ur-bike-sticker-wrap'); if (bsWrap) bsWrap.style.display = 'none';
@@ -10708,6 +10719,25 @@ function saveUnitRecord() {
   pushUndo({ sec: 'residents', type: 'EDIT', id: r.id, before: before, after: Object.assign({}, r), label: 'unit record — Unit ' + r.unit });
   logActivity('residents', 'edit', 'Updated unit record — Unit ' + r.unit);
   scheduleSave(); closeModal('modal-unit-record'); renderResidents(); toast('Saved');
+}
+
+// Removes a decommissioned/duplicate unit record. Records are keyed to other sections by unit
+// NUMBER, not by id, so deleting one leaves Parking/Keys/Moves history for that unit intact —
+// the confirm says so, since "delete the unit" could otherwise read as "delete everything for it".
+async function deleteUnitRecord() {
+  if (currentUser && currentUser.role !== 'admin') { toast('Admin access required'); return; }
+  if (!editingUnitRecordId) return;
+  var r = (state.unitRecords || []).find(function(x) { return x.id === editingUnitRecordId; });
+  if (!r) return;
+  var warn = '';
+  if (r.leaseholder) warn = '\n\nThis unit still lists a leaseholder (' + r.leaseholder + ') — make sure the move-out is actually complete first.';
+  if (!await confirmModal('Delete the unit record for Unit ' + r.unit + '?' + warn + '\n\nParking, key, and move history for this unit are kept — only this Unit Tracker record is removed. You can undo this with ⌘Z.', { okLabel: 'Delete Unit' })) return;
+  pushUndo({ sec: 'residents', type: 'DELETE', id: r.id, data: Object.assign({}, r), label: 'delete unit record — Unit ' + r.unit });
+  logActivity('residents', 'delete', 'Deleted unit record — Unit ' + r.unit + (r.leaseholder ? ' · ' + r.leaseholder : ''));
+  state.unitRecords = (state.unitRecords || []).filter(function(x) { return x.id !== r.id; });
+  editingUnitRecordId = null; _urCurrentUnit = '';
+  scheduleSave(); closeModal('modal-unit-record'); renderResidents(); refreshUnitDatalist(); updateBadges();
+  toast('Unit ' + r.unit + ' removed');
 }
 
 // legacy stubs kept for move-in flow compatibility
@@ -10799,10 +10829,13 @@ function openUnitView(unit) {
     return items.join(' &middot; ') || '(no items listed)';
   }));
   // ── L&F ──
-  var laf = (state.laf||[]).filter(function(i){ return !i.claimedAt && i.flaggedForPassdown; });
-  var lafUnit = laf.filter(function(i){ return (i.unit||'')===unit; });
-  // Also check unclaimed items with no unit but flag them separately
-  if (lafUnit.length) html += uvSection('&#128181;', 'Flagged L&F Items', lafUnit.map(function(i){ return esc(i.desc) + ' &middot; ' + (i.location||'?'); }));
+  // Unclaimed items attributed to this unit. Deliberately NOT gated on flaggedForPassdown —
+  // that flag means "mention in the shift handoff," which is a separate question from
+  // "does this unit have property sitting in the L&F bin." Flagged items get a marker instead.
+  var lafUnit = (state.laf||[]).filter(function(i){ return !i.claimedAt && String(i.unit||'').trim() === unit; });
+  html += uvSection('&#128188;', 'Unclaimed Lost &amp; Found', lafUnit.map(function(i){
+    return esc(i.desc) + ' <span style="color:var(--text3)">&middot; ' + esc(i.location||'?') + '</span>' + (i.flaggedForPassdown ? ' <span style="color:var(--green);font-size:11px">&#10003; passdown</span>' : '');
+  }));
   // ── Active monitoring security for unit ──
   var sec = (state.security||[]).filter(function(s){ return s.unit===unit && s.status==='monitoring'; });
   html += uvSection('&#128737;', 'Active Security Monitoring', sec.map(function(s){
@@ -11230,14 +11263,20 @@ function openQuickAdj(id, delta) {
   var title = g('qa-title'); if (title) title.textContent = 'Adjust — ' + s.name;
   var nameEl = g('qa-name'); if (nameEl) nameEl.textContent = s.name;
   var curEl = g('qa-current'); if (curEl) curEl.textContent = (s.qty || 0) + (s.unit ? ' ' + s.unit : '');
-  var newEl = g('qa-new-qty'); if (newEl) newEl.textContent = _qaNewQty;
+  var newEl = g('qa-new-qty'); if (newEl) newEl.value = _qaNewQty;
   var reasonEl = g('qa-reason'); if (reasonEl) { reasonEl.value = ''; }
   openModal('modal-quick-adj');
   setTimeout(function(){ var r = g('qa-reason'); if (r) r.focus(); }, 120);
 }
 function qaDelta(d) {
   _qaNewQty = Math.max(0, _qaNewQty + d);
-  var newEl = g('qa-new-qty'); if (newEl) newEl.textContent = _qaNewQty;
+  var newEl = g('qa-new-qty'); if (newEl) newEl.value = _qaNewQty;
+}
+// Direct entry. Keeps the field usable mid-typing (a bare "" or "-" parses to NaN) by
+// holding the last valid number in _qaNewQty and only rewriting the input on blur/save.
+function qaSetQty(val) {
+  var n = parseInt(val, 10);
+  _qaNewQty = (isNaN(n) || n < 0) ? 0 : n;
 }
 function saveQuickAdj() {
   var reason = (g('qa-reason') ? g('qa-reason').value.trim() : '');
@@ -11263,7 +11302,7 @@ function setSupplyQtyPrompt(id) {
   if (currentUser && currentUser.role !== 'admin') { toast('Admin access required'); return; }
   var s = (state.supplies || []).find(function(x){ return x.id === id; });
   if (!s) return;
-  openQuickAdj(id, 0);  // open at current qty, let user +/- to desired value
+  openQuickAdj(id, 0);  // open at current qty; user can type the new count or +/- to it
 }
 
 function openInventoryCount() {
@@ -12888,7 +12927,7 @@ var editingLAFId = null;
 function openAddLAF() {
   editingLAFId = null;
   setModalMode('modal-laf-title','modal-laf-savebtn','Log Lost & Found Item','Log Item');
-  ['lf-foundby','lf-location','lf-desc','lf-notes','lf-time'].forEach(function(id){g(id).value='';});
+  ['lf-foundby','lf-location','lf-unit','lf-desc','lf-notes','lf-time'].forEach(function(id){var el=g(id); if(el) el.value='';});
   g('lf-date').value=today(); g('lf-condition').value='Good';
   openModal('modal-laf');
 }
@@ -12898,6 +12937,7 @@ function openEditLAF(id) {
   setModalMode('modal-laf-title','modal-laf-savebtn','Edit L&F Item','Save Changes');
   g('lf-date').value=item.date||today(); g('lf-time').value=item.time||'';
   g('lf-foundby').value=item.foundBy||''; g('lf-location').value=item.location||'';
+  var lfuEl=g('lf-unit'); if(lfuEl) lfuEl.value=item.unit||'';
   g('lf-desc').value=item.desc||''; g('lf-notes').value=item.notes||'';
   g('lf-condition').value=item.condition||'Good';
   openModal('modal-laf');

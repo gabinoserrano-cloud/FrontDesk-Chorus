@@ -14,6 +14,12 @@ sgt-tour-key-labels-avery8460.html
 SGT Tour Key Labels - Avery 8460.pdf
 vendor-onetime-card-labels-avery8460.html
 sgt-labels-new-units-727-2703.html
+# Printable label sheets are generated per batch and carry unit/resident data — never deployed.
+# Globbed so new ones don't need a new line here each time (both cases: git matches case-sensitively).
+*labels*.pdf
+*labels*.html
+*Labels*.pdf
+*Labels*.html
 
 # Vendor documentation — third-party copyrighted manuals, not ours to republish
 Visionline_User_Manual.pdf
