@@ -744,7 +744,6 @@
   .unit-dot.ud-occupied{background:var(--green-light);border:1px solid #C8E4B0}
   .unit-dot.ud-vacant{background:var(--red-light);border:1px solid #F0BFBF}
   .unit-dot.ud-blueground{background:#E8F0FF;border:1px solid #B8CCEE}
-  .unit-dot.ud-maint{background:var(--amber-light);border:1px solid #E8C878}
   .unit-map-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:10px;color:var(--text3)}
   .unit-map-legend span{display:flex;align-items:center;gap:4px}
   .unit-map-legend .leg-dot{width:10px;height:10px;border-radius:2px;display:inline-block;flex-shrink:0}
@@ -791,17 +790,14 @@
     <div class="nav-label">Operations</div>
     <div class="nav-item" data-sec="moves" onclick="nav(this)"><span class="icon" data-icon="truck"></span><span class="nav-txt">Move Ins / Outs</span><span class="badge" id="badge-moves"></span></div>
     <div class="nav-item" data-sec="walkthrough" onclick="nav(this)"><span class="icon" data-icon="shield"></span><span class="nav-txt">Security Patrols</span></div>
-    <div class="nav-item" data-sec="maintenance" onclick="nav(this)"><span class="icon" data-icon="wrench"></span><span class="nav-txt">Maintenance</span><span class="badge" id="badge-maint"></span></div>
     <div class="nav-item" data-sec="logbook" onclick="nav(this)"><span class="icon" data-icon="book"></span><span class="nav-txt">Logbook</span><span class="badge" id="badge-logbook"></span></div>
     <div class="nav-item" data-sec="supplies" onclick="nav(this)"><span class="icon" data-icon="package"></span><span class="nav-txt">Supplies</span><span class="badge" id="badge-supplies"></span></div>
   </div>
   <div class="nav-group">
     <div class="nav-label">Resident Services</div>
-    <div class="nav-item" data-sec="guests" onclick="nav(this)"><span class="icon" data-icon="users"></span><span class="nav-txt">Guests &amp; Visitors</span><span class="badge" id="badge-guests"></span></div>
     <div class="nav-item" data-sec="keys" onclick="nav(this)"><span class="icon" data-icon="key"></span><span class="nav-txt">Key Tracker</span><span class="badge" id="badge-keys"></span></div>
     <div class="nav-item" data-sec="amenities" onclick="nav(this)"><span class="icon" data-icon="star"></span><span class="nav-txt">Amenity Bookings</span><span class="badge" id="badge-amenities"></span></div>
     <div class="nav-item" data-sec="laf" onclick="nav(this)"><span class="icon" data-icon="search"></span><span class="nav-txt">Lost &amp; Found</span><span class="badge" id="badge-laf"></span></div>
-    <div class="nav-item" data-sec="tours" onclick="nav(this)"><span class="icon" data-icon="mappin"></span><span class="nav-txt">Tour Log</span><span class="badge" id="badge-tours"></span></div>
     <div class="nav-item" data-sec="residents" onclick="nav(this)"><span class="icon" data-icon="user"></span><span class="nav-txt">Unit Tracker</span></div>
     <div class="nav-item" data-sec="templates" onclick="nav(this)"><span class="icon" data-icon="message-square"></span><span class="nav-txt">Message Templates</span></div>
   </div>
@@ -879,17 +875,6 @@
       <div id="moves-cards"></div>
       <div class="card" id="tight-panel" style="display:none"><div class="card-hdr"><span class="card-title">Tight Turnovers</span></div><div class="card-body" id="tight-body"></div></div>
     </div>
-    <div class="section" id="section-maintenance">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterMaint('all',this)">All</div><div class="sub-tab" onclick="filterMaint('open',this)">Open</div><div class="sub-tab" onclick="filterMaint('in-progress',this)">In Progress</div><div class="sub-tab" onclick="filterMaint('resolved',this)">Resolved</div></div>
-      <div class="stat-grid" id="maint-stats"></div>
-      <div style="font-size:12px;background:rgba(217,119,6,0.08);color:var(--amber);border:1px solid rgba(217,119,6,0.2);border-radius:6px;padding:8px 12px;margin-bottom:10px">⚠ If a work order has already been submitted, do not add it to the passdown — the maintenance team is notified automatically.</div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Maintenance Log</span><span class="card-count" id="maint-count">0 issues</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddMaint()">+ Log Issue</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Issue</th><th>Priority</th><th>Status</th><th>Reported</th><th></th></tr></thead><tbody id="maint-tbody"></tbody></table></div></div>
-    </div>
-    <div class="section" id="section-guests">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterGuests('all',this)">All</div><div class="sub-tab" onclick="filterGuests('in',this)">In Building</div><div class="sub-tab" onclick="filterGuests('pending',this)">Pending</div><div class="sub-tab" onclick="filterGuests('out',this)">Checked Out</div></div>
-      <div class="stat-grid" id="guests-stats"></div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Guest &amp; Visitor Log</span><span class="card-count" id="guests-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddGuest()">+ Log Guest</button></div><div class="tbl-wrap"><table><thead><tr><th>Guest</th><th>Unit</th><th>Host</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody id="guests-tbody"></tbody></table></div></div>
-    </div>
     <div class="section" id="section-keys">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterKeys('drawer',this)">🗝 Card Drawer</div><div class="sub-tab" onclick="filterKeys('issued',this)">Currently Out</div><div class="sub-tab" onclick="filterKeys('fobs',this)">Resident Fobs</div><div class="sub-tab" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('parking',this)">🚗 Parking</div><div class="sub-tab" onclick="filterKeys('transponders',this)">📡 Credentials</div></div>
       <div id="keys-dupe-banner" style="display:none"></div>
@@ -942,11 +927,6 @@
     <div class="section" id="section-amenities">
       <div class="sub-tabs"><div class="sub-tab active" onclick="filterAmenities('upcoming',this)">Upcoming</div><div class="sub-tab" onclick="filterAmenities('today',this)">Today</div><div class="sub-tab" onclick="filterAmenities('event',this)">Events</div><div class="sub-tab" onclick="filterAmenities('past',this)">Past</div><div class="sub-tab" onclick="filterAmenities('all',this)">All</div></div>
       <div class="card"><div class="card-hdr"><span class="card-title">Amenity Bookings</span><span class="card-count" id="amenities-count">0 bookings</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddAmenity()">+ Add Booking</button></div><div class="tbl-wrap"><table><thead><tr><th>Resident</th><th>Unit</th><th>Amenity</th><th>Date</th><th>Time</th><th>Type</th><th>Notes</th><th></th></tr></thead><tbody id="amenities-tbody"></tbody></table></div></div>
-    </div>
-    <div class="section" id="section-tours">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterTours('all',this)">All</div><div class="sub-tab" onclick="filterTours('sgt',this)">SGT</div><div class="sub-tab" onclick="filterTours('guided',this)">Guided</div><div class="sub-tab" onclick="filterTours('today',this)">Today</div></div>
-      <div class="stat-grid" id="tours-stats"></div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Tour Log</span><span class="card-count" id="tours-count">0 tours</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddTour()">+ Log Tour</button></div><div class="tbl-wrap"><table><thead><tr><th>Prospect</th><th>Unit(s)</th><th>Date</th><th>Type</th><th>Notes</th><th></th></tr></thead><tbody id="tours-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-walkthrough">
       <div class="sub-tabs" id="patrol-tabs">
@@ -1111,9 +1091,7 @@
           <div class="fg">
             <label>What are you importing?</label>
             <select id="img-import-type" onchange="updateClaudePrompt()" style="margin-bottom:10px">
-              <option value="tours">Tours / Scheduled Showings (EliseAI)</option>
               <option value="moves">Move Ins / Move Outs</option>
-              <option value="maintenance">Maintenance Issues</option>
               <option value="amenities">Amenity Bookings</option>
             </select>
           </div>
@@ -1136,9 +1114,7 @@
           <div class="fg">
             <label>What are you importing?</label>
             <select id="csv-import-type" style="margin-bottom:10px">
-              <option value="tours">Tours / Scheduled Showings</option>
               <option value="moves">Move Ins / Move Outs</option>
-              <option value="maintenance">Maintenance Issues</option>
               <option value="amenities">Amenity Bookings</option>
               <option value="wifi">WiFi / Zentro Service</option>
             </select>
@@ -1162,8 +1138,6 @@
           <code style="font-family:var(--font-mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">name, date, time, unit, type (sgt/guided), contact, notes</code></div>
           <div style="margin-bottom:12px"><strong style="color:var(--text)">Moves CSV columns:</strong><br>
           <code style="font-family:var(--font-mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">unit, resident, date, type (in/out), time, total, elevator (yes/no), notes</code></div>
-          <div style="margin-bottom:12px"><strong style="color:var(--text)">Maintenance CSV columns:</strong><br>
-          <code style="font-family:var(--font-mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">unit, issue, description, priority (high/medium/low), status (open/in-progress/resolved), reporter</code></div>
           <div style="margin-bottom:12px"><strong style="color:var(--text)">Amenity Bookings CSV columns:</strong><br>
           <code style="font-family:var(--font-mono);background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">resident, unit, space, date, start, end, type (reservation/event), fee, notes</code></div>
           <div><strong style="color:var(--text)">WiFi / Zentro Service CSV columns:</strong><br>
@@ -1472,29 +1446,7 @@
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-task')">Cancel</button><button class="btn btn-primary" onclick="saveTask()">Add Task</button></div>
 </div></div>
 
-<div class="modal-ov" id="modal-maint"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="modal-maint-title">Log Maintenance Issue</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-maint')">&#x2715;</button></div>
-  <div class="modal-bdy">
-    <div class="fr"><div class="fg"><label>Unit / Location</label><input id="mt-unit" type="text" placeholder="e.g. 804 or Lobby"></div><div class="fg"><label>Issue Type</label><input id="mt-issue" type="text" placeholder="e.g. HVAC, Plumbing"></div></div>
-    <div class="fg"><label>Description</label><textarea id="mt-desc" rows="4"></textarea></div>
-    <div class="fr"><div class="fg"><label>Priority</label><select id="mt-priority"><option value="high">High - Urgent</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></div><div class="fg"><label>Status</label><select id="mt-status"><option value="open" selected>Open</option><option value="in-progress">In Progress</option><option value="resolved">Resolved</option></select></div></div>
-    <div class="fg"><label>Reported By</label><input id="mt-reporter" type="text"></div>
-    <div class="fg" style="display:flex;align-items:center;gap:8px;margin-top:4px"><input id="mt-workorder" type="checkbox" style="width:16px;height:16px;accent-color:var(--accent)"><label for="mt-workorder" style="margin:0;font-weight:500;cursor:pointer">Work Order Submitted</label></div>
-  </div>
-  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-maint')">Cancel</button><button class="btn btn-primary" onclick="saveMaint()">Save Issue</button></div>
-</div></div>
 
-<div class="modal-ov" id="modal-guest"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="modal-guest-title">Log Guest / Visitor</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-guest')">&#x2715;</button></div>
-  <div class="modal-bdy">
-    <div class="fg"><label>Guest Name</label><input id="gs-name" type="text"></div>
-    <div class="fr"><div class="fg"><label>Visiting Unit #</label><input id="gs-unit" type="text"></div><div class="fg"><label>Host Resident</label><input id="gs-host" type="text"></div></div>
-    <div class="fr"><div class="fg"><label>Visit Type</label><select id="gs-type"><option>Visitor</option><option>Vendor / Contractor</option><option>Delivery Person</option><option>Joiner Guest</option></select></div><div class="fg"><label>Status</label><select id="gs-status"><option value="pending">Pending</option><option value="in">Checked In</option><option value="out">Checked Out</option></select></div></div>
-    <div class="fg"><label>Notes</label><textarea id="gs-notes" rows="3"></textarea></div>
-    <div class="fg" id="guest-key-wrap"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="guest-issue-key" style="width:auto"> Issue a one-time key for this visit</label></div>
-  </div>
-  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-guest')">Cancel</button><button class="btn btn-primary" onclick="saveGuest()">Log Guest</button></div>
-</div></div>
 
 <div class="modal-ov" id="modal-key"><div class="modal">
   <div class="modal-hdr"><span class="modal-title" id="modal-key-title">Log Key / Access</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-key')">&#x2715;</button></div>
@@ -1772,17 +1724,6 @@
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-amenity')">Cancel</button><button class="btn btn-primary" onclick="saveAmenity()">Add Booking</button></div>
 </div></div>
 
-<div class="modal-ov" id="modal-tour"><div class="modal">
-  <div class="modal-hdr"><span class="modal-title" id="modal-tour-title">Log Tour</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-tour')">&#x2715;</button></div>
-  <div class="modal-bdy">
-    <div class="fr"><div class="fg"><label>Prospect Name</label><input id="tr-name" type="text"></div><div class="fg"><label>Unit Type <span style="font-size:10px;color:var(--text3);font-weight:400">— suggests vacant units</span></label><select id="tr-unit-type" onchange="showTourUnitInfo()"><option value="">Any type</option><option value="studio">Studio</option><option value="1br">1 Bedroom</option><option value="2br">2 Bedroom</option><option value="3br">3 Bedroom</option><option value="other">Other</option></select></div></div>
-    <div class="fr"><div class="fg"><label>Unit(s) Shown</label><input id="tr-unit" type="text" placeholder="e.g. 804, 1102" oninput="showTourUnitInfo()"><div id="tr-unit-info" style="margin-top:4px;font-size:11px;line-height:1.6"></div></div></div>
-    <div class="fr"><div class="fg"><label>Tour Type</label><select id="tr-type"><option value="sgt">SGT (Self-Guided)</option><option value="guided">Guided</option></select></div><div class="fg"><label>Date</label><input id="tr-date" type="date"></div></div>
-    <div class="fr"><div class="fg"><label>Time</label><input id="tr-time" type="time"></div><div class="fg"><label>Contact</label><input id="tr-contact" type="text"></div></div>
-    <div class="fg"><label>Outcome / Notes</label><textarea id="tr-notes" rows="3"></textarea></div>
-  </div>
-  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-tour')">Cancel</button><button class="btn btn-primary" onclick="saveTour()">Log Tour</button></div>
-</div></div>
 
 <div class="modal-ov" id="modal-flag"><div class="modal">
   <div class="modal-hdr"><span class="modal-title">Flag an Issue</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-flag')">&#x2715;</button></div>
@@ -3167,7 +3108,7 @@ function cloneData(obj) {
   try { return JSON.parse(JSON.stringify(obj)); }
   catch (e) { return obj; }
 }
-function emptyState() { return { moves: [], units: [], maintenance: [], guests: [], keys: [], amenities: [], tours: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, archivedTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], transponders: { startingInventory: 100, log: [], counts: [] }, security: [], logbook: [], propertyConfig: {}, recurringReminders: [], pushLog: [], cardPools: { oneTime: { startingCount: 40, counts: [] }, vendor: { startingCount: null, counts: [] }, sgt: { startingCount: null, counts: [] } } }; }
+function emptyState() { return { moves: [], units: [], keys: [], amenities: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, archivedTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], transponders: { startingInventory: 100, log: [], counts: [] }, security: [], logbook: [], propertyConfig: {}, recurringReminders: [], pushLog: [], cardPools: { oneTime: { startingCount: 40, counts: [] }, vendor: { startingCount: null, counts: [] }, sgt: { startingCount: null, counts: [] } } }; }
 
 // ─── SHIFT LOG ───
 function getShiftLog() {
@@ -3381,7 +3322,7 @@ function renderActivityLog() {
   (state.accounts || []).forEach(function(a) { userOpts += '<option value="' + a.id + '"' + (filterUser === a.id ? ' selected' : '') + '>' + esc(a.name) + '</option>'; });
 
   var secOpts = '<option value="">All Sections</option>';
-  var secs = ['moves','maintenance','guests','keys','amenities','tours','walkthrough','laf','passdown','logbook','residents','supplies','todos','units','parking','transponders','settings','activity','session'];
+  var secs = ['moves','keys','amenities','walkthrough','laf','passdown','logbook','residents','supplies','todos','units','parking','transponders','settings','activity','session'];
   secs.forEach(function(s) { secOpts += '<option value="' + s + '"' + (filterSec === s ? ' selected' : '') + '>' + (SEC_TITLES[s] || s) + '</option>'; });
 
   var html = '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px">'
@@ -3436,15 +3377,12 @@ function openMobSidebar() { g('sidebar').classList.add('mob-open'); g('sb-ov').s
 function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov').style.display = 'none'; }
 
 // ─── NAV ───
-var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', maintenance: 'Maintenance', guests: 'Guests & Visitors', keys: 'Key Tracker', amenities: 'Amenity Bookings', tours: 'Tour Log', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Unit Tracker', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', team: 'Team Tracker', parking: 'Parking Credentials', transponders: 'Transponders', security: 'Incident Log', session: 'Login / Session', logbook: 'Logbook', supplies: 'Supplies' };
+var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', keys: 'Key Tracker', amenities: 'Amenity Bookings', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Unit Tracker', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', team: 'Team Tracker', parking: 'Parking Credentials', transponders: 'Transponders', security: 'Incident Log', session: 'Login / Session', logbook: 'Logbook', supplies: 'Supplies' };
 var patrolFilter = 'amenity';
 var SEC_ACTIONS = {
   moves: '<button class="btn btn-secondary btn-sm" onclick="openLetterImport()">&#128231; Import Letter</button> <button class="btn btn-secondary btn-sm" onclick="openReconcile()">&#128269; Reconcile</button> <button class="btn btn-secondary btn-sm" onclick="printMovesReport()">&#128424; Print Report</button> <button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
-  maintenance: '<button class="btn btn-primary btn-sm" onclick="openAddMaint()">+ Log Issue</button>',
-  guests: '<button class="btn btn-primary btn-sm" onclick="openAddGuest()">+ Log Guest</button>',
   keys: '<button class="btn btn-primary btn-sm" onclick="openAddKey()">+ Log Key</button>',
   amenities: '<button class="btn btn-primary btn-sm" onclick="openAddAmenity()">+ Add Booking</button>',
-  tours: '<button class="btn btn-primary btn-sm" onclick="openAddTour()">+ Log Tour</button>',
   walkthrough: '<button class="btn btn-secondary btn-sm" onclick="openModal(\'modal-flag\')">Flag Issue</button>',
   laf: '<button class="btn btn-primary btn-sm" onclick="openAddLAF()">+ Log Item</button>',
   concierge: '<button class="btn btn-primary btn-sm" onclick="openAddConcierge()">+ Log Request</button>',
@@ -3454,7 +3392,7 @@ var SEC_ACTIONS = {
   templates: '<button class="btn btn-primary btn-sm" onclick="openAddTemplate()">+ Add Template</button>'
 };
 var curSec = 'dashboard';
-var SEC_HELP = { dashboard:'g-dashboard', moves:'g-moves', maintenance:'g-maint', guests:'g-guests', keys:'g-keys', amenities:'g-amenities', tours:'g-tours', walkthrough:'g-patrol', todos:'g-todos', laf:'g-laf', passdown:'g-passdown', calendar:'g-calendar', settings:'g-settings', import:'g-import', residents:'g-residents', team:'g-team', logbook:'g-logbook', supplies:'g-supplies' };
+var SEC_HELP = { dashboard:'g-dashboard', moves:'g-moves', keys:'g-keys', amenities:'g-amenities', walkthrough:'g-patrol', todos:'g-todos', laf:'g-laf', passdown:'g-passdown', calendar:'g-calendar', settings:'g-settings', import:'g-import', residents:'g-residents', team:'g-team', logbook:'g-logbook', supplies:'g-supplies' };
 var STAFF_NO_ADD = ['moves', 'templates'];
 function getSecActions(sec) {
   var isStaff = currentUser && currentUser.role === 'staff';
@@ -3526,7 +3464,7 @@ function mobNav(item) {
   curSec = sec; renderSection(sec); releaseSectionDom(previousSec, sec);
 }
 function renderSection(sec) {
-  var map = { dashboard: renderDash, moves: renderMoves, maintenance: renderMaint, guests: renderGuests, keys: renderKeysSection, amenities: renderAmenities, tours: renderTours, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, templates: renderTemplates, guide: renderGuide, security: renderSecurity, supplies: renderSupplies, activity: renderActivityLog, parking: renderParking, logbook: renderLogbook };
+  var map = { dashboard: renderDash, moves: renderMoves, keys: renderKeysSection, amenities: renderAmenities, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, templates: renderTemplates, guide: renderGuide, security: renderSecurity, supplies: renderSupplies, activity: renderActivityLog, parking: renderParking, logbook: renderLogbook };
   if (map[sec]) map[sec]();
 }
 function renderAll() { renderSection(curSec); updateBadges(); }
@@ -3571,13 +3509,6 @@ async function loadTestData() {
   state.moves.push({ id: uid(), type: 'in', unit: '1204', resident: 'Marcus Webb', date: t, apptDate: t, apptTime: '15:00', total: '4200', notes: 'Elevator reserved 2pm–5pm. 2 fobs requested. Moving company: Bekins.', tasks: [{ id: uid(), text: 'Confirm elevator reservation', cat: 'Move-In', done: true },{ id: uid(), text: 'Issue 2 fobs', cat: 'Move-In', done: true },{ id: uid(), text: 'Orientation walkthrough', cat: 'Move-In', done: false },{ id: uid(), text: 'Collect pro-rated rent check', cat: 'Move-In', done: false }], addedBy: amBy, createdAt: now - 3600000*5 });
 
   // ── MAINTENANCE ──────────────────────────────────────────────────────────
-  if (!state.maintenance) state.maintenance = [];
-  // AM: high priority, WO filed
-  state.maintenance.push({ id: uid(), unit: '402', issue: 'HVAC not cooling', desc: 'Resident reported no cold air since yesterday. Thermostat set to 68, reading 78.', priority: 'high', status: 'in-progress', reporter: 'Maria Santos (Resident)', workorder: true, addedBy: amBy, createdAt: now - 3600000*8, log: [{ ts: now - 3600000*8, by: amBy, note: 'Resident reported no cold air since yesterday.' },{ ts: now - 3600000*5, by: amBy, note: 'WO submitted. Tech scheduled tomorrow 10am–12pm. Resident notified.' }] });
-  // PM: medium, open
-  state.maintenance.push({ id: uid(), unit: 'Lobby', issue: 'Elevator B — slow response', desc: 'Multiple residents reported elevator B taking 3–4 minutes to arrive. Vendor notified.', priority: 'medium', status: 'open', reporter: 'Front Desk', workorder: false, addedBy: pmBy, createdAt: now - 3600000*3, log: [{ ts: now - 3600000*3, by: pmBy, note: 'Multiple residents reported elevator B taking 3–4 minutes. Vendor notified.' }] });
-  // Overnight: low, open — carried from previous shift
-  state.maintenance.push({ id: uid(), unit: '5th floor hallway', issue: 'Light fixture flickering', desc: 'Flickering overhead light near unit 512. Not an emergency but reported twice this week.', priority: 'low', status: 'open', reporter: 'Resident via email', workorder: false, addedBy: nocBy, createdAt: now - 3600000*14, log: [{ ts: now - 3600000*14, by: nocBy, note: 'Added after resident email. Will log WO in the morning.' }] });
 
   // ── KEYS ─────────────────────────────────────────────────────────────────
   if (!state.keys) state.keys = [];
@@ -3598,11 +3529,6 @@ async function loadTestData() {
   state.amenities.push({ id: uid(), space: 'Rooftop Terrace', unit: '1108', resident: 'Sofia Park', date: t, start: '18:00', end: '20:00', notes: 'Birthday dinner, 8 guests. Chairs pre-arranged. Caterer arriving at 5:30pm.', addedBy: pmBy, createdAt: now - 3600000*3 });
 
   // ── GUESTS ───────────────────────────────────────────────────────────────
-  if (!state.guests) state.guests = [];
-  // Checked in AM
-  state.guests.push({ id: uid(), name: 'Rachel Kim', unit: '1108', host: 'Sofia Park', type: 'Overnight Guest', status: 'in', notes: 'Approved for 2 nights. Has access card. Staying in unit.', addedBy: amBy, createdAt: now - 3600000*7 });
-  // Checked in PM, still in
-  state.guests.push({ id: uid(), name: 'Derek Moss', unit: '302', host: 'Armando Vega', type: 'Guest', status: 'in', notes: 'Dropped off a package for resident. Resident came down to escort.', addedBy: pmBy, createdAt: now - 3600000*2 });
 
   // ── LOGBOOK ──────────────────────────────────────────────────────────────
   if (!state.logbook) state.logbook = [];
@@ -3613,11 +3539,6 @@ async function loadTestData() {
   state.logbook.push({ id: uid(), category: 'security', type: 'Noise complaint escalation', unit: '804', resident: '', location: 'Unit 804', notes: 'Two neighbors called down about loud music. Staff knocked — resident complied. Second complaint 30 min later. Monitoring; will escalate to manager if another complaint received.', status: 'in-progress', handledBy: pmBy, addedBy: pmBy, createdAt: now - 3600000*1.5, nextAction: 'Continue monitoring — will escalate to Ian if third complaint received.', log: [] });
 
   // ── TOURS ────────────────────────────────────────────────────────────────
-  if (!state.tours) state.tours = [];
-  // AM tour — done
-  state.tours.push({ id: uid(), name: 'Claire Dubois', email: 'cdubois@email.com', phone: '(415) 555-0142', units: '508, 611', agent: 'Leasing Team', date: t, time: '10:30', notes: 'Very interested in 508 — returning with partner this weekend.', addedBy: amBy, createdAt: now - 3600000*8 });
-  // PM tour — upcoming
-  state.tours.push({ id: uid(), name: 'Jordan Lee', email: 'jlee@email.com', phone: '', units: '601, 808, 1102', agent: 'Leasing Team', date: t, time: '16:30', notes: 'Rescheduled from Wednesday. Very interested in 1102.', addedBy: pmBy, createdAt: now - 3600000*2 });
 
   // ── LOST & FOUND ─────────────────────────────────────────────────────────
   if (!state.laf) state.laf = [];
@@ -3738,7 +3659,7 @@ function closeModal(id) {
       _modalReturnFocus = null;
     }
   }
-  if (curSec === 'passdown' && ['modal-maint','modal-logbook','modal-key','modal-amenity'].indexOf(id) !== -1) {
+  if (curSec === 'passdown' && ['modal-logbook','modal-key','modal-amenity'].indexOf(id) !== -1) {
     setTimeout(function(){ renderPdAutoBlocks(currentUser && currentUser.role === 'admin'); }, 150);
   }
 }
@@ -3903,11 +3824,8 @@ document.addEventListener('keydown', function(e) {
 // ─── BADGES ───
 function updateBadges() {
   var mN = (state.moves || []).filter(function (m) { return !m.archivedAt; }).length;
-  var mtN = (state.maintenance || []).filter(function (m) { return m.status !== 'resolved'; }).length;
-  var gN = (state.guests || []).filter(function (g) { return g.status === 'in'; }).length;
   var kN = (state.keys || []).filter(function (k) { return k.status === 'issued' && k.type !== 'resident'; }).length;
   var aN = (state.amenities || []).filter(function (a) { return a.date >= today(); }).length;
-  var trN = (state.tours || []).filter(function (t) { return t.date === today(); }).length;
   var tdN = getCurrentTodos().filter(function (t) { return !t.done && (t.workType || 'task') !== 'project'; }).length;
   var lN = (state.laf || []).filter(function (i) { return !i.claimedAt; }).length;
   var naN = (state.moves || []).filter(function (m) { return !m.archivedAt && !m.apptDate && !m.apptTbd && m.date >= today(); }).length;
@@ -3916,9 +3834,9 @@ function updateBadges() {
   var lbN = lbAll.filter(function(e){ return e.status==='open'||e.status==='in-progress'; }).length;
   var supLow = (state.supplies || []).filter(function(s){ return s.lowAt != null && s.qty <= s.lowAt; }).length;
   var supOut = (state.supplies || []).filter(function(s){ return s.qty === 0; }).length;
-  setBadge('badge-moves', mN); setBadge('badge-maint', mtN);
-  setBadge('badge-guests', gN); setBadge('badge-keys', kN); setBadge('badge-amenities', aN);
-  setBadge('badge-tours', trN); setBadge('badge-todos', tdN); setBadge('badge-laf', lN);
+  setBadge('badge-moves', mN);
+  setBadge('badge-keys', kN); setBadge('badge-amenities', aN);
+  setBadge('badge-todos', tdN); setBadge('badge-laf', lN);
   setBadge('badge-logbook', lbN); setBadge('badge-supplies', supLow);
   var supBadge = g('badge-supplies'); if (supBadge) supBadge.classList.toggle('badge-red', supOut > 0);
   setMBadge('mb-moves', mN); setMBadge('mb-todos', tdN); setMBadge('mb-keys', kN);
@@ -3938,7 +3856,6 @@ function renderDash() {
   var d7 = new Date(); d7.setDate(d7.getDate() + 7);
   var wEnd = localDateStr(d7);
   var weekM = active.filter(function (m) { return m.date >= t && m.date <= wEnd; });
-  var openMt = (state.maintenance || []).filter(function (m) { return m.status !== 'resolved'; });
   var openConcierge = (state.concierge || []).filter(function (c) { return c.status === 'open'; });
   var lbAllDash = (state.logbook||[]).concat((state.concierge||[]).map(function(c){ return Object.assign({},c,{status:c.status==='completed'?'resolved':c.status}); })).concat((state.security||[]).map(function(s){ return Object.assign({},s,{status:s.status==='monitoring'?'in-progress':s.status}); }));
   var openLogbook = lbAllDash.filter(function(e){ return e.status==='open'||e.status==='in-progress'; });
@@ -3976,7 +3893,6 @@ function renderDash() {
   html += '<div class="stat-card stat-clickable" onclick="navToMoves(\'today\')"><div class="stat-num">' + todayM.length + '</div><div class="stat-lbl">Moves Today</div></div>';
   html += '<div class="stat-card stat-clickable" onclick="navToMoves(\'all\')"><div class="stat-num">' + weekM.length + '</div><div class="stat-lbl">Next 7 Days</div></div>';
   html += '<div class="stat-card stat-clickable ' + (openLogbook.length > 0 ? 'accent' : '') + '" onclick="navToSec(\'logbook\')"><div class="stat-num">' + openLogbook.length + '</div><div class="stat-lbl">Open Logbook</div></div>';
-  html += '<div class="stat-card stat-clickable ' + (openMt.length > 0 ? 'red' : '') + '" onclick="navToSec(\'maintenance\')"><div class="stat-num">' + openMt.length + '</div><div class="stat-lbl">Open Maintenance</div></div>';
   html += '<div class="stat-card stat-clickable ' + (overdueOut.length > 0 ? 'red' : '') + '" onclick="navToSec(\'keys\')"><div class="stat-num">' + activeOut.length + '</div><div class="stat-lbl">Keys Out</div></div>';
   html += '<div class="stat-card stat-clickable" onclick="navToSec(\'todos\')"><div class="stat-num">' + pendTd.length + '</div><div class="stat-lbl">Pending To-Dos</div></div>';
   html += '<div class="stat-card stat-clickable" onclick="navToSec(\'laf\')"><div class="stat-num">' + unclLAF.length + '</div><div class="stat-lbl">Lost &amp; Found</div></div>';
@@ -3994,15 +3910,11 @@ function renderDash() {
   if (unitRecs.length > 0) {
     var occupied = unitRecs.filter(function(r){ return r.leaseholder || r.blueground; }).length;
     var vacant = unitRecs.filter(function(r){ return !r.leaseholder && !r.blueground; }).length;
-    var openMaintCount = {};
-    (state.maintenance||[]).filter(function(m){return m.status!=='resolved';}).forEach(function(m){openMaintCount[m.unit]=true;});
-    var maintUnits = Object.keys(openMaintCount).length;
     html += '<div class="card" style="margin-bottom:14px"><div class="card-body" style="padding:10px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
       + '<span style="font-size:13px;font-weight:600">&#128205; Building Map</span>'
       + '<span style="font-size:12px;color:var(--text3)">' + unitRecs.length + ' units</span>'
       + '<span style="display:flex;align-items:center;gap:4px;font-size:12px"><span class="leg-dot" style="background:var(--green-light);border:1px solid #C8E4B0;width:9px;height:9px;border-radius:2px;display:inline-block"></span>' + occupied + ' occupied</span>'
       + '<span style="display:flex;align-items:center;gap:4px;font-size:12px"><span class="leg-dot" style="background:var(--red-light);border:1px solid #F0BFBF;width:9px;height:9px;border-radius:2px;display:inline-block"></span>' + vacant + ' vacant</span>'
-      + (maintUnits > 0 ? '<span style="display:flex;align-items:center;gap:4px;font-size:12px"><span class="leg-dot" style="background:var(--amber-light);border:1px solid #E8C878;width:9px;height:9px;border-radius:2px;display:inline-block"></span>' + maintUnits + ' open maintenance</span>' : '')
       + '<button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openBuildingMap()">View Map &rarr;</button>'
       + '</div></div>';
   }
@@ -4051,10 +3963,6 @@ function renderDash() {
   if (!withP.length) html += '<div class="text-3 text-sm">No active moves with tasks</div>';
   else withP.slice(0, 5).forEach(function (m) { var dn = (m.tasks || []).filter(function (t) { return t.done; }).length, tot = (m.tasks || []).length, pct = Math.round(dn / tot * 100); var bc = pct < 30 ? 'var(--red)' : pct < 70 ? 'var(--amber)' : 'var(--green)'; html += '<div style="margin-bottom:8px"><div class="flex items-center gap-4" style="margin-bottom:3px"><span class="text-sm font-600" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(m.resident) + '</span><span class="mono text-xs text-3">Unit ' + esc(m.unit) + '</span><span class="mono text-xs text-3 ml-auto">' + dn + '/' + tot + '</span></div><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div></div>'; });
   html += '</div></div></div><div class="dash-grid3">';
-  html += '<div class="card"><div class="card-hdr"><span class="card-title">Open Maintenance</span></div><div class="card-body" style="padding:8px 14px">';
-  if (!openMt.length) html += '<div class="text-3 text-sm">No open issues</div>';
-  else openMt.slice(0, 5).forEach(function (m) { var bc = m.priority === 'high' ? 'var(--red)' : m.priority === 'medium' ? 'var(--amber)' : '#B0AEA7'; html += '<div class="flex items-center gap-8" style="padding:4px 0;border-bottom:1px solid var(--border2)"><div style="width:7px;height:7px;border-radius:50%;background:' + bc + ';flex-shrink:0"></div><span class="text-sm" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Unit ' + esc(m.unit) + ': ' + esc(m.issue) + '</span><span class="pill pill-' + (m.status === 'in-progress' ? 'inprogress' : 'open') + '" style="font-size:10px">' + m.status + '</span></div>'; });
-  html += '</div></div>';
   var fobCount = issuedK.length - activeOut.length;
   var fobNote = fobCount > 0 ? '<div style="font-size:10px;color:var(--text3);padding-top:6px;text-align:center">+ ' + fobCount + ' resident fob' + (fobCount > 1 ? 's' : '') + ' held — see Key Tracker</div>' : '';
   html += '<div class="card"><div class="card-hdr"><span class="card-title">Keys Out</span>'
@@ -4185,10 +4093,8 @@ function dashSearch(q) {
   if (!q.trim()) { res.style.display = 'none'; if (input) input.setAttribute('aria-expanded','false'); return; }
   var ql = q.toLowerCase(), results = [];
   (state.moves || []).filter(function (m) { return (m.resident || '').toLowerCase().includes(ql) || (m.unit || '').toLowerCase().includes(ql); }).forEach(function (m) { results.push({ id:m.id, kind:'move', label: m.resident + ' — Unit ' + m.unit, sub: (m.type === 'in' ? 'Move In' : 'Move Out') + ' · ' + fmtShort(m.date), sec: 'moves' }); });
-  (state.guests || []).filter(function (gst) { return (gst.name || '').toLowerCase().includes(ql) || (gst.unit || '').toLowerCase().includes(ql); }).forEach(function (gst) { results.push({ id:gst.id, kind:'guest', label: gst.name + ' (Guest)', sub: 'Unit ' + gst.unit + ' · ' + gst.status, sec: 'guests' }); });
   (state.unitRecords || []).filter(function (r) { return (r.leaseholder || '').toLowerCase().includes(ql) || (r.unit || '').toLowerCase().includes(ql); }).forEach(function (r) { results.push({ id:r.id, kind:'unit', label: (r.leaseholder || 'Unit') + ' — Unit ' + r.unit, sub: 'Unit Tracker', sec: 'residents' }); });
   (state.keys || []).filter(function (k) { return (k.name || '').toLowerCase().includes(ql) || (k.unit || '').toLowerCase().includes(ql) || (k.fob || '').toLowerCase().includes(ql); }).forEach(function (k) { results.push({ id:k.id, kind:'key', label: k.name + ' — Unit ' + k.unit, sub: 'Key Tracker · ' + k.type + ' · ' + k.status, sec: 'keys' }); });
-  (state.maintenance || []).filter(function (m) { return (m.unit || '').toLowerCase().includes(ql) || (m.issue || '').toLowerCase().includes(ql); }).forEach(function (m) { results.push({ id:m.id, kind:'maintenance', label: m.issue + ' — Unit ' + m.unit, sub: 'Maintenance · ' + m.status, sec: 'maintenance' }); });
   (state.concierge || []).filter(function (c) { return (c.resident || '').toLowerCase().includes(ql) || (c.unit || '').toLowerCase().includes(ql); }).forEach(function (c) { results.push({ id:c.id, kind:'concierge', label: c.resident + ' — Unit ' + c.unit, sub: 'Logbook · ' + c.type + ' · ' + c.status, sec: 'logbook' }); });
   if (!results.length) { res.innerHTML = '<div class="sr-item text-3" role="status">No matching records</div>'; res.style.display = ''; if (input) input.setAttribute('aria-expanded','true'); return; }
   var html = '';
@@ -5547,15 +5453,15 @@ async function toggleTask(moveId, taskId, checked) {
   }
   // ── Connection 3: Move-out damage task → Maintenance ──
   if (checked && m.type === 'out' && automationId === 'damage-review') {
-    if (await confirmModal('Log damage as a maintenance issue for Unit ' + m.unit + '?')) {
-      if (!state.maintenance) state.maintenance = [];
+    if (await confirmModal('Log this damage in the Logbook for Unit ' + m.unit + '?')) {
+      if (!state.logbook) state.logbook = [];
       var damageNow = Date.now(), damageBy = currentUser ? currentUser.name : '';
       var damageNote = 'Damage noted during move-out — see move-out checklist and photos';
-      var damageEntry = { id: uid(), unit: m.unit, issue: 'Move-out damage — Unit ' + m.unit, desc: damageNote, priority: 'medium', status: 'open', reporter: m.resident || '', workorder: false, addedBy: damageBy, createdAt: damageNow, log: [{ ts: damageNow, by: damageBy, note: damageNote }] };
-      state.maintenance.push(damageEntry);
-      cmds.push({ sec: 'maintenance', type: 'ADD', id: damageEntry.id, data: cloneData(damageEntry), label: 'damage logged — Unit ' + m.unit });
-      renderMaint(); updateBadges(); renderDash();
-      toast('Maintenance issue logged for Unit ' + m.unit);
+      var damageEntry = { id: uid(), category: 'property', type: 'Property damage', unit: m.unit, resident: m.resident || '', location: '', notes: damageNote, nextAction: 'Report to management for the move-out ledger', status: 'open', handledBy: '', addedBy: damageBy, createdAt: damageNow, time: '', managerNotified: false, footagePreserved: false, incidentReport: false, log: [{ ts: damageNow, by: damageBy, note: damageNote }] };
+      state.logbook.push(damageEntry);
+      cmds.push({ sec: 'logbook', type: 'ADD', id: damageEntry.id, data: cloneData(damageEntry), label: 'damage logged — Unit ' + m.unit });
+      renderLogbook(); updateBadges(); renderDash();
+      toast('Logbook entry created for Unit ' + m.unit);
     }
   }
   var tasksAfter = JSON.parse(JSON.stringify(m.tasks));
@@ -5849,7 +5755,7 @@ function renderConcierge() {
     html += '<td><select class="ie-sel" onchange="updateConciergeStatus(\'' + c.id + '\',this.value)"><option value="open"' + (c.status==='open'?' selected':'') + '>Open</option><option value="completed"' + (c.status==='completed'?' selected':'') + '>Completed</option></select></td>';
     html += '<td class="text-xs text-2">' + (c.handledBy || '—') + '</td>';
     html += '<td class="text-xs text-3">' + new Date(c.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) + '</td>';
-    html += '<td><button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="toggleConciergeLog(\'' + c.id + '\')" title="Activity log">' + logBtnLabel + '</button> ' + (c.status === 'open' ? '<button onclick="escalateConciergeToMaint(\'' + c.id + '\')" class="btn btn-ghost btn-xs" title="Escalate to Maintenance" style="color:var(--amber)">&#8594; Maint</button> ' : '') + (c.unit ? '<button class="btn btn-ghost btn-xs" onclick="openUnitView(\'' + c.unit + '\')" title="Unit overview" style="color:var(--accent)">&#128100;</button>' : '') + '<button class="btn btn-ghost btn-xs" onclick="openEditConcierge(\'' + c.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteConcierge(\'' + c.id + '\')">&#215;</button></td>';
+    html += '<td><button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="toggleConciergeLog(\'' + c.id + '\')" title="Activity log">' + logBtnLabel + '</button> ' + (c.unit ? '<button class="btn btn-ghost btn-xs" onclick="openUnitView(\'' + c.unit + '\')" title="Unit overview" style="color:var(--accent)">&#128100;</button>' : '') + '<button class="btn btn-ghost btn-xs" onclick="openEditConcierge(\'' + c.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteConcierge(\'' + c.id + '\')">&#215;</button></td>';
     html += '</tr>';
     // Activity log sub-row
     var logInputId = 'concierge-log-input-' + c.id;
@@ -5872,30 +5778,6 @@ function renderConcierge() {
   setBadge('badge-concierge', open);
 }
 // ── Connection 5: Concierge → Maintenance escalation ──
-async function escalateConciergeToMaint(id) {
-  var c = (state.concierge || []).find(function(x) { return x.id === id; }); if (!c) return;
-  if (!await confirmModal('Create a maintenance issue from this concierge request?')) return;
-  var entry = { id: uid(), unit: c.unit || '', resident: c.resident || '', type: 'General', priority: 'medium', status: 'open', notes: 'Escalated from concierge request: ' + c.type + (c.notes ? ' — ' + c.notes : ''), log: [], createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' };
-  if (!state.maintenance) state.maintenance = [];
-  state.maintenance.push(entry);
-  if (!c.log) c.log = [];
-  c.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: 'Escalated to maintenance' });
-  logActivity('concierge', 'edit', 'Escalated concierge request to maintenance — Unit ' + c.unit + ' · ' + c.type);
-  scheduleSave(); renderMaint(); renderConcierge(); updateBadges(); renderDash();
-  toast('Maintenance issue created from concierge request');
-}
-async function escalateSecurityToMaint(id) {
-  var s = (state.security || []).find(function(x) { return x.id === id; }); if (!s) return;
-  if (!await confirmModal('Create a maintenance issue from this security incident?')) return;
-  var desc = s.notes ? s.notes : (s.type + ' at ' + s.location);
-  var entry = { id: uid(), unit: s.unit || '', resident: '', type: 'General', priority: 'high', status: 'open', notes: 'Escalated from security incident: ' + s.type + ' — ' + s.location + (s.notes ? '\nDetails: ' + s.notes : '') + '\nIncident logged: ' + (s.date || '') + (s.time ? ' at ' + s.time : ''), log: [], createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' };
-  if (!state.maintenance) state.maintenance = [];
-  state.maintenance.push(entry);
-  s.maintEscalated = true;
-  logActivity('security', 'edit', 'Escalated security incident to maintenance — ' + s.type + ' · ' + s.location);
-  scheduleSave(); renderMaint(); renderSecurity(); updateBadges(); renderDash();
-  toast('Maintenance issue created from security incident');
-}
 
 // ─── LOGBOOK ───
 var logbookFilter = 'all', logbookCatFilter = 'all', editingLogbookId = null;
@@ -6192,164 +6074,9 @@ function renderLogbook() {
 }
 
 // ─── MAINTENANCE ───
-var maintFilter = 'all';
 // ===== [MAINTENANCE] =========================================================
-function filterMaint(f, item) { maintFilter = f; document.querySelectorAll('#section-maintenance .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderMaint(); }
-function saveMaint() {
-  var unit = g('mt-unit').value.trim(), issue = g('mt-issue').value.trim();
-  if (!requireFields([[g('mt-unit'),!!unit,'Enter the unit or location'],[g('mt-issue'),!!issue,'Describe the issue']])) return;
-  if (editingMaintId) {
-    var m = (state.maintenance||[]).find(function(x){return x.id===editingMaintId;}); if(!m) return;
-    var _mb = Object.assign({}, m);
-    m.unit=unit; m.issue=issue; m.desc=g('mt-desc').value.trim(); m.priority=g('mt-priority').value; m.status=g('mt-status').value; m.reporter=g('mt-reporter').value.trim(); m.workorder=g('mt-workorder').checked;
-    pushUndo({ sec: 'maintenance', type: 'EDIT', id: m.id, before: _mb, after: Object.assign({}, m), label: 'maintenance edit — Unit ' + unit });
-    editingMaintId=null; logActivity('maintenance', 'edit', 'Updated maintenance issue — Unit ' + unit + ' · ' + issue); scheduleSave(); closeModal('modal-maint'); renderMaint(); updateBadges(); renderDash(); toast('Issue updated'); return;
-  }
-  var mNow = Date.now(), mBy = currentUser ? currentUser.name : '';
-  var mDesc = g('mt-desc').value.trim();
-  var m = { id: uid(), unit: unit, issue: issue, desc: mDesc, priority: g('mt-priority').value, status: g('mt-status').value, reporter: g('mt-reporter').value.trim(), workorder: g('mt-workorder').checked, addedBy: mBy, createdAt: mNow, log: mDesc ? [{ ts: mNow, by: mBy, note: mDesc }] : [] };
-  if (!state.maintenance) state.maintenance = [];
-  state.maintenance.push(m); pushUndo({ sec: 'maintenance', type: 'ADD', id: m.id, data: Object.assign({}, m), label: 'add maintenance — Unit ' + unit }); logActivity('maintenance', 'create', 'Logged maintenance issue — Unit ' + unit + ' · ' + issue); scheduleSave(); closeModal('modal-maint'); renderMaint(); updateBadges(); renderDash();
-  ['mt-unit', 'mt-issue', 'mt-desc', 'mt-reporter'].forEach(function (id) { g(id).value = ''; }); toast('Issue logged');
-}
-function renderMaint() {
-  var list = (state.maintenance || []).slice();
-  if (maintFilter !== 'all') list = list.filter(function (m) { return m.status === maintFilter; });
-  list.sort(function (a, b) { var p = { high: 0, medium: 1, low: 2 }; if (a.status === 'resolved' && b.status !== 'resolved') return 1; if (b.status === 'resolved' && a.status !== 'resolved') return -1; return (p[a.priority] || 1) - (p[b.priority] || 1); });
-  var open = (state.maintenance || []).filter(function (m) { return m.status === 'open'; }).length;
-  var inp = (state.maintenance || []).filter(function (m) { return m.status === 'in-progress'; }).length;
-  var res = (state.maintenance || []).filter(function (m) { return m.status === 'resolved'; }).length;
-  var hi = (state.maintenance || []).filter(function (m) { return m.priority === 'high' && m.status !== 'resolved'; }).length;
-  g('maint-stats').innerHTML = '<div class="stat-card red"><div class="stat-num">' + open + '</div><div class="stat-lbl">Open</div></div><div class="stat-card"><div class="stat-num">' + inp + '</div><div class="stat-lbl">In Progress</div></div><div class="stat-card green"><div class="stat-num">' + res + '</div><div class="stat-lbl">Resolved</div></div><div class="stat-card ' + (hi > 0 ? 'red' : '') + '"><div class="stat-num">' + hi + '</div><div class="stat-lbl">High Priority</div></div>';
-  var tbody = g('maint-tbody'), cnt = g('maint-count');
-  if (cnt) cnt.textContent = list.length + ' issues';
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="6" class="tbl-empty">No issues logged.</td></tr>'; return; }
-  var html = '';
-  list.forEach(function (m) {
-    // Build log (backwards compat: fall back to desc if no log array yet)
-    var log = m.log || (m.desc ? [{ ts: m.createdAt, by: m.addedBy || '', note: m.desc }] : []);
-    var logCount = log.length;
-    var latestNote = logCount ? log[logCount - 1].note : (m.desc || '');
-    var desc = latestNote ? '<div class="text-xs text-2" style="margin-top:2px">' + esc(latestNote) + '</div>' : '';
-    var mtBy = fmtByTag(m.addedBy, m.createdAt);
-    var logBtnLabel = logCount > 1 ? '&#128221; ' + logCount + ' updates' : '&#128221; Log';
-    html += '<tr>';
-    var woBadge = m.workorder ? ' <span style="display:inline-block;font-size:10px;font-weight:600;background:rgba(34,197,94,0.12);color:#16a34a;border:1px solid rgba(34,197,94,0.25);border-radius:4px;padding:1px 6px;vertical-align:middle">WO Filed</span>' : '';
-    html += '<td class="mono font-600">' + esc(m.unit) + '</td>';
-    html += '<td><div class="font-600">' + esc(m.issue) + woBadge + mtBy + '</div>' + desc + '</td>';
-    html += '<td><span class="pill pill-' + m.priority + '">' + m.priority + '</span></td>';
-    html += '<td><select class="ie-sel" onchange="updateMaintStatus(\'' + m.id + '\',this.value)"><option value="open" ' + (m.status === 'open' ? 'selected' : '') + '>Open</option><option value="in-progress" ' + (m.status === 'in-progress' ? 'selected' : '') + '>In Progress</option><option value="resolved" ' + (m.status === 'resolved' ? 'selected' : '') + '>Resolved</option></select></td>';
-    html += '<td class="text-xs text-3">' + new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</td>';
-    html += '<td><button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="toggleMaintLog(\'' + m.id + '\')" title="Activity log">' + logBtnLabel + '</button> <button class="btn btn-ghost btn-xs" onclick="openEditMaint(\'' + m.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteMaint(\'' + m.id + '\')">&#x2715;</button></td>';
-    html += '</tr>';
-    // Activity log sub-row
-    var logInputId = 'maint-log-input-' + m.id;
-    var mid = m.id;
-    var entriesHtml = log.map(function (e, idx) {
-      var d = new Date(e.ts); var tf = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-      return '<div class="act-log-entry" id="mle-' + mid + '-' + idx + '" style="display:flex;align-items:flex-start;gap:4px"><div style="flex:1"><span class="act-log-meta">' + tf + (e.by ? ' · ' + esc(e.by) : '') + '</span><span class="act-log-note"> ' + esc(e.note) + '</span></div>'
-        + '<button class="btn btn-ghost btn-xs" style="opacity:0.45;flex-shrink:0;padding:1px 4px" onclick="editMaintLog(\'' + mid + '\',' + idx + ')" title="Edit">✏</button>'
-        + '<button class="btn btn-ghost btn-xs" style="color:var(--red);opacity:0.45;flex-shrink:0;padding:1px 4px" onclick="deleteMaintLog(\'' + mid + '\',' + idx + ')" title="Delete">×</button>'
-        + '</div>';
-    }).join('');
-    html += '<tr class="act-log-row" id="maint-log-' + m.id + '">';
-    html += '<td colspan="6"><div class="act-log-inner">';
-    html += '<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Activity Log</div>';
-    html += entriesHtml || '<div style="color:var(--text3);font-size:12px;padding:4px 0">No updates yet.</div>';
-    html += '<div class="act-log-add"><input type="text" id="' + logInputId + '" placeholder="Log an update…" style="flex:1;font-size:12px" onkeydown="if(event.key===\'Enter\')addMaintLog(\'' + m.id + '\',this.value)"><button class="btn btn-secondary btn-sm" onclick="addMaintLog(\'' + m.id + '\',g(\'' + logInputId + '\').value)">Log update</button></div>';
-    html += '</div></td></tr>';
-  });
-  tbody.innerHTML = html;
-  setBadge('badge-maint', open + inp);
-}
-function updateMaintStatus(id, val) { var m = (state.maintenance || []).find(function (x) { return x.id === id; }); if (m) { m.status = val; scheduleSave(); renderMaint(); updateBadges(); renderDash(); } }
-async function deleteMaint(id) { if (!await confirmModal('Delete?')) return; var mx = (state.maintenance||[]).find(function(x){return x.id===id;}); if (mx) pushUndo({ sec: 'maintenance', type: 'DELETE', id: id, data: Object.assign({}, mx), label: 'delete maintenance — Unit ' + mx.unit }); logActivity('maintenance', 'delete', 'Deleted maintenance issue' + (mx ? ' — Unit ' + mx.unit + ' · ' + mx.issue : '')); state.maintenance = (state.maintenance || []).filter(function (m) { return m.id !== id; }); scheduleSave(); renderMaint(); updateBadges(); renderDash(); toast('Deleted'); }
 
 // ─── GUESTS ───
-var guestFilter = 'all';
-function filterGuests(f, item) { guestFilter = f; document.querySelectorAll('#section-guests .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderGuests(); }
-function saveGuest() {
-  var name = g('gs-name').value.trim(), unit = g('gs-unit').value.trim();
-  if (!requireFields([[g('gs-name'),!!name,'Enter the guest name'],[g('gs-unit'),!!unit,'Enter the host unit']])) return;
-  if (editingGuestId) {
-    var gst = (state.guests||[]).find(function(x){return x.id===editingGuestId;}); if(!gst) return;
-    var _gb = Object.assign({}, gst);
-    gst.name=name; gst.unit=unit; gst.host=g('gs-host').value.trim(); gst.type=g('gs-type').value; gst.status=g('gs-status').value; gst.notes=g('gs-notes').value.trim();
-    pushUndo({ sec: 'guests', type: 'EDIT', id: gst.id, before: _gb, after: Object.assign({}, gst), label: 'guest edit — ' + name });
-    editingGuestId=null; logActivity('guests', 'edit', 'Updated guest — ' + name + ' · Unit ' + unit); scheduleSave(); closeModal('modal-guest'); renderGuests(); updateBadges(); toast('Guest updated'); return;
-  }
-  var gst = { id: uid(), name: name, unit: unit, host: g('gs-host').value.trim(), type: g('gs-type').value, status: g('gs-status').value, notes: g('gs-notes').value.trim(), checkIn: Date.now(), checkOut: null, addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
-  if (!state.guests) state.guests = [];
-  var gCmds = [];
-  // ── Connection 4: Guest one-time key issuance ──
-  var issueKey = g('guest-issue-key') && g('guest-issue-key').checked;
-  if (issueKey) {
-    if (!state.keys) state.keys = [];
-    var guestKeyEntry = { id: uid(), unit: unit, name: g('gs-host').value.trim(), guest: name, type: 'one-time', fob: '', status: 'issued', notes: 'Issued for guest visit — logged from Guest Log', addedBy: currentUser ? currentUser.name : '', issuedAt: Date.now(), createdAt: Date.now(), returnedAt: null, expiry: null, timeout: '', company: '', workArea: '', vendorReturn: '', isReplacement: false, fee: 0, feeAddedToLedger: false, feeWaived: false, feeAddedAt: null, feeAddedBy: '', reachedOut: false, reachedOutAt: null };
-    state.keys.push(guestKeyEntry);
-    gst.linkedKeyId = guestKeyEntry.id;
-    gCmds.push({ sec: 'keys', type: 'ADD', id: guestKeyEntry.id, data: cloneData(guestKeyEntry), label: 'guest key issued — Unit ' + unit });
-    var gSupCmd2 = applySupplyAdjustment('One-Time Cards – Active Issued', +1, 'Issued for guest — Unit ' + unit + ' · ' + name);
-    if (gSupCmd2) gCmds.push(gSupCmd2);
-    renderKeys();
-  }
-  state.guests.push(gst);
-  gCmds.unshift({ sec: 'guests', type: 'ADD', id: gst.id, data: Object.assign({}, gst), label: 'add guest — ' + name });
-  pushBatchUndo('guests', 'add guest — ' + name, gCmds);
-  logActivity('guests', 'create', 'Logged guest — ' + name + ' · Unit ' + unit + (issueKey ? ' (key issued)' : '')); scheduleSave(); closeModal('modal-guest'); renderGuests(); updateBadges();
-  ['gs-name', 'gs-unit', 'gs-host', 'gs-notes'].forEach(function (id) { g(id).value = ''; });
-  if (g('guest-issue-key')) g('guest-issue-key').checked = false;
-  toast(issueKey ? 'Guest logged + one-time key issued' : 'Guest logged');
-}
-function renderGuests() {
-  var list = (state.guests || []).slice();
-  if (guestFilter === 'in') list = list.filter(function (gst) { return gst.status === 'in'; });
-  else if (guestFilter === 'pending') list = list.filter(function (gst) { return gst.status === 'pending'; });
-  else if (guestFilter === 'out') list = list.filter(function (gst) { return gst.status === 'out'; });
-  list.sort(function (a, b) { return b.createdAt - a.createdAt; });
-  var allG = state.guests || [];
-  g('guests-stats').innerHTML = '<div class="stat-card accent"><div class="stat-num">' + allG.filter(function (gst) { return gst.status === 'in'; }).length + '</div><div class="stat-lbl">Currently In</div></div><div class="stat-card"><div class="stat-num">' + allG.filter(function (gst) { return gst.status === 'pending'; }).length + '</div><div class="stat-lbl">Pending</div></div><div class="stat-card"><div class="stat-num">' + allG.length + '</div><div class="stat-lbl">Total Logged</div></div>';
-  var tbody = g('guests-tbody'), cnt = g('guests-count');
-  if (cnt) cnt.textContent = list.length + ' entries';
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="6" class="tbl-empty">No guests logged.</td></tr>'; return; }
-  var html = '';
-  list.forEach(function (gst) {
-    var gstBy = fmtByTag(gst.addedBy, gst.createdAt);
-    html += '<tr><td class="font-600">' + gst.name + gstBy + '</td><td class="mono">' + gst.unit + '</td><td class="text-sm text-2">' + (gst.host || '-') + '</td><td class="text-sm">' + gst.type + '</td>';
-    html += '<td><select class="ie-sel" onchange="updateGuestStatus(\'' + gst.id + '\',this.value)"><option value="pending" ' + (gst.status === 'pending' ? 'selected' : '') + '>Pending</option><option value="in" ' + (gst.status === 'in' ? 'selected' : '') + '>Checked In</option><option value="out" ' + (gst.status === 'out' ? 'selected' : '') + '>Checked Out</option></select></td>';
-    html += '<td><button class="btn btn-ghost btn-xs" onclick="openEditGuest(\'' + gst.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteGuest(\'' + gst.id + '\')">&#x2715;</button></td></tr>';
-  });
-  tbody.innerHTML = html;
-  setBadge('badge-guests', allG.filter(function (gst) { return gst.status === 'in'; }).length);
-}
-async function updateGuestStatus(id, val) {
-  var gst = (state.guests || []).find(function (x) { return x.id === id; }); if (!gst) return;
-  var _gsb = { status: gst.status, checkOut: gst.checkOut };
-  gst.status = val;
-  var gsCmds = [];
-  if (val === 'out') {
-    gst.checkOut = Date.now();
-    // ── Connection 4: Guest checkout → prompt to return linked key ──
-    if (gst.linkedKeyId) {
-      var linkedKey = (state.keys || []).find(function(k) { return k.id === gst.linkedKeyId && k.status === 'issued'; });
-      if (linkedKey) {
-        if (await confirmModal('Mark guest key as returned?')) {
-          var _lkb = { status: linkedKey.status, returnedAt: linkedKey.returnedAt };
-          linkedKey.status = 'returned'; linkedKey.returnedAt = Date.now();
-          gsCmds.push({ sec: 'keys', type: 'EDIT', id: linkedKey.id, before: _lkb, after: { status: linkedKey.status, returnedAt: linkedKey.returnedAt }, label: 'guest key returned — Unit ' + gst.unit });
-          var gsSupCmd2 = applySupplyAdjustment('One-Time Cards – Active Issued', -1, 'Returned — guest key Unit ' + gst.unit + ' · ' + gst.name);
-          if (gsSupCmd2) gsCmds.push(gsSupCmd2);
-          renderKeys();
-        }
-      }
-    }
-  }
-  gsCmds.unshift({ sec: 'guests', type: 'EDIT', id: gst.id, before: _gsb, after: { status: gst.status, checkOut: gst.checkOut }, label: 'guest status → ' + val });
-  pushBatchUndo('guests', 'guest status → ' + val, gsCmds);
-  logActivity('guests', 'edit', 'Guest status → ' + val + ' — ' + gst.name + ' · Unit ' + gst.unit);
-  scheduleSave(); renderGuests(); updateBadges();
-}
-async function deleteGuest(id) { if (!await confirmModal('Remove?')) return; var gx = (state.guests||[]).find(function(x){return x.id===id;}); if (gx) pushUndo({ sec: 'guests', type: 'DELETE', id: id, data: Object.assign({}, gx), label: 'delete guest — ' + gx.name }); logActivity('guests', 'delete', 'Removed guest' + (gx ? ' — ' + gx.name + ' · Unit ' + gx.unit : '')); state.guests = (state.guests || []).filter(function (gst) { return gst.id !== id; }); scheduleSave(); renderGuests(); updateBadges(); toast('Removed'); }
 
 // ─── KEYS ───
 var keyFilter = 'drawer';
@@ -6616,39 +6343,13 @@ function saveSgtIssue() {
   var phone = g('sgt-phone') ? g('sgt-phone').value.trim() : '';
   var unit = String(_sgtIssueKey.unit);
   var normName = name.toLowerCase().trim();
-  // If this prospect already has another tour key out right now, this checkout is the same tour
-  // visiting a second unit, not a new visit — fold it into their existing open Tour Log row so
-  // "units shown" reflects the whole tour instead of splitting into duplicate entries.
-  var alreadyTouring = (state.keys || []).some(function (ok) { return ok.type === 'sgt' && ok.status === 'issued' && ok.name.toLowerCase().trim() === normName; });
   var k = { id: uid(), unit: unit, name: name, guest: '', phone: phone, fob: lbl, type: 'sgt', status: 'issued', issuedAt: Date.now(), notes: notes, addedBy: currentUser ? currentUser.name : '', createdAt: Date.now(), returnedAt: null };
   state.keys.push(k);
   var sgtCmds = [{ sec: 'keys', type: 'ADD', id: k.id, data: Object.assign({}, k), label: 'issue tour key ' + lbl }];
   logActivity('keys', 'create', 'Issued self-guided tour key ' + lbl + ' — ' + name, 'Unit ' + k.unit + (back ? ' · Expected back ' + fmtTime(back) : ''));
-  // Auto-log to Tour Log so every key checkout leaves a traceable tour record (who showed it,
-  // unit, prospect) without a separate manual "+ Log Tour" step — this is what lets commission
-  // later be attributed back to whoever issued the key.
-  if (!state.tours) state.tours = [];
-  var openTour = alreadyTouring ? state.tours.filter(function (t) { return t.type === 'sgt' && t.date === today() && t.name.toLowerCase().trim() === normName; }).sort(function (a, b) { return b.createdAt - a.createdAt; })[0] : null;
-  if (openTour) {
-    var trBefore = { unit: openTour.unit, notes: openTour.notes, contact: openTour.contact };
-    var units = openTour.unit.split(',').map(function (u) { return u.trim(); }).filter(Boolean);
-    if (units.indexOf(unit) === -1) units.push(unit);
-    openTour.unit = units.join(', ');
-    openTour.notes = (openTour.notes ? openTour.notes + ' · ' : '') + 'Key ' + lbl + (notes ? ' — ' + notes : '');
-    if (!openTour.contact && phone) openTour.contact = phone;
-    var trAfter = { unit: openTour.unit, notes: openTour.notes, contact: openTour.contact };
-    sgtCmds.push({ sec: 'tours', type: 'EDIT', id: openTour.id, before: trBefore, after: trAfter, label: 'added unit ' + unit + ' to tour — ' + name });
-    logActivity('tours', 'edit', 'Added Unit ' + unit + ' to tour (auto — key issue) — ' + name);
-  } else {
-    var sgtNow = new Date();
-    var tr = { id: uid(), name: name, unit: unit, type: 'sgt', date: today(), time: ('0' + sgtNow.getHours()).slice(-2) + ':' + ('0' + sgtNow.getMinutes()).slice(-2), contact: phone, notes: 'Key ' + lbl + (notes ? ' — ' + notes : ''), addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
-    state.tours.push(tr);
-    sgtCmds.push({ sec: 'tours', type: 'ADD', id: tr.id, data: Object.assign({}, tr), label: 'auto-logged tour — ' + name });
-    logActivity('tours', 'create', 'Logged tour (auto — key issue) — ' + name + ' · Unit ' + tr.unit);
-  }
   pushBatchUndo('keys', 'issue tour key ' + lbl, sgtCmds);
-  scheduleSave(); closeModal('modal-sgt-issue'); renderSgtKeys(); renderKeys(); renderTours(); updateBadges(); renderDash(); renderSupplies();
-  toast('Tour key ' + lbl + ' issued — ' + (openTour ? 'added to ' + name + '’s tour' : 'logged to Tour Log'));
+  scheduleSave(); closeModal('modal-sgt-issue'); renderSgtKeys(); renderKeys(); updateBadges(); renderDash(); renderSupplies();
+  toast('Tour key ' + lbl + ' issued — ' + name);
   _sgtIssueKey = null;
 }
 // ── SGT roster editor ──
@@ -8673,7 +8374,7 @@ function renderSecurity() {
     html+='<td class="text-sm">'+s.handledBy+'</td>';
     html+='<td>'+statusBadge+'</td>';
     html+='<td class="text-sm text-2" style="max-width:200px;white-space:pre-wrap">'+(s.notes||'—')+'</td>';
-    html+='<td>' + (!s.maintEscalated ? '<button onclick="escalateSecurityToMaint(\''+s.id+'\')" class="btn btn-ghost btn-xs" title="Escalate to Maintenance" style="color:var(--amber)">&#8594; Maint</button> ' : '<span style="font-size:10px;color:var(--text3);font-style:italic">&#8594; Maint</span> ') + '<button class="btn btn-ghost btn-xs" onclick="openEditSecurity(\''+s.id+'\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteSecurity(\''+s.id+'\')">&#x2715;</button></td>';
+    html+='<td>' + '<button class="btn btn-ghost btn-xs" onclick="openEditSecurity(\''+s.id+'\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteSecurity(\''+s.id+'\')">&#x2715;</button></td>';
     html+='</tr>';
   });
   tbody.innerHTML=html;
@@ -8833,86 +8534,6 @@ function renderAmenities() {
 async function deleteAmenity(id) { if (!await confirmModal('Remove?')) return; var ax=(state.amenities||[]).find(function(x){return x.id===id;}); if (ax) pushUndo({ sec: 'amenities', type: 'DELETE', id: id, data: Object.assign({}, ax), label: 'delete booking — Unit ' + ax.unit }); logActivity('amenities','delete','Removed amenity booking'+(ax?' — Unit '+ax.unit+' · '+ax.space+' · '+fmtShort(ax.date):'')); state.amenities = (state.amenities || []).filter(function (a) { return a.id !== id; }); scheduleSave(); renderAmenities(); updateBadges(); toast('Removed'); }
 
 // ─── TOURS ───
-var tourFilter = 'all';
-function filterTours(f, item) { tourFilter = f; document.querySelectorAll('#section-tours .sub-tab').forEach(function (t) { t.classList.remove('active'); }); item.classList.add('active'); renderTours(); }
-function showTourUnitInfo() {
-  var el = g('tr-unit-info'); if (!el) return;
-  var raw = (g('tr-unit') ? g('tr-unit').value : '').trim();
-  var unitType = g('tr-unit-type') ? g('tr-unit-type').value : '';
-  var recs = state.unitRecords || [];
-  var typeLabels = { studio: 'Studio', '1br': '1BR', '2br': '2BR', '3br': '3BR', other: 'Other' };
-
-  // If a specific unit is typed, show info for that unit
-  if (raw) {
-    var nums = raw.split(/[,\s]+/).map(function(s){ return s.trim(); }).filter(Boolean);
-    var lines = [];
-    nums.forEach(function(num) {
-      var r = recs.find(function(x){ return x.unit === num; });
-      if (!r) return;
-      var parts = [];
-      if (r.unitType) parts.push(typeLabels[r.unitType] || r.unitType);
-      var isVacant = !r.leaseholder && !r.blueground;
-      parts.push(isVacant ? '<span style="color:var(--accent);font-weight:600">Vacant</span>' : '<span style="color:var(--text3)">Occupied — ' + esc(r.leaseholder) + '</span>');
-      lines.push('Unit ' + esc(num) + ' · ' + parts.join(' · '));
-    });
-    el.innerHTML = lines.join('<br>');
-    return;
-  }
-
-  // If a unit type is selected, show vacant units of that type as clickable suggestions
-  if (unitType) {
-    var vacant = recs.filter(function(r){ return r.unitType === unitType && !r.leaseholder && !r.blueground; });
-    if (!vacant.length) {
-      el.innerHTML = '<span style="color:var(--text3)">No vacant ' + (typeLabels[unitType]||unitType) + ' units found in Unit Tracker.</span>';
-      return;
-    }
-    var html = '<span style="color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Vacant ' + (typeLabels[unitType]||unitType) + ' units — click to fill:</span><br>';
-    html += vacant.map(function(r){
-      return '<button type="button" onclick="var f=g(\'tr-unit\');if(f){f.value=f.value?(f.value+\', \'+' + JSON.stringify(r.unit) + '):' + JSON.stringify(r.unit) + ';showTourUnitInfo();}" style="margin:2px 4px 2px 0;padding:2px 10px;font-size:11px;font-weight:600;background:var(--accent-light);color:var(--accent);border:1px solid rgba(61,107,79,0.25);border-radius:4px;cursor:pointer">Unit ' + esc(r.unit) + '</button>';
-    }).join('');
-    el.innerHTML = html;
-    return;
-  }
-
-  el.innerHTML = '';
-}
-function saveTour() {
-  var name = g('tr-name').value.trim(), date = g('tr-date').value;
-  if (!requireFields([[g('tr-name'),!!name,'Enter the prospect name'],[g('tr-date'),!!date,'Choose a tour date']])) return;
-  if (editingTourId) {
-    var tr = (state.tours||[]).find(function(x){return x.id===editingTourId;}); if(!tr) return;
-    var _tb = Object.assign({}, tr);
-    tr.name=name; tr.unit=g('tr-unit').value.trim(); tr.type=g('tr-type').value; tr.date=date; tr.time=g('tr-time').value; tr.contact=g('tr-contact').value.trim(); tr.notes=g('tr-notes').value.trim();
-    pushUndo({ sec: 'tours', type: 'EDIT', id: tr.id, before: _tb, after: Object.assign({}, tr), label: 'tour edit — ' + name });
-    editingTourId=null; logActivity('tours','edit','Updated tour — '+name+' · '+fmtShort(date)); scheduleSave(); closeModal('modal-tour'); renderTours(); updateBadges(); toast('Tour updated'); return;
-  }
-  var tr = { id: uid(), name: name, unit: g('tr-unit').value.trim(), type: g('tr-type').value, date: date, time: g('tr-time').value, contact: g('tr-contact').value.trim(), notes: g('tr-notes').value.trim(), addedBy: currentUser ? currentUser.name : '', createdAt: Date.now() };
-  if (!state.tours) state.tours = [];
-  state.tours.push(tr); pushUndo({ sec: 'tours', type: 'ADD', id: tr.id, data: Object.assign({}, tr), label: 'add tour — ' + name }); logActivity('tours','create','Logged tour — '+name+' · '+fmtShort(date)+' ('+g('tr-type').value+')'); scheduleSave(); closeModal('modal-tour'); renderTours(); updateBadges();
-  ['tr-name', 'tr-unit', 'tr-contact', 'tr-notes'].forEach(function (id) { g(id).value = ''; }); g('tr-time').value = ''; var ttEl=g('tr-unit-type');if(ttEl)ttEl.value=''; var uInfo=g('tr-unit-info');if(uInfo)uInfo.innerHTML=''; toast('Tour logged');
-}
-function renderTours() {
-  var list = (state.tours || []).slice(), t = today();
-  if (tourFilter === 'sgt') list = list.filter(function (tr) { return tr.type === 'sgt'; });
-  else if (tourFilter === 'guided') list = list.filter(function (tr) { return tr.type === 'guided'; });
-  else if (tourFilter === 'today') list = list.filter(function (tr) { return tr.date === t; });
-  list.sort(function (a, b) { return b.createdAt - a.createdAt; });
-  var allT = state.tours || [];
-  g('tours-stats').innerHTML = '<div class="stat-card"><div class="stat-num">' + allT.filter(function (tr) { return tr.date === t; }).length + '</div><div class="stat-lbl">Today</div></div><div class="stat-card"><div class="stat-num">' + allT.filter(function (tr) { return tr.type === 'sgt'; }).length + '</div><div class="stat-lbl">SGT Total</div></div><div class="stat-card"><div class="stat-num">' + allT.filter(function (tr) { return tr.type === 'guided'; }).length + '</div><div class="stat-lbl">Guided Total</div></div><div class="stat-card"><div class="stat-num">' + allT.length + '</div><div class="stat-lbl">All Time</div></div>';
-  var tbody = g('tours-tbody'), cnt = g('tours-count');
-  if (cnt) cnt.textContent = list.length + ' tours';
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="6" class="tbl-empty">No tours logged.</td></tr>'; return; }
-  var html = '';
-  list.forEach(function (tr) {
-    var trBy = fmtByTag(tr.addedBy, tr.createdAt);
-    html += '<tr><td class="font-600">' + tr.name + trBy + '</td><td class="mono text-sm">' + (tr.unit || '-') + '</td><td class="mono text-sm">' + fmtShort(tr.date) + '</td>';
-    html += '<td><span class="pill ' + (tr.type === 'sgt' ? 'pill-reservation' : 'pill-event') + '">' + (tr.type === 'sgt' ? 'SGT' : 'Guided') + '</span></td>';
-    html += '<td class="text-sm text-2">' + (tr.notes || '-') + '</td><td><button class="btn btn-ghost btn-xs" onclick="openEditTour(\'' + tr.id + '\')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteTour(\'' + tr.id + '\')">&#x2715;</button></td></tr>';
-  });
-  tbody.innerHTML = html;
-  setBadge('badge-tours', allT.filter(function (tr) { return tr.date === t; }).length);
-}
-async function deleteTour(id) { if (!await confirmModal('Delete?')) return; var tx=(state.tours||[]).find(function(x){return x.id===id;}); if (tx) pushUndo({ sec: 'tours', type: 'DELETE', id: id, data: Object.assign({}, tx), label: 'delete tour — ' + tx.name }); logActivity('tours','delete','Deleted tour'+(tx?' — '+tx.name+' · '+fmtShort(tx.date):'')); state.tours = (state.tours || []).filter(function (tr) { return tr.id !== id; }); scheduleSave(); renderTours(); updateBadges(); toast('Deleted'); }
 
 // ─── WALKTHROUGH ───
 function toggleWTFloor(hdr) { hdr.parentElement.classList.toggle('open'); }
@@ -9028,7 +8649,6 @@ function renderPatrolByType(type) {
       html += '<div class="flex items-center gap-8" style="padding:9px 14px;border-bottom:1px solid var(--border2)">';
       html += '<div style="flex:1"><span class="font-600 text-sm">' + f.location + '</span><span class="pill pill-' + f.priority + '" style="font-size:10px;margin-left:6px">' + f.priority + '</span>';
       html += '<div class="text-sm text-2">' + f.desc + '</div></div>';
-      html += (!f.maintEscalated ? '<button onclick="escalateFlagToMaint(\'' + f.id + '\')" class="btn btn-ghost btn-xs" title="Escalate to Maintenance" style="color:var(--amber)">&#8594; Maint</button>' : '<span style="font-size:10px;color:var(--text3);font-style:italic">&#8594; Maint</span>');
       html += ' <button class="btn btn-green btn-xs" onclick="resolveFlag(\'' + f.id + '\')">Resolve</button>';
       html += '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteFlag(\'' + f.id + '\')">&#x2715;</button>';
       html += '</div>';
@@ -9745,22 +9365,6 @@ async function deleteFlag(id) {
   }
   state.flags = (state.flags || []).filter(function (f) { return f.id !== id; });
   scheduleSave(); renderWT(); toast('Removed');
-}
-async function escalateFlagToMaint(id) {
-  var f = (state.flags || []).find(function(x) { return x.id === id; }); if (!f) return;
-  if (!await confirmModal('Create a maintenance issue from this patrol flag?')) return;
-  var entry = { id: uid(), unit: '', resident: '', type: 'General', priority: f.priority === 'high' ? 'high' : (f.priority === 'medium' ? 'medium' : 'low'), status: 'open', notes: 'Escalated from patrol flag: ' + f.location + (f.desc ? '\nDetails: ' + f.desc : ''), log: [], createdAt: Date.now(), addedBy: currentUser ? currentUser.name : '' };
-  if (!state.maintenance) state.maintenance = [];
-  var flagBefore = cloneData(f);
-  state.maintenance.push(entry);
-  f.maintEscalated = true;
-  pushBatchUndo('walkthrough', 'escalate patrol issue — ' + f.location, [
-    { sec: 'maintenance', type: 'ADD', path: ['maintenance'], id: entry.id, data: cloneData(entry), label: 'add maintenance from patrol issue — ' + f.location },
-    { sec: 'walkthrough', type: 'EDIT', path: ['flags'], id: f.id, before: flagBefore, after: cloneData(f), label: 'mark patrol issue escalated — ' + f.location }
-  ]);
-  logActivity('walkthrough', 'escalate', 'Escalated patrol issue to maintenance — ' + f.location, f.desc || '');
-  scheduleSave(); renderMaint(); renderWT(); updateBadges(); renderDash();
-  toast('Maintenance issue created from patrol flag');
 }
 
 // ─── TO-DO ───
@@ -10799,11 +10403,6 @@ function openUnitView(unit) {
     return s;
   }
   // ── Maintenance ──
-  var maint = (state.maintenance||[]).filter(function(m){ return m.unit===unit && (m.status==='open'||m.status==='in-progress'); });
-  html += uvSection('&#128295;', 'Open Maintenance', maint.map(function(m){
-    var pri = m.priority==='high'?'<span style="color:var(--red);font-weight:600">High</span>':m.priority==='low'?'<span style="color:var(--text3)">Low</span>':'Med';
-    return '<strong>' + esc(m.issue||m.type) + '</strong> &middot; ' + pri + ' &middot; ' + (m.status==='in-progress'?'In Progress':'Open');
-  }));
   // ── Keys ──
   var keys = (state.keys||[]).filter(function(k){ return k.unit===unit && k.status==='issued'; });
   html += uvSection('&#128273;', 'Keys Out', keys.map(function(k){
@@ -10842,7 +10441,7 @@ function openUnitView(unit) {
     return '<strong>' + esc(s.type) + '</strong> &middot; ' + esc(s.location) + (s.time?' at '+fmtTime(s.time):'');
   }));
   // ── All clear ──
-  var anyOpen = maint.length||keys.length||conc.length||amens.length||parking.length||lafUnit.length||sec.length;
+  var anyOpen = keys.length||conc.length||amens.length||parking.length||lafUnit.length||sec.length;
   if (!anyOpen) html += '<div style="padding:14px 16px;font-size:12px;color:var(--green);font-weight:600">&#10003; No open items across any section</div>';
   var bodyEl = g('unit-view-body');
   if (bodyEl) bodyEl.innerHTML = html;
@@ -11454,8 +11053,6 @@ function renderResidents() {
 
   // Map view
   if (utView === 'map') {
-    var openMaintUnitsMap = {};
-    (state.maintenance||[]).filter(function(m){return m.status!=='resolved';}).forEach(function(m){openMaintUnitsMap[m.unit]=true;});
     var floorMap = {};
     allRecs.forEach(function(r) {
       var u = (r.unit||'').trim();
@@ -11475,15 +11072,14 @@ function renderResidents() {
         var units = floorMap[floor].slice().sort(function(a,b){return parseInt(a.unit||0)-parseInt(b.unit||0);});
         mhtml += '<div class="unit-map-floor"><div class="unit-map-lbl">F' + floor + '</div><div class="unit-map-cells">';
         units.forEach(function(r) {
-          var hasMaint = !!openMaintUnitsMap[r.unit];
-          var cls = hasMaint ? 'ud-maint' : r.blueground ? 'ud-blueground' : (r.leaseholder ? 'ud-occupied' : 'ud-vacant');
-          var tipLine = 'Unit ' + r.unit + (r.leaseholder ? '<br>' + r.leaseholder : '<br>Vacant') + (hasMaint ? '<br>⚠ Open Maintenance' : '') + (r.blueground ? '<br>Blueground' : '');
+          var cls = r.blueground ? 'ud-blueground' : (r.leaseholder ? 'ud-occupied' : 'ud-vacant');
+          var tipLine = 'Unit ' + r.unit + (r.leaseholder ? '<br>' + r.leaseholder : '<br>Vacant') + (r.blueground ? '<br>Blueground' : '');
           mhtml += '<div class="unit-dot ' + cls + '" onclick="openEditUnitRecord(\'' + r.id + '\')"><span class="unit-tip">' + tipLine + '</span></div>';
         });
         mhtml += '</div></div>';
       });
       mhtml += '</div>';
-      mhtml += '<div class="unit-map-legend" style="margin-top:10px"><span><span class="leg-dot" style="background:var(--green-light);border:1px solid #C8E4B0"></span>Occupied</span><span><span class="leg-dot" style="background:var(--red-light);border:1px solid #F0BFBF"></span>Vacant</span><span><span class="leg-dot" style="background:#E8F0FF;border:1px solid #B8CCEE"></span>Blueground</span><span><span class="leg-dot" style="background:var(--amber-light);border:1px solid #E8C878"></span>Open Maintenance</span></div>';
+      mhtml += '<div class="unit-map-legend" style="margin-top:10px"><span><span class="leg-dot" style="background:var(--green-light);border:1px solid #C8E4B0"></span>Occupied</span><span><span class="leg-dot" style="background:var(--red-light);border:1px solid #F0BFBF"></span>Vacant</span><span><span class="leg-dot" style="background:#E8F0FF;border:1px solid #B8CCEE"></span>Blueground</span></div>';
     }
     mhtml += '</div>';
     grid.innerHTML = mhtml;
@@ -11709,14 +11305,12 @@ function getActiveAutoBlockIds() {
     if (a.closeoutNote) return; // already closed out — skip
     if ((a.date===t && pdInShift(a.start, shift)) || (isLead && a.date>t && a.date<=maxDate)) ids.push(exKey);
   });
-  (state.maintenance||[]).filter(function(m){ return (m.status==='open'||m.status==='in-progress') && !pdExcluded['mt_'+m.id]; }).forEach(function(m){ ids.push('mt_'+m.id); });
   getUnifiedLogbook().filter(function(e){ return (e.status==='open'||e.status==='in-progress') && !pdExcluded['lb_'+e.id]; }).forEach(function(e){ ids.push('lb_'+e.id); });
   (state.laf||[]).filter(function(i){ return i.flaggedForPassdown && !i.claimedAt && !pdExcluded['laf_'+i.id]; }).forEach(function(i){ ids.push('laf_'+i.id); });
   return ids;
 }
 function pdAttrEsc(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 function pdAutoRowEditFn(exKey) {
-  if (exKey.indexOf('mt_') === 0) return 'openEditMaint(\'' + exKey.slice(3) + '\')';
   if (exKey.indexOf('c_') === 0) return 'openEditConcierge(\'' + exKey.slice(2) + '\')';
   if (exKey.indexOf('key_') === 0) return 'openEditKey(\'' + exKey.slice(4) + '\')';
   if (exKey.indexOf('in_') === 0) return 'openEditMove(\'' + exKey.slice(3) + '\')';
@@ -11732,10 +11326,7 @@ function pdAutoRowSave(exKey, value) {
   var now = Date.now(), by = currentUser ? currentUser.name : '';
   var sid = getCurrentShiftId(), slbl = getCurrentShiftLabel();
   var entry = { ts: now, by: by, note: value.trim(), shiftId: sid, shift: slbl };
-  if (exKey.indexOf('mt_') === 0) {
-    var id = exKey.slice(3), m = (state.maintenance||[]).find(function(x){return x.id===id;});
-    if (m) { if (!m.log) m.log = []; m.log.push({ts:now, by:by, note:value.trim()}); scheduleSave(); }
-  } else if (exKey.indexOf('key_') === 0) {
+  if (exKey.indexOf('key_') === 0) {
     var id = exKey.slice(4), k = (state.keys||[]).find(function(x){return x.id===id;});
     if (k) { if (!k.shiftNotes) k.shiftNotes = []; if (!k.shiftNotes.some(function(n){return n.shiftId===sid;})) { k.shiftNotes.push(entry); scheduleSave(); } }
   } else if (exKey.indexOf('c_') === 0) {
@@ -12046,28 +11637,6 @@ function renderPdAutoBlocks(isLead) {
     html += '</div>';
   }
 
-  // Open / in-progress maintenance items
-  var openMaint = (state.maintenance||[]).filter(function(m){ return m.status!=='resolved'; });
-  openMaint.sort(function(a,b){ var p={high:0,medium:1,low:2}; return (p[a.priority]||1)-(p[b.priority]||1); });
-  pdSections.push({ id: 'pd-blk-maint', icon: '🔧', label: 'Maintenance', count: openMaint.length });
-  html += '<div class="pd-auto-block" id="pd-blk-maint"><div class="pd-auto-hdr">🔧 Open Maintenance</div>';
-  if (!openMaint.length) {
-    html += '<div style="color:var(--text3)">No open items</div>';
-  } else {
-    openMaint.forEach(function(m) {
-      var priBadge = { high: 'var(--red)', medium: 'var(--amber)', low: 'var(--text3)' }[m.priority] || 'var(--text3)';
-      var woBadge = m.workorder ? ' <span style="font-size:10px;font-weight:600;background:rgba(34,197,94,0.12);color:#16a34a;border:1px solid rgba(34,197,94,0.25);border-radius:4px;padding:1px 6px">WO Filed</span>' : '';
-      var statusLabel = { open: 'Open', 'in-progress': 'In Progress' }[m.status] || m.status;
-      var priLabel = m.priority.charAt(0).toUpperCase() + m.priority.slice(1);
-      var content = '<strong>Unit ' + esc(m.unit) + ' – ' + esc(m.issue) + '</strong>' + pdYouBadge(m) + woBadge + ' <span style="font-size:11px;color:' + priBadge + ';font-weight:600">' + priLabel + '</span> · ' + statusLabel;
-      if (m.desc) content += '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + esc(m.desc) + '</div>';
-      var defNsMt = (m.log && m.log.length) ? 'Latest note: ' + m.log[m.log.length-1].note : 'Escalate to maintenance or follow up on resolution status.';
-      var mtKey = 'mt_' + m.id;
-      if (m.log && m.log.length && pdNotes[mtKey] === undefined) pdNotes[mtKey] = defNsMt;
-      html += pdAutoRow(mtKey, content, defNsMt, true);
-    });
-  }
-  html += '</div>';
 
 
   // Fees to ledger
@@ -12389,22 +11958,6 @@ function generatePassdown() {
     out += 'Next Step: ' + pdNote('tp_summary', 'Credential log updated — verify stock counts match at end of shift.') + '\n';
   }
 
-  // Open / in-progress maintenance (skip excluded)
-  var openM = (state.maintenance||[]).filter(function(m){ return (m.status==='open'||m.status==='in-progress') && !pdExcluded['mt_'+m.id] && pdHasNote('mt_'+m.id); });
-  if (openM.length) {
-    out += '\n🔧 Open Maintenance\n';
-    openM.forEach(function(m, mtIdx) {
-      if (mtIdx) out += '\n';
-      var prioTag = m.priority === 'high' ? ' ⚠ HIGH' : m.priority === 'medium' ? ' MED' : '';
-      var woTag = m.workorder ? ' – WO Filed' : '';
-      var statusStr = { open: 'Open', 'in-progress': 'In Progress' }[m.status] || m.status;
-      var latestNote = (m.log && m.log.length) ? m.log[m.log.length-1].note : (m.desc || '');
-      out += 'Unit ' + m.unit + ' – ' + m.issue + prioTag + woTag + ' (' + statusStr + ')\n';
-      if (latestNote) out += 'Update: ' + latestNote + '\n';
-      var defNsM = (m.log && m.log.length) ? 'Latest note: ' + m.log[m.log.length-1].note : (m.status === 'in-progress' ? 'In progress — monitor and update next shift.' : 'Pending — follow up with maintenance team.');
-      out += 'Next Step: ' + pdNote('mt_'+m.id, defNsM) + '\n';
-    });
-  }
 
   // Flagged L&F items
   var flaggedLAF = (state.laf || []).filter(function(i){ return i.flaggedForPassdown && !i.claimedAt && !pdExcluded['laf_'+i.id] && pdHasNote('laf_'+i.id); });
@@ -12804,42 +12357,8 @@ function setModalMode(titleId, btnId, titleText, btnText) {
 }
 
 // ─── MAINTENANCE EDIT ───
-var editingMaintId = null;
-function openAddMaint() {
-  editingMaintId = null;
-  setModalMode('modal-maint-title','modal-maint-savebtn','Log Maintenance Issue','Save Issue');
-  ['mt-unit','mt-issue','mt-desc','mt-reporter'].forEach(function(id){g(id).value='';});
-  g('mt-priority').value='medium'; g('mt-status').value='open'; g('mt-workorder').checked=false;
-  openModal('modal-maint');
-}
-function openEditMaint(id) {
-  var m = (state.maintenance||[]).find(function(x){return x.id===id;}); if(!m) return;
-  editingMaintId = id;
-  setModalMode('modal-maint-title','modal-maint-savebtn','Edit Issue','Save Changes');
-  g('mt-unit').value = m.unit||''; g('mt-issue').value = m.issue||'';
-  g('mt-desc').value = m.desc||''; g('mt-reporter').value = m.reporter||'';
-  g('mt-priority').value = m.priority||'medium'; g('mt-status').value = m.status||'open'; g('mt-workorder').checked = m.workorder||false;
-  openModal('modal-maint');
-}
 
 // ─── GUEST EDIT ───
-var editingGuestId = null;
-function openAddGuest() {
-  editingGuestId = null;
-  setModalMode('modal-guest-title','modal-guest-savebtn','Log Guest / Visitor','Log Guest');
-  ['gs-name','gs-unit','gs-host','gs-notes'].forEach(function(id){g(id).value='';});
-  g('gs-type').value='Visitor'; g('gs-status').value='pending';
-  openModal('modal-guest');
-}
-function openEditGuest(id) {
-  var gst = (state.guests||[]).find(function(x){return x.id===id;}); if(!gst) return;
-  editingGuestId = id;
-  setModalMode('modal-guest-title','modal-guest-savebtn','Edit Guest','Save Changes');
-  g('gs-name').value=gst.name||''; g('gs-unit').value=gst.unit||'';
-  g('gs-host').value=gst.host||''; g('gs-notes').value=gst.notes||'';
-  g('gs-type').value=gst.type||'Visitor'; g('gs-status').value=gst.status||'pending';
-  openModal('modal-guest');
-}
 
 // ─── KEY EDIT ───
 var editingKeyId = null;
@@ -12900,27 +12419,6 @@ function openEditAmenity(id) {
 }
 
 // ─── TOUR EDIT ───
-var editingTourId = null;
-function openAddTour() {
-  editingTourId = null;
-  setModalMode('modal-tour-title','modal-tour-savebtn','Log Tour','Log Tour');
-  ['tr-name','tr-unit','tr-contact','tr-notes'].forEach(function(id){g(id).value='';});
-  g('tr-time').value=''; g('tr-date').value=today(); g('tr-type').value='sgt';
-  var ttEl = g('tr-unit-type'); if (ttEl) ttEl.value = '';
-  var uInfo = g('tr-unit-info'); if (uInfo) uInfo.innerHTML = '';
-  openModal('modal-tour');
-}
-function openEditTour(id) {
-  var tr = (state.tours||[]).find(function(x){return x.id===id;}); if(!tr) return;
-  editingTourId = id;
-  setModalMode('modal-tour-title','modal-tour-savebtn','Edit Tour','Save Changes');
-  g('tr-name').value=tr.name||''; g('tr-unit').value=tr.unit||'';
-  g('tr-contact').value=tr.contact||''; g('tr-notes').value=tr.notes||'';
-  g('tr-time').value=tr.time||''; g('tr-date').value=tr.date||today();
-  g('tr-type').value=tr.type||'sgt';
-  openModal('modal-tour');
-  setTimeout(showTourUnitInfo, 0);
-}
 
 // ─── LAF EDIT ───
 var editingLAFId = null;
@@ -13162,33 +12660,7 @@ function applyImport(type, rows) {
   var added = 0, updated = 0, skipped = 0;
   var preview = [];
 
-  if (type === 'tours') {
-    if (!state.tours) state.tours = [];
-    rows.forEach(function (row) {
-      var name = getField(row, ['name','prospectname','prospect','guestname','residentname','tenant']);
-      var date = normalizeDate(getField(row, ['date','tourdate','scheduleddate','appointmentdate','startdate']));
-      var time = getField(row, ['time','starttime','tourtime','appointmenttime']);
-      var unit = getField(row, ['unit','unitnumber','unitsshown','units','unitid']);
-      var tourType = getField(row, ['type','tourtype','kind']);
-      if (!tourType) tourType = 'sgt';
-      else tourType = tourType.toLowerCase().includes('guid') ? 'guided' : 'sgt';
-      var contact = getField(row, ['contact','email','phone','contactinfo']);
-      var notes = getField(row, ['notes','note','comments','outcome','description']);
-      if (!name || !date) { skipped++; return; }
-      // Dedup: match on name (normalized) + date
-      var normName = name.toLowerCase().trim();
-      var existing = state.tours.find(function (t) { return t.date === date && t.name.toLowerCase().trim() === normName; });
-      if (existing) {
-        existing.time = time || existing.time; existing.unit = unit || existing.unit;
-        existing.type = tourType; existing.contact = contact || existing.contact; existing.notes = notes || existing.notes;
-        updated++; preview.push({ action:'updated', label: name + ' on ' + date });
-      } else {
-        state.tours.push({ id: uid(), name: name, date: date, time: time, unit: unit, type: tourType, contact: contact, notes: notes, createdAt: Date.now() });
-        added++; preview.push({ action:'added', label: name + ' on ' + date });
-      }
-    });
-
-  } else if (type === 'moves') {
+  if (type === 'moves') {
     if (!state.moves) state.moves = [];
     rows.forEach(function (row) {
       var unit = getField(row, ['unit','unitnumber','unitnum','apt','apartment']);
@@ -13215,30 +12687,6 @@ function applyImport(type, rows) {
         var tasks = (moveType === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null, paymentTask: t.paymentTask || false, automationId: getTaskAutomationId(t) || null }; });
         state.moves.push({ id: uid(), unit: unit, resident: resident||'', date: date, type: moveType, time: time, total: total, elevator: elevator||'no', notes: notes, tasks: tasks, archivedAt: null, createdAt: Date.now() });
         added++; preview.push({ action:'added', label: (resident||unit) + ' Unit ' + unit + ' ' + date });
-      }
-    });
-
-  } else if (type === 'maintenance') {
-    if (!state.maintenance) state.maintenance = [];
-    rows.forEach(function (row) {
-      var unit = getField(row, ['unit','unitnumber','location','apt']);
-      var issue = getField(row, ['issue','issuetype','type','category','problem']);
-      var desc = getField(row, ['description','desc','detail','notes','comments']);
-      var priority = getField(row, ['priority','urgency','severity']);
-      if (!priority) priority = 'medium'; else priority = priority.toLowerCase();
-      if (!['high','medium','low'].includes(priority)) priority = 'medium';
-      var status = getField(row, ['status','state']);
-      if (!status) status = 'open'; else status = status.toLowerCase().replace(' ','-');
-      if (!['open','in-progress','resolved'].includes(status)) status = 'open';
-      var reporter = getField(row, ['reporter','reportedby','submittedby','submitter']);
-      if (!unit || !issue) { skipped++; return; }
-      var existing = state.maintenance.find(function (m) { return m.unit === unit && m.issue.toLowerCase() === issue.toLowerCase() && m.status !== 'resolved'; });
-      if (existing) {
-        if (desc) existing.desc = desc; if (priority) existing.priority = priority; if (status) existing.status = status;
-        updated++; preview.push({ action:'updated', label: 'Unit ' + unit + ' - ' + issue });
-      } else {
-        state.maintenance.push({ id: uid(), unit: unit, issue: issue, desc: desc, priority: priority, status: status, reporter: reporter, createdAt: Date.now() });
-        added++; preview.push({ action:'added', label: 'Unit ' + unit + ' - ' + issue });
       }
     });
 
@@ -13323,14 +12771,14 @@ var IMG_PROMPTS = {
 };
 
 function updateClaudePrompt() {
-  var type = g('img-import-type') ? g('img-import-type').value : 'tours';
+  var type = g('img-import-type') ? g('img-import-type').value : 'moves';
   var el = g('claude-prompt-display');
   if (el) el.textContent = IMG_PROMPTS[type] || IMG_PROMPTS.tours;
   resetJsonImportPreview();
 }
 
 function copyClaudePrompt() {
-  var type = g('img-import-type') ? g('img-import-type').value : 'tours';
+  var type = g('img-import-type') ? g('img-import-type').value : 'moves';
   var prompt = IMG_PROMPTS[type] || IMG_PROMPTS.tours;
   navigator.clipboard.writeText(prompt).then(function () { toast('Prompt copied'); }).catch(function () { toast('Copy failed'); });
 }
@@ -13344,16 +12792,12 @@ function resetJsonImportPreview() {
 function importRequiredFields(type, row) {
   var missing = [];
   function need(label, aliases, normalize) { var value = getField(row, aliases); if (normalize) value = normalize(value); if (!value) missing.push(label); }
-  if (type === 'tours') { need('name',['name','prospectname','prospect','guestname','residentname','tenant']); need('date',['date','tourdate','scheduleddate','appointmentdate','startdate'],normalizeDate); }
-  else if (type === 'moves') { need('unit',['unit','unitnumber','unitnum','apt','apartment']); need('date',['date','movedate','moveindate','moveoutdate','scheduleddate'],normalizeDate); }
-  else if (type === 'maintenance') { need('unit/location',['unit','unitnumber','location','apt']); need('issue',['issue','issuetype','type','category','problem']); }
+  if (type === 'moves') { need('unit',['unit','unitnumber','unitnum','apt','apartment']); need('date',['date','movedate','moveindate','moveoutdate','scheduleddate'],normalizeDate); }
   else if (type === 'amenities') { need('space',['space','amenity','amenityspace','room','location']); need('date',['date','bookingdate','eventdate','reservationdate'],normalizeDate); }
   return missing;
 }
 function importRowLabel(type, row, index) {
-  if (type === 'tours') return (getField(row,['name','prospectname','prospect']) || 'Tour') + ' · ' + normalizeDate(getField(row,['date','tourdate','scheduleddate']));
   if (type === 'moves') return 'Unit ' + getField(row,['unit','unitnumber','apt']) + ' · ' + (getField(row,['resident','residentname','name']) || 'Resident not listed') + ' · ' + normalizeDate(getField(row,['date','movedate','moveindate','moveoutdate']));
-  if (type === 'maintenance') return 'Unit ' + getField(row,['unit','unitnumber','location','apt']) + ' · ' + getField(row,['issue','issuetype','type','problem']);
   if (type === 'amenities') return (getField(row,['space','amenity','room']) || 'Amenity') + ' · ' + normalizeDate(getField(row,['date','bookingdate','eventdate'])) + ' · Unit ' + getField(row,['unit','unitnumber','apt']);
   return 'Record ' + (index + 1);
 }
@@ -13436,9 +12880,6 @@ function openCalPop(dateStr, evt) {
     items.push({ type: 'Booking', typeClass: 'pill-event', main: a.space, sub: a.resident + ' · Unit ' + a.unit + (a.start ? ' · ' + fmtTime(a.start) : ''), sec: 'amenities' });
   });
   // Tours
-  (state.tours || []).filter(function (tr) { return tr.date === dateStr; }).forEach(function (tr) {
-    items.push({ type: tr.type === 'sgt' ? 'SGT Tour' : 'Guided Tour', typeClass: 'pill-resolved', main: tr.name, sub: (tr.unit ? 'Unit ' + tr.unit : '') + (tr.time ? ' · ' + fmtTime(tr.time) : ''), sec: 'tours' });
-  });
 
   var fmtted = new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   g('cal-pop-title').textContent = fmtted;
@@ -13470,7 +12911,6 @@ function openCalPop(dateStr, evt) {
   html += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
   html += '<button class="btn btn-secondary btn-xs" onclick="openCalQuickTodo(\'' + dateStr + '\')">+ To-Do</button>';
   html += '<button class="btn btn-secondary btn-xs" onclick="closeCalPop();openAddAmenityForDate(\'' + dateStr + '\')">+ Booking</button>';
-  html += '<button class="btn btn-secondary btn-xs" onclick="closeCalPop();openAddTourForDate(\'' + dateStr + '\')">+ Tour</button>';
   html += '</div></div>';
   }
 
@@ -13519,10 +12959,6 @@ function getChips(dateStr, unit, viewMode, maxShow) {
       var amLbl = viewMode === 'month' ? a.space.split(' ')[0] + ' ' + a.unit : a.space.split(' ')[0] + ' \u00b7 ' + a.resident.split(' ')[0];
       items.push('<div class="cal-chip cal-chip-amenity" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + a.space + ' \u00b7 Unit ' + a.unit + '">' + amLbl + '</div>');
     });
-    (state.tours || []).filter(function (tr) { return tr.date === dateStr; }).forEach(function (tr) {
-      var tourLbl = viewMode === 'month' ? 'Tour ' + (tr.unit || tr.name.split(' ')[0]) : 'Tour: ' + tr.name.split(' ')[0];
-      items.push('<div class="cal-chip" style="background:var(--purple-light);color:var(--purple);cursor:pointer" onclick="openCalPop(\'' + dateStr + '\',event)" title="' + tr.name + (tr.unit ? ' \u00b7 Unit ' + tr.unit : '') + '">' + tourLbl + '</div>');
-    });
   }
   if (maxShow && items.length > maxShow) {
     var extra = items.length - maxShow;
@@ -13568,8 +13004,7 @@ function renderWeekCal() {
   var hasTodos = getCurrentTodos().some(function (t) { return t.dueDate; });
   var hasAmenities = (state.amenities || []).length > 0;
   var hasTaskDates = (state.moves || []).some(function (m) { return (m.tasks || []).some(function (t) { return t.dueDate; }); });
-  var hasTours = (state.tours || []).length > 0;
-  if (hasTodos || hasAmenities || hasTaskDates || hasTours) {
+  if (hasTodos || hasAmenities || hasTaskDates) {
     html += '<tr><td class="unit-lbl" style="color:var(--text3)">General</td>';
     days.forEach(function (d) {
       var ds = localDateStr(d);
@@ -13607,7 +13042,6 @@ function renderAgendaCal() {
     + '<span style="font-size:12px;color:var(--text3)">Quick add:</span>'
     + '<button class="btn btn-secondary btn-xs" onclick="openCalQuickTodo(\'\')">+ To-Do</button>'
     + '<button class="btn btn-secondary btn-xs" onclick="openAddAmenityForDate(\'\')">+ Booking</button>'
-    + '<button class="btn btn-secondary btn-xs" onclick="openAddTourForDate(\'\')">+ Tour</button>'
     + '</div>';
   var hasAny = false;
   for (var day = 1; day <= daysInM; day++) {
@@ -13629,9 +13063,6 @@ function renderAgendaCal() {
     });
     (state.amenities || []).filter(function (a) { return a.date === ds; }).forEach(function (a) {
       dayItems.push({ tag: 'APT', tagCls: 'cal-chip-amenity', tagStyle: '', text: a.space + ' \u2014 ' + a.resident + ', Unit ' + a.unit + (a.start ? ' at ' + fmtTime(a.start) : ''), sec: 'amenities' });
-    });
-    (state.tours || []).filter(function (tr) { return tr.date === ds; }).forEach(function (tr) {
-      dayItems.push({ tag: 'TOUR', tagCls: '', tagStyle: 'background:var(--purple-light);color:var(--purple)', text: (tr.type === 'sgt' ? 'SGT' : 'Guided') + ' Tour \u2014 ' + tr.name + (tr.unit ? ', Unit ' + tr.unit : '') + (tr.time ? ' at ' + fmtTime(tr.time) : ''), sec: 'tours' });
     });
     if (!dayItems.length) continue;
     hasAny = true;
@@ -13659,7 +13090,6 @@ function openCalQuickTodo(dateStr) {
   openAddTodoModal(dateStr);
 }
 function openAddAmenityForDate(dateStr) { openAddAmenity(); if (dateStr) g('am-date').value = dateStr; }
-function openAddTourForDate(dateStr) { openAddTour(); if (dateStr) g('tr-date').value = dateStr; }
 
 // ─── GUIDE ───
 var GUIDE_DATA = [
@@ -13682,11 +13112,7 @@ var GUIDE_DATA = [
   { id:'g-patrol', icon:'🛡', title:'Security Patrols', keywords:'patrol walkthrough security floor area flag issue qr scan checkpoint pin alert overdue hours',
     html:'<h4>What It Does</h4><p>Tracks building walkthroughs and QR checkpoint scans. Floors and areas are configured in <strong>Settings → Property → Walkthrough Floors &amp; Areas</strong>.</p><h4>Logging a Walkthrough</h4><p>Select a floor/area and mark it as checked. Add flags for any issues observed — each flag has a priority level and description. Active flags appear on the Dashboard and feed into the Daily Passdown.</p><h4>QR Checkpoint Scans</h4><p>Each checkpoint has a printable QR code. When scanned, the user selects their name and enters the QR PIN to confirm the scan. All scans are logged with a timestamp on the patrol timeline.</p><h4>Patrol Alert Threshold</h4><p>Set in <strong>Settings → Security Patrols → Patrol Alert Threshold</strong>. If no scan is logged within that window (default 4 hours), a warning appears on the Dashboard.</p><div class="guide-note">📌 The QR scan confirmation page never exposes the full dashboard — it only shows a success screen, keeping the app secure on shared devices.</div>' },
 
-  { id:'g-maint', icon:'🔧', title:'Maintenance', keywords:'maintenance issue repair unit priority status open in progress resolved reporter emergency high medium low',
-    html:'<h4>Logging an Issue</h4><p>Click <strong>+ Log Issue</strong>. Fill in unit number, issue title, description, reporter name, priority, and status.</p><h4>Priority Levels</h4><ul><li><strong>Low</strong> — cosmetic or non-urgent</li><li><strong>Medium</strong> — needs attention within a few days</li><li><strong>High</strong> — same-day or next-day response needed</li><li><strong>Emergency</strong> — immediate response required</li></ul><h4>Statuses</h4><ul><li><strong>Open</strong> — issue reported, not yet addressed</li><li><strong>In Progress</strong> — work is underway</li><li><strong>Resolved</strong> — issue is closed</li></ul><h4>Tabs</h4><p>Filter by Open, In Progress, or Resolved using the sub-tabs at the top of the section. The Dashboard badge shows the count of open + in-progress items.</p>' },
 
-  { id:'g-guests', icon:'👥', title:'Guests & Visitors', keywords:'guest visitor vendor delivery contractor mover type status checked in out pending host unit',
-    html:'<h4>Logging a Guest</h4><p>Click <strong>+ Log Guest</strong>. Enter the guest\'s name, the unit they\'re visiting, the host resident\'s name, visit type, status, and any notes.</p><h4>Visit Types</h4><p>Visitor, Vendor, Delivery, Contractor, Mover, or Other.</p><h4>Statuses</h4><ul><li><strong>Pending</strong> — expected but not yet arrived</li><li><strong>Checked In</strong> — guest is currently in the building</li><li><strong>Checked Out</strong> — guest has departed</li></ul><div class="guide-tip">💡 The Dashboard badge shows the number of guests currently checked in.</div>' },
 
   { id:'g-keys', icon:'🔑', title:'Key Tracker', keywords:'key fob access one-time resident issued returned overdue guest unit timeout 2 hours badge red',
     html:'<h4>Key Types</h4><ul><li><strong>Resident Key / Fob</strong> — permanent keys issued to residents. Tracked for record-keeping but not time-sensitive.</li><li><strong>One-Time Key</strong> — temporary keys for guests, vendors, or contractors. Have an expected return time and trigger overdue alerts.</li></ul><h4>Issuing a Key</h4><p>Click <strong>+ Log Key</strong>. Choose the type, fill in unit, holder name, key/fob number, and for one-time keys — the expected return time and guest name.</p><h4>Returning a Key</h4><p>Click <strong>Edit</strong> on the key entry and change status to <strong>Returned</strong>. This removes one-time keys from the overdue watch list.</p><h4>Overdue Alerts</h4><p>One-time keys out for more than 2 hours display a red <strong>⚠ OVERDUE</strong> badge showing elapsed time. These automatically appear in the Daily Passdown auto-blocks.</p>' },
@@ -13697,8 +13123,6 @@ var GUIDE_DATA = [
   { id:'g-laf', icon:'🔍', title:'Lost & Found', keywords:'lost found item unclaimed claimed disposed location storage expiry reminder disposal days holding',
     html:'<h4>Logging an Item</h4><p>Click <strong>+ Log Item</strong>. Describe the item, where it was found, the storage location, and the date found. Add a claimant name when someone picks it up.</p><h4>Statuses</h4><ul><li><strong>Unclaimed</strong> — item is in storage waiting to be claimed</li><li><strong>Claimed</strong> — resident or owner picked it up</li><li><strong>Disposed</strong> — item was discarded after the holding period</li></ul><h4>Disposal Reminders</h4><p>Unclaimed items older than the configured holding period show a red <strong>⚠ Dispose</strong> badge. The holding period is set in <strong>Settings → Property → L&amp;F Disposal Reminder</strong> (default 30 days).</p>' },
 
-  { id:'g-tours', icon:'🏡', title:'Tour Log', keywords:'tour sgt self guided unit date time notes prospect name guided log',
-    html:'<h4>Logging a Tour</h4><p>Click <strong>+ Log Tour</strong>. Enter the prospect\'s name, tour type (SGT — Self-Guided, or Guided), unit(s) shown, date, time, and notes.</p><h4>What Shows in the Log</h4><p>All tours sorted by date, most recent first. Today\'s tours appear on the Dashboard badge and in the legacy passdown generator.</p>' },
 
   { id:'g-logbook', icon:'📓', title:'Logbook', keywords:'logbook request resident concern security incident unit type dry cleaning package hold noise complaint unhoused medical emergency status open in-progress resolved handled by passdown activity log',
     html:'<h4>What It Tracks</h4><p>Everything that happens at the front desk — resident requests, concerns, security incidents, property issues, and medical events — in one unified log.</p><h4>Adding an Entry</h4><p>Click <strong>+ Log Entry</strong>. Select the type from the grouped dropdown, fill in the unit/resident or location, add notes, next action, status, and who handled it.</p><h4>Type Groups</h4><ul><li><strong>Resident Requests</strong> — dry cleaning, package holds, parking, concerns</li><li><strong>Security</strong> — unhoused individuals, unauthorized access, disturbances, noise complaints</li><li><strong>Property</strong> — missing packages, damage, elevator issues, footage requests</li><li><strong>Medical</strong> — emergencies, first aid, welfare checks, slip/falls</li></ul><h4>Statuses</h4><ul><li><strong>Open</strong> — just logged, no action taken yet</li><li><strong>In Progress</strong> — being handled; waiting on another party or follow-up pending</li><li><strong>Resolved</strong> — fully closed; resident updated, no further action needed</li></ul><h4>Activity Log</h4><p>Each entry has an activity log for adding updates as a situation develops. Click the log button on any row to expand it and add notes.</p><h4>Passdown Integration</h4><p>All open and in-progress logbook entries automatically appear in the Daily Passdown auto-blocks so the incoming shift is always aware of pending items.</p>' },
@@ -13985,14 +13409,11 @@ function openTeamEntryModal(entry) {
 var TOGGLEABLE_SECTIONS = [
   { id: 'moves', label: 'Move Ins / Outs' },
   { id: 'walkthrough', label: 'Security Patrols' },
-  { id: 'maintenance', label: 'Maintenance' },
   { id: 'logbook', label: 'Logbook' },
   { id: 'supplies', label: 'Supplies & Inventory' },
-  { id: 'guests', label: 'Guests & Visitors' },
   { id: 'keys', label: 'Key Tracker' },
   { id: 'amenities', label: 'Amenity Bookings' },
   { id: 'laf', label: 'Lost & Found' },
-  { id: 'tours', label: 'Tour Log' },
   { id: 'residents', label: 'Unit Tracker' },
   { id: 'templates', label: 'Message Templates' },
   { id: 'passdown', label: 'Daily Passdown' },
@@ -15056,11 +14477,9 @@ function checkCarriedItemsOnLogin() {
   var shownKey = 'carried_shown_' + (currentUser ? currentUser.id : '') + '_' + today();
   try { if (sessionStorage.getItem(shownKey)) return; sessionStorage.setItem(shownKey, '1'); } catch(e) {}
   var openKeys = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued'; });
-  var openMaint = (state.maintenance||[]).filter(function(m){ return m.status==='open'||m.status==='in-progress'; });
   var openConcierge = (state.concierge||[]).filter(function(c){ return c.status==='open'; });
   var carriedItems = [];
   openKeys.forEach(function(k){ carriedItems.push({ label: '🗝 Key still out — Unit ' + k.unit + ' (' + k.name + (k.guest?' / '+k.guest:'') + ')' }); });
-  openMaint.forEach(function(m){ carriedItems.push({ label: '🔧 Maintenance open — Unit ' + (m.unit||'Common Area') + ': ' + m.issue }); });
   openConcierge.forEach(function(c){ carriedItems.push({ label: '🎭 Concierge request — Unit ' + c.unit + ': ' + c.type }); });
   if (!carriedItems.length) return;
   var firstName = currentUser.name.split(' ')[0];
@@ -15584,56 +15003,6 @@ function addKeyShiftNote(id, note) {
 // ─────────────────────────────────────────────────────────────────────────────
 // TWEAK 2 — Activity log helpers (Maintenance & Concierge)
 // ─────────────────────────────────────────────────────────────────────────────
-function toggleMaintLog(id) {
-  var row = g('maint-log-' + id); if (!row) return;
-  row.classList.toggle('open');
-}
-function addMaintLog(id, note) {
-  note = (note || '').trim();
-  if (!note) { toast('Enter an update'); return; }
-  var m = (state.maintenance || []).find(function (x) { return x.id === id; }); if (!m) return;
-  if (!m.log) m.log = m.desc ? [{ ts: m.createdAt, by: m.addedBy || '', note: m.desc }] : [];
-  var before = cloneData(m.log);
-  m.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: note });
-  pushUndo({ sec: 'maintenance', type: 'EDIT', id: m.id, before: { log: before }, after: { log: cloneData(m.log) }, label: 'maintenance update — Unit ' + (m.unit || '-') });
-  logActivity('maintenance', 'update', 'Added maintenance update — Unit ' + (m.unit || '-') + ' · ' + (m.issue || m.type || 'Issue'), note);
-  scheduleSave(); renderMaint(); toast('Update logged');
-  setTimeout(function () { var row = g('maint-log-' + id); if (row) row.classList.add('open'); }, 0);
-}
-function editMaintLog(id, idx) {
-  var el = g('mle-' + id + '-' + idx); if (!el) return;
-  var m = (state.maintenance||[]).find(function(x){return x.id===id;}); if (!m||!m.log||!m.log[idx]) return;
-  var cur = (m.log[idx].note||'').replace(/"/g,'&quot;');
-  el.innerHTML = '<div style="display:flex;gap:5px;flex:1;align-items:center">'
-    + '<input type="text" id="mle-inp-'+id+'-'+idx+'" value="'+cur+'" style="flex:1;font-size:12px" onkeydown="if(event.key===\'Enter\')saveMaintLog(\''+id+'\','+idx+')">'
-    + '<button class="btn btn-secondary btn-xs" onclick="saveMaintLog(\''+id+'\','+idx+')">Save</button>'
-    + '<button class="btn btn-ghost btn-xs" onclick="cancelMaintLog(\''+id+'\','+idx+')">Cancel</button></div>';
-  var inp = g('mle-inp-'+id+'-'+idx); if (inp) inp.focus();
-}
-function saveMaintLog(id, idx) {
-  var inp = g('mle-inp-'+id+'-'+idx); if (!inp) return;
-  var note = inp.value.trim(); if (!note) { toast('Note cannot be empty'); return; }
-  var m = (state.maintenance||[]).find(function(x){return x.id===id;}); if (!m||!m.log||!m.log[idx]) return;
-  var before = cloneData(m.log);
-  var oldNote = m.log[idx].note || '';
-  m.log[idx].note = note; scheduleSave(); renderMaint(); toast('Log entry updated');
-  pushUndo({ sec: 'maintenance', type: 'EDIT', id: m.id, before: { log: before }, after: { log: cloneData(m.log) }, label: 'edit maintenance update — Unit ' + (m.unit || '-') });
-  logActivity('maintenance', 'edit', 'Edited maintenance update — Unit ' + (m.unit || '-') + ' · ' + (m.issue || m.type || 'Issue'), 'Was: ' + oldNote + ' · Now: ' + note);
-  scheduleSave();
-  setTimeout(function(){var row=g('maint-log-'+id);if(row)row.classList.add('open');},0);
-}
-function cancelMaintLog(id, idx) { renderMaint(); setTimeout(function(){var row=g('maint-log-'+id);if(row)row.classList.add('open');},0); }
-async function deleteMaintLog(id, idx) {
-  if (!await confirmModal('Delete this log entry?')) return;
-  var m = (state.maintenance||[]).find(function(x){return x.id===id;}); if (!m||!m.log) return;
-  var before = cloneData(m.log);
-  var old = m.log[idx];
-  m.log.splice(idx, 1); scheduleSave(); renderMaint(); toast('Log entry deleted');
-  pushUndo({ sec: 'maintenance', type: 'EDIT', id: m.id, before: { log: before }, after: { log: cloneData(m.log) }, label: 'delete maintenance update — Unit ' + (m.unit || '-') });
-  logActivity('maintenance', 'delete', 'Deleted maintenance update — Unit ' + (m.unit || '-') + ' · ' + (m.issue || m.type || 'Issue'), old ? old.note : '');
-  scheduleSave();
-  setTimeout(function(){var row=g('maint-log-'+id);if(row)row.classList.add('open');},0);
-}
 function toggleConciergeLog(id) {
   var row = g('concierge-log-' + id); if (!row) return;
   row.classList.toggle('open');
