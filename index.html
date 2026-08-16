@@ -67,6 +67,10 @@
   .nav-item .icon{width:16px;text-align:center;font-size:14px;flex-shrink:0}
   .badge{margin-left:auto;background:var(--accent);color:#FFFFFF;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;font-family:var(--font-mono);min-width:18px;text-align:center;display:none}
   .badge.vis{display:block}
+  /* Badges inside pill tabs must sit inline — the sidebar's margin-left:auto/display:block
+     pushes them onto their own line and doubles the pill's height. */
+  .sub-tab .badge{margin-left:6px;vertical-align:baseline}
+  .sub-tab .badge.vis{display:inline-block}
   .badge.badge-red{background:var(--red);color:#fff}
   .sb-footer{margin-top:auto;padding:10px 10px 14px;border-top:0.5px solid rgba(255,255,255,0.09);display:flex;flex-direction:column;gap:4px}
   .footer-btn{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:var(--radius);font-size:11.5px;color:rgba(255,255,255,0.60);cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;width:100%;text-align:left;transition:background .1s;white-space:nowrap}
@@ -957,7 +961,7 @@
         <div class="sub-tab todo-ws" data-workspace="followup" onclick="setTodoWorkspace('followup',this)">&#8635; Follow-Ups</div>
         <div class="sub-tab todo-ws" data-workspace="assigned" onclick="setTodoWorkspace('assigned',this)">&#128100; Assigned</div>
         <div class="sub-tab todo-ws" data-workspace="done" onclick="setTodoWorkspace('done',this)">&#10003; Completed</div>
-        <div class="sub-tab todo-ws" id="td-projects-pill" data-workspace="projects" style="display:none" onclick="setTodoWorkspace('projects',this)">&#128188; Admin Projects</div>
+        <div class="sub-tab todo-ws" id="td-projects-pill" data-workspace="projects" style="display:none" onclick="setTodoWorkspace('projects',this)">&#128188; Admin Projects<span class="badge" id="badge-projects"></span></div>
       </div>
       <div class="todo-list-tools" id="todo-list-tools">
         <input type="search" id="todo-search" placeholder="Search tasks, units, notes, or owners…" oninput="setTodoSearch(this.value)">
@@ -9744,6 +9748,19 @@ function renderTodos() {
   }
   var titleEl = g('todos-section-title');
   var projectTab = g('td-projects-pill'); if (projectTab) projectTab.style.display = (currentUser && currentUser.role === 'admin' && !isViewingOther) ? '' : 'none';
+  // Admin Projects are excluded from the sidebar badge and the pending count on purpose (they're
+  // long-running work, not shift tasks) — which left this tab with no signal at all, so anything
+  // filed here went unseen. Count it on the tab instead; amber once items start going stale.
+  var projOpen = getCurrentTodos().filter(function (t) { return !t.done && (t.workType || 'task') === 'project'; });
+  var projStale = projOpen.filter(function (t) { return todoIsStale(t); }).length;
+  setBadge('badge-projects', projOpen.length);
+  var projBadge = g('badge-projects');
+  if (projBadge) {
+    projBadge.style.background = projStale ? 'var(--amber)' : '';
+    projBadge.title = projOpen.length
+      ? projOpen.length + ' open' + (projStale ? ' · ' + projStale + ' with no update in a while' : '')
+      : '';
+  }
   if (todoWorkspace === 'projects' && (!currentUser || currentUser.role !== 'admin' || isViewingOther)) todoWorkspace = 'shift';
   document.querySelectorAll('#todos-tabs .todo-ws').forEach(function(x){ x.classList.toggle('active', x.dataset.workspace === todoWorkspace); });
   var titleMap = { shift:'This Shift', all:'All Tasks', followup:'Waiting & Blocked Follow-Ups', assigned:'Assignments', done:'Completed Tasks', projects:'Admin Projects' };
