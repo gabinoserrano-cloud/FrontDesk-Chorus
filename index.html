@@ -2454,7 +2454,7 @@ async function mergeTodoInbox() {
     // (inbox_push.py already blocks those fields in patch; this re-checks as
     // defense in depth) — closing a loop still has to happen by hand in the UI.
     var editsTouched = 0;
-    var editsByQueue = { todos: 0, moves: 0, amenities: 0, logbook: 0, keys: 0 };
+    var editsByQueue = { todos: 0, moves: 0, amenities: 0, logbook: 0, keys: 0, parking: 0 };
     edits.forEach(function (ed) {
       if (!ed || !ed.queue || !ed.targetId || !ed.patch || !editsByQueue.hasOwnProperty(ed.queue)) return;
       var target = null;
@@ -2472,6 +2472,8 @@ async function mergeTodoInbox() {
         target = (state.logbook || []).find(function (e2) { return e2.id === ed.targetId; });
       } else if (ed.queue === 'keys') {
         target = (state.keys || []).find(function (k) { return k.id === ed.targetId; });
+      } else if (ed.queue === 'parking') {
+        target = (state.parking || []).find(function (p) { return p.id === ed.targetId; });
       }
       if (!target) return; // record gone/never existed — drop the request rather than retry forever
       Object.keys(ed.patch).forEach(function (k) {
@@ -2495,7 +2497,7 @@ async function mergeTodoInbox() {
       if (amenitiesTouched && typeof renderCalendar === 'function') renderCalendar();
       if ((logsTouched || editsByQueue.logbook) && typeof curSec !== 'undefined' && curSec === 'logbook' && typeof renderLogbook === 'function') renderLogbook();
       if (keysTouched || editsByQueue.keys) { if (typeof renderCardDrawer === 'function') renderCardDrawer(); if (typeof curSec !== 'undefined' && curSec === 'keys' && typeof renderKeys === 'function') renderKeys(); }
-      if (parkingTouched && typeof curSec !== 'undefined' && curSec === 'keys') { if (typeof renderParking === 'function') renderParking(); if (typeof renderTransponders === 'function') renderTransponders(); }
+      if ((parkingTouched || editsByQueue.parking) && typeof curSec !== 'undefined' && curSec === 'keys') { if (typeof renderParking === 'function') renderParking(); if (typeof renderTransponders === 'function') renderTransponders(); }
       updateBadges();
       var parts = [];
       if (added) parts.push(added + ' to-do' + (added > 1 ? 's' : ''));
