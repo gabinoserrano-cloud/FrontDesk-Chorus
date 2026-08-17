@@ -554,6 +554,8 @@
   .act-log-row{display:none;background:var(--surface2)}
   .act-log-row.open{display:table-row}
   .act-log-row td{padding:0;border-bottom:2px solid var(--accent)}
+  /* Logbook cards render the activity log as a nested div, not a table row. */
+  .lb-card .act-log-row{margin-top:9px;border-radius:6px;border:1px solid var(--border)}
   .act-log-inner{padding:10px 14px}
   .act-log-entry{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border2);font-size:12px}
   .act-log-entry:last-child{border-bottom:none}
@@ -754,6 +756,29 @@
 
   /* ─── Moves print report ─── */
   #moves-print-report{display:none}
+  /* Logbook card list — replaces the old 8-column table so notes/next-action get
+     full width instead of being squeezed into 150px cells beside empty columns. */
+  .lb-list{padding:4px 0}
+  .lb-card{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:8px;padding:12px 14px;margin-bottom:9px}
+  .lb-card.lb-open{border-left-color:var(--red)}
+  .lb-card.lb-resolved{border-left-color:var(--green);opacity:.72}
+  .lb-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px}
+  .lb-unit{font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+  .lb-res{color:var(--text2);font-size:13px}
+  .lb-st{font-size:9.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-left:auto}
+  /* The status <select> is styled for table cells elsewhere (full width); pin it
+     compact and right-aligned so it sits on the header line, not its own row. */
+  .lb-top .ie-sel{margin-left:auto;width:auto;min-width:96px;flex:0 0 auto;font-size:11px;padding:2px 6px;border:1px solid var(--border);border-radius:5px;background:var(--card);color:var(--text2)}
+  .lb-notes{font-size:12.5px;color:var(--text2);margin:7px 0 9px;white-space:pre-wrap;word-break:break-word}
+  .lb-next{background:var(--bg);border-radius:6px;padding:7px 10px;font-size:12.5px;display:flex;gap:8px;align-items:flex-start}
+  .lb-next-lbl{color:var(--accent);font-weight:650;white-space:nowrap;font-size:10.5px;letter-spacing:.3px;text-transform:uppercase;padding-top:2px}
+  .lb-next-in{flex:1;border:none;border-bottom:1px dashed var(--border);background:transparent;font:inherit;font-size:12.5px;color:var(--text);padding:1px 0;outline:none}
+  .lb-next-in:focus{border-bottom-color:var(--accent)}
+  .lb-foot{display:flex;gap:12px;margin-top:9px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);flex-wrap:wrap;align-items:center}
+  .lb-foot .lb-acts{margin-left:auto;display:flex;gap:5px;align-items:center}
+  .lb-empty{color:var(--text3);font-style:italic;padding:18px 4px;font-size:13px}
+  .lb-fu{font-size:10px;font-weight:600;margin-top:3px}
+  @media(max-width:640px){ .lb-st{margin-left:0} .lb-foot .lb-acts{margin-left:0;width:100%;margin-top:4px} }
   #moves-print-report .mr-hdr{margin-bottom:16px;border-bottom:2px solid #000;padding-bottom:10px;display:flex;justify-content:space-between;align-items:baseline}
   #moves-print-report .mr-title{font-size:18px;font-weight:700;font-family:var(--font-serif,serif);color:#000}
   #moves-print-report .mr-note{font-size:9px;color:#444;margin-top:2px}
@@ -1002,14 +1027,7 @@
           <span class="card-count" id="logbook-count">0 entries</span>
           <button class="btn btn-primary btn-sm ml-auto" onclick="openAddLogbook()">+ Log Entry</button>
         </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead>
-              <tr><th>Date / Time</th><th>Type</th><th>Unit / Resident</th><th>Details</th><th>Next Action</th><th>Status</th><th>Handled By</th><th></th></tr>
-            </thead>
-            <tbody id="logbook-tbody"></tbody>
-          </table>
-        </div>
+        <div id="logbook-list" class="lb-list"></div>
       </div>
     </div>
     <div class="section" id="section-concierge" style="display:none"></div>
@@ -2128,7 +2146,8 @@ async function mergeTodoInbox() {
     var keyEntries = Array.isArray(rowData.keyEntries) ? rowData.keyEntries : [];
     var moveCreates = Array.isArray(rowData.moveCreates) ? rowData.moveCreates : [];
     var edits = Array.isArray(rowData.edits) ? rowData.edits : [];
-    if (!inbox.length && !moveUpdates.length && !amenityUpdates.length && !logbookEntries.length && !keyEntries.length && !moveCreates.length && !edits.length) return;
+    var parkingEntries = Array.isArray(rowData.parkingEntries) ? rowData.parkingEntries : [];
+    if (!inbox.length && !moveUpdates.length && !amenityUpdates.length && !logbookEntries.length && !keyEntries.length && !moveCreates.length && !edits.length && !parkingEntries.length) return;
     var resolved = [];
     for (var i = 0; i < inbox.length; i++) {
       var item = inbox[i];
@@ -2338,6 +2357,37 @@ async function mergeTodoInbox() {
       logActivity('keys', 'create', 'Added one-time key from card-audit outreach — Unit ' + ke.unit + (ke.fob ? ' · Card #' + ke.fob : ''), ke.addedBy || 'Email Triage');
       keysTouched++;
     });
+    // Apply queued parking credential grants: always a fresh state.parking record —
+    // a credential grant is a discrete event, not a per-unit profile to fill blanks
+    // on. Mirrors saveParking()'s new-record path exactly (same defaults: status
+    // 'active', tpLogId null, etc.), then calls the app's own
+    // syncParkingToCredentials() on the new record — the same function the "+ Add
+    // Parking Credential" UI calls after a manual save — so the linked
+    // transponders.log entry is created identically either way instead of this
+    // drain re-implementing that sync logic. Dedupe is stamp-based inside notes,
+    // same pattern as logbookEntries/keyEntries.
+    var parkingTouched = 0;
+    parkingEntries.forEach(function (pe) {
+      if (!pe || !pe.unit || !pe.resident) return;
+      var stamp = 'triage:' + (pe.srcThread || pe.id || '');
+      if (!state.parking) state.parking = [];
+      if (state.parking.some(function (p) { return (p.notes || '').indexOf(stamp) !== -1; })) return; // already applied
+      var noteLines = [String(pe.notes || ''), '[' + stamp + ']'].filter(Boolean);
+      var newP = {
+        id: pe.id || uid(), category: pe.category || 'Resident', unit: String(pe.unit), resident: pe.resident,
+        monthlyFee: pe.monthlyFee || '', startDate: pe.startDate || today(), notes: noteLines.join('\n'),
+        transponder: { issued: !!pe.transponderIssued, num: pe.transponderNum || '' },
+        keyTag: { issued: !!pe.keyTagIssued, num: pe.keyTagNum || '' },
+        valetSticker: { issued: !!pe.valetIssued, num: pe.valetNum || '' },
+        status: 'active', cancelNoticeDate: null, returnedAt: null,
+        addedBy: pe.addedBy || 'Email Triage', createdAt: Date.now(), tpLogId: null
+      };
+      state.parking.push(newP);
+      syncParkingToCredentials(newP);
+      logActivity('parking', 'create', 'Added parking credential from triage — Unit ' + pe.unit + ' · ' + pe.resident,
+        (newP.transponder.issued ? 'Transponder ✓ ' : '') + (newP.keyTag.issued ? 'Key Tag ✓ ' : '') + (newP.valetSticker.issued ? 'Xpress Sticker ✓' : ''));
+      parkingTouched++;
+    });
     // Apply queued brand-new move cards (move-in or move-out) — the gap moveUpdates
     // deliberately doesn't cover: moveUpdates only ever fills blanks on a card that
     // already exists (or falls back to a to-do so Gabino decides), because deciding
@@ -2433,7 +2483,7 @@ async function mergeTodoInbox() {
       editsByQueue[ed.queue]++;
       editsTouched++;
     });
-    var merged = added + movesTouched + amenitiesTouched + logsTouched + keysTouched + movesCreated + editsTouched;
+    var merged = added + movesTouched + amenitiesTouched + logsTouched + keysTouched + movesCreated + editsTouched + parkingTouched;
     if (merged) {
       if (added) logActivity('todos', 'create', 'Imported ' + added + ' to-do(s) from email triage inbox', (resolved.length + moveUpdates.length + amenityUpdates.length - merged) ? 'duplicates skipped' : '');
       scheduleSave();
@@ -2445,6 +2495,7 @@ async function mergeTodoInbox() {
       if (amenitiesTouched && typeof renderCalendar === 'function') renderCalendar();
       if ((logsTouched || editsByQueue.logbook) && typeof curSec !== 'undefined' && curSec === 'logbook' && typeof renderLogbook === 'function') renderLogbook();
       if (keysTouched || editsByQueue.keys) { if (typeof renderCardDrawer === 'function') renderCardDrawer(); if (typeof curSec !== 'undefined' && curSec === 'keys' && typeof renderKeys === 'function') renderKeys(); }
+      if (parkingTouched && typeof curSec !== 'undefined' && curSec === 'keys') { if (typeof renderParking === 'function') renderParking(); if (typeof renderTransponders === 'function') renderTransponders(); }
       updateBadges();
       var parts = [];
       if (added) parts.push(added + ' to-do' + (added > 1 ? 's' : ''));
@@ -2453,6 +2504,7 @@ async function mergeTodoInbox() {
       if (amenitiesTouched) parts.push(amenitiesTouched + ' amenity booking(s)');
       if (logsTouched) parts.push(logsTouched + ' logbook entry(ies)');
       if (keysTouched) parts.push(keysTouched + ' key entry(ies)');
+      if (parkingTouched) parts.push(parkingTouched + ' parking credential(s)');
       if (editsTouched) parts.push(editsTouched + ' correction(s) applied');
       toast(parts.join(' + ') + ' from email triage');
     }
@@ -2460,7 +2512,7 @@ async function mergeTodoInbox() {
     // right before clearing (rather than blanking from the stale rowData snapshot)
     // so anything a concurrent inbox_push.py run appended while we were merging/
     // saving survives instead of being silently wiped by this PATCH.
-    var seenTodoIds = {}, seenMoveIds = {}, seenAmenIds = {}, seenLogIds = {}, seenKeyIds = {}, seenMoveCreateIds = {}, seenEditIds = {};
+    var seenTodoIds = {}, seenMoveIds = {}, seenAmenIds = {}, seenLogIds = {}, seenKeyIds = {}, seenMoveCreateIds = {}, seenEditIds = {}, seenParkingIds = {};
     inbox.forEach(function (t) { if (t && t.id) seenTodoIds[t.id] = true; });
     moveUpdates.forEach(function (m) { if (m && m.id) seenMoveIds[m.id] = true; });
     amenityUpdates.forEach(function (a) { if (a && a.id) seenAmenIds[a.id] = true; });
@@ -2468,6 +2520,7 @@ async function mergeTodoInbox() {
     keyEntries.forEach(function (ke) { if (ke && ke.id) seenKeyIds[ke.id] = true; });
     moveCreates.forEach(function (mc) { if (mc && mc.id) seenMoveCreateIds[mc.id] = true; });
     edits.forEach(function (ed) { if (ed && ed.id) seenEditIds[ed.id] = true; });
+    parkingEntries.forEach(function (pe) { if (pe && pe.id) seenParkingIds[pe.id] = true; });
     var freshRowData = rowData;
     try {
       var freshRes = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox&select=data', { headers: await getSupaHdr() });
@@ -2483,7 +2536,8 @@ async function mergeTodoInbox() {
     var remainKeys = (Array.isArray(freshRowData.keyEntries) ? freshRowData.keyEntries : []).filter(function (ke) { return !(ke && seenKeyIds[ke.id]); });
     var remainMoveCreates = (Array.isArray(freshRowData.moveCreates) ? freshRowData.moveCreates : []).filter(function (mc) { return !(mc && seenMoveCreateIds[mc.id]); });
     var remainEdits = (Array.isArray(freshRowData.edits) ? freshRowData.edits : []).filter(function (ed) { return !(ed && seenEditIds[ed.id]); });
-    var cleared = Object.assign({}, freshRowData, { todos: remainTodos, moveUpdates: remainMoves, amenityUpdates: remainAmens, logbookEntries: remainLogs, keyEntries: remainKeys, moveCreates: remainMoveCreates, edits: remainEdits });
+    var remainParking = (Array.isArray(freshRowData.parkingEntries) ? freshRowData.parkingEntries : []).filter(function (pe) { return !(pe && seenParkingIds[pe.id]); });
+    var cleared = Object.assign({}, freshRowData, { todos: remainTodos, moveUpdates: remainMoves, amenityUpdates: remainAmens, logbookEntries: remainLogs, keyEntries: remainKeys, moveCreates: remainMoveCreates, edits: remainEdits, parkingEntries: remainParking });
     await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox', {
       method: 'PATCH',
       headers: await getSupaHdr({ 'Prefer': 'return=minimal' }),
@@ -5180,7 +5234,7 @@ function renderMoves() {
     // Re-render text content with indicator
     var dateColLbl = (moveFilter === 'out' || moveFilter === 'turnover') ? 'Lease End'
       : (moveFilter === 'in' || moveFilter === 'postmovein') ? 'Lease Start' : 'Lease Date';
-    var colLabels = ['Unit','Resident',dateColLbl,'Type','Appt'];
+    var colLabels = ['Unit','Resident',dateColLbl,'Type','Reservation'];
     theadRow.querySelectorAll('th.th-sort').forEach(function(th, i) {
       var col = ['unit','name','date','type','appt'][i];
       th.textContent = colLabels[i] + (col === moveSort ? (moveSortDir === 'asc' ? ' ▲' : ' ▼') : '');
@@ -5658,13 +5712,33 @@ function printMovesReport() {
       return '<tr class="' + (flag ? 'mr-flag' : '') + '"><td>' + esc(m.unit) + '</td><td>' + names(m) + '</td><td>' + fmtShort(m.date) + '</td></tr>';
     }).join('');
   }
+  // Vacant units — no leaseholder and not a Blueground unit (same rule the Unit
+  // Tracker's Vacant filter uses). Cross-referenced against active move-ins so the
+  // report distinguishes "ready to show" from "already spoken for".
+  var vacantRecs = (state.unitRecords || []).filter(function (r) { return !r.leaseholder && !r.blueground; });
+  var vacantRows = vacantRecs.map(function (r) {
+    var incoming = active.filter(function (m) { return m.type === 'in' && String(m.unit) === String(r.unit); })
+      .sort(function (a, b) { return (a.date || '').localeCompare(b.date || ''); })[0];
+    return { unit: r.unit, incoming: incoming };
+  }).sort(function (a, b) { return (parseInt(a.unit, 10) || 0) - (parseInt(b.unit, 10) || 0); });
+  function vacantRowsHtml() {
+    if (!vacantRows.length) return '<tr><td colspan="3" class="mr-empty">No vacant units</td></tr>';
+    return vacantRows.map(function (v) {
+      var status = v.incoming ? 'Move-in booked' : 'Available';
+      var note = v.incoming ? esc(v.incoming.resident || '') + ' &middot; ' + fmtShort(v.incoming.date) : '&mdash;';
+      // Bold the truly-empty ones — those are the units the team can actually show or turn.
+      return '<tr class="' + (v.incoming ? '' : 'mr-flag') + '"><td>' + esc(v.unit) + '</td><td>' + status + '</td><td>' + note + '</td></tr>';
+    }).join('');
+  }
   var _pc = getPropertyConfig();
   var genAt = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
-  var html = '<div class="mr-hdr"><div><div class="mr-title">' + esc(_pc.name || 'Chorus SF') + ' — Move Ins / Move Outs</div><div class="mr-note">Bold rows = today or past due</div></div><div class="mr-sub">Generated ' + esc(genAt) + '</div></div>'
+  var html = '<div class="mr-hdr"><div><div class="mr-title">' + esc(_pc.name || 'Chorus SF') + ' — Move Ins / Move Outs</div><div class="mr-note">Bold rows = today or past due (moves) &middot; available now (vacant)</div></div><div class="mr-sub">Generated ' + esc(genAt) + '</div></div>'
     + '<div class="mr-section"><div class="mr-section-title">Move Ins (' + ins.length + ')</div>'
     + '<table><thead><tr><th>Unit</th><th>Resident</th><th>Lease Start</th></tr></thead><tbody>' + rowsHtml(ins) + '</tbody></table></div>'
     + '<div class="mr-section"><div class="mr-section-title">Move Outs (' + outs.length + ')</div>'
-    + '<table><thead><tr><th>Unit</th><th>Resident</th><th>Lease End</th></tr></thead><tbody>' + rowsHtml(outs) + '</tbody></table></div>';
+    + '<table><thead><tr><th>Unit</th><th>Resident</th><th>Lease End</th></tr></thead><tbody>' + rowsHtml(outs) + '</tbody></table></div>'
+    + '<div class="mr-section"><div class="mr-section-title">Vacant Units (' + vacantRows.length + ')</div>'
+    + '<table><thead><tr><th>Unit</th><th>Status</th><th>Incoming Resident</th></tr></thead><tbody>' + vacantRowsHtml() + '</tbody></table></div>';
   g('moves-print-report').innerHTML = html;
   document.body.classList.add('printing-moves-report');
   window.print();
@@ -5982,8 +6056,8 @@ function renderLogbook() {
   if (logbookCatFilter !== 'all') list = list.filter(function(e){ return (e.category||'request') === logbookCatFilter; });
 
   var cntEl = g('logbook-count'); if (cntEl) cntEl.textContent = list.length + ' entr' + (list.length===1?'y':'ies');
-  var tbody = g('logbook-tbody'); if (!tbody) return;
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="8" class="tbl-empty">No entries logged.</td></tr>'; return; }
+  var tbody = g('logbook-list'); if (!tbody) return;
+  if (!list.length) { tbody.innerHTML = '<div class="lb-empty">No entries logged.</div>'; return; }
 
   var isNative = {};
   (state.logbook||[]).forEach(function(x){ isNative[x.id] = true; });
@@ -6037,8 +6111,8 @@ function renderLogbook() {
       : '<span style="font-size:11px;color:var(--text3)">'+(e.status||'')+'</span>';
 
     var naCell = isNative[e.id]
-      ? '<input type="text" value="'+(e.nextAction||'').replace(/"/g,'&quot;')+'" placeholder="Add next action…" style="width:100%;font-size:11.5px;border:none;border-bottom:1px dashed var(--border);background:transparent;padding:2px 0;color:'+(e.nextAction?'var(--text)':'var(--text3)')+';outline:none;font-family:inherit" onblur="updateLogbookNextAction(\''+e.id+'\',this.value)" onfocus="this.style.borderBottomColor=\'var(--accent)\'" onblur="updateLogbookNextAction(\''+e.id+'\',this.value);this.style.borderBottomColor=\'var(--border)\'">'
-      : (e.nextAction ? esc(e.nextAction) : '<span style="color:var(--text3)">—</span>');
+      ? '<input type="text" class="lb-next-in" value="'+(e.nextAction||'').replace(/"/g,'&quot;')+'" placeholder="Add next action…" onblur="updateLogbookNextAction(\''+e.id+'\',this.value)">'
+      : '<span style="flex:1">'+(e.nextAction ? esc(e.nextAction) : '<span style="color:var(--text3)">—</span>')+'</span>';
 
     var actBtns = isNative[e.id]
       ? '<button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="toggleLogbookLog(\''+e.id+'\')" title="Activity log">'+logBtnLabel+'</button> '
@@ -6046,16 +6120,27 @@ function renderLogbook() {
         + '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteLogbook(\''+e.id+'\')">&#215;</button>'
       : '<span style="font-size:10px;color:var(--text3);font-style:italic">legacy</span>';
 
-    html += '<tr>';
-    html += '<td>'+dateCell+byTag+'</td>';
-    html += '<td>'+pill+fuHtml+flagRow+'</td>';
-    html += '<td style="font-size:12px">'+who+'</td>';
-    html += '<td style="max-width:160px;white-space:normal;font-size:12px;color:var(--text2)">'+(e.notes?esc(stripTriageStamp(e.notes)):'—')+'</td>';
-    html += '<td style="max-width:180px">'+naCell+'</td>';
-    html += '<td>'+statusSel+'</td>';
-    html += '<td class="text-xs text-2">'+(e.handledBy||'—')+'</td>';
-    html += '<td>'+actBtns+'</td>';
-    html += '</tr>';
+    // Status drives the card's left edge so state reads at a glance without
+    // hunting the dropdown; 'resolved' also dims the whole card.
+    var stCls = e.status==='open' ? 'lb-open' : e.status==='resolved' ? 'lb-resolved' : '';
+    var stBadge = e.status==='in-progress'
+      ? '<span class="lb-st" style="background:var(--amber-light);color:var(--amber)">In Progress</span>'
+      : e.status==='resolved'
+        ? '<span class="lb-st" style="background:var(--green-light);color:var(--green)">Resolved</span>'
+        : '<span class="lb-st" style="background:var(--red-light);color:var(--red)">Open</span>';
+    var hdrWho = (e.unit || e.resident)
+      ? (e.unit ? '<span class="lb-unit">'+esc(e.unit)+'</span>' : '') + (e.resident ? '<span class="lb-res">'+esc(e.resident)+'</span>' : '')
+      : '<span class="lb-res">'+esc(e.location || '')+'</span>';
+
+    html += '<div class="lb-card '+stCls+'">';
+    html += '<div class="lb-top">'+hdrWho+pill+(isNative[e.id]?statusSel:stBadge)+'</div>';
+    if (fuHtml || flagRow) html += '<div>'+fuHtml+flagRow+'</div>';
+    html += '<div class="lb-notes">'+(e.notes?esc(stripTriageStamp(e.notes)):'<span style="color:var(--text3)">No details recorded.</span>')+'</div>';
+    html += '<div class="lb-next"><span class="lb-next-lbl">Next</span>'+naCell+'</div>';
+    html += '<div class="lb-foot"><span>'+dateFmt+', '+timeFmt+'</span>'
+      + (e.handledBy ? '<span>Handled by '+esc(e.handledBy)+'</span>' : '')
+      + (byTag ? '<span>'+byTag+'</span>' : '')
+      + '<span class="lb-acts">'+actBtns+'</span></div>';
 
     // Activity log sub-row (native entries only)
     if (isNative[e.id]) {
@@ -6065,13 +6150,14 @@ function renderLogbook() {
         var ld = new Date(le.ts); var lf = ld.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+ld.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
         return '<div class="act-log-entry" style="display:flex;align-items:flex-start;gap:4px"><div style="flex:1"><span class="act-log-meta">'+lf+(le.by?' · '+le.by:'')+'</span><span class="act-log-note"> '+le.note+'</span></div></div>';
       }).join('');
-      html += '<tr class="act-log-row" id="logbook-log-'+eid+'" style="display:none">';
-      html += '<td colspan="8"><div class="act-log-inner">';
+      html += '<div class="act-log-row" id="logbook-log-'+eid+'" style="display:none">';
+      html += '<div class="act-log-inner">';
       html += '<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Activity Log</div>';
       html += entriesHtml || '<div style="color:var(--text3);font-size:12px;padding:4px 0">No updates yet.</div>';
       html += '<div class="act-log-add"><input type="text" id="'+logInputId+'" placeholder="Log an update…" style="flex:1;font-size:12px" onkeydown="if(event.key===\'Enter\')addLogbookLog(\''+eid+'\',this.value)"><button class="btn btn-secondary btn-sm" onclick="addLogbookLog(\''+eid+'\',g(\''+logInputId+'\').value)">Log update</button></div>';
-      html += '</div></td></tr>';
+      html += '</div></div>';
     }
+    html += '</div>'; // close .lb-card
   });
   tbody.innerHTML = html;
   setBadge('badge-logbook', openN + ipN);
@@ -11518,7 +11604,7 @@ function renderPdAutoBlocks(isLead) {
       var content = tag + '<strong>Unit ' + esc(m.unit) + ' – ' + esc(m.resident) + '</strong>' + pdYouBadge(m);
       if (isMoveCompleted(m)) content += ' <span style="font-size:10px;background:#D1FAE5;color:#065F46;border-radius:3px;padding:1px 5px;margin-left:2px">✓ Completed</span>';
       content += ' | Lease: ' + dayLblAuto(m.date);
-      if (m.apptDate) { content += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); } else content += ' <span style="font-size:10px;background:var(--amber-light);color:var(--amber);border-radius:3px;padding:1px 5px">No Appt</span>';
+      if (m.apptDate) { content += ' | Move-In Reservation: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); } else content += ' <span style="font-size:10px;background:var(--amber-light);color:var(--amber);border-radius:3px;padding:1px 5px">No Reservation</span>';
       if (m.total) content += ' | $' + m.total;
       var postPendingNs = (m.tasks||[]).filter(function(tk){ return (tk.cat==='Post Move-In')&&!tk.done; });
       var ns = isMoveCompleted(m)
@@ -11540,7 +11626,7 @@ function renderPdAutoBlocks(isLead) {
       var content = tag + '<strong>Unit ' + esc(m.unit) + ' – ' + esc(m.resident) + '</strong>' + pdYouBadge(m);
       if (isMoveCompleted(m)) content += ' <span style="font-size:10px;background:#D1FAE5;color:#065F46;border-radius:3px;padding:1px 5px;margin-left:2px">✓ Completed</span>';
       content += ' | Lease end: ' + dayLblAuto(m.date);
-      if (m.apptDate) { content += ' | Appt: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); } else content += ' <span style="font-size:10px;background:var(--amber-light);color:var(--amber);border-radius:3px;padding:1px 5px">No Appt</span>';
+      if (m.apptDate) { content += ' | Move-Out Reservation: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); } else content += ' <span style="font-size:10px;background:var(--amber-light);color:var(--amber);border-radius:3px;padding:1px 5px">No Reservation</span>';
       var postPendingOut = (m.tasks||[]).filter(function(tk){ return (tk.cat==='Post Move-Out')&&!tk.done; });
       var nsOut = isMoveCompleted(m)
         ? ('Move-out completed' + (postPendingOut.length ? ' — ' + postPendingOut.length + ' post move-out task(s) still pending.' : ' — all tasks done.'))
@@ -11556,7 +11642,7 @@ function renderPdAutoBlocks(isLead) {
         var content = '<strong>Unit ' + esc(m.unit) + ' – ' + esc(m.resident) + '</strong>'
           + ' <span style="font-size:10px;background:rgba(217,119,6,0.12);color:var(--amber);border:1px solid rgba(217,119,6,0.3);border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:600">⚠ Keys not collected</span>'
           + ' | Lease ended: ' + dayLblAuto(m.date)
-          + (m.apptDate ? ' | Move appt: ' + dayLblAuto(m.apptDate) : '');
+          + (m.apptDate ? ' | Move-Out Reservation: ' + dayLblAuto(m.apptDate) : '');
         html += pdAutoRow(koKey, content, 'Keys not yet collected — follow up with resident to confirm return.', !!carriedSet[koKey]);
       });
     }
@@ -11844,7 +11930,7 @@ function generatePassdown() {
         var tag = apptD !== t ? '[' + dayLbl(apptD) + '] ' : '';
         out += tag + 'Unit ' + m.unit + ' – ' + m.resident + '\n';
         out += 'Lease: ' + dayLbl(m.date);
-        if (m.apptDate) { out += ' | Appt: ' + dayLbl(m.apptDate); if (m.apptTime) out += ' @ ' + fmtTime(m.apptTime); } else out += ' | No Appt scheduled';
+        if (m.apptDate) { out += ' | Move-In Reservation: ' + dayLbl(m.apptDate); if (m.apptTime) out += ' @ ' + fmtTime(m.apptTime); } else out += ' | No Reservation scheduled';
         if (m.total) out += ' | Move-In Total: $' + m.total;
         var defNsIn;
         if (isMoveCompleted(m)) {
@@ -11886,7 +11972,7 @@ function generatePassdown() {
         var tag = apptD !== t ? '[' + dayLbl(apptD) + '] ' : '';
         out += tag + 'Unit ' + m.unit + ' – ' + m.resident + '\n';
         out += 'Lease end: ' + dayLbl(m.date);
-        if (m.apptDate) { out += ' | Appt: ' + dayLbl(m.apptDate); if (m.apptTime) out += ' @ ' + fmtTime(m.apptTime); } else out += ' | No Appt scheduled';
+        if (m.apptDate) { out += ' | Move-Out Reservation: ' + dayLbl(m.apptDate); if (m.apptTime) out += ' @ ' + fmtTime(m.apptTime); } else out += ' | No Reservation scheduled';
         var defNsOut;
         if (isMoveCompleted(m)) {
           var postPending2 = (m.tasks||[]).filter(function(tk){ return (tk.cat==='Post Move-Out') && !tk.done; });
@@ -11900,7 +11986,7 @@ function generatePassdown() {
       outstandingKeys.forEach(function(m) {
         if (!moveOutFirst) out += '\n'; moveOutFirst = false;
         out += 'Unit ' + m.unit + ' – ' + m.resident + ' ⚠ Keys not collected\n';
-        out += 'Lease ended: ' + dayLbl(m.date) + (m.apptDate ? ' | Move appt: ' + dayLbl(m.apptDate) : '') + '\n';
+        out += 'Lease ended: ' + dayLbl(m.date) + (m.apptDate ? ' | Move-Out Reservation: ' + dayLbl(m.apptDate) : '') + '\n';
         out += 'Next Step: ' + pdNote('keys_out_'+m.id, 'Keys not yet collected — follow up with resident to confirm return.') + '\n';
       });
     }
@@ -13120,10 +13206,10 @@ var GUIDE_DATA = [
     html:'<h4>Overview Cards</h4><p>The dashboard shows live counts of active items across all sections: pending moves, open maintenance, guests checked in, keys out, upcoming amenity bookings, open L&amp;F items, upcoming tours, and open concierge requests. Click any card to jump to that section.</p><h4>Quick Search</h4><p>Type any unit number, resident name, or keyword in the search bar to instantly find matching entries across moves, maintenance, guests, keys, amenities, and more. Click any result to navigate directly to that section.</p><h4>Greeting</h4><p>The greeting uses your logged-in name and adjusts based on the time of day. The date and building name are displayed at the top of the sidebar.</p>' },
 
   { id:'g-calendar', icon:'📅', title:'Calendar', keywords:'calendar events move lease date amenity tour booking upcoming month week agenda',
-    html:'<h4>What Shows on the Calendar</h4><ul><li><strong>Move-ins</strong> — shown on their appointment date (or lease start date if no appointment is set)</li><li><strong>Move-outs</strong> — shown on their appointment date (or lease end date)</li><li><strong>Amenity bookings</strong> — shown on the booking date</li><li><strong>Tours</strong> — shown on the tour date</li><li><strong>Lease start/end</strong> — shown as dashed borders for reference</li></ul><h4>Views</h4><p>Switch between Week, Month, and Agenda views using the buttons in the top-right of the calendar. Use ← → to move between periods, or click Today to return to the current date.</p><div class="guide-note">📌 The calendar is read-only. All edits happen in the individual sections (Moves, Amenities, Tours, etc.).</div>' },
+    html:'<h4>What Shows on the Calendar</h4><ul><li><strong>Move-ins</strong> — shown on their reservation date (or lease start date if no reservation is set)</li><li><strong>Move-outs</strong> — shown on their reservation date (or lease end date)</li><li><strong>Amenity bookings</strong> — shown on the booking date</li><li><strong>Tours</strong> — shown on the tour date</li><li><strong>Lease start/end</strong> — shown as dashed borders for reference</li></ul><h4>Views</h4><p>Switch between Week, Month, and Agenda views using the buttons in the top-right of the calendar. Use ← → to move between periods, or click Today to return to the current date.</p><div class="guide-note">📌 The calendar is read-only. All edits happen in the individual sections (Moves, Amenities, Tours, etc.).</div>' },
 
   { id:'g-moves', icon:'🚛', title:'Move Ins / Outs', keywords:'move in out lease resident unit task checklist appointment appt archive post turnover staff admin conflict elevator total',
-    html:'<h4>Tabs</h4><ul><li><strong>Move-Ins / Move-Outs</strong> — all active (non-archived) moves split by type</li><li><strong>Today</strong> — moves whose lease or appointment date is today</li><li><strong>Needs Appt</strong> — move-ins with no appointment date scheduled yet (amber badge)</li><li><strong>Post Move-In</strong> — residents already moved in (lease start in the past) who still have incomplete tasks tagged "Post Move-In"</li><li><strong>Turnover</strong> — units with all move-out tasks complete, ready for inspection</li><li><strong>Archive</strong> — completed moves that have been archived</li></ul><h4>Adding a Move</h4><p>Click <strong>+ Add Move</strong> (admin only). Fill in unit, resident name, lease date, type (in or out), and optionally an appointment date/time, move-in total, elevator reservation, and notes. The checklist is pre-populated from your default task list (configurable in Settings).</p><h4>Checklist &amp; Tasks</h4><p>Click any move row to expand its checklist. Check off tasks as they\'re completed. Tasks can be tagged by category — tasks tagged "Post Move-In" appear in the Post Move-In tab after the resident\'s lease start date has passed.</p><h4>Appointment Conflict Detection</h4><p>If two moves share the same appointment date and time, an orange <strong>⚠ Conflict</strong> badge appears on both. Reschedule to avoid overlap.</p><h4>Completion Status</h4><p>Once a move\'s appointment date has passed and all main tasks are checked off, the move shows a green <strong>✓ Completed</strong> badge and automatically reflects that status in the Daily Passdown.</p><h4>Archiving</h4><p>Once a move is fully complete, click <strong>Archive</strong> to remove it from the active list. Archived moves remain visible in the Archive tab.</p><div class="guide-tip">💡 Click the <strong>Passdown</strong> button in Moves to jump directly to the Daily Passdown with today\'s moves pre-filled.</div><div class="guide-note">🔒 Staff cannot add, edit, or delete moves — only check off tasks on the checklist.</div>' },
+    html:'<h4>Tabs</h4><ul><li><strong>Move-Ins / Move-Outs</strong> — all active (non-archived) moves split by type</li><li><strong>Today</strong> — moves whose lease or reservation date is today</li><li><strong>No Reservation</strong> — move-ins with no loading dock + elevator reservation scheduled yet (amber badge)</li><li><strong>Post Move-In</strong> — residents already moved in (lease start in the past) who still have incomplete tasks tagged "Post Move-In"</li><li><strong>Turnover</strong> — units with all move-out tasks complete, ready for inspection</li><li><strong>Archive</strong> — completed moves that have been archived</li></ul><h4>Adding a Move</h4><p>Click <strong>+ Add Move</strong> (admin only). Fill in unit, resident name, lease date, type (in or out), and optionally the move-in/move-out reservation date/time (loading dock + service elevator), move-in total, and notes. The checklist is pre-populated from your default task list (configurable in Settings).</p><h4>Checklist &amp; Tasks</h4><p>Click any move row to expand its checklist. Check off tasks as they\'re completed. Tasks can be tagged by category — tasks tagged "Post Move-In" appear in the Post Move-In tab after the resident\'s lease start date has passed.</p><h4>Reservation Conflict Detection</h4><p>If two moves share the same reservation date and time, an orange <strong>⚠ Conflict</strong> badge appears on both. Reschedule to avoid overlap.</p><h4>Completion Status</h4><p>Once a move\'s reservation date has passed and all main tasks are checked off, the move shows a green <strong>✓ Completed</strong> badge and automatically reflects that status in the Daily Passdown.</p><h4>Archiving</h4><p>Once a move is fully complete, click <strong>Archive</strong> to remove it from the active list. Archived moves remain visible in the Archive tab.</p><div class="guide-tip">💡 Click the <strong>Passdown</strong> button in Moves to jump directly to the Daily Passdown with today\'s moves pre-filled.</div><div class="guide-note">🔒 Staff cannot add, edit, or delete moves — only check off tasks on the checklist.</div>' },
 
 
   { id:'g-patrol', icon:'🛡', title:'Security Patrols', keywords:'patrol walkthrough security floor area flag issue qr scan checkpoint pin alert overdue hours',
