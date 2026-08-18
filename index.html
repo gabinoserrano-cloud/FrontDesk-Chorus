@@ -3988,6 +3988,21 @@ function renderDash() {
     needsAppt.slice(0,4).forEach(function (m) { html += '<div class="tight-row"><span class="tr-main"><strong>Unit ' + esc(m.unit) + '</strong> - ' + esc(m.resident) + ' - Lease starts ' + fmtShort(m.date) + '</span> <button class="btn btn-xs btn-secondary" onclick="openEditMove(\'' + m.id + '\')">Schedule</button></div>'; });
     html += '</div>';
   }
+  // Admin Projects have no daily/shift signal anywhere else — the tab itself is easy to
+  // never check, which is how 4 already-done items sat unchecked for weeks (2026-08-18).
+  // Surface stale ones (same todoIsStale() the tab badge already uses) right on the home view.
+  var projOpenDash = getCurrentTodos().filter(function(t2) { return !t2.done && (t2.workType||'task')==='project'; });
+  var projStaleDash = projOpenDash.filter(function(t2) { return todoIsStale(t2); });
+  if (projStaleDash.length) {
+    html += '<div style="background:var(--amber-light);border:1px solid rgba(201,164,94,0.45);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px">';
+    html += '<div style="font-size:12px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">&#128188; Admin Projects — ' + projStaleDash.length + ' item' + (projStaleDash.length !== 1 ? 's' : '') + ' with no update in a while</div>';
+    projStaleDash.slice(0, 4).forEach(function(t2) {
+      html += '<div class="tight-row"><span class="tr-main">' + esc(t2.text) + '</span></div>';
+    });
+    if (projStaleDash.length > 4) html += '<div style="font-size:11px;color:var(--text3);margin:2px 0 0">+' + (projStaleDash.length - 4) + ' more</div>';
+    html += '<button class="btn btn-xs btn-secondary" style="margin-top:8px" onclick="navToAdminProjects()">Review Admin Projects &rarr;</button>';
+    html += '</div>';
+  }
   var wifiDue = getWifiRenewals();
   if (wifiDue.length) {
     var wt2 = today();
@@ -5480,7 +5495,13 @@ async function toggleTask(moveId, taskId, checked) {
   // ── Connection 1: Move-out collect keys task → mark keys returned ──
   if (m.type === 'out' && automationId === 'collect-unit-keys') {
     if (checked) {
-      var issuedKeys = (state.keys || []).filter(function(k) { return k.unit === m.unit && k.status === 'issued'; });
+      // Match by the outgoing resident's name (+ co-residents), not unit alone — keys are
+      // created during move-IN (a separate move record) and returned during move-OUT, so
+      // there's no shared move id to key off of. Matching by unit alone will also sweep up
+      // an incoming resident's freshly-prepped keys if their move-in prep happened before
+      // this move-out was completed (confirmed on Unit 523, 2026-08-18).
+      var _outNames = [m.resident].concat((m.coResidents || []).map(function(cr) { return cr.name; }));
+      var issuedKeys = (state.keys || []).filter(function(k) { return k.unit === m.unit && k.status === 'issued' && _outNames.indexOf(k.name) !== -1; });
       if (issuedKeys.length) {
         issuedKeys.forEach(function(k) {
           var _kcb = { status: k.status, returnedAt: k.returnedAt };
@@ -7317,8 +7338,13 @@ function checkUnreturnedKeyFees() {
     if (daysPast < 1) return;
     var keyTask = (m.tasks || []).find(function(tk) { return tk.cat === 'Keys & Access' && /unit keys/i.test(tk.text); });
     if (keyTask && keyTask.done) return;
+    // Match by the outgoing resident's name (+ co-residents), not unit alone — same fix as
+    // the collect-unit-keys automation above, and for the same reason: an incoming
+    // resident's freshly-prepped keys on this unit shouldn't get flagged as unreturned
+    // against a different resident's move-out.
+    var _mNames = [m.resident].concat((m.coResidents || []).map(function(cr) { return cr.name; }));
     (state.keys || []).filter(function(k) {
-      return k.unit === m.unit && k.status === 'issued' && (k.type === 'resident' || k.type === 'joiner') && !k.unreturnedFee;
+      return k.unit === m.unit && k.status === 'issued' && (k.type === 'resident' || k.type === 'joiner') && !k.unreturnedFee && _mNames.indexOf(k.name) !== -1;
     }).forEach(function(k) {
       k.unreturnedFee = 100;
       k.unreturnedFlaggedAt = Date.now();
@@ -11251,7 +11277,7 @@ function getWifiRenewals() {
   return (state.unitRecords||[]).filter(function(r){ return r.wifiExpiry && r.wifiExpiry <= d15s; }).sort(function(a,b){ return a.wifiExpiry < b.wifiExpiry ? -1 : 1; });
 }
 // ─── PASSDOWN ───
-var pdSections = { keysAccess: [], residentMatters: [], thisShift: [], shiftNotes: [], policyReminders: [] };
+var pdSections = { shiftNotes: [], teamUpdate: [], pendingFollowUps: [], communicationsSent: [], escalations: [] };
 var pdExcluded = {};
 var pdNotes = {};
 var pdEditingSection = null;
@@ -11295,14 +11321,14 @@ function pdLoadDraft() {
   try {
     var draftDate = localStorage.getItem(pdDraftKey('pd_draft_date'));
     if (draftDate && draftDate !== today()) { pdClearDraft(); return; }
-    var s = localStorage.getItem(pdDraftKey('pd_draft_sections')); if (s) { pdSections = JSON.parse(s); if (!pdSections.thisShift) pdSections.thisShift = []; if (!pdSections.policyReminders) pdSections.policyReminders = []; }
+    var s = localStorage.getItem(pdDraftKey('pd_draft_sections')); if (s) { pdSections = JSON.parse(s); ['shiftNotes','teamUpdate','pendingFollowUps','communicationsSent','escalations'].forEach(function(k){ if (!pdSections[k]) pdSections[k] = []; }); }
     var e = localStorage.getItem(pdDraftKey('pd_draft_excluded')); if (e) pdExcluded = JSON.parse(e);
     var n = localStorage.getItem(pdDraftKey('pd_draft_notes')); if (n) pdNotes = JSON.parse(n);
     var sum = localStorage.getItem(pdDraftKey('pd_draft_summary')); if (sum) { var sumEl = g('pd-summary'); if (sumEl) sumEl.value = sum; }
   } catch(e) {}
 }
 function pdClearDraft() {
-  pdSections = { keysAccess: [], residentMatters: [], thisShift: [], shiftNotes: [], policyReminders: [] };
+  pdSections = { shiftNotes: [], teamUpdate: [], pendingFollowUps: [], communicationsSent: [], escalations: [] };
   pdExcluded = {};
   pdNotes = {};
   var sumEl = g('pd-summary'); if (sumEl) sumEl.value = '';
@@ -11800,10 +11826,10 @@ function renderPdAutoBlocks(isLead) {
 function renderPdFreeSections(isLead) {
   var container = g('pd-free-sections'); if (!container) return;
   var secs = isLead
-    ? [{ key:'thisShift', emoji:'📋', label:'This Shift', hint:'Cover: resident interactions, escalations, resolved issues, after-hours calls, anything unusual. Do not repeat items already in the auto-blocks. Routine daily deliveries are handled by the package concierge team — only note exceptions.' },
-       { key:'keysAccess', emoji:'🔑', label:'Keys / Access' },
-       { key:'residentMatters', emoji:'👤', label:'Resident Matters' },
-       { key:'policyReminders', emoji:'📢', label:'Policy Reminders', adminOnly: true }]
+    ? [{ key:'teamUpdate', emoji:'📢', label:'Team Update', adminOnly: true, hint:'Building-wide or team-wide announcements and policy reminders — things every shift needs to know going forward, not a specific incident.' },
+       { key:'pendingFollowUps', emoji:'⏳', label:'Pending & Follow-Ups', hint:'Open threads not already covered by the Logbook auto-block — anything still waiting on a person, a reply, or a next step.' },
+       { key:'communicationsSent', emoji:'📨', label:'Communications Sent', hint:'Emails, replies, or notices sent today worth the team knowing about.' },
+       { key:'escalations', emoji:'🚨', label:'Escalations & Management Involvement', hint:'Who in management is looped in on what, and what they still need to weigh in on.' }]
     : [{ key:'shiftNotes', emoji:'📋', label:'This Shift', hint:'Cover: resident interactions, noise complaints, resolved maintenance, after-hours calls, anything unusual. Do not repeat items already in the auto-blocks. Routine daily deliveries are handled by the package concierge team — only note exceptions (missed delivery requiring a callback, special handling, or a complaint).' }];
   var html = '';
   secs.forEach(function(s) {
@@ -11838,7 +11864,7 @@ function refreshPdItems(secKey) {
 
 function openPdItem(secKey) {
   pdEditingSection = secKey;
-  var isPolicy = secKey === 'policyReminders';
+  var isPolicy = secKey === 'teamUpdate';
   var ov = g('modal-pd-item');
   if (!ov) {
     ov = document.createElement('div');
@@ -11865,7 +11891,7 @@ function openPdItem(secKey) {
 }
 
 function savePdItem() {
-  var isPolicy = pdEditingSection === 'policyReminders';
+  var isPolicy = pdEditingSection === 'teamUpdate';
   var desc = (g('pdi-desc').value||'').trim(), nextStep = (g('pdi-nextstep') ? (g('pdi-nextstep').value||'').trim() : '');
   if (!desc) { toast(isPolicy ? 'Reminder text is required' : 'Description is required'); return; }
   if (!isPolicy && !nextStep) { toast('Update / Next Step is required'); return; }
@@ -11892,6 +11918,7 @@ function generatePassdown() {
   out += greeting + ' team,\nHere is today\'s passdown with active items and updates from the Front Desk. Please review carefully and reach out if you have any questions.\n';
   var summary = pdGetSummary();
   if (summary) { out += '\n— ' + summary + '\n'; }
+  if (isLead) writeSec('📢', 'Team Update', 'teamUpdate');
   var shiftLogEntries = getShiftLog();
   if (shiftLogEntries.length) {
     out += '\n📋 Shift Notes\n';
@@ -12017,15 +12044,14 @@ function generatePassdown() {
   // Open logbook entries (native + concierge + security, unified — skip excluded/unnoted)
   var openLbGen = getUnifiedLogbook().filter(function(e){ return (e.status==='open' || e.status==='in-progress') && !pdExcluded['lb_'+e.id] && pdHasNote('lb_'+e.id); });
   if (openLbGen.length) {
-    out += '\n📓 Logbook\n';
+    out += '\n------------------------------\n📓 Logbook\n\n';
     openLbGen.forEach(function(e, lbIdx) {
       if (lbIdx) out += '\n';
       var who = e.resident ? 'Unit ' + e.unit + ' – ' + e.resident : (e.location || '');
       var defNsLb = e.nextAction || 'Follow up and update status once resolved.';
-      // Lead with a status dot + unit/who, not the category label — skimming for "which
-      // unit, what state" matters more than the category when scanning several entries.
-      var statusDot = e.status === 'in-progress' ? '🟡' : '🔴';
-      out += statusDot + ' ' + (who || e.type) + (who ? ' — ' + e.type : '') + (e.status==='in-progress' ? ' (In Progress)' : '') + '\n';
+      // "who | type" — skimming for "which unit, what state" matters more than a status
+      // dot when scanning several entries.
+      out += (who || e.type) + (who ? ' | ' + e.type : '') + (e.status==='in-progress' ? ' (In Progress)' : '') + '\n';
       if (e.notes) out += stripTriageStamp(e.notes) + '\n';
       out += '→ Next: ' + pdNote('lb_'+e.id, defNsLb) + '\n';
     });
@@ -12103,23 +12129,21 @@ function generatePassdown() {
     });
   }
 
-  // Free-entry sections
+  // Free-entry sections — single item with no unit/resident renders as plain prose
+  // (matches how a one-off Team Update reads); multiple items render as a dash list.
   function writeSec(emoji, label, key) {
     var items = pdSections[key]||[]; if (!items.length) return;
-    out += '\n' + emoji + ' ' + label + '\n';
-    items.forEach(function(item, secIdx) {
-      if (secIdx) out += '\n';
+    out += '\n------------------------------\n' + emoji + ' ' + label + '\n\n';
+    items.forEach(function(item) {
       var hdr = [(item.unit ? 'Unit ' + item.unit : ''), item.resident].filter(Boolean).join(' – ');
-      if (hdr) out += hdr + '\n';
-      out += item.desc + '\n';
-      if (item.nextStep) out += 'Next Step: ' + item.nextStep + '\n';
+      var body = (hdr ? hdr + ': ' : '') + item.desc + (item.nextStep ? ' — ' + item.nextStep : '');
+      out += (items.length > 1 ? '- ' : '') + body + '\n';
     });
   }
   if (isLead) {
-    writeSec('📋', 'This Shift', 'thisShift');
-    writeSec('🔑', 'Keys / Access', 'keysAccess');
-    writeSec('👤', 'Resident Matters', 'residentMatters');
-    writeSec('📢', 'Policy Reminders', 'policyReminders');
+    writeSec('⏳', 'Pending & Follow-Ups', 'pendingFollowUps');
+    writeSec('📨', 'Communications Sent', 'communicationsSent');
+    writeSec('🚨', 'Escalations & Management Involvement', 'escalations');
   } else {
     writeSec('📋', 'This Shift', 'shiftNotes');
   }
@@ -12129,6 +12153,7 @@ function generatePassdown() {
   var sigName = currentUser ? currentUser.name : 'Front Desk';
   var sigTitle = (acct && acct.jobTitle) ? acct.jobTitle : (isLead ? 'Front Desk Lead | Chorus – SF' : 'Front Desk Associate | Chorus – SF');
   var sigEmail = (acct && acct.workEmail) ? acct.workEmail : '';
+  if (isLead) out += '\n------------------------------\n\nPlease continue documenting any updates or completed follow-ups so the next shift has a clear record of where each item stands. Thank you, and I hope everyone has a smooth rest of the day.\n';
   out += '\nBest,\n' + sigName + '\n' + sigTitle + '\n' + (sigEmail ? sigEmail + '\n' : '');
 
   g('pd-preview').value = out;
@@ -12243,11 +12268,14 @@ function reviewBeforeSend() {
   if (pdGetSummary()) passes.push('Shift summary written');
   else issues.push({ sev: 'warn', msg: 'No shift summary — every passdown should open with one line describing the shift' });
 
-  // Check 3: any "This Shift" or "Shift Notes" items logged?
-  var freeItems = (pdSections.shiftNotes || []).concat(pdSections.thisShift || []);
+  // Check 3: any narrative content logged? Staff use "This Shift"; leads use the four
+  // free-entry sections (Team Update / Pending & Follow-Ups / Communications Sent / Escalations).
   var isStaffUser = currentUser && currentUser.role === 'staff';
-  if (freeItems.length > 0) passes.push('Shift notes logged (' + freeItems.length + ' item' + (freeItems.length > 1 ? 's' : '') + ')');
-  else issues.push({ sev: isStaffUser ? 'block' : 'warn', msg: isStaffUser ? 'No shift notes added — you must log at least one item in the "This Shift" section before sending. Every passdown needs to reflect what you personally observed and handled this shift.' : 'No shift notes added — consider logging anything from your shift not captured in the auto-blocks above.' });
+  var freeCount = isStaffUser
+    ? (pdSections.shiftNotes || []).length
+    : ['teamUpdate','pendingFollowUps','communicationsSent','escalations'].reduce(function(sum, k){ return sum + (pdSections[k]||[]).length; }, 0);
+  if (freeCount > 0) passes.push('Shift notes logged (' + freeCount + ' item' + (freeCount > 1 ? 's' : '') + ')');
+  else issues.push({ sev: isStaffUser ? 'block' : 'warn', msg: isStaffUser ? 'No shift notes added — you must log at least one item in the "This Shift" section before sending. Every passdown needs to reflect what you personally observed and handled this shift.' : 'No narrative content added yet — consider logging a Team Update, Pending & Follow-Up, Communication Sent, or Escalation before sending.' });
 
   // Check 4: vague next actions in the preview text?
   var lines = preview.split('\n');
@@ -13033,6 +13061,10 @@ function openCalPop(dateStr, evt) {
 function navToSec(sec) {
   var item = document.querySelector('.nav-item[data-sec="' + sec + '"]');
   if (item) nav(item);
+}
+function navToAdminProjects() {
+  navToSec('todos');
+  setTodoWorkspace('projects');
 }
 
 function getChips(dateStr, unit, viewMode, maxShow) {
@@ -14623,7 +14655,7 @@ function addCarriedItemsToTodos() {
   if (added) toast('Added ' + added + ' item' + (added > 1 ? 's' : '') + ' to your to-do list');
 }
 function resetPassdownState() {
-  pdSections = { keysAccess: [], residentMatters: [], thisShift: [], shiftNotes: [], policyReminders: [] };
+  pdSections = { shiftNotes: [], teamUpdate: [], pendingFollowUps: [], communicationsSent: [], escalations: [] };
   pdExcluded = {};
   pdNotes = {};
   var sumEl = g('pd-summary'); if (sumEl) sumEl.value = '';
