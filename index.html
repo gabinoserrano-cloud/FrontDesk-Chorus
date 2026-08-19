@@ -820,6 +820,7 @@
     <div class="nav-item" data-sec="moves" onclick="nav(this)"><span class="icon" data-icon="truck"></span><span class="nav-txt">Move Ins / Outs</span><span class="badge" id="badge-moves"></span></div>
     <div class="nav-item" data-sec="walkthrough" onclick="nav(this)"><span class="icon" data-icon="camera"></span><span class="nav-txt">Camera Check</span></div>
     <div class="nav-item" data-sec="logbook" onclick="nav(this)"><span class="icon" data-icon="book"></span><span class="nav-txt">Logbook</span><span class="badge" id="badge-logbook"></span></div>
+    <div class="nav-item" data-sec="incidents" onclick="nav(this)"><span class="icon" data-icon="alert-triangle"></span><span class="nav-txt">Incident Reports</span><span class="badge" id="badge-incidents"></span></div>
     <div class="nav-item" data-sec="supplies" onclick="nav(this)"><span class="icon" data-icon="package"></span><span class="nav-txt">Supplies</span><span class="badge" id="badge-supplies"></span></div>
   </div>
   <div class="nav-group">
@@ -1024,6 +1025,9 @@
         </div>
         <div id="logbook-list" class="lb-list"></div>
       </div>
+    </div>
+    <div class="section" id="section-incidents">
+      <div id="ir-body"></div>
     </div>
     <div class="section" id="section-concierge" style="display:none"></div>
     <div class="section" id="section-security" style="display:none"></div>
@@ -1311,10 +1315,6 @@
           <p class="set-desc" style="padding:0 14px 8px">Tasks that reappear on a schedule instead of getting archived once — physical inventory counts, cleaning checks, anything periodic. Shows on the Dashboard when due.</p>
           <div id="settings-recurring" style="padding:0"></div>
         </div>
-        <div class="card mb-12">
-          <div class="card-hdr"><span class="set-ico" data-icon="mappin"></span><span class="card-title">Walkthrough Floors &amp; Areas</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddWTFloor()">+ Add Floor</button></div>
-          <div id="settings-wt-floors" style="padding:0"></div>
-        </div>
         <div class="set-group-lbl">Card &amp; Key Pools</div>
         <div class="card mb-12">
           <div class="card-hdr"><span class="set-ico" data-icon="key"></span><span class="card-title">Starting Counts</span></div>
@@ -1326,6 +1326,16 @@
           <div class="card-body">
             <p class="set-desc">One shared PIN for the front-desk Key Scan QR code — anyone on the team can use it to log or return a one-time key from their phone without a full account login. Share it verbally with new hires on day one.</p>
             <div id="key-scan-pin-settings-body"></div>
+          </div>
+        </div>
+        <div class="set-group-lbl">Incident Reports</div>
+        <div class="card mb-12">
+          <div class="card-hdr"><span class="set-ico" data-icon="alert-triangle"></span><span class="card-title">Stale Preliminary Threshold</span></div>
+          <div class="card-body">
+            <div class="set-row" style="border-bottom:none;padding-top:0">
+              <div><div class="set-lbl">Flag a Preliminary report as stale after</div><div class="set-hint">Shows on the Incident Reports list and the Dashboard once a draft has sat unfinished this long. Saves automatically.</div></div>
+              <div class="flex gap-8 items-center"><input type="number" id="ir-stale-hours" min="1" max="240" style="width:76px" placeholder="24" onchange="saveIncidentStaleHours()"><span class="set-hint">hours</span></div>
+            </div>
           </div>
         </div>
         <div class="set-group-lbl">Team Tracker</div>
@@ -1557,7 +1567,7 @@
     <div id="lb-followup-hint" style="display:none;margin-bottom:8px"><div style="font-size:11px;color:#92400e;background:rgba(217,119,6,0.1);border-radius:4px;padding:6px 10px">24-hour follow-up standard applies — set a next action and update the resident by the same time tomorrow.</div></div>
     <div id="lb-manager-wrap" style="display:none;margin-bottom:8px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500"><input type="checkbox" id="lb-manager-notified" style="width:auto;accent-color:var(--accent)"> Manager notified via Teams</label></div>
     <div id="lb-footage-wrap" style="display:none;margin-bottom:8px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500"><input type="checkbox" id="lb-footage-preserved" style="width:auto;accent-color:var(--accent)"> Footage preserved (Magic Monitor)</label></div>
-    <div id="lb-ir-wrap" style="display:none;margin-bottom:8px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500"><input type="checkbox" id="lb-incident-report" style="width:auto;accent-color:var(--accent)"> Incident Report filed</label></div>
+    <div id="lb-ir-wrap" style="display:none;margin-bottom:8px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500"><input type="checkbox" id="lb-incident-report" style="width:auto;accent-color:var(--accent)"> Needs an Incident Report</label></div>
     <div class="fr"><div class="fg"><label>Unit # <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="lb-unit" type="text" placeholder="e.g. 804"></div><div class="fg"><label>Resident <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="lb-resident" type="text"></div></div>
     <div class="fg" id="lb-location-wrap"><label>Location <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input id="lb-location" type="text" placeholder="e.g. Lobby, Rooftop, Garage"></div>
     <div class="fg"><label>Details / Notes</label><textarea id="lb-notes" rows="3" placeholder="Describe what happened or what was requested..."></textarea></div>
@@ -3157,6 +3167,7 @@ function localDateStr(d) {
   return yr + '-' + mo + '-' + dy;
 }
 function today() { return localDateStr(new Date()); }
+function localTimeStr(d) { return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
 // A move counts as "today" if its appointment is today, or — when it has no appointment — its scheduled date is today.
 // Single source of truth shared by the dashboard and the Moves tab so the two never disagree.
 function moveIsToday(m, t) { t = t || today(); return m.apptDate === t || (!m.apptDate && m.date === t); }
@@ -3177,7 +3188,7 @@ function cloneData(obj) {
   try { return JSON.parse(JSON.stringify(obj)); }
   catch (e) { return obj; }
 }
-function emptyState() { return { moves: [], units: [], keys: [], amenities: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', keyScanPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, archivedTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], transponders: { startingInventory: 100, log: [], counts: [] }, security: [], logbook: [], cameraChecks: [], propertyConfig: {}, recurringReminders: [], pushLog: [], cardPools: { oneTime: { startingCount: 40, counts: [] }, vendor: { startingCount: null, counts: [] }, sgt: { startingCount: null, counts: [] } } }; }
+function emptyState() { return { moves: [], units: [], keys: [], amenities: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', keyScanPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, archivedTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], transponders: { startingInventory: 100, log: [], counts: [] }, security: [], logbook: [], cameraChecks: [], incidentReports: [], incidentSettings: { staleHours: 24 }, propertyConfig: {}, recurringReminders: [], pushLog: [], cardPools: { oneTime: { startingCount: 40, counts: [] }, vendor: { startingCount: null, counts: [] }, sgt: { startingCount: null, counts: [] } } }; }
 
 // ─── SHIFT LOG ───
 function getShiftLog() {
@@ -3446,7 +3457,7 @@ function openMobSidebar() { g('sidebar').classList.add('mob-open'); g('sb-ov').s
 function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov').style.display = 'none'; }
 
 // ─── NAV ───
-var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', keys: 'Key Tracker', amenities: 'Amenity Bookings', walkthrough: 'Camera Check', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Unit Tracker', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', team: 'Team Tracker', parking: 'Parking Credentials', transponders: 'Transponders', security: 'Incident Log', session: 'Login / Session', logbook: 'Logbook', supplies: 'Supplies' };
+var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', keys: 'Key Tracker', amenities: 'Amenity Bookings', walkthrough: 'Camera Check', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Unit Tracker', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', team: 'Team Tracker', parking: 'Parking Credentials', transponders: 'Transponders', security: 'Incident Log', session: 'Login / Session', logbook: 'Logbook', supplies: 'Supplies', incidents: 'Incident Reports' };
 var patrolFilter = 'amenity';
 var SEC_ACTIONS = {
   moves: '<button class="btn btn-secondary btn-sm" onclick="openLetterImport()">&#128231; Import Letter</button> <button class="btn btn-secondary btn-sm" onclick="openReconcile()">&#128269; Reconcile</button> <button class="btn btn-secondary btn-sm" onclick="printMovesReport()">&#128424; Print Report</button> <button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
@@ -3458,10 +3469,11 @@ var SEC_ACTIONS = {
   residents: '<button class="btn btn-primary btn-sm" onclick="openAddUnitRecord()">+ Add Unit Record</button>',
   passdown: '',
   todos: '',
-  templates: '<button class="btn btn-primary btn-sm" onclick="openAddTemplate()">+ Add Template</button>'
+  templates: '<button class="btn btn-primary btn-sm" onclick="openAddTemplate()">+ Add Template</button>',
+  incidents: '<button class="btn btn-primary btn-sm" onclick="openNewIncidentReport()">+ New Incident Report</button>'
 };
 var curSec = 'dashboard';
-var SEC_HELP = { dashboard:'g-dashboard', moves:'g-moves', keys:'g-keys', amenities:'g-amenities', walkthrough:'g-patrol', todos:'g-todos', laf:'g-laf', passdown:'g-passdown', calendar:'g-calendar', settings:'g-settings', import:'g-import', residents:'g-residents', team:'g-team', logbook:'g-logbook', supplies:'g-supplies' };
+var SEC_HELP = { dashboard:'g-dashboard', moves:'g-moves', keys:'g-keys', amenities:'g-amenities', walkthrough:'g-patrol', todos:'g-todos', laf:'g-laf', passdown:'g-passdown', calendar:'g-calendar', settings:'g-settings', import:'g-import', residents:'g-residents', team:'g-team', logbook:'g-logbook', supplies:'g-supplies', incidents:'g-incidents' };
 var STAFF_NO_ADD = ['moves', 'templates'];
 function getSecActions(sec) {
   var isStaff = currentUser && currentUser.role === 'staff';
@@ -3533,7 +3545,7 @@ function mobNav(item) {
   curSec = sec; renderSection(sec); releaseSectionDom(previousSec, sec);
 }
 function renderSection(sec) {
-  var map = { dashboard: renderDash, moves: renderMoves, keys: renderKeysSection, amenities: renderAmenities, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, templates: renderTemplates, guide: renderGuide, security: renderSecurity, supplies: renderSupplies, activity: renderActivityLog, parking: renderParking, logbook: renderLogbook };
+  var map = { dashboard: renderDash, moves: renderMoves, keys: renderKeysSection, amenities: renderAmenities, walkthrough: renderWT, todos: renderTodos, laf: renderLAF, passdown: renderPassdown, calendar: renderCalendar, settings: renderSettings, import: renderImportCenter, team: renderTeam, concierge: renderConcierge, residents: renderResidents, templates: renderTemplates, guide: renderGuide, security: renderSecurity, supplies: renderSupplies, activity: renderActivityLog, parking: renderParking, logbook: renderLogbook, incidents: renderIncidents };
   if (map[sec]) map[sec]();
 }
 function renderAll() { renderSection(curSec); updateBadges(); }
@@ -3546,7 +3558,8 @@ var SECTION_VOLATILE = {
   keys:['keys-stats','keys-tbody','keys-otk-cards','parking-tbody','tp-tbody','tp-history-tbody','drawer-body','vendor-drawer-body','sgt-body','cardpool-tbody'],
   amenities:['amenities-tbody'], tours:['tours-stats','tours-tbody'],
   walkthrough:['cc-body'], todos:['todo-list','todo-board'], laf:['laf-tbody'],
-  team:['team-body'], activity:['activity-tbody'], logbook:['logbook-body'], supplies:['supplies-body']
+  team:['team-body'], activity:['activity-tbody'], logbook:['logbook-body'], supplies:['supplies-body'],
+  incidents:['ir-body']
 };
 function releaseSectionDom(previousSec, nextSec) {
   if (!previousSec || previousSec === nextSec) return;
@@ -3903,10 +3916,12 @@ function updateBadges() {
   var lbN = lbAll.filter(function(e){ return e.status==='open'||e.status==='in-progress'; }).length;
   var supLow = (state.supplies || []).filter(function(s){ return s.lowAt != null && s.qty <= s.lowAt; }).length;
   var supOut = (state.supplies || []).filter(function(s){ return s.qty === 0; }).length;
+  var irN = (state.incidentReports || []).filter(function(r){ return r.status === 'preliminary'; }).length;
   setBadge('badge-moves', mN);
   setBadge('badge-keys', kN); setBadge('badge-amenities', aN);
   setBadge('badge-todos', tdN); setBadge('badge-laf', lN);
   setBadge('badge-logbook', lbN); setBadge('badge-supplies', supLow);
+  setBadge('badge-incidents', irN);
   var supBadge = g('badge-supplies'); if (supBadge) supBadge.classList.toggle('badge-red', supOut > 0);
   setMBadge('mb-moves', mN); setMBadge('mb-todos', tdN); setMBadge('mb-keys', kN);
 }
@@ -4012,6 +4027,17 @@ function renderDash() {
     });
     if (projStaleDash.length > 4) html += '<div style="font-size:11px;color:var(--text3);margin:2px 0 0">+' + (projStaleDash.length - 4) + ' more</div>';
     html += '<button class="btn btn-xs btn-secondary" style="margin-top:8px" onclick="navToAdminProjects()">Review Admin Projects &rarr;</button>';
+    html += '</div>';
+  }
+  var staleIRDash = (state.incidentReports || []).filter(irIsStale);
+  if (staleIRDash.length) {
+    html += '<div style="background:var(--red-light);border:1px solid rgba(192,53,53,0.35);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px">';
+    html += '<div style="font-size:12px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">&#9888; Incident Reports — ' + staleIRDash.length + ' Preliminary report' + (staleIRDash.length !== 1 ? 's' : '') + ' still open</div>';
+    staleIRDash.slice(0, 4).forEach(function(staleIR) {
+      html += '<div class="tight-row"><span class="tr-main">' + esc(staleIR.reportNumber) + (staleIR.location ? ' — ' + esc(staleIR.location) : '') + '</span></div>';
+    });
+    if (staleIRDash.length > 4) html += '<div style="font-size:11px;color:var(--text3);margin:2px 0 0">+' + (staleIRDash.length - 4) + ' more</div>';
+    html += '<button class="btn btn-xs btn-secondary" style="margin-top:8px" onclick="navToSec(\'incidents\')">Review Incident Reports &rarr;</button>';
     html += '</div>';
   }
   var wifiDue = getWifiRenewals();
@@ -6009,6 +6035,7 @@ function saveLogbook() {
     entry.managerNotified = managerNotified; entry.footagePreserved = footagePreserved; entry.incidentReport = incidentReport;
     pushUndo({ sec: 'logbook', type: 'EDIT', id: entry.id, before: _before, after: Object.assign({}, entry), label: 'logbook edit — ' + type });
     logActivity('logbook', 'edit', 'Updated logbook entry — ' + type);
+    if (incidentReport && !hasIncidentReportFor('srcLogbookId', entry.id)) draftIncidentReportFromLogbook(entry);
     editingLogbookId = null; scheduleSave(); closeModal('modal-logbook'); renderLogbook(); updateBadges(); toast('Entry updated'); return;
   }
   var newEntry = { id: uid(), category: category, type: type, unit: unit, resident: resident, location: location, notes: notes, nextAction: nextAction, status: status, handledBy: handledBy, addedBy: by, createdAt: createdAt, time: timeVal, managerNotified: managerNotified, footagePreserved: footagePreserved, incidentReport: incidentReport, log: notes ? [{ ts: now2, by: by, note: notes }] : [] };
@@ -6016,6 +6043,7 @@ function saveLogbook() {
   state.logbook.push(newEntry);
   pushUndo({ sec: 'logbook', type: 'ADD', id: newEntry.id, data: Object.assign({}, newEntry), label: 'add logbook — ' + type });
   logActivity('logbook', 'create', 'Logged entry — ' + type);
+  if (incidentReport) draftIncidentReportFromLogbook(newEntry);
   scheduleSave(); closeModal('modal-logbook'); renderLogbook(); updateBadges(); renderDash(); toast('Entry logged');
 }
 
@@ -12962,15 +12990,27 @@ function submitCameraCheck() {
   state.cameraChecks.push(rec);
   logActivity('walkthrough', 'create', 'Camera check logged — ' + name + ' · ' + st.shift + (rec.issuesObserved==='Yes, issue observed' ? ' · issue observed' : (st.completed==='No' ? ' · check blocked' : '')));
 
-  // Issue observed → also create a Security/Logbook entry so it's passdown-visible immediately.
+  // Issue observed → also create a Security/Logbook entry so it's passdown-visible immediately,
+  // and a Preliminary Incident Report pre-filled with exactly what this check captured.
   if (rec.issuesObserved === 'Yes, issue observed') {
     if (!state.logbook) state.logbook = [];
+    var ccLbId = uid();
     state.logbook.push({
-      id: uid(), category: 'security', type: 'Camera Check — Issue Observed', unit: '', resident: '',
+      id: ccLbId, category: 'security', type: 'Camera Check — Issue Observed', unit: '', resident: '',
       location: rec.location, status: 'open', handledBy: name,
       notes: (rec.whatObserved || '') + (rec.actionTaken ? ' Action taken: ' + rec.actionTaken : ''),
       nextAction: rec.followUpRequired === 'Yes' ? 'Immediate follow-up needed — see camera check log for details.' : 'No immediate follow-up flagged — reference only.',
-      createdAt: Date.now(), addedBy: currentUser ? currentUser.name : name, log: []
+      createdAt: Date.now(), addedBy: currentUser ? currentUser.name : name, log: [],
+      incidentReport: true
+    });
+    draftIncidentReport({
+      createdAt: rec.ts, createdBy: name, addedBy: currentUser ? currentUser.name : name,
+      source: 'camera-check', srcCameraCheckId: rec.id, srcLogbookId: ccLbId,
+      incidentDate: localDateStr(new Date(rec.ts)), incidentTime: localTimeStr(new Date(rec.ts)),
+      location: rec.location, description: rec.whatObserved || '', actionsTaken: rec.actionTaken || '',
+      followUpRequired: rec.followUpRequired === 'Yes' ? 'yes' : (rec.followUpRequired === 'No' ? 'no' : ''),
+      followUpWhat: rec.followUpRequired === 'Yes' ? 'See camera check log for details.' : '',
+      printedName: name, signOffDate: today(), shift: rec.shift
     });
   }
   // Blocked + a reason given → likely a system problem, log it so IT/maintenance sees the pattern.
@@ -13006,6 +13046,445 @@ function showCameraCheckSuccess(rec, streak) {
     + '<span style="font-size:12px;color:var(--text3);cursor:pointer" onclick="closeCameraCheckOverlay()">Done</span></div>';
   overlay.style.display = 'flex';
   if (window.history && window.history.replaceState) window.history.replaceState({}, '', window.location.pathname);
+}
+
+// ── Incident Reports ────────────────────────────────────────────────────────
+// Formal write-up matching the property's real Incident Report Template exactly
+// (9 sections). Auto-drafts whenever a Logbook entry has its "Needs an Incident
+// Report" box checked (Camera Check sets this on its own when an issue is
+// observed) — pre-fills only what that source actually captured; everything
+// else stays blank and prints as "NEEDS COMPLETION" while still Preliminary.
+// Lifecycle: Preliminary -> Completed -> Filed. Filed is a manual admin/manager
+// attestation that a signed paper copy is on file — never set automatically.
+var _irDetailId = null;
+var IR_STATUS_LABEL = { preliminary: 'Preliminary', completed: 'Completed', filed: 'Filed' };
+var IR_NATURE_OPTIONS = ['Medical emergency','Fire or fire alarm','Elevator malfunction / entrapment','Flood / water damage','Power outage','Disruptive or intoxicated individual','Trespass / unauthorized access','Theft or property damage'];
+var IR_POLICE_AGENCIES = ['SFPD','SF Fire','EMS / Paramedics'];
+function irReportNumber(ts) {
+  var d = new Date(ts);
+  function p(n){ return ('0'+n).slice(-2); }
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes());
+}
+function emptyIncidentReport() {
+  return {
+    id: uid(), reportNumber: '', dateOfReport: today(), status: 'preliminary', filedAt: null, filedBy: '',
+    incidentDate: '', incidentTime: '', location: '', unit: '', floor: '',
+    nature: [], natureOther: '', physicalDamage: '', physicalDamageDesc: '',
+    individualNames: '', individualUnit: '', individualContact: '', additionalIndividuals: '', witnesses: '',
+    description: '',
+    actionsTaken: '', maintenanceNotified: '', maintenanceNotifiedTime: '', maintenanceNotifiedMethod: '',
+    writtenStatementRequested: '', writtenStatementBy: '',
+    policeCalled: false, policeCalledTime: '', policeAgencies: [], policeReportNum: '',
+    securityCalled: false, securityCalledTime: '', otisCalled: false, otisCalledTime: '',
+    pgeCalled: false, pgeCalledTime: '', noEmergencyServices: false, emergencyNotes: '',
+    footagePulled: false, footageDate: '', footageTimeStart: '', footageTimeEnd: '', footageSavedTo: '',
+    photosTaken: false, photosDesc: '', noFootage: false,
+    managerNotified: false, managerNotifiedTime: '', managerNotifiedMethod: '', managerNotifiedOther: '',
+    documentedInPassdown: false, mayRequireInsurance: false, managerNotNotifiedReason: '',
+    followUpRequired: '', followUpWhat: '', followUpWho: '', followUpDueBy: '',
+    associateSignature: '', printedName: '', signOffDate: '', shift: '',
+    source: 'manual', srcCameraCheckId: '', srcLogbookId: '',
+    createdAt: Date.now(), createdBy: '', addedBy: '', updatedAt: Date.now()
+  };
+}
+function hasIncidentReportFor(field, id) { return (state.incidentReports||[]).some(function(r){ return r[field] === id; }); }
+function draftIncidentReport(overrides) {
+  if (!state.incidentReports) state.incidentReports = [];
+  var rec = Object.assign(emptyIncidentReport(), overrides);
+  rec.reportNumber = irReportNumber(rec.createdAt || Date.now());
+  state.incidentReports.push(rec);
+  logActivity('incidents', 'create', 'Incident report drafted — ' + rec.reportNumber, rec.location ? ('Location: ' + rec.location) : '');
+  return rec;
+}
+// Shared trigger point for any Logbook entry flagged "Needs an Incident Report" —
+// manual entries and the move-out damage checklist path both funnel through here,
+// same as Camera Check does directly in submitCameraCheck().
+function draftIncidentReportFromLogbook(entry) {
+  return draftIncidentReport({
+    createdAt: entry.createdAt || Date.now(), createdBy: entry.handledBy || entry.addedBy || '',
+    addedBy: entry.addedBy || '', source: 'logbook', srcLogbookId: entry.id,
+    incidentDate: entry.createdAt ? localDateStr(new Date(entry.createdAt)) : today(),
+    incidentTime: entry.time || (entry.createdAt ? localTimeStr(new Date(entry.createdAt)) : ''),
+    location: entry.location || '', unit: entry.unit || '',
+    individualNames: entry.resident || '', individualUnit: entry.unit || '',
+    description: stripTriageStamp(entry.notes || ''),
+    followUpRequired: entry.nextAction ? 'yes' : '', followUpWhat: entry.nextAction || '',
+    managerNotified: !!entry.managerNotified, documentedInPassdown: true,
+    footagePulled: !!entry.footagePreserved,
+    printedName: entry.handledBy || entry.addedBy || '', signOffDate: today()
+  });
+}
+function irIsStale(r) {
+  if (r.status !== 'preliminary') return false;
+  var hrs = (state.incidentSettings && state.incidentSettings.staleHours) || 24;
+  return (Date.now() - (r.createdAt||0)) >= hrs * 3600000;
+}
+function irStatusPill(r) {
+  if (r.status === 'filed') return '<span class="pill" style="background:#1a2232;color:#f0dfa8">Filed</span>';
+  if (r.status === 'completed') return '<span class="pill pill-resolved">Completed</span>';
+  return '<span class="pill pill-inprogress">Preliminary</span>';
+}
+function irVisibleReports() {
+  var all = (state.incidentReports || []).slice().sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+  var isStaff = currentUser && currentUser.role === 'staff';
+  if (!isStaff) return all;
+  return all.filter(function(r){ return r.createdBy === currentUser.name || r.addedBy === currentUser.name; });
+}
+function openNewIncidentReport() {
+  var rec = draftIncidentReport({
+    source: 'manual', createdBy: currentUser?currentUser.name:'', addedBy: currentUser?currentUser.name:'',
+    incidentDate: today(), incidentTime: localTimeStr(new Date()),
+    printedName: currentUser?currentUser.name:'', signOffDate: today()
+  });
+  scheduleSave();
+  openIncidentDetail(rec.id);
+}
+function openIncidentDetail(id) { _irDetailId = id; renderIncidents(); }
+function closeIncidentDetail() { _irDetailId = null; renderIncidents(); }
+function renderIncidents() {
+  var body = g('ir-body'); if (!body) return;
+  if (_irDetailId) renderIncidentDetail(body); else renderIncidentList(body);
+}
+function renderIncidentList(body) {
+  var reports = irVisibleReports();
+  var stale = reports.filter(irIsStale);
+  var html = '';
+  if (stale.length) {
+    html += '<div class="card mb-12" style="border-color:var(--red)"><div class="card-body" style="padding:12px 14px;font-size:13px;color:var(--red)">'
+      + '&#9888; ' + stale.length + ' Preliminary report' + (stale.length>1?'s':'') + ' open longer than ' + ((state.incidentSettings&&state.incidentSettings.staleHours)||24) + 'h — needs finishing.</div></div>';
+  }
+  html += '<div class="card"><div class="card-hdr"><span class="card-title">Incident Reports</span><span class="card-count">' + reports.length + '</span></div>';
+  if (!reports.length) {
+    html += '<div class="card-body" style="padding:24px;text-align:center;color:var(--text3);font-size:13px">No incident reports yet. Reports draft automatically when a Camera Check flags an issue or a Logbook entry is marked "Needs an Incident Report" — or start one manually above.</div>';
+  } else {
+    html += '<div class="tbl-wrap"><table><thead><tr><th>Report #</th><th>Date</th><th>Location</th><th>Nature</th><th>Status</th><th></th></tr></thead><tbody>';
+    reports.forEach(function(r) {
+      var nature = (r.nature||[]).join(', ') || (r.natureOther || '—');
+      html += '<tr style="cursor:pointer" onclick="openIncidentDetail(\'' + r.id + '\')">'
+        + '<td class="mono">' + esc(r.reportNumber) + '</td>'
+        + '<td>' + fmtShort(r.incidentDate) + '</td>'
+        + '<td>' + esc(r.location || '—') + '</td>'
+        + '<td>' + esc(nature) + '</td>'
+        + '<td>' + irStatusPill(r) + (irIsStale(r) ? ' <span style="font-size:9px;color:var(--red)">&#9888; stale</span>' : '') + '</td>'
+        + '<td style="color:var(--accent);font-size:12px">View &rarr;</td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+  html += '</div>';
+  body.innerHTML = html;
+}
+function renderIncidentDetail(body) {
+  var r = (state.incidentReports||[]).find(function(x){ return x.id === _irDetailId; });
+  if (!r) { _irDetailId = null; renderIncidentList(body); return; }
+  var isAdmin = currentUser && currentUser.role === 'admin';
+  var locked = r.status === 'filed';
+  var dis = locked ? ' disabled' : '';
+  var html = '';
+  html += '<button class="btn btn-ghost btn-sm" style="margin-bottom:12px" onclick="closeIncidentDetail()">&larr; All Incident Reports</button>';
+  if (r.status === 'preliminary') {
+    html += '<div class="card mb-12" style="background:var(--amber-light);border-color:var(--amber)"><div class="card-body" style="padding:12px 14px">'
+      + '<strong style="color:var(--amber)">PRELIMINARY</strong><span style="font-size:12.5px;color:var(--text2)"> — drafted from ' + (r.source==='camera-check'?'a Camera Check':(r.source==='logbook'?'a Logbook entry':'a manual start')) + '. Fill in what\'s missing below, then Mark Completed.</span>'
+      + '</div></div>';
+  }
+  html += '<div class="card mb-12"><div class="card-body" style="padding:14px 16px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between">'
+    + '<div><div style="font-family:var(--font-mono);font-weight:600;font-size:15px">' + esc(r.reportNumber) + '</div><div style="font-size:11.5px;color:var(--text3)">Report filed ' + fmtShort(r.dateOfReport) + '</div></div>'
+    + irStatusPill(r) + '</div></div>';
+
+  html += '<div class="card mb-12"><div class="card-hdr"><span class="card-title">Section 1 — Incident Details</span></div><div class="card-body">'
+    + '<div class="fr"><div class="fg"><label>Date of incident</label><input type="date" id="ir-incidentDate" value="'+esc(r.incidentDate)+'"'+dis+'></div>'
+    + '<div class="fg"><label>Time</label><input type="time" id="ir-incidentTime" value="'+esc(r.incidentTime)+'"'+dis+'></div></div>'
+    + '<div class="fg"><label>Location in building</label><input type="text" id="ir-location" value="'+esc(r.location)+'"'+dis+'></div>'
+    + '<div class="fr"><div class="fg"><label>Unit # (if applicable)</label><input type="text" id="ir-unit" value="'+esc(r.unit)+'"'+dis+'></div>'
+    + '<div class="fg"><label>Floor</label><input type="text" id="ir-floor" value="'+esc(r.floor)+'"'+dis+'></div></div>'
+    + '<div class="fg"><label>Nature of incident (check all that apply)</label>'
+    + IR_NATURE_OPTIONS.map(function(n){ return '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:400;margin-bottom:6px"><input type="checkbox" class="ir-nature-cb" value="'+esc(n)+'" style="width:auto;accent-color:var(--accent)"'+(r.nature.indexOf(n)!==-1?' checked':'')+dis+'> '+esc(n)+'</label>'; }).join('')
+    + '<label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:4px"><span style="min-width:44px;color:var(--text2)">Other:</span><input type="text" id="ir-natureOther" value="'+esc(r.natureOther)+'" style="flex:1"'+dis+'></label>'
+    + '</div>'
+    + '<div class="fg"><label>Property / physical damage?</label><select id="ir-physicalDamage"'+dis+'>'
+    + '<option value=""'+(r.physicalDamage===''?' selected':'')+'>— Not yet answered —</option>'
+    + '<option value="none"'+(r.physicalDamage==='none'?' selected':'')+'>No physical damage observed</option>'
+    + '<option value="present"'+(r.physicalDamage==='present'?' selected':'')+'>Physical damage present</option></select></div>'
+    + '<div class="fg"><label>Damage description</label><textarea id="ir-physicalDamageDesc" class="ta-auto"'+dis+'>'+esc(r.physicalDamageDesc)+'</textarea></div>'
+    + '</div></div>';
+
+  html += '<div class="card mb-12"><div class="card-hdr"><span class="card-title">Section 2 — Individuals Involved</span></div><div class="card-body">'
+    + '<div class="fr"><div class="fg"><label>Resident / visitor name(s)</label><input type="text" id="ir-individualNames" value="'+esc(r.individualNames)+'"'+dis+'></div>'
+    + '<div class="fg"><label>Unit # (if resident)</label><input type="text" id="ir-individualUnit" value="'+esc(r.individualUnit)+'"'+dis+'></div></div>'
+    + '<div class="fg"><label>Phone / contact</label><input type="text" id="ir-individualContact" value="'+esc(r.individualContact)+'"'+dis+'></div>'
+    + '<div class="fg"><label>Additional individuals directly involved (if any)</label><textarea id="ir-additionalIndividuals" class="ta-auto"'+dis+'>'+esc(r.additionalIndividuals)+'</textarea></div>'
+    + '<div class="fg"><label>Witnesses (name — contact, one per line)</label><textarea id="ir-witnesses" class="ta-auto"'+dis+'>'+esc(r.witnesses)+'</textarea></div>'
+    + '</div></div>';
+
+  html += '<div class="card mb-12"><div class="card-hdr"><span class="card-title">Section 3 — Description of Incident</span></div><div class="card-body">'
+    + '<p style="font-size:12px;color:var(--red);font-style:italic;margin-bottom:8px">Do not admit fault, speculate about causes, or express opinions. Write only what you directly observed — this document may be discoverable in legal proceedings.</p>'
+    + '<div class="fg"><textarea id="ir-description" style="min-height:120px"'+dis+'>'+esc(r.description)+'</textarea></div>'
+    + '</div></div>';
+
+  html += '<div class="card mb-12"><div class="card-hdr"><span class="card-title">Section 4 — Actions Taken</span></div><div class="card-body">'
+    + '<div class="fg"><label>Steps taken, in order and with timing</label><textarea id="ir-actionsTaken" style="min-height:90px"'+dis+'>'+esc(r.actionsTaken)+'</textarea></div>'
+    + '<div class="fg"><label>Maintenance notified? (flood, power, elevator incidents)</label><select id="ir-maintenanceNotified"'+dis+'>'
+    + '<option value=""'+(r.maintenanceNotified===''?' selected':'')+'>— Not yet answered —</option>'
+    + '<option value="yes"'+(r.maintenanceNotified==='yes'?' selected':'')+'>Yes</option>'
+    + '<option value="na"'+(r.maintenanceNotified==='na'?' selected':'')+'>Not applicable</option></select></div>'
+    + '<div class="fr"><div class="fg"><label>Time notified</label><input type="time" id="ir-maintenanceNotifiedTime" value="'+esc(r.maintenanceNotifiedTime)+'"'+dis+'></div>'
+    + '<div class="fg"><label>Method</label><select id="ir-maintenanceNotifiedMethod"'+dis+'>'
+    + ['','In person','Phone','Teams'].map(function(m){ return '<option value="'+esc(m)+'"'+(r.maintenanceNotifiedMethod===m?' selected':'')+'>'+(m||'—')+'</option>'; }).join('')
+    + '</select></div></div>'
+    + '<div class="fg"><label>Was a written statement requested by any party?</label><select id="ir-writtenStatementRequested"'+dis+'>'
+    + '<option value=""'+(r.writtenStatementRequested===''?' selected':'')+'>— Not yet answered —</option>'
+    + '<option value="no"'+(r.writtenStatementRequested==='no'?' selected':'')+'>No</option>'
+    + '<option value="yes"'+(r.writtenStatementRequested==='yes'?' selected':'')+'>Yes</option></select></div>'
+    + '<div class="fg"><label>Requested by</label><input type="text" id="ir-writtenStatementBy" value="'+esc(r.writtenStatementBy)+'"'+dis+'></div>'
+    + '<p style="font-size:12px;color:var(--red);font-style:italic">Do not provide a written statement to any party — resident, visitor, officer, or adjuster — without management approval.</p>'
+    + '</div></div>';
+
+  html += '<div class="card mb-12"><div class="card-hdr"><span class="card-title">Section 5 — Emergency Services</span></div><div class="card-body">'
+    + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;margin-bottom:6px"><input type="checkbox" id="ir-policeCalled" style="width:auto;accent-color:var(--accent)"'+(r.policeCalled?' checked':'')+dis+'> 911 called</label>'
+    + '<div class="fr"><div class="fg"><label>Time called</label><input type="time" id="ir-policeCalledTime" value="'+esc(r.policeCalledTime)+'"'+dis+'></div>'
+    + '<div class="fg"><label>Report #</label><input type="text" id="ir-policeReportNum" value="'+esc(r.policeReportNum)+'"'+dis+'></div></div>'
+    + '<div class="fg"><label>Agency</label>' + IR_POLICE_AGENCIES.map(function(a){ return '<label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:400;margin-right:16px"><input type="checkbox" class="ir-police-agency-cb" value="'+esc(a)+'" style="width:auto;accent-color:var(--accent)"'+(r.policeAgencies.indexOf(a)!==-1?' checked':'')+dis+'> '+esc(a)+'</label>'; }).join('') + '</div>'
+    + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;margin-bottom:6px"><input type="checkbox" id="ir-securityCalled" style="width:auto;accent-color:var(--accent)"'+(r.securityCalled?' checked':'')+dis+'> Security (Vigilant Pros) called</label>'
+    + '<div class="fg"><label>Time called</label><input type="time" id="ir-securityCalledTime" value="'+esc(r.securityCalledTime)+'"'+dis+'></div>'
+    + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;margin-bottom:6px"><input type="checkbox" id="ir-otisCalled" style="width:auto;accent-color:var(--accent)"'+(r.otisCalled?' checked':'')+dis+'> Otis (elevator) called</label>'
+    + '<div class="fg"><label>Time called</label><input type="time" id="ir-otisCalledTime" value="'+esc(r.otisCalledTime)+'"'+dis+'></div>'
+    + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;margin-bottom:6px"><input type="checkbox" id="ir-pgeCalled" style="width:auto;accent-color:var(--accent)"'+(r.pgeCalled?' checked':'')+dis+'> PG&amp;E called</label>'
+    + '<div class="fg"><label>Time called</label><input type="time" id="ir-pgeCalledTime" value="'+esc(r.pgeCalledTime)+'"'+dis+'></div>'
+    + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;margin-bottom:10px"><input type="checkbox" id="ir-noEmergencyServices" style="width:auto;accent-color:var(--accent)"'+(r.noEmergencyServices?' checked':'')+dis+'> No emergency services required</label>'
+    + '<div class="fg"><label>Emergency services notes (badge #, case #, instructions given)</label><textarea id="ir-emergencyNotes" class="ta-auto"'+dis+'>'+esc(r.emergencyNotes)+'</textarea></div>'
+    + '</div></div>';
+
+  html += '<div class="card mb-12"><div class="card-hdr"><span class="card-title">Section 6 — Footage &amp; Documentation</span></div><div class="card-body">'
+    + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;margin-bottom:6px"><input type="checkbox" id="ir-footagePulled" style="width:auto;accent-color:var(--accent)"'+(r.footagePulled?' checked':'')+dis+'> Magic Monitor footage pulled and preserved</label>'
+    + '<div class="fr"><div class="fg"><label>Date of footage</label><input type="date" id="ir-footageDate" value="'+esc(r.footageDate)+'"'+dis+'></div>'
+    + '<div class="fg"><label>Saved to (file / folder)</label><input type="text" id="ir-footageSavedTo" value="'+esc(r.footageSavedTo)+'"'+dis+'></div></div>'
+    + '<div class="fr"><div class="fg"><label>Time range — start</label><input type="time" id="ir-footageTimeStart" value="'+esc(r.footageTimeStart)+'"'+dis+'></div>'
+    + '<div class="fg"><label>Time range — end</label><input type="time" id="ir-footageTimeEnd" value="'+esc(r.footageTimeEnd)+'"'+dis+'></div></div>'
+    + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;margin-bottom:6px"><input type="checkbox" id="ir-photosTaken" style="width:auto;accent-color:var(--accent)"'+(r.photosTaken?' checked':'')+dis+'> Photos taken</label>'
+    + '<div class="fg"><label>Describe</label><input type="text" id="ir-photosDesc" value="'+esc(r.photosDesc)+'"'+dis+'></div>'
+    + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500"><input type="checkbox" id="ir-noFootage" style="width:auto;accent-color:var(--accent)"'+(r.noFootage?' checked':'')+dis+'> No footage or documentation applicable</label>'
+    + '</div></div>';
+
+  html += '<div class="card mb-12"><div class="card-hdr"><span class="card-title">Section 7 — Manager Notified</span></div><div class="card-body">'
+    + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;margin-bottom:6px"><input type="checkbox" id="ir-managerNotified" style="width:auto;accent-color:var(--accent)"'+(r.managerNotified?' checked':'')+dis+'> Manager notified</label>'
+    + '<div class="fr"><div class="fg"><label>Time notified</label><input type="time" id="ir-managerNotifiedTime" value="'+esc(r.managerNotifiedTime)+'"'+dis+'></div>'
+    + '<div class="fg"><label>Method</label><select id="ir-managerNotifiedMethod"'+dis+'>' + ['','Teams message','Phone call','Email','Other'].map(function(m){ return '<option value="'+esc(m)+'"'+(r.managerNotifiedMethod===m?' selected':'')+'>'+(m||'—')+'</option>'; }).join('') + '</select></div></div>'
+    + '<div class="fg"><label>Other method (if selected above)</label><input type="text" id="ir-managerNotifiedOther" value="'+esc(r.managerNotifiedOther)+'"'+dis+'></div>'
+    + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;margin-bottom:6px"><input type="checkbox" id="ir-documentedInPassdown" style="width:auto;accent-color:var(--accent)"'+(r.documentedInPassdown?' checked':'')+dis+'> Incident documented in passdown</label>'
+    + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;margin-bottom:6px"><input type="checkbox" id="ir-mayRequireInsurance" style="width:auto;accent-color:var(--accent)"'+(r.mayRequireInsurance?' checked':'')+dis+'> May require insurance notification — flagged for Manager review</label>'
+    + '<div class="fg"><label>If manager not yet notified — reason</label><input type="text" id="ir-managerNotNotifiedReason" value="'+esc(r.managerNotNotifiedReason)+'"'+dis+'></div>'
+    + '</div></div>';
+
+  html += '<div class="card mb-12"><div class="card-hdr"><span class="card-title">Section 8 — Follow-Up Required</span></div><div class="card-body">'
+    + '<div class="fg"><select id="ir-followUpRequired"'+dis+'>'
+    + '<option value=""'+(r.followUpRequired===''?' selected':'')+'>— Not yet answered —</option>'
+    + '<option value="no"'+(r.followUpRequired==='no'?' selected':'')+'>No follow-up required</option>'
+    + '<option value="yes"'+(r.followUpRequired==='yes'?' selected':'')+'>Follow-up required</option></select></div>'
+    + '<div class="fg"><label>What follow-up is needed</label><textarea id="ir-followUpWhat" class="ta-auto"'+dis+'>'+esc(r.followUpWhat)+'</textarea></div>'
+    + '<div class="fr"><div class="fg"><label>Responsible party</label><input type="text" id="ir-followUpWho" value="'+esc(r.followUpWho)+'"'+dis+'></div>'
+    + '<div class="fg"><label>Due by</label><input type="date" id="ir-followUpDueBy" value="'+esc(r.followUpDueBy)+'"'+dis+'></div></div>'
+    + '</div></div>';
+
+  html += '<div class="card mb-12"><div class="card-body">'
+    + '<p style="font-size:12px;color:var(--text2);font-style:italic">This report is an internal document and may be subject to legal discovery. Do not share with residents, visitors, or third parties. All disclosure requests must be routed through the Manager.</p>'
+    + '</div></div>';
+  html += '<div class="card mb-12"><div class="card-hdr"><span class="card-title">Section 9 — Associate Sign-Off</span></div><div class="card-body">'
+    + '<div class="fr"><div class="fg"><label>Associate signature (type full name to sign)</label><input type="text" id="ir-associateSignature" value="'+esc(r.associateSignature)+'"'+dis+'></div>'
+    + '<div class="fg"><label>Printed name</label><input type="text" id="ir-printedName" value="'+esc(r.printedName)+'"'+dis+'></div></div>'
+    + '<div class="fr"><div class="fg"><label>Date</label><input type="date" id="ir-signOffDate" value="'+esc(r.signOffDate)+'"'+dis+'></div>'
+    + '<div class="fg"><label>Shift</label><select id="ir-shift"'+dis+'>' + ['','AM','PM','Overnight'].map(function(s){ return '<option value="'+s+'"'+(r.shift===s?' selected':'')+'>'+(s||'—')+'</option>'; }).join('') + '</select></div></div>'
+    + '<p style="font-size:11.5px;color:var(--text3)">A signed copy of this report must be filed with the Manager. A copy should be kept on file at the front desk.</p>'
+    + '</div></div>';
+
+  html += '<div class="card"><div class="card-body" style="padding:14px 16px;display:flex;gap:8px;flex-wrap:wrap">';
+  if (locked) {
+    html += '<span style="font-size:12.5px;color:var(--text3)">This report is Filed and locked.</span>';
+    if (isAdmin) html += '<button class="btn btn-ghost btn-sm" onclick="unmarkIncidentFiled(\''+r.id+'\')">Undo Filed</button>';
+  } else {
+    html += '<button class="btn btn-primary btn-sm" onclick="saveIncidentReport(\''+r.id+'\')">Save</button>';
+    if (r.status === 'preliminary') html += '<button class="btn btn-secondary btn-sm" onclick="markIncidentCompleted(\''+r.id+'\')">Mark Completed</button>';
+    if (r.status === 'completed' && isAdmin) html += '<button class="btn btn-secondary btn-sm" onclick="markIncidentFiled(\''+r.id+'\')">Mark as Filed&hellip;</button>';
+  }
+  html += '<button class="btn btn-secondary btn-sm" onclick="printIncidentReport(\''+r.id+'\')">Print / Export</button>';
+  if (isAdmin) html += '<button class="btn btn-ghost btn-sm" style="color:var(--red);margin-left:auto" onclick="deleteIncidentReport(\''+r.id+'\')">Delete</button>';
+  html += '</div></div>';
+
+  body.innerHTML = html;
+}
+function saveIncidentReport(id) {
+  var r = (state.incidentReports||[]).find(function(x){ return x.id===id; }); if (!r) return;
+  if (r.status === 'filed') { toast('Filed reports are locked — an admin can Undo Filed to edit'); return; }
+  var before = cloneData(r);
+  function v(fid){ var el=g(fid); return el ? el.value.trim() : ''; }
+  function chk(fid){ var el=g(fid); return el ? el.checked : false; }
+  r.incidentDate = v('ir-incidentDate'); r.incidentTime = v('ir-incidentTime'); r.location = v('ir-location');
+  r.unit = v('ir-unit'); r.floor = v('ir-floor');
+  r.nature = Array.prototype.slice.call(document.querySelectorAll('.ir-nature-cb:checked')).map(function(el){ return el.value; });
+  r.natureOther = v('ir-natureOther');
+  r.physicalDamage = v('ir-physicalDamage'); r.physicalDamageDesc = v('ir-physicalDamageDesc');
+  r.individualNames = v('ir-individualNames'); r.individualUnit = v('ir-individualUnit'); r.individualContact = v('ir-individualContact');
+  r.additionalIndividuals = v('ir-additionalIndividuals'); r.witnesses = v('ir-witnesses');
+  r.description = v('ir-description');
+  r.actionsTaken = v('ir-actionsTaken');
+  r.maintenanceNotified = v('ir-maintenanceNotified'); r.maintenanceNotifiedTime = v('ir-maintenanceNotifiedTime'); r.maintenanceNotifiedMethod = v('ir-maintenanceNotifiedMethod');
+  r.writtenStatementRequested = v('ir-writtenStatementRequested'); r.writtenStatementBy = v('ir-writtenStatementBy');
+  r.policeCalled = chk('ir-policeCalled'); r.policeCalledTime = v('ir-policeCalledTime');
+  r.policeAgencies = Array.prototype.slice.call(document.querySelectorAll('.ir-police-agency-cb:checked')).map(function(el){ return el.value; });
+  r.policeReportNum = v('ir-policeReportNum');
+  r.securityCalled = chk('ir-securityCalled'); r.securityCalledTime = v('ir-securityCalledTime');
+  r.otisCalled = chk('ir-otisCalled'); r.otisCalledTime = v('ir-otisCalledTime');
+  r.pgeCalled = chk('ir-pgeCalled'); r.pgeCalledTime = v('ir-pgeCalledTime');
+  r.noEmergencyServices = chk('ir-noEmergencyServices'); r.emergencyNotes = v('ir-emergencyNotes');
+  r.footagePulled = chk('ir-footagePulled'); r.footageDate = v('ir-footageDate'); r.footageTimeStart = v('ir-footageTimeStart'); r.footageTimeEnd = v('ir-footageTimeEnd'); r.footageSavedTo = v('ir-footageSavedTo');
+  r.photosTaken = chk('ir-photosTaken'); r.photosDesc = v('ir-photosDesc'); r.noFootage = chk('ir-noFootage');
+  r.managerNotified = chk('ir-managerNotified'); r.managerNotifiedTime = v('ir-managerNotifiedTime'); r.managerNotifiedMethod = v('ir-managerNotifiedMethod'); r.managerNotifiedOther = v('ir-managerNotifiedOther');
+  r.documentedInPassdown = chk('ir-documentedInPassdown'); r.mayRequireInsurance = chk('ir-mayRequireInsurance'); r.managerNotNotifiedReason = v('ir-managerNotNotifiedReason');
+  r.followUpRequired = v('ir-followUpRequired'); r.followUpWhat = v('ir-followUpWhat'); r.followUpWho = v('ir-followUpWho'); r.followUpDueBy = v('ir-followUpDueBy');
+  r.associateSignature = v('ir-associateSignature'); r.printedName = v('ir-printedName'); r.signOffDate = v('ir-signOffDate'); r.shift = v('ir-shift');
+  r.updatedAt = Date.now();
+  pushUndo({ sec: 'incidents', type: 'EDIT', id: r.id, before: before, after: cloneData(r), label: 'edit incident report — ' + r.reportNumber });
+  logActivity('incidents', 'edit', 'Updated incident report — ' + r.reportNumber);
+  scheduleSave(); toast('Incident report saved'); renderIncidents();
+}
+function markIncidentCompleted(id) {
+  saveIncidentReport(id);
+  var r = (state.incidentReports||[]).find(function(x){ return x.id===id; }); if (!r) return;
+  var before = { status: r.status };
+  r.status = 'completed'; r.updatedAt = Date.now();
+  pushUndo({ sec: 'incidents', type: 'EDIT', id: r.id, before: before, after: { status: 'completed' }, label: 'mark incident report completed — ' + r.reportNumber });
+  logActivity('incidents', 'complete', 'Marked incident report completed — ' + r.reportNumber);
+  scheduleSave(); toast('Marked Completed'); renderIncidents(); updateBadges();
+}
+async function markIncidentFiled(id) {
+  var r = (state.incidentReports||[]).find(function(x){ return x.id===id; }); if (!r) return;
+  if (!await confirmModal('Confirm a signed physical copy of this report is on file with the Manager. Mark as Filed?')) return;
+  var before = { status: r.status, filedAt: r.filedAt, filedBy: r.filedBy };
+  r.status = 'filed'; r.filedAt = Date.now(); r.filedBy = currentUser ? currentUser.name : '';
+  pushUndo({ sec: 'incidents', type: 'EDIT', id: r.id, before: before, after: { status: 'filed', filedAt: r.filedAt, filedBy: r.filedBy }, label: 'mark incident report filed — ' + r.reportNumber });
+  logActivity('incidents', 'complete', 'Marked incident report Filed — ' + r.reportNumber, 'Signed copy on file per ' + r.filedBy);
+  scheduleSave(); toast('Marked Filed'); renderIncidents();
+}
+function unmarkIncidentFiled(id) {
+  var r = (state.incidentReports||[]).find(function(x){ return x.id===id; }); if (!r) return;
+  var before = { status: r.status, filedAt: r.filedAt, filedBy: r.filedBy };
+  r.status = 'completed'; r.filedAt = null; r.filedBy = '';
+  pushUndo({ sec: 'incidents', type: 'EDIT', id: r.id, before: before, after: { status: 'completed', filedAt: null, filedBy: '' }, label: 'undo filed — ' + r.reportNumber });
+  logActivity('incidents', 'edit', 'Reverted incident report from Filed — ' + r.reportNumber);
+  scheduleSave(); toast('Reverted to Completed'); renderIncidents();
+}
+async function deleteIncidentReport(id) {
+  var r = (state.incidentReports||[]).find(function(x){ return x.id===id; }); if (!r) return;
+  if (!await confirmModal('Delete incident report ' + r.reportNumber + '? This cannot be undone.')) return;
+  state.incidentReports = (state.incidentReports||[]).filter(function(x){ return x.id!==id; });
+  logActivity('incidents', 'delete', 'Deleted incident report — ' + r.reportNumber);
+  scheduleSave(); _irDetailId = null; renderIncidents(); updateBadges(); toast('Deleted');
+}
+// Printed output deliberately does NOT reuse the dashboard's visual system — it follows
+// the Property Bible binder's navy/gold document layout so a printed copy reads like the
+// rest of the binder. Blank fields on a still-Preliminary report print as "NEEDS
+// COMPLETION" rather than silently blank; plain unchecked boxes print as unchecked since
+// "not selected" is itself a valid answer on the paper form.
+function irPF(r, val) {
+  var s = (val==null?'':String(val)).trim();
+  if (s) return esc(s).replace(/\n/g,'<br>');
+  return r.status === 'preliminary' ? '<span style="color:#b91c1c;font-weight:700">NEEDS COMPLETION</span>' : '<span style="color:#94a3b8">&mdash;</span>';
+}
+function printIncidentReport(id) {
+  var r = (state.incidentReports||[]).find(function(x){ return x.id===id; }); if (!r) return;
+  function pf(val){ return irPF(r, val); }
+  function cb(b){ return b ? '&#9745;' : '&#9744;'; }
+  var natureHtml = IR_NATURE_OPTIONS.map(function(n){ return '<div class="ir-chk">'+cb(r.nature.indexOf(n)!==-1)+' '+esc(n)+'</div>'; }).join('')
+    + '<div class="ir-chk">'+cb(!!r.natureOther)+' Other: ' + (r.natureOther?esc(r.natureOther):'&mdash;') + '</div>';
+  var iconUrl = new URL('Binder/Icon-Navy.png', location.href).href;
+  var svcLines = [];
+  svcLines.push(cb(r.policeCalled) + ' 911 called' + (r.policeCalled ? ' &mdash; ' + esc(r.policeCalledTime||'') + (r.policeAgencies.length?' &middot; '+esc(r.policeAgencies.join(', ')):'') + (r.policeReportNum?' &middot; Report #'+esc(r.policeReportNum):'') : ''));
+  svcLines.push(cb(r.securityCalled) + ' Security (Vigilant Pros)' + (r.securityCalled?' &mdash; '+esc(r.securityCalledTime||''):''));
+  svcLines.push(cb(r.otisCalled) + ' Otis (elevator)' + (r.otisCalled?' &mdash; '+esc(r.otisCalledTime||''):''));
+  svcLines.push(cb(r.pgeCalled) + ' PG&amp;E' + (r.pgeCalled?' &mdash; '+esc(r.pgeCalledTime||''):''));
+  svcLines.push(cb(r.noEmergencyServices) + ' No emergency services required');
+  var body = '<div class="doc-header"><div class="doc-header-left"><img src="' + iconUrl + '" alt="Chorus"><div><div class="doc-header-title">Incident Report</div><div class="doc-header-sub">Chorus SF &middot; 30 Otis St, San Francisco &middot; Internal use only</div></div></div>'
+    + '<div class="doc-header-right"><div class="report-num">' + esc(r.reportNumber) + '</div><div class="status-pill status-' + r.status + '">' + IR_STATUS_LABEL[r.status] + '</div></div></div>'
+    + (r.status==='preliminary' ? '<div class="prelim-banner">PRELIMINARY &mdash; this report is not yet complete. Fields marked NEEDS COMPLETION must be filled in before this report can be marked Completed.</div>' : '')
+    + '<div class="sec"><div class="sec-h">Section 1 &middot; Incident Details</div>'
+    + '<div class="fld"><span class="k">Date / Time</span><span class="v">' + (r.incidentDate ? esc(fmtShort(r.incidentDate) + (r.incidentTime? ' at '+r.incidentTime : '')) : pf('')) + '</span></div>'
+    + '<div class="fld"><span class="k">Location</span><span class="v">' + pf(r.location) + '</span></div>'
+    + '<div class="fld"><span class="k">Unit / Floor</span><span class="v">' + pf([r.unit,r.floor].filter(Boolean).join(' &middot; ')) + '</span></div>'
+    + '<div style="margin-top:6px">' + natureHtml + '</div>'
+    + '<div class="fld" style="margin-top:6px"><span class="k">Physical damage</span><span class="v">' + (r.physicalDamage==='present' ? 'Yes &mdash; ' + esc(r.physicalDamageDesc||'') : r.physicalDamage==='none' ? 'No physical damage observed' : pf('')) + '</span></div>'
+    + '</div>'
+    + '<div class="sec"><div class="sec-h">Section 2 &middot; Individuals Involved</div>'
+    + '<div class="fld"><span class="k">Resident / visitor</span><span class="v">' + pf(r.individualNames) + '</span></div>'
+    + '<div class="fld"><span class="k">Unit / Contact</span><span class="v">' + pf([r.individualUnit,r.individualContact].filter(Boolean).join(' &middot; ')) + '</span></div>'
+    + (r.additionalIndividuals ? '<div class="fld"><span class="k">Additional individuals</span><span class="v">' + esc(r.additionalIndividuals) + '</span></div>' : '')
+    + (r.witnesses ? '<div class="fld"><span class="k">Witnesses</span><span class="v">' + esc(r.witnesses) + '</span></div>' : '')
+    + '</div>'
+    + '<div class="sec"><div class="sec-h">Section 3 &middot; Description of Incident</div><div class="note-block">' + pf(r.description) + '</div></div>'
+    + '<div class="sec"><div class="sec-h">Section 4 &middot; Actions Taken</div>'
+    + '<div class="note-block">' + pf(r.actionsTaken) + '</div>'
+    + '<div class="fld" style="margin-top:8px"><span class="k">Maintenance notified</span><span class="v">' + (r.maintenanceNotified==='yes' ? 'Yes &mdash; ' + esc(r.maintenanceNotifiedTime||'') + (r.maintenanceNotifiedMethod?' &middot; '+esc(r.maintenanceNotifiedMethod):'') : r.maintenanceNotified==='na' ? 'Not applicable' : pf('')) + '</span></div>'
+    + '<div class="fld"><span class="k">Written statement requested</span><span class="v">' + (r.writtenStatementRequested==='yes' ? 'Yes &mdash; requested by ' + esc(r.writtenStatementBy||'&mdash;') : r.writtenStatementRequested==='no' ? 'No' : pf('')) + '</span></div>'
+    + '</div>'
+    + '<div class="sec"><div class="sec-h">Section 5 &middot; Emergency Services</div>'
+    + svcLines.map(function(l){ return '<div class="ir-chk">'+l+'</div>'; }).join('')
+    + (r.emergencyNotes ? '<div class="fld" style="margin-top:6px"><span class="k">Notes</span><span class="v">'+esc(r.emergencyNotes)+'</span></div>' : '')
+    + '</div>'
+    + '<div class="sec"><div class="sec-h">Section 6 &middot; Footage &amp; Documentation</div>'
+    + '<div class="ir-chk">' + cb(r.footagePulled) + ' Magic Monitor footage pulled and preserved' + (r.footagePulled ? ' &mdash; ' + esc(r.footageDate||'') + (r.footageTimeStart||r.footageTimeEnd ? ' ('+esc(r.footageTimeStart||'')+'&ndash;'+esc(r.footageTimeEnd||'')+')' : '') + (r.footageSavedTo?' &middot; Saved to: '+esc(r.footageSavedTo):'') : '') + '</div>'
+    + '<div class="ir-chk">' + cb(r.photosTaken) + ' Photos taken' + (r.photosTaken && r.photosDesc ? ' &mdash; ' + esc(r.photosDesc) : '') + '</div>'
+    + '<div class="ir-chk">' + cb(r.noFootage) + ' No footage or documentation applicable</div>'
+    + '</div>'
+    + '<div class="sec"><div class="sec-h">Section 7 &middot; Manager Notified</div>'
+    + '<div class="ir-chk">' + cb(r.managerNotified) + ' Manager notified' + (r.managerNotified ? ' &mdash; ' + esc(r.managerNotifiedTime||'') + (r.managerNotifiedMethod?' &middot; '+esc(r.managerNotifiedMethod==='Other'?(r.managerNotifiedOther||'Other'):r.managerNotifiedMethod):'') : (r.managerNotNotifiedReason ? ' &mdash; reason: '+esc(r.managerNotNotifiedReason) : '')) + '</div>'
+    + '<div class="ir-chk">' + cb(r.documentedInPassdown) + ' Incident documented in passdown</div>'
+    + '<div class="ir-chk">' + cb(r.mayRequireInsurance) + ' May require insurance notification &mdash; flagged for Manager review</div>'
+    + '</div>'
+    + '<div class="sec"><div class="sec-h">Section 8 &middot; Follow-Up Required</div>'
+    + '<div class="fld"><span class="k">Follow-up</span><span class="v">' + (r.followUpRequired==='yes' ? 'Required' : r.followUpRequired==='no' ? 'Not required' : pf('')) + '</span></div>'
+    + (r.followUpRequired==='yes' ? ('<div class="fld"><span class="k">What\'s needed</span><span class="v">'+pf(r.followUpWhat)+'</span></div>'
+      + '<div class="fld"><span class="k">Responsible party</span><span class="v">'+pf(r.followUpWho)+'</span></div>'
+      + '<div class="fld"><span class="k">Due by</span><span class="v">'+pf(r.followUpDueBy)+'</span></div>') : '')
+    + '</div>'
+    + '<div class="legal">This report is an internal document and may be subject to legal discovery. Do not share with residents, visitors, or third parties. All disclosure requests must be routed through the Manager. Use factual, objective language throughout &mdash; opinions, assumptions, and admissions of fault may be used against the building in legal proceedings.</div>'
+    + '<div class="sec"><div class="sec-h">Section 9 &middot; Associate Sign-Off</div>'
+    + '<div class="fld"><span class="k">Associate signature</span><span class="v">' + pf(r.associateSignature) + '</span></div>'
+    + '<div class="fld"><span class="k">Printed name</span><span class="v">' + pf(r.printedName) + '</span></div>'
+    + '<div class="fld"><span class="k">Date / Shift</span><span class="v">' + pf([r.signOffDate, r.shift].filter(Boolean).join(' &middot; ')) + '</span></div>'
+    + '</div>'
+    + '<div style="font-size:10.5px;color:#94a3b8;margin-top:0.1in">A signed copy of this report must be filed with the Manager. A copy should be kept on file at the front desk.'
+    + (r.status==='filed' ? ' <strong style="color:#1a7a4c">&mdash; Confirmed on file' + (r.filedBy?' ('+esc(r.filedBy)+(r.filedAt?', '+fmtShort(localDateStr(new Date(r.filedAt)))+')':')'):'') + '</strong>' : '') + '</div>';
+  var doc = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Incident Report ' + esc(r.reportNumber) + '</title>'
+    + '<link rel="preconnect" href="https://fonts.googleapis.com">'
+    + '<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">'
+    + '<style>'
+    + '*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + 'body{font-family:\'DM Sans\',Arial,sans-serif;background:#fff;color:#334155}'
+    + '@page{size:letter;margin:0.55in 0.65in}'
+    + '.doc-header{display:flex;align-items:center;justify-content:space-between;border-bottom:2.5px solid #c9a84c;padding-bottom:0.22in;margin-bottom:0.3in}'
+    + '.doc-header-left{display:flex;align-items:center;gap:12px}.doc-header-left img{height:0.4in;width:auto}'
+    + '.doc-header-title{font-size:19px;font-weight:700;color:#1a2232;letter-spacing:0.06em;text-transform:uppercase}'
+    + '.doc-header-sub{font-size:11px;color:#64748b;margin-top:2px}'
+    + '.doc-header-right{text-align:right}'
+    + '.report-num{font-family:\'DM Sans\',monospace;font-weight:700;font-size:13px;color:#1a2232}'
+    + '.status-pill{display:inline-block;margin-top:4px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 9px;border-radius:20px}'
+    + '.status-preliminary{background:#fdf1d6;color:#8A5510}.status-completed{background:#dcf3e6;color:#1a7a4c}.status-filed{background:#1a2232;color:#f0dfa8}'
+    + '.prelim-banner{background:rgba(201,168,76,0.12);border-left:3px solid #c9a84c;padding:9px 14px;font-size:12px;color:#7a5a1a;font-weight:600;margin-bottom:0.28in}'
+    + '.sec{margin-bottom:0.26in;page-break-inside:avoid}'
+    + '.sec-h{font-size:13.5px;font-weight:700;color:#1a2232;text-transform:uppercase;letter-spacing:.08em;margin-bottom:0.12in;padding-bottom:5px;border-bottom:1px solid #e2e8f0}'
+    + '.fld{font-size:12.5px;padding:3px 0;display:flex;gap:8px}.fld .k{color:#64748b;min-width:1.9in;flex-shrink:0}.fld .v{color:#1e293b;flex:1}'
+    + '.ir-chk{font-size:12.5px;padding:2px 0;color:#1e293b}'
+    + '.note-block{font-size:12.5px;color:#1e293b;white-space:pre-wrap;line-height:1.55;background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:10px 12px;margin-top:4px}'
+    + '.legal{font-size:10.5px;color:#94a3b8;font-style:italic;line-height:1.5;margin:0.25in 0;border-top:1px solid #e2e8f0;padding-top:0.15in}'
+    + '.doc-footer{background:#1a2232;padding:0.16in 0;text-align:center;margin-top:0.3in}.doc-footer span{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(201,168,76,0.8)}'
+    + '.print-bar{padding:14px;background:#f4f4f4;border-bottom:1px solid #ddd;font-family:Arial,sans-serif;font-size:13px;color:#333}'
+    + '.print-bar button{font-size:13px;padding:7px 16px;border-radius:6px;border:none;background:#111;color:#fff;cursor:pointer;margin-left:10px}'
+    + '@media print{.print-bar{display:none}}'
+    + '</style></head><body>'
+    + '<div class="print-bar">Incident Report ' + esc(r.reportNumber) + '<button onclick="window.print()">Print</button></div>'
+    + '<div style="padding:0.3in 0.5in 0">' + body + '</div>'
+    + '<div class="doc-footer"><span>Internal Document &middot; Not For Distribution</span></div>'
+    + '</body></html>';
+  var win = window.open('', '_blank');
+  if (!win) { toast('Pop-up blocked — allow pop-ups for this site to print'); return; }
+  win.document.open(); win.document.write(doc); win.document.close();
 }
 
 function openKeyScanQR() {
@@ -13780,8 +14259,10 @@ var GUIDE_DATA = [
     html:'<h4>Tabs</h4><ul><li><strong>Move-Ins / Move-Outs</strong> — all active (non-archived) moves split by type</li><li><strong>Today</strong> — moves whose lease or reservation date is today</li><li><strong>No Reservation</strong> — move-ins with no loading dock + elevator reservation scheduled yet (amber badge)</li><li><strong>Post Move-In</strong> — residents already moved in (lease start in the past) who still have incomplete tasks tagged "Post Move-In"</li><li><strong>Turnover</strong> — units with all move-out tasks complete, ready for inspection</li><li><strong>Archive</strong> — completed moves that have been archived</li></ul><h4>Adding a Move</h4><p>Click <strong>+ Add Move</strong> (admin only). Fill in unit, resident name, lease date, type (in or out), and optionally the move-in/move-out reservation date/time (loading dock + service elevator), move-in total, and notes. The checklist is pre-populated from your default task list (configurable in Settings).</p><h4>Checklist &amp; Tasks</h4><p>Click any move row to expand its checklist. Check off tasks as they\'re completed. Tasks can be tagged by category — tasks tagged "Post Move-In" appear in the Post Move-In tab after the resident\'s lease start date has passed.</p><h4>Reservation Conflict Detection</h4><p>If two moves share the same reservation date and time, an orange <strong>⚠ Conflict</strong> badge appears on both. Reschedule to avoid overlap.</p><h4>Completion Status</h4><p>Once a move\'s reservation date has passed and all main tasks are checked off, the move shows a green <strong>✓ Completed</strong> badge and automatically reflects that status in the Daily Passdown.</p><h4>Archiving</h4><p>Once a move is fully complete, click <strong>Archive</strong> to remove it from the active list. Archived moves remain visible in the Archive tab.</p><div class="guide-tip">💡 Click the <strong>Passdown</strong> button in Moves to jump directly to the Daily Passdown with today\'s moves pre-filled.</div><div class="guide-note">🔒 Staff cannot add, edit, or delete moves — only check off tasks on the checklist.</div>' },
 
 
-  { id:'g-patrol', icon:'🛡', title:'Security Patrols', keywords:'patrol walkthrough security floor area flag issue qr scan checkpoint pin alert overdue hours',
-    html:'<h4>What It Does</h4><p>Tracks building walkthroughs and QR checkpoint scans. Floors and areas are configured in <strong>Settings → Property → Walkthrough Floors &amp; Areas</strong>.</p><h4>Logging a Walkthrough</h4><p>Select a floor/area and mark it as checked. Add flags for any issues observed — each flag has a priority level and description. Active flags appear on the Dashboard and feed into the Daily Passdown.</p><h4>QR Checkpoint Scans</h4><p>Each checkpoint has a printable QR code. When scanned, the user selects their name and enters the QR PIN to confirm the scan. All scans are logged with a timestamp on the patrol timeline.</p><h4>Patrol Alert Threshold</h4><p>Set in <strong>Settings → Security Patrols → Patrol Alert Threshold</strong>. If no scan is logged within that window (default 4 hours), a warning appears on the Dashboard.</p><div class="guide-note">📌 The QR scan confirmation page never exposes the full dashboard — it only shows a success screen, keeping the app secure on shared devices.</div>' },
+  { id:'g-patrol', icon:'📷', title:'Camera Check', keywords:'camera check hourly monitor magic monitor qr scan streak issue blocked compliance incident',
+    html:'<h4>What It Does</h4><p>Replaces the old paper/Google Form hourly camera-monitor check. Scan the QR code posted at the front desk next to the camera monitors, answer a few quick questions, and it\'s logged — no app login needed.</p><h4>The Check-In Flow</h4><p>Enter your name and shift, then answer whether the camera monitor check was completed. If <strong>No</strong>, you can optionally note what prevented it (usually Magic Monitor being unresponsive). If <strong>Yes</strong>, say whether any issues were observed — if so, capture the location, what was observed, action taken, and whether follow-up is required.</p><h4>Team Streak</h4><p>A shared, team-wide streak of consecutive on-time checks — shown on the Dashboard and at the top of this section. It only breaks on an actual missed or blocked check, and keeps counting across every shift and every person.</p><h4>Issue Observed → Automatic Follow-Through</h4><p>Any check with an issue observed automatically creates an open Logbook entry (so it surfaces in the Daily Passdown right away) and drafts a Preliminary Incident Report pre-filled with what was captured — see <strong>Incident Reports</strong>.</p><h4>Admin View</h4><p>Admins additionally see compliance %, missed checks, best shift, most-flagged location, the full check-in history (including imported pre-launch history), and per-person completion counts.</p><div class="guide-note">📌 The QR scan page never exposes the full dashboard — it only shows the check-in form and a success screen, keeping the app secure on shared devices.</div>' },
+  { id:'g-incidents', icon:'🚨', title:'Incident Reports', keywords:'incident report preliminary completed filed camera check logbook needs completion print binder',
+    html:'<h4>What It Does</h4><p>A formal write-up for anything serious enough to need one — matches the property\'s real Incident Report Template exactly (9 sections). Anyone can start one manually with <strong>+ New Incident Report</strong>.</p><h4>Auto-Drafting</h4><p>A report drafts itself automatically whenever a Logbook entry has its <strong>Needs an Incident Report</strong> box checked — Camera Check sets this on its own when an issue is observed. Only what that source actually captured gets pre-filled; everything else is left blank for whoever finishes the report.</p><h4>Lifecycle</h4><ul><li><strong>Preliminary</strong> — drafted or started, still needs work. Blank fields print as "NEEDS COMPLETION" so nothing is silently skipped.</li><li><strong>Completed</strong> — the write-up itself is done.</li><li><strong>Filed</strong> — admin/manager-only. Confirms a signed physical copy is on file with the Manager — the dashboard never sets this on its own.</li></ul><h4>Stale Preliminary Alert</h4><p>Set in <strong>Settings → Incident Reports → Stale Preliminary Threshold</strong>. A Preliminary report open longer than that shows on the Dashboard and at the top of this section until it\'s finished.</p><h4>Print / Export</h4><p>Printed reports follow the Property Bible binder\'s navy &amp; gold layout, not the dashboard\'s on-screen styling — so a printed copy looks and reads like the rest of the binder.</p><h4>Visibility</h4><p>Staff see reports they started; admins see all of them.</p>' },
 
 
 
@@ -13811,9 +14292,9 @@ var GUIDE_DATA = [
     admin:true,
     html:'<div class="guide-note">🔒 Visible to Admin (Lead) users only by default.</div><h4>What It Does</h4><p>Logs team activity and notes throughout the shift — arrivals, departures, task assignments, and any staffing notes the lead needs to track. Entries are timestamped and attributed to the logged-in user.</p><h4>PIN Protection</h4><p>The Team Tracker can require a PIN before making entries. Set or change the PIN in <strong>Settings → Team Tracker → Team Tracker PIN</strong>.</p><h4>Staff List</h4><p>The roster is managed in Settings. Creating a team account automatically adds that person to the staff list. The list supports reordering (▲/▼) and inline renaming.</p>' },
 
-  { id:'g-settings', icon:'⚙️', title:'Settings', keywords:'settings admin account pin session timeout staff visible sections moves tasks patrol qr floor walkthrough disposal laf job title email signature',
+  { id:'g-settings', icon:'⚙️', title:'Settings', keywords:'settings admin account pin session timeout staff visible sections moves tasks camera check incident report disposal laf job title email signature',
     admin:true,
-    html:'<div class="guide-note">🔒 Visible to Admin (Lead) users only.</div><h4>Accounts &amp; Access</h4><ul><li><strong>Team Accounts</strong> — create, rename, reorder, change roles, reset PINs, and remove accounts. Roles: Admin or Staff. You can also set a job title and work email per account, which appear in passdown signatures.</li><li><strong>Session Timeout</strong> — how long before an idle session auto-logs out. Options: Never, 5, 10, 15, 30, 60, or 120 minutes.</li></ul><h4>Team Tracker</h4><ul><li><strong>Staff List</strong> — the roster used in the Team Tracker. Synced with Team Accounts automatically.</li><li><strong>Team Tracker PIN</strong> — optional PIN to restrict Team Tracker entries.</li></ul><h4>Security Patrols</h4><ul><li><strong>Patrol Alert Threshold</strong> — hours of scan inactivity before an alert fires on the Dashboard.</li><li><strong>QR Checkpoint PIN</strong> — PIN required to confirm a QR scan.</li></ul><h4>Moves</h4><ul><li><strong>Default Move-In Tasks</strong> — the checklist that pre-populates every new move-in. Edit, reorder, add, or remove tasks. Tag tasks with a category (e.g., "Post Move-In") to control which tab they appear in.</li><li><strong>Default Move-Out Tasks</strong> — same, for move-outs.</li></ul><h4>Property</h4><ul><li><strong>Walkthrough Floors &amp; Areas</strong> — configure the floors and sub-areas used in Security Patrols.</li><li><strong>Visible Sections (Your View)</strong> — hide sections from your own nav that you don\'t use.</li><li><strong>Team (Staff) Visible Sections</strong> — control which sections staff accounts can see.</li><li><strong>L&amp;F Disposal Reminder</strong> — the number of days before unclaimed items are flagged for disposal (default 30).</li></ul>' },
+    html:'<div class="guide-note">🔒 Visible to Admin (Lead) users only.</div><h4>Accounts &amp; Access</h4><ul><li><strong>Team Accounts</strong> — create, rename, reorder, change roles, reset PINs, and remove accounts. Roles: Admin or Staff. You can also set a job title and work email per account, which appear in passdown signatures.</li><li><strong>Session Timeout</strong> — how long before an idle session auto-logs out. Options: Never, 5, 10, 15, 30, 60, or 120 minutes.</li></ul><h4>Team Tracker</h4><ul><li><strong>Staff List</strong> — the roster used in the Team Tracker. Synced with Team Accounts automatically.</li><li><strong>Team Tracker PIN</strong> — optional PIN to restrict Team Tracker entries.</li></ul><h4>Incident Reports</h4><ul><li><strong>Stale Preliminary Threshold</strong> — hours a Preliminary incident report can sit unfinished before it\'s flagged on the Dashboard and the Incident Reports list.</li></ul><h4>Moves</h4><ul><li><strong>Default Move-In Tasks</strong> — the checklist that pre-populates every new move-in. Edit, reorder, add, or remove tasks. Tag tasks with a category (e.g., "Post Move-In") to control which tab they appear in.</li><li><strong>Default Move-Out Tasks</strong> — same, for move-outs.</li></ul><h4>Property</h4><ul><li><strong>Visible Sections (Your View)</strong> — hide sections from your own nav that you don\'t use.</li><li><strong>Team (Staff) Visible Sections</strong> — control which sections staff accounts can see.</li><li><strong>L&amp;F Disposal Reminder</strong> — the number of days before unclaimed items are flagged for disposal (default 30).</li></ul>' },
 
   { id:'g-supplies', icon:'📦', title:'Supplies & Inventory', keywords:'supplies inventory stock quantity low reorder threshold admin edit item add remove badge red amber',
     html:'<h4>What It Tracks</h4><p>Office and building supplies with live stock levels. Each item has a name, current quantity, and an optional reorder threshold. When stock drops to or below the threshold, an amber badge appears on the nav item. If any item reaches zero, the badge turns red.</p><h4>Adding / Editing Items</h4><p>Admin only. Click <strong>+ Add Item</strong> to create a new supply entry. Click the pencil icon to edit an item\'s name, quantity, or threshold.</p><h4>Adjusting Quantities</h4><ul><li><strong>+ / –</strong> buttons — increment or decrement by 1</li><li><strong>Set Qty</strong> — enter an exact number</li></ul><p>Staff can view stock levels and low-stock alerts but cannot edit quantities or add/remove items.</p><h4>Reorder Todos</h4><p>When stock drops below the reorder threshold, a to-do is automatically created for all admin accounts: <em>"Reorder [item] — X remaining (reorder at Y)."</em> The todo auto-completes when stock is replenished above the threshold.</p><div class="guide-note">📌 Quantity changes from other sections (key issuance, parking credentials, etc.) apply automatically regardless of role.</div>' },
@@ -14081,6 +14562,7 @@ var TOGGLEABLE_SECTIONS = [
   { id: 'moves', label: 'Move Ins / Outs' },
   { id: 'walkthrough', label: 'Camera Check' },
   { id: 'logbook', label: 'Logbook' },
+  { id: 'incidents', label: 'Incident Reports' },
   { id: 'supplies', label: 'Supplies & Inventory' },
   { id: 'keys', label: 'Key Tracker' },
   { id: 'amenities', label: 'Amenity Bookings' },
@@ -14565,7 +15047,6 @@ function renderSettings() {
   renderTaskList('in');
   renderTaskList('out');
   renderRecurringReminders();
-  renderSettingsWTFloors();
   renderAmenitySpaceSettings();
   renderTeamStaff();
   renderNavVisibilitySettings();
@@ -14576,6 +15057,8 @@ function renderSettings() {
   renderCardPoolSettings();
   var ph = g('patrol-alert-hours');
   if (ph) ph.value = (state.patrolSettings && state.patrolSettings.alertHours) || 4;
+  var ih = g('ir-stale-hours');
+  if (ih) ih.value = (state.incidentSettings && state.incidentSettings.staleHours) || 24;
   var lx = g('laf-expiry-days');
   if (lx) lx.value = (state.lafSettings && state.lafSettings.expiryDays) || 30;
   var sto = g('session-timeout-sel');
@@ -14704,6 +15187,15 @@ function saveLAFSettings() {
   if (!state.lafSettings) state.lafSettings = {};
   state.lafSettings.expiryDays = val;
   scheduleSave(); renderLAF(); toast('Saved');
+}
+
+function saveIncidentStaleHours() {
+  var ih = g('ir-stale-hours');
+  var val = ih ? parseInt(ih.value, 10) : 24;
+  if (!val || val < 1) { toast('Enter a valid number of hours'); return; }
+  if (!state.incidentSettings) state.incidentSettings = {};
+  state.incidentSettings.staleHours = val;
+  scheduleSave(); renderIncidents(); toast('Saved');
 }
 
 function savePatrolAlertHours() {
