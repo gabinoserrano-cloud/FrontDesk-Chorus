@@ -919,7 +919,7 @@
         <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">&#128273; One-Time Keys Out</div>
         <div id="keys-otk-cards"></div>
       </div>
-      <div class="card" id="keys-log-card"><div class="card-hdr"><span class="card-title" id="keys-log-title">Key Log</span><span class="card-count" id="keys-count">0 entries</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddKey()">+ Log Key</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident / Guest</th><th>Type</th><th>Key #</th><th>Time Out</th><th>Status</th><th></th></tr></thead><tbody id="keys-tbody"></tbody></table></div></div>
+      <div class="card" id="keys-log-card"><div class="card-hdr"><span class="card-title" id="keys-log-title">Key Log</span><span class="card-count" id="keys-count">0 entries</span><button class="btn btn-secondary btn-sm ml-auto" onclick="openKeyScanQR()">Key Scan QR Code</button><button class="btn btn-primary btn-sm" onclick="openAddKey()">+ Log Key</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident / Guest</th><th>Type</th><th>Key #</th><th>Time Out</th><th>Status</th><th></th></tr></thead><tbody id="keys-tbody"></tbody></table></div></div>
       <!-- Card Drawer view -->
       <div id="card-drawer-view">
         <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">Stock by Pool</span><span class="card-count" id="cardpool-hint"></span><button class="btn btn-ghost btn-sm ml-auto" onclick="openCardPoolBaselines()" title="Edit starting counts for each pool">&#9998; Baselines</button></div>
@@ -1341,6 +1341,13 @@
           <div class="card-body">
             <p class="set-desc">Staff must enter this PIN before a QR checkpoint scan is logged. Keep it separate from the Team Tracker PIN.</p>
             <div id="patrol-pin-settings-body"></div>
+          </div>
+        </div>
+        <div class="card mb-12">
+          <div class="card-hdr"><span class="set-ico" data-icon="key"></span><span class="card-title">One-Time Key Scan PIN</span></div>
+          <div class="card-body">
+            <p class="set-desc">One shared PIN for the front-desk Key Scan QR code — anyone on the team can use it to log or return a one-time key from their phone without a full account login. Share it verbally with new hires on day one.</p>
+            <div id="key-scan-pin-settings-body"></div>
           </div>
         </div>
         <div class="set-group-lbl">Team Tracker</div>
@@ -3059,6 +3066,7 @@ async function verifyPinPBKDF2(entered, stored, salt) {
 // Fixed per-field salts for the two singleton section PINs (no per-record id to salt with, unlike accounts).
 var TEAMPIN_SALT = 'chorus-teampin-v1';
 var PATROLPIN_SALT = 'chorus-patrolpin-v1';
+var KEYSCANPIN_SALT = 'chorus-keyscanpin-v1';
 // Verify a typed section PIN against the stored value: PBKDF2 (current), legacy SHA-256, or
 // plaintext (pre-migration fallback). On a successful legacy/plaintext match, transparently
 // upgrades to PBKDF2 via onUpgrade(newHash) — we can only do this at verify time since a stored
@@ -3168,7 +3176,7 @@ function cloneData(obj) {
   try { return JSON.parse(JSON.stringify(obj)); }
   catch (e) { return obj; }
 }
-function emptyState() { return { moves: [], units: [], keys: [], amenities: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, archivedTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], transponders: { startingInventory: 100, log: [], counts: [] }, security: [], logbook: [], propertyConfig: {}, recurringReminders: [], pushLog: [], cardPools: { oneTime: { startingCount: 40, counts: [] }, vendor: { startingCount: null, counts: [] }, sgt: { startingCount: null, counts: [] } } }; }
+function emptyState() { return { moves: [], units: [], keys: [], amenities: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', keyScanPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, archivedTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], transponders: { startingInventory: 100, log: [], counts: [] }, security: [], logbook: [], propertyConfig: {}, recurringReminders: [], pushLog: [], cardPools: { oneTime: { startingCount: 40, counts: [] }, vendor: { startingCount: null, counts: [] }, sgt: { startingCount: null, counts: [] } } }; }
 
 // ─── SHIFT LOG ───
 function getShiftLog() {
@@ -9275,6 +9283,185 @@ function showScanPinPrompt(checkpointId, staffName, cpName) {
   if (backLnk) backLnk.addEventListener('click', function() { showScanOverlay(checkpointId); });
 }
 
+// ── One-Time Key Scan QR flow — deliberately simpler than the patrol scan above: one
+// shared PIN (not a per-staff-name pick), then straight to two plain-language actions.
+// Built so a day-one hire with zero dashboard training can use it correctly on the first
+// try (2026-08-18).
+function showKeyScanOverlay() {
+  var overlay = g('scan-overlay'); if (!overlay) return;
+  var pin = state.keyScanPin || '';
+  if (pin && !window._keyScanPinVerified) {
+    overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
+      + '<div style="font-size:28px;margin-bottom:10px">&#128273;</div>'
+      + '<div style="font-size:20px;font-weight:600;margin-bottom:16px">One-Time Key Log</div>'
+      + '<div style="font-size:13px;color:var(--text2);margin-bottom:12px">Enter the Key Scan PIN.</div>'
+      + '<input type="password" id="ks-pin-inp" maxlength="8" inputmode="numeric" placeholder="PIN" style="width:100%;font-size:16px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);text-align:center;margin-bottom:12px">'
+      + '<button id="ks-pin-btn" class="btn btn-primary" style="width:100%;justify-content:center;font-size:15px;padding:12px 0">Continue</button>'
+      + '<div style="margin-top:16px"><span style="font-size:12px;color:var(--text3);cursor:pointer" id="ks-close-lnk">Close</span></div>'
+      + '</div>';
+    overlay.style.display = 'flex';
+    var closeLnk = g('ks-close-lnk');
+    if (closeLnk) closeLnk.addEventListener('click', function() { closeKeyScanOverlay(); });
+    var pinInp = g('ks-pin-inp'), pinBtn = g('ks-pin-btn');
+    async function tryPin() {
+      if (await verifySectionPin(pinInp.value, pin, KEYSCANPIN_SALT, function(h){ state.keyScanPin = h; scheduleSave(); })) {
+        window._keyScanPinVerified = true;
+        showKeyScanMenu();
+      } else {
+        toast('Incorrect PIN'); pinInp.value = ''; pinInp.focus();
+      }
+    }
+    if (pinBtn) pinBtn.addEventListener('click', tryPin);
+    if (pinInp) { pinInp.focus(); pinInp.addEventListener('keydown', function(e){ if (e.key==='Enter') tryPin(); }); }
+    return;
+  }
+  showKeyScanMenu();
+}
+function closeKeyScanOverlay() {
+  var overlay = g('scan-overlay'); if (!overlay) return;
+  if (window._openedViaScan) {
+    // Opened via QR — never expose the full dashboard to a non-staff scan.
+    overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
+      + '<div style="font-size:48px;margin-bottom:16px">&#128274;</div>'
+      + '<div style="font-size:20px;font-weight:600;margin-bottom:8px">Staff Access Only</div>'
+      + '<div style="font-size:14px;color:var(--text2)">If you are staff, please scan the Key Scan QR code at the front desk.</div>'
+      + '</div>';
+  } else {
+    overlay.style.display = 'none';
+    if (window.history && window.history.replaceState) window.history.replaceState({}, '', window.location.pathname);
+  }
+}
+function showKeyScanMenu() {
+  var overlay = g('scan-overlay'); if (!overlay) return;
+  overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
+    + '<div style="font-size:28px;margin-bottom:10px">&#128273;</div>'
+    + '<div style="font-size:20px;font-weight:600;margin-bottom:20px">One-Time Key Log</div>'
+    + '<button id="ks-new-btn" class="btn btn-primary" style="width:100%;justify-content:center;font-size:16px;padding:16px 0;margin-bottom:10px">+ New One-Time Key</button>'
+    + '<button id="ks-return-btn" class="btn btn-secondary" style="width:100%;justify-content:center;font-size:16px;padding:16px 0">Return a Key</button>'
+    + '<div style="margin-top:18px"><span style="font-size:12px;color:var(--text3);cursor:pointer" id="ks-menu-close-lnk">Close</span></div>'
+    + '</div>';
+  overlay.style.display = 'flex';
+  var nb = g('ks-new-btn'); if (nb) nb.addEventListener('click', showKeyScanNewForm);
+  var rb = g('ks-return-btn'); if (rb) rb.addEventListener('click', showKeyScanReturnList);
+  var cl = g('ks-menu-close-lnk'); if (cl) cl.addEventListener('click', closeKeyScanOverlay);
+}
+function showKeyScanNewForm() {
+  var overlay = g('scan-overlay'); if (!overlay) return;
+  overlay.innerHTML = '<div style="text-align:left;max-width:340px;width:100%;padding:0 20px">'
+    + '<div style="text-align:center;font-size:18px;font-weight:600;margin-bottom:16px">New One-Time Key</div>'
+    + '<div class="fg"><label>Unit #</label><input type="text" id="ks-unit" list="unit-options" placeholder="e.g. 619" style="width:100%;font-size:16px;padding:10px;border:1px solid var(--border);border-radius:var(--radius)"></div>'
+    + '<div class="fg" style="margin-top:10px"><label>Name</label><input type="text" id="ks-name" placeholder="Resident or guest name" style="width:100%;font-size:16px;padding:10px;border:1px solid var(--border);border-radius:var(--radius)"></div>'
+    + '<div class="fg" style="margin-top:10px"><label>Fob / Card #</label><input type="text" id="ks-fob" inputmode="numeric" placeholder="e.g. 12" style="width:100%;font-size:16px;padding:10px;border:1px solid var(--border);border-radius:var(--radius)"></div>'
+    + '<div class="fg" style="margin-top:10px"><label>Expected back <span style="font-weight:400;color:var(--text3)">(optional)</span></label><input type="time" id="ks-timeout" style="width:100%;font-size:16px;padding:10px;border:1px solid var(--border);border-radius:var(--radius)"></div>'
+    + '<button id="ks-new-submit" class="btn btn-primary" style="width:100%;justify-content:center;font-size:16px;padding:14px 0;margin-top:16px">Log It</button>'
+    + '<div style="margin-top:14px;text-align:center"><span style="font-size:12px;color:var(--text3);cursor:pointer" id="ks-new-back">&#8592; Back</span></div>'
+    + '</div>';
+  overlay.style.display = 'flex';
+  var back = g('ks-new-back'); if (back) back.addEventListener('click', showKeyScanMenu);
+  var submit = g('ks-new-submit'); if (submit) submit.addEventListener('click', submitKeyScanNew);
+  var unitInp = g('ks-unit'); if (unitInp) unitInp.focus();
+}
+function submitKeyScanNew() {
+  var unit = (g('ks-unit') ? g('ks-unit').value.trim() : '');
+  var name = (g('ks-name') ? g('ks-name').value.trim() : '');
+  var fob = (g('ks-fob') ? g('ks-fob').value.trim() : '');
+  var timeout = (g('ks-timeout') ? g('ks-timeout').value : '');
+  if (!unit || !name || !fob) { toast('Unit, name, and fob/card # are required'); return; }
+  if (!state.keys) state.keys = [];
+  var already = state.keys.some(function(k) { return k.fob === fob && k.status === 'issued'; });
+  if (already) { toast('Card #' + fob + ' is already logged as out — return it first'); return; }
+  var k = { id: uid(), unit: unit, name: name, guest: '', fob: fob, type: 'one-time', status: 'issued', issuedAt: Date.now(), timeout: timeout, notes: '', addedBy: currentUser ? currentUser.name : 'Key Scan QR', createdAt: Date.now(), returnedAt: null };
+  state.keys.push(k);
+  var cmds = [{ sec: 'keys', type: 'ADD', id: k.id, data: Object.assign({}, k), label: 'issue card #' + fob + ' — Unit ' + unit + ' (Key Scan QR)' }];
+  logActivity('keys', 'create', 'Issued one-time card #' + fob + ' — Unit ' + unit + ' · ' + name + ' (via Key Scan QR)');
+  var supCmd = applySupplyAdjustment('One-Time Cards – Active Issued', +1, 'Issued — Card #' + fob + ' · Unit ' + unit + ' · ' + name + ' (Key Scan QR)');
+  if (supCmd) cmds.push(supCmd);
+  pushBatchUndo('keys', 'issue card #' + fob + ' — Unit ' + unit, cmds);
+  scheduleSave(); updateBadges();
+  if (curSec === 'keys') renderKeys();
+  showKeyScanSuccess('Card #' + fob + ' logged — Unit ' + unit + (timeout ? ', back by ' + fmtTime(timeout) : ''));
+}
+function showKeyScanReturnList() {
+  var overlay = g('scan-overlay'); if (!overlay) return;
+  var out = (state.keys || []).filter(function(k) { return k.type === 'one-time' && k.status === 'issued'; })
+    .sort(function(a, b) { return (a.issuedAt||a.createdAt||0) - (b.issuedAt||b.createdAt||0); });
+  var now = Date.now();
+  var rows = '';
+  if (!out.length) {
+    rows = '<div style="font-size:13px;color:var(--text3);padding:16px 0;text-align:center">No one-time keys are currently out.</div>';
+  } else {
+    out.forEach(function(k) {
+      var ms = now - (k.issuedAt || k.createdAt || now);
+      var overdue = ms >= 2*3600000;
+      var dur = fmtOverdueDuration(ms);
+      rows += '<button class="btn btn-secondary ks-return-row" data-id="' + k.id + '" style="width:100%;justify-content:space-between;text-align:left;padding:12px 14px;margin-bottom:8px;' + (overdue ? 'border-color:var(--red)' : '') + '">'
+        + '<span><strong>Unit ' + esc(k.unit) + '</strong> — ' + esc(k.name) + '<br><span style="font-size:12px;color:var(--text3)">Card #' + esc(k.fob) + '</span></span>'
+        + '<span style="font-size:11px;font-weight:700;' + (overdue ? 'color:var(--red)' : 'color:var(--text3)') + '">' + dur + ' OUT</span>'
+        + '</button>';
+    });
+  }
+  overlay.innerHTML = '<div style="text-align:left;max-width:340px;width:100%;padding:0 20px;max-height:90vh;overflow-y:auto">'
+    + '<div style="text-align:center;font-size:18px;font-weight:600;margin-bottom:16px">Return a Key</div>'
+    + rows
+    + '<div style="margin-top:10px;text-align:center"><span style="font-size:12px;color:var(--text3);cursor:pointer" id="ks-return-back">&#8592; Back</span></div>'
+    + '</div>';
+  overlay.style.display = 'flex';
+  var back = g('ks-return-back'); if (back) back.addEventListener('click', showKeyScanMenu);
+  document.querySelectorAll('.ks-return-row').forEach(function(btn) {
+    btn.addEventListener('click', function() { confirmKeyScanReturn(btn.getAttribute('data-id')); });
+  });
+}
+function confirmKeyScanReturn(id) {
+  var overlay = g('scan-overlay'); if (!overlay) return;
+  var k = (state.keys || []).find(function(x) { return x.id === id; }); if (!k) return;
+  overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
+    + '<div style="font-size:18px;font-weight:600;margin-bottom:6px">Mark returned?</div>'
+    + '<div style="font-size:14px;color:var(--text2);margin-bottom:20px">Card #' + esc(k.fob) + ' — Unit ' + esc(k.unit) + ' · ' + esc(k.name) + '</div>'
+    + '<button id="ks-ret-confirm" class="btn btn-primary" style="width:100%;justify-content:center;font-size:16px;padding:14px 0;margin-bottom:10px">Confirm Return</button>'
+    + '<span style="font-size:12px;color:var(--text3);cursor:pointer" id="ks-ret-cancel">&#8592; Back</span>'
+    + '</div>';
+  overlay.style.display = 'flex';
+  var cancel = g('ks-ret-cancel'); if (cancel) cancel.addEventListener('click', showKeyScanReturnList);
+  var confirmBtn = g('ks-ret-confirm'); if (confirmBtn) confirmBtn.addEventListener('click', function() { finishKeyScanReturn(id); });
+}
+function finishKeyScanReturn(id) {
+  var k = (state.keys || []).find(function(x) { return x.id === id; }); if (!k) { showKeyScanError('That key could not be found — it may have already been returned.'); return; }
+  var before = { status: k.status, returnedAt: k.returnedAt };
+  k.status = 'returned'; k.returnedAt = Date.now();
+  var cmds = [{ sec: 'keys', type: 'EDIT', id: k.id, before: before, after: { status: k.status, returnedAt: k.returnedAt }, label: 'key returned — Unit ' + k.unit + ' (Key Scan QR)' }];
+  logActivity('keys', 'complete', 'Card #' + k.fob + ' returned — Unit ' + k.unit + ' · ' + k.name + ' (via Key Scan QR)');
+  var supCmd = applySupplyAdjustment('One-Time Cards – Active Issued', -1, 'Returned — Card #' + k.fob + ' · Unit ' + k.unit + ' (Key Scan QR)');
+  if (supCmd) cmds.push(supCmd);
+  pushBatchUndo('keys', 'key returned — Unit ' + k.unit, cmds);
+  scheduleSave(); updateBadges();
+  if (curSec === 'keys') renderKeys();
+  showKeyScanSuccess('Card #' + k.fob + ' marked returned — Unit ' + k.unit);
+}
+function showKeyScanSuccess(message) {
+  var overlay = g('scan-overlay'); if (!overlay) return;
+  overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
+    + '<div style="font-size:60px;color:var(--green);margin-bottom:16px">&#10003;</div>'
+    + '<div style="font-size:16px;color:var(--text2);margin-bottom:24px">' + esc(message) + '</div>'
+    + '<button id="ks-success-again" class="btn btn-primary" style="width:100%;justify-content:center;font-size:15px;padding:12px 0;margin-bottom:10px">Log Another</button>'
+    + '<span style="font-size:12px;color:var(--text3);cursor:pointer" id="ks-success-done">Done</span>'
+    + '</div>';
+  overlay.style.display = 'flex';
+  if (window.history && window.history.replaceState) window.history.replaceState({}, '', window.location.pathname);
+  var again = g('ks-success-again'); if (again) again.addEventListener('click', showKeyScanMenu);
+  var done = g('ks-success-done'); if (done) done.addEventListener('click', closeKeyScanOverlay);
+}
+function showKeyScanError(message) {
+  var overlay = g('scan-overlay'); if (!overlay) return;
+  overlay.innerHTML = '<div role="alert" style="text-align:center;max-width:360px;width:100%;padding:0 20px">'
+    + '<div style="font-size:52px;color:var(--red);margin-bottom:14px">&#9888;</div>'
+    + '<div style="font-size:20px;font-weight:600;color:var(--red);margin-bottom:8px">Something went wrong</div>'
+    + '<div style="font-size:14px;color:var(--text2);line-height:1.55">' + esc(message) + '</div>'
+    + '<div style="margin-top:16px"><span style="font-size:12px;color:var(--text3);cursor:pointer" id="ks-err-back">&#8592; Back</span></div>'
+    + '</div>';
+  overlay.style.display = 'flex';
+  var back = g('ks-err-back'); if (back) back.addEventListener('click', showKeyScanMenu);
+}
+
 function toggleWTItem(key, checked) {
   if (!state.walkthrough) state.walkthrough = {};
   var before = !!state.walkthrough[key];
@@ -12495,6 +12682,27 @@ function setModalMode(titleId, btnId, titleText, btnText) {
 
 // ─── KEY EDIT ───
 var editingKeyId = null;
+function openKeyScanQR() {
+  var baseUrl = 'https://gabinoserrano-cloud.github.io/FrontDesk-Chorus/';
+  var scanUrl = baseUrl + '?keyscan=1';
+  var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=8&data=' + encodeURIComponent(scanUrl);
+  var ov = g('modal-keyscan-qr');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.className = 'modal-ov'; ov.id = 'modal-keyscan-qr';
+    ov.innerHTML = '<div class="modal" style="max-width:360px">'
+      + '<div class="modal-hdr"><span class="modal-title">One-Time Key Scan QR</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-keyscan-qr\')">&#x2715;</button></div>'
+      + '<div class="modal-bdy" style="text-align:center">'
+      + '<img src="' + qrUrl + '" style="width:200px;height:200px;border-radius:6px;margin:4px auto 14px;display:block" alt="One-Time Key Scan QR code">'
+      + '<p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:4px">Print this and post it at the front desk. Anyone on the team can scan it with their phone camera to log or return a one-time key — no dashboard login needed, just the shared Key Scan PIN.</p>'
+      + '<p style="font-size:12px;color:var(--text3)">Set that PIN under Settings &rarr; One-Time Key Scan PIN.</p>'
+      + '</div>'
+      + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-keyscan-qr\')">Close</button><button class="btn btn-primary" onclick="window.print()">Print</button></div>'
+      + '</div>';
+    document.body.appendChild(ov);
+  }
+  openModal('modal-keyscan-qr');
+}
 function openAddKey() {
   editingKeyId = null;
   setModalMode('modal-key-title','modal-key-savebtn','Log Key / Access','Save');
@@ -14037,6 +14245,7 @@ function renderSettings() {
   renderNavVisibilitySettings();
   renderStaffNavVisibilitySettings();
   renderPatrolPinSettings();
+  renderKeyScanPinSettings();
   renderTeamPinSettings();
   renderCardPoolSettings();
   var ph = g('patrol-alert-hours');
@@ -14120,6 +14329,45 @@ async function removePatrolPin() {
   if (!(await verifySectionPin(cur, state.patrolPin, PATROLPIN_SALT))) { toast('Current PIN is incorrect'); return; }
   if (!await confirmModal('Remove patrol PIN? Anyone scanning a QR code will be able to log a scan.')) return;
   state.patrolPin = ''; scheduleSave(); renderPatrolPinSettings(); toast('Patrol PIN removed');
+}
+
+function renderKeyScanPinSettings() {
+  var el = g('key-scan-pin-settings-body'); if (!el) return;
+  var pin = state.keyScanPin || '';
+  if (!pin) {
+    el.innerHTML = '<div class="fg"><label>New PIN (4-8 digits)</label><input type="password" id="ksp-new" maxlength="8" inputmode="numeric" placeholder="e.g. 4521"></div>'
+      + '<div class="fg"><label>Confirm PIN</label><input type="password" id="ksp-confirm" maxlength="8" inputmode="numeric" placeholder="Repeat PIN"></div>'
+      + '<button class="btn btn-primary btn-sm" onclick="setKeyScanPin()">Set Key Scan PIN</button>';
+  } else {
+    el.innerHTML = '<p style="font-size:13px;color:var(--green);margin-bottom:10px">&#10003; Key Scan QR PIN is active.</p>'
+      + '<div class="fg"><label>Current PIN</label><input type="password" id="ksp-cur" maxlength="8" inputmode="numeric" placeholder="Current PIN"></div>'
+      + '<div class="fg"><label>New PIN (leave blank to remove)</label><input type="password" id="ksp-new" maxlength="8" inputmode="numeric" placeholder="New PIN"></div>'
+      + '<div class="fg"><label>Confirm New PIN</label><input type="password" id="ksp-confirm" maxlength="8" inputmode="numeric" placeholder="Repeat"></div>'
+      + '<button class="btn btn-primary btn-sm" onclick="changeKeyScanPin()">Update PIN</button>'
+      + ' <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="removeKeyScanPin()">Remove PIN</button>';
+  }
+}
+async function setKeyScanPin() {
+  var np = (g('ksp-new') ? g('ksp-new').value.trim() : '');
+  var cp = (g('ksp-confirm') ? g('ksp-confirm').value.trim() : '');
+  if (!np || np.length < 4) { toast('PIN must be at least 4 digits'); return; }
+  if (np !== cp) { toast('PINs do not match'); return; }
+  state.keyScanPin = await hashPinPBKDF2(np, KEYSCANPIN_SALT); scheduleSave(); renderKeyScanPinSettings(); toast('Key Scan PIN set');
+}
+async function changeKeyScanPin() {
+  var cur = (g('ksp-cur') ? g('ksp-cur').value : '');
+  var np = (g('ksp-new') ? g('ksp-new').value.trim() : '');
+  var cp = (g('ksp-confirm') ? g('ksp-confirm').value.trim() : '');
+  if (!(await verifySectionPin(cur, state.keyScanPin, KEYSCANPIN_SALT))) { toast('Current PIN is incorrect'); return; }
+  if (!np || np.length < 4) { toast('New PIN must be at least 4 digits'); return; }
+  if (np !== cp) { toast('PINs do not match'); return; }
+  state.keyScanPin = await hashPinPBKDF2(np, KEYSCANPIN_SALT); scheduleSave(); renderKeyScanPinSettings(); toast('Key Scan PIN updated');
+}
+async function removeKeyScanPin() {
+  var cur = (g('ksp-cur') ? g('ksp-cur').value : '');
+  if (!(await verifySectionPin(cur, state.keyScanPin, KEYSCANPIN_SALT))) { toast('Current PIN is incorrect'); return; }
+  if (!await confirmModal('Remove the Key Scan PIN? Anyone who scans the QR code will be able to log or return a key.')) return;
+  state.keyScanPin = ''; scheduleSave(); renderKeyScanPinSettings(); toast('Key Scan PIN removed');
 }
 
 
@@ -15031,8 +15279,8 @@ async function init() {
   ['mousemove','mousedown','keydown','touchstart','scroll'].forEach(function(ev) {
     document.addEventListener(ev, _resetActivity, { passive: true });
   });
-  var pendingScanId = null;
-  try { var params = new URLSearchParams(window.location.search); pendingScanId = params.get('scan'); } catch(e) {}
+  var pendingScanId = null, pendingKeyScan = false;
+  try { var params = new URLSearchParams(window.location.search); pendingScanId = params.get('scan'); pendingKeyScan = params.get('keyscan') === '1'; } catch(e) {}
   await pullCloud();
   await migratePinsToHashed();
   purgeDeadResidentProfiles();
@@ -15068,13 +15316,13 @@ async function init() {
   refreshUnitDatalist();
   updatePropertyUI();
   lastSyncTs = Date.now();
-  if (pendingScanId) {
+  if (pendingScanId || pendingKeyScan) {
     // Page opened via QR code — hide the dashboard entirely until after the scan
     window._openedViaScan = true;
     g('sidebar').style.display = 'none';
     g('main').style.display = 'none';
     if (g('mob-nav')) g('mob-nav').style.display = 'none';
-    showScanOverlay(pendingScanId);
+    if (pendingKeyScan) showKeyScanOverlay(); else showScanOverlay(pendingScanId);
   } else {
     window._openedViaScan = false;
     showLogin();
