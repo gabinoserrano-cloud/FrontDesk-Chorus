@@ -13055,7 +13055,9 @@ function showCameraCheckSuccess(rec, streak) {
 // observed) — pre-fills only what that source actually captured; everything
 // else stays blank and prints as "NEEDS COMPLETION" while still Preliminary.
 // Lifecycle: Preliminary -> Completed -> Filed. Filed is a manual admin/manager
-// attestation that a signed paper copy is on file — never set automatically.
+// step that reviews and finalizes the report and locks it from further edits —
+// no printed or signed copy is required; the dashboard record is the report of
+// record. Print/Export stays available (once Completed) purely as a convenience.
 var _irDetailId = null;
 var IR_STATUS_LABEL = { preliminary: 'Preliminary', completed: 'Completed', filed: 'Filed' };
 var IR_NATURE_OPTIONS = ['Medical emergency','Fire or fire alarm','Elevator malfunction / entrapment','Flood / water damage','Power outage','Disruptive or intoxicated individual','Trespass / unauthorized access','Theft or property damage'];
@@ -13292,7 +13294,7 @@ function renderIncidentDetail(body) {
     + '<div class="fg"><label>Printed name</label><input type="text" id="ir-printedName" value="'+esc(r.printedName)+'"'+dis+'></div></div>'
     + '<div class="fr"><div class="fg"><label>Date</label><input type="date" id="ir-signOffDate" value="'+esc(r.signOffDate)+'"'+dis+'></div>'
     + '<div class="fg"><label>Shift</label><select id="ir-shift"'+dis+'>' + ['','AM','PM','Overnight'].map(function(s){ return '<option value="'+s+'"'+(r.shift===s?' selected':'')+'>'+(s||'—')+'</option>'; }).join('') + '</select></div></div>'
-    + '<p style="font-size:11.5px;color:var(--text3)">A signed copy of this report must be filed with the Manager. A copy should be kept on file at the front desk.</p>'
+    + '<p style="font-size:11.5px;color:var(--text3)">This dashboard record is the report of record — no printed or signed copy is required.</p>'
     + '</div></div>';
 
   html += '<div class="card"><div class="card-body" style="padding:14px 16px;display:flex;gap:8px;flex-wrap:wrap">';
@@ -13304,7 +13306,11 @@ function renderIncidentDetail(body) {
     if (r.status === 'preliminary') html += '<button class="btn btn-secondary btn-sm" onclick="markIncidentCompleted(\''+r.id+'\')">Mark Completed</button>';
     if (r.status === 'completed' && isAdmin) html += '<button class="btn btn-secondary btn-sm" onclick="markIncidentFiled(\''+r.id+'\')">Mark as Filed&hellip;</button>';
   }
-  html += '<button class="btn btn-secondary btn-sm" onclick="printIncidentReport(\''+r.id+'\')">Print / Export</button>';
+  if (r.status === 'preliminary') {
+    html += '<span style="font-size:12px;color:var(--text3);align-self:center">Print unlocks once this is Marked Completed, for a clean copy if you ever need one.</span>';
+  } else {
+    html += '<button class="btn btn-secondary btn-sm" onclick="printIncidentReport(\''+r.id+'\')">Print / Export</button>';
+  }
   if (isAdmin) html += '<button class="btn btn-ghost btn-sm" style="color:var(--red);margin-left:auto" onclick="deleteIncidentReport(\''+r.id+'\')">Delete</button>';
   html += '</div></div>';
 
@@ -13356,11 +13362,11 @@ function markIncidentCompleted(id) {
 }
 async function markIncidentFiled(id) {
   var r = (state.incidentReports||[]).find(function(x){ return x.id===id; }); if (!r) return;
-  if (!await confirmModal('Confirm a signed physical copy of this report is on file with the Manager. Mark as Filed?')) return;
+  if (!await confirmModal('Mark this report reviewed and finalized? This locks it from further edits.')) return;
   var before = { status: r.status, filedAt: r.filedAt, filedBy: r.filedBy };
   r.status = 'filed'; r.filedAt = Date.now(); r.filedBy = currentUser ? currentUser.name : '';
   pushUndo({ sec: 'incidents', type: 'EDIT', id: r.id, before: before, after: { status: 'filed', filedAt: r.filedAt, filedBy: r.filedBy }, label: 'mark incident report filed — ' + r.reportNumber });
-  logActivity('incidents', 'complete', 'Marked incident report Filed — ' + r.reportNumber, 'Signed copy on file per ' + r.filedBy);
+  logActivity('incidents', 'complete', 'Marked incident report Filed — ' + r.reportNumber, 'Finalized by ' + r.filedBy);
   scheduleSave(); toast('Marked Filed'); renderIncidents();
 }
 function unmarkIncidentFiled(id) {
@@ -13449,8 +13455,8 @@ function printIncidentReport(id) {
     + '<div class="fld"><span class="k">Printed name</span><span class="v">' + pf(r.printedName) + '</span></div>'
     + '<div class="fld"><span class="k">Date / Shift</span><span class="v">' + pf([r.signOffDate, r.shift].filter(Boolean).join(' &middot; ')) + '</span></div>'
     + '</div>'
-    + '<div style="font-size:10.5px;color:#94a3b8;margin-top:0.1in">A signed copy of this report must be filed with the Manager. A copy should be kept on file at the front desk.'
-    + (r.status==='filed' ? ' <strong style="color:#1a7a4c">&mdash; Confirmed on file' + (r.filedBy?' ('+esc(r.filedBy)+(r.filedAt?', '+fmtShort(localDateStr(new Date(r.filedAt)))+')':')'):'') + '</strong>' : '') + '</div>';
+    + '<div style="font-size:10.5px;color:#94a3b8;margin-top:0.1in">This dashboard record is the report of record — printing this page is optional.'
+    + (r.status==='filed' ? ' <strong style="color:#1a7a4c">&mdash; Finalized' + (r.filedBy?' by '+esc(r.filedBy)+(r.filedAt?' on '+fmtShort(localDateStr(new Date(r.filedAt))):''):'') + '</strong>' : '') + '</div>';
   var doc = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Incident Report ' + esc(r.reportNumber) + '</title>'
     + '<link rel="preconnect" href="https://fonts.googleapis.com">'
     + '<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">'
@@ -14262,7 +14268,7 @@ var GUIDE_DATA = [
   { id:'g-patrol', icon:'📷', title:'Camera Check', keywords:'camera check hourly monitor magic monitor qr scan streak issue blocked compliance incident',
     html:'<h4>What It Does</h4><p>Replaces the old paper/Google Form hourly camera-monitor check. Scan the QR code posted at the front desk next to the camera monitors, answer a few quick questions, and it\'s logged — no app login needed.</p><h4>The Check-In Flow</h4><p>Enter your name and shift, then answer whether the camera monitor check was completed. If <strong>No</strong>, you can optionally note what prevented it (usually Magic Monitor being unresponsive). If <strong>Yes</strong>, say whether any issues were observed — if so, capture the location, what was observed, action taken, and whether follow-up is required.</p><h4>Team Streak</h4><p>A shared, team-wide streak of consecutive on-time checks — shown on the Dashboard and at the top of this section. It only breaks on an actual missed or blocked check, and keeps counting across every shift and every person.</p><h4>Issue Observed → Automatic Follow-Through</h4><p>Any check with an issue observed automatically creates an open Logbook entry (so it surfaces in the Daily Passdown right away) and drafts a Preliminary Incident Report pre-filled with what was captured — see <strong>Incident Reports</strong>.</p><h4>Admin View</h4><p>Admins additionally see compliance %, missed checks, best shift, most-flagged location, the full check-in history (including imported pre-launch history), and per-person completion counts.</p><div class="guide-note">📌 The QR scan page never exposes the full dashboard — it only shows the check-in form and a success screen, keeping the app secure on shared devices.</div>' },
   { id:'g-incidents', icon:'🚨', title:'Incident Reports', keywords:'incident report preliminary completed filed camera check logbook needs completion print binder',
-    html:'<h4>What It Does</h4><p>A formal write-up for anything serious enough to need one — matches the property\'s real Incident Report Template exactly (9 sections). Anyone can start one manually with <strong>+ New Incident Report</strong>.</p><h4>Auto-Drafting</h4><p>A report drafts itself automatically whenever a Logbook entry has its <strong>Needs an Incident Report</strong> box checked — Camera Check sets this on its own when an issue is observed. Only what that source actually captured gets pre-filled; everything else is left blank for whoever finishes the report.</p><h4>Lifecycle</h4><ul><li><strong>Preliminary</strong> — drafted or started, still needs work. Blank fields print as "NEEDS COMPLETION" so nothing is silently skipped.</li><li><strong>Completed</strong> — the write-up itself is done.</li><li><strong>Filed</strong> — admin/manager-only. Confirms a signed physical copy is on file with the Manager — the dashboard never sets this on its own.</li></ul><h4>Stale Preliminary Alert</h4><p>Set in <strong>Settings → Incident Reports → Stale Preliminary Threshold</strong>. A Preliminary report open longer than that shows on the Dashboard and at the top of this section until it\'s finished.</p><h4>Print / Export</h4><p>Printed reports follow the Property Bible binder\'s navy &amp; gold layout, not the dashboard\'s on-screen styling — so a printed copy looks and reads like the rest of the binder.</p><h4>Visibility</h4><p>Staff see reports they started; admins see all of them.</p>' },
+    html:'<h4>What It Does</h4><p>A formal write-up for anything serious enough to need one — matches the property\'s real Incident Report Template exactly (9 sections). Anyone can start one manually with <strong>+ New Incident Report</strong>.</p><h4>Auto-Drafting</h4><p>A report drafts itself automatically whenever a Logbook entry has its <strong>Needs an Incident Report</strong> box checked — Camera Check sets this on its own when an issue is observed. Only what that source actually captured gets pre-filled; everything else is left blank for whoever finishes the report.</p><h4>Lifecycle</h4><ul><li><strong>Preliminary</strong> — drafted or started, still needs work. Blank fields print as "NEEDS COMPLETION" so nothing is silently skipped.</li><li><strong>Completed</strong> — the write-up itself is done.</li><li><strong>Filed</strong> — admin/manager-only. Marks the report reviewed and finalized, and locks it from further edits. No printed or signed copy is required — the dashboard record is the report of record.</li></ul><h4>Stale Preliminary Alert</h4><p>Set in <strong>Settings → Incident Reports → Stale Preliminary Threshold</strong>. A Preliminary report open longer than that shows on the Dashboard and at the top of this section until it\'s finished.</p><h4>Print / Export</h4><p>Optional — unlocks once a report is Completed. Follows the Property Bible binder\'s navy &amp; gold layout, not the dashboard\'s on-screen styling, in case a hard copy is ever needed.</p><h4>Visibility</h4><p>Staff see reports they started; admins see all of them.</p>' },
 
 
 
