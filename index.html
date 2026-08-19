@@ -818,7 +818,7 @@
   <div class="nav-group">
     <div class="nav-label">Operations</div>
     <div class="nav-item" data-sec="moves" onclick="nav(this)"><span class="icon" data-icon="truck"></span><span class="nav-txt">Move Ins / Outs</span><span class="badge" id="badge-moves"></span></div>
-    <div class="nav-item" data-sec="walkthrough" onclick="nav(this)"><span class="icon" data-icon="shield"></span><span class="nav-txt">Security Patrols</span></div>
+    <div class="nav-item" data-sec="walkthrough" onclick="nav(this)"><span class="icon" data-icon="camera"></span><span class="nav-txt">Camera Check</span></div>
     <div class="nav-item" data-sec="logbook" onclick="nav(this)"><span class="icon" data-icon="book"></span><span class="nav-txt">Logbook</span><span class="badge" id="badge-logbook"></span></div>
     <div class="nav-item" data-sec="supplies" onclick="nav(this)"><span class="icon" data-icon="package"></span><span class="nav-txt">Supplies</span><span class="badge" id="badge-supplies"></span></div>
   </div>
@@ -958,12 +958,7 @@
       <div class="card"><div class="card-hdr"><span class="card-title">Amenity Bookings</span><span class="card-count" id="amenities-count">0 bookings</span><button class="btn btn-primary btn-sm ml-auto" onclick="openAddAmenity()">+ Add Booking</button></div><div class="tbl-wrap"><table><thead><tr><th>Resident</th><th>Unit</th><th>Amenity</th><th>Date</th><th>Time</th><th>Type</th><th>Notes</th><th></th></tr></thead><tbody id="amenities-tbody"></tbody></table></div></div>
     </div>
     <div class="section" id="section-walkthrough">
-      <div class="sub-tabs" id="patrol-tabs">
-        <div class="sub-tab active" onclick="patrolTab('amenity',this)">Amenity Patrol</div>
-        <div class="sub-tab" onclick="patrolTab('stairway',this)">Stairway / Exit</div>
-        <div class="sub-tab" id="patrol-tab-checkpoints" onclick="patrolTab('checkpoints',this)">Checkpoints</div>
-      </div>
-      <div id="patrol-body"></div>
+      <div id="cc-body"></div>
     </div>
     <div class="section" id="section-todos">
       <div id="todos-user-switcher" style="display:none;margin-bottom:10px;padding:6px 10px;background:var(--accent-light);border:1px solid var(--border);border-radius:var(--radius);align-items:center;gap:6px"></div>
@@ -1325,23 +1320,6 @@
           <div class="card-hdr"><span class="set-ico" data-icon="key"></span><span class="card-title">Starting Counts</span></div>
           <p class="set-desc" style="padding:0 14px 8px">How many of each physical card/key you actually have. Leave blank if you haven't counted yet — "Reconcile" logs a physical count against what the dashboard expects, so drift gets caught early instead of surprising you months later.</p>
           <div id="settings-card-pools" style="padding:0"></div>
-        </div>
-        <div class="set-group-lbl">Security Patrols</div>
-        <div class="card mb-12">
-          <div class="card-hdr"><span class="set-ico" data-icon="shield"></span><span class="card-title">Patrol Alert Threshold</span></div>
-          <div class="card-body">
-            <div class="set-row" style="border-bottom:none;padding-top:0">
-              <div><div class="set-lbl">Alert when no scan within</div><div class="set-hint">Shows a dashboard alert when a checkpoint hasn't been scanned in time. Saves automatically.</div></div>
-              <div class="flex gap-8 items-center"><input type="number" id="patrol-alert-hours" min="1" max="72" style="width:76px" placeholder="4" onchange="savePatrolAlertHours()"><span class="set-hint">hours</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="card mb-12">
-          <div class="card-hdr"><span class="set-ico" data-icon="shield"></span><span class="card-title">QR Checkpoint PIN</span></div>
-          <div class="card-body">
-            <p class="set-desc">Staff must enter this PIN before a QR checkpoint scan is logged. Keep it separate from the Team Tracker PIN.</p>
-            <div id="patrol-pin-settings-body"></div>
-          </div>
         </div>
         <div class="card mb-12">
           <div class="card-hdr"><span class="set-ico" data-icon="key"></span><span class="card-title">One-Time Key Scan PIN</span></div>
@@ -2154,7 +2132,8 @@ async function mergeTodoInbox() {
     var moveCreates = Array.isArray(rowData.moveCreates) ? rowData.moveCreates : [];
     var edits = Array.isArray(rowData.edits) ? rowData.edits : [];
     var parkingEntries = Array.isArray(rowData.parkingEntries) ? rowData.parkingEntries : [];
-    if (!inbox.length && !moveUpdates.length && !amenityUpdates.length && !logbookEntries.length && !keyEntries.length && !moveCreates.length && !edits.length && !parkingEntries.length) return;
+    var cameraCheckEntries = Array.isArray(rowData.cameraCheckEntries) ? rowData.cameraCheckEntries : [];
+    if (!inbox.length && !moveUpdates.length && !amenityUpdates.length && !logbookEntries.length && !keyEntries.length && !moveCreates.length && !edits.length && !parkingEntries.length && !cameraCheckEntries.length) return;
     var resolved = [];
     for (var i = 0; i < inbox.length; i++) {
       var item = inbox[i];
@@ -2364,6 +2343,25 @@ async function mergeTodoInbox() {
       logActivity('keys', 'create', 'Added one-time key from card-audit outreach — Unit ' + ke.unit + (ke.fob ? ' · Card #' + ke.fob : ''), ke.addedBy || 'Email Triage');
       keysTouched++;
     });
+    // Camera Check entries — always a fresh state.cameraChecks record, one per hourly
+    // check. Dedupe by id only (no srcThread concept here). `imported` defaults true
+    // from inbox_push.py so bulk-imported history stays out of the team-facing streak/
+    // feed (ccLiveChecks() filters it out) while still counting in admin-only stats.
+    var cameraChecksTouched = 0;
+    cameraCheckEntries.forEach(function (cc) {
+      if (!cc || !cc.id) return;
+      if (!state.cameraChecks) state.cameraChecks = [];
+      if (state.cameraChecks.some(function (c) { return c.id === cc.id; })) return; // already applied
+      state.cameraChecks.push({
+        id: cc.id, ts: cc.ts || Date.now(), name: cc.name || 'Unknown', shift: cc.shift,
+        completed: cc.completed, blockedReason: cc.blockedReason || '',
+        issuesObserved: cc.issuesObserved || null, location: cc.location || '',
+        whatObserved: cc.whatObserved || '', actionTaken: cc.actionTaken || '',
+        followUpRequired: cc.followUpRequired || null, comments: cc.comments || '',
+        addedBy: cc.addedBy || 'Import', imported: cc.imported !== false
+      });
+      cameraChecksTouched++;
+    });
     // Apply queued parking credential grants: always a fresh state.parking record —
     // a credential grant is a discrete event, not a per-unit profile to fill blanks
     // on. Mirrors saveParking()'s new-record path exactly (same defaults: status
@@ -2521,7 +2519,7 @@ async function mergeTodoInbox() {
     // right before clearing (rather than blanking from the stale rowData snapshot)
     // so anything a concurrent inbox_push.py run appended while we were merging/
     // saving survives instead of being silently wiped by this PATCH.
-    var seenTodoIds = {}, seenMoveIds = {}, seenAmenIds = {}, seenLogIds = {}, seenKeyIds = {}, seenMoveCreateIds = {}, seenEditIds = {}, seenParkingIds = {};
+    var seenTodoIds = {}, seenMoveIds = {}, seenAmenIds = {}, seenLogIds = {}, seenKeyIds = {}, seenMoveCreateIds = {}, seenEditIds = {}, seenParkingIds = {}, seenCameraCheckIds = {};
     inbox.forEach(function (t) { if (t && t.id) seenTodoIds[t.id] = true; });
     moveUpdates.forEach(function (m) { if (m && m.id) seenMoveIds[m.id] = true; });
     amenityUpdates.forEach(function (a) { if (a && a.id) seenAmenIds[a.id] = true; });
@@ -2530,6 +2528,7 @@ async function mergeTodoInbox() {
     moveCreates.forEach(function (mc) { if (mc && mc.id) seenMoveCreateIds[mc.id] = true; });
     edits.forEach(function (ed) { if (ed && ed.id) seenEditIds[ed.id] = true; });
     parkingEntries.forEach(function (pe) { if (pe && pe.id) seenParkingIds[pe.id] = true; });
+    cameraCheckEntries.forEach(function (cc) { if (cc && cc.id) seenCameraCheckIds[cc.id] = true; });
     var freshRowData = rowData;
     try {
       var freshRes = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox&select=data', { headers: await getSupaHdr() });
@@ -2546,7 +2545,8 @@ async function mergeTodoInbox() {
     var remainMoveCreates = (Array.isArray(freshRowData.moveCreates) ? freshRowData.moveCreates : []).filter(function (mc) { return !(mc && seenMoveCreateIds[mc.id]); });
     var remainEdits = (Array.isArray(freshRowData.edits) ? freshRowData.edits : []).filter(function (ed) { return !(ed && seenEditIds[ed.id]); });
     var remainParking = (Array.isArray(freshRowData.parkingEntries) ? freshRowData.parkingEntries : []).filter(function (pe) { return !(pe && seenParkingIds[pe.id]); });
-    var cleared = Object.assign({}, freshRowData, { todos: remainTodos, moveUpdates: remainMoves, amenityUpdates: remainAmens, logbookEntries: remainLogs, keyEntries: remainKeys, moveCreates: remainMoveCreates, edits: remainEdits, parkingEntries: remainParking });
+    var remainCameraChecks = (Array.isArray(freshRowData.cameraCheckEntries) ? freshRowData.cameraCheckEntries : []).filter(function (cc) { return !(cc && seenCameraCheckIds[cc.id]); });
+    var cleared = Object.assign({}, freshRowData, { todos: remainTodos, moveUpdates: remainMoves, amenityUpdates: remainAmens, logbookEntries: remainLogs, keyEntries: remainKeys, moveCreates: remainMoveCreates, edits: remainEdits, parkingEntries: remainParking, cameraCheckEntries: remainCameraChecks });
     await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox', {
       method: 'PATCH',
       headers: await getSupaHdr({ 'Prefer': 'return=minimal' }),
@@ -2572,6 +2572,7 @@ var SVG_ICONS = {
   truck:     _svg('<rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>'),
   building:  _svg('<path d="M3 21h18M3 7l9-4 9 4M4 7v14M20 7v14M9 21V11h6v10"/>'),
   shield:    _svg('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'),
+  camera:    _svg('<path d="M4 8l8-4 8 4v5c0 5-3.5 8-8 8s-8-3-8-8V8z"/><circle cx="12" cy="11" r="2.4"/><path d="M12 13.4V16"/>'),
   wrench:    _svg('<path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>'),
   users:     _svg('<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>'),
   key:       _svg('<circle cx="7.5" cy="15.5" r="4.5"/><path d="M21 2L10.57 12.43"/><path d="M17 6l4 4"/>'),
@@ -3176,7 +3177,7 @@ function cloneData(obj) {
   try { return JSON.parse(JSON.stringify(obj)); }
   catch (e) { return obj; }
 }
-function emptyState() { return { moves: [], units: [], keys: [], amenities: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', keyScanPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, archivedTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], transponders: { startingInventory: 100, log: [], counts: [] }, security: [], logbook: [], propertyConfig: {}, recurringReminders: [], pushLog: [], cardPools: { oneTime: { startingCount: 40, counts: [] }, vendor: { startingCount: null, counts: [] }, sgt: { startingCount: null, counts: [] } } }; }
+function emptyState() { return { moves: [], units: [], keys: [], amenities: [], walkthrough: {}, flags: [], todos: [], laf: [], passdowns: [], deletedMoveIds: [], wtFloors: [], teamlog: [], teamstaff: [], teampin: '', privatePin: '', patrolPin: '', keyScanPin: '', checkpoints: [], scans: [], patrolSettings: { alertHours: 4 }, lafSettings: { expiryDays: 30 }, passdownSettings: { recipients: 'chorus-all@alignrealestate.com' }, hiddenSections: ['maintenance', 'tours'], staffHiddenSections: [], concierge: [], residentProfiles: [], unitRecords: [], accounts: [], userTodos: {}, archivedTodos: {}, userPassdowns: {}, shiftLog: {}, supplies: [], activityLog: [], templates: [], parking: [], transponders: { startingInventory: 100, log: [], counts: [] }, security: [], logbook: [], cameraChecks: [], propertyConfig: {}, recurringReminders: [], pushLog: [], cardPools: { oneTime: { startingCount: 40, counts: [] }, vendor: { startingCount: null, counts: [] }, sgt: { startingCount: null, counts: [] } } }; }
 
 // ─── SHIFT LOG ───
 function getShiftLog() {
@@ -3445,13 +3446,13 @@ function openMobSidebar() { g('sidebar').classList.add('mob-open'); g('sb-ov').s
 function closeMobSidebar() { g('sidebar').classList.remove('mob-open'); g('sb-ov').style.display = 'none'; }
 
 // ─── NAV ───
-var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', keys: 'Key Tracker', amenities: 'Amenity Bookings', walkthrough: 'Security Patrols', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Unit Tracker', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', team: 'Team Tracker', parking: 'Parking Credentials', transponders: 'Transponders', security: 'Incident Log', session: 'Login / Session', logbook: 'Logbook', supplies: 'Supplies' };
+var SEC_TITLES = { dashboard: 'Dashboard', moves: 'Move Ins / Outs', vacant: 'Vacant Units', units: 'Unit Registry', keys: 'Key Tracker', amenities: 'Amenity Bookings', walkthrough: 'Camera Check', todos: 'To-Do List', laf: 'Lost & Found', passdown: 'Daily Passdown', calendar: 'Calendar', settings: 'Settings', import: 'Import Center', concierge: 'Concierge Log', residents: 'Unit Tracker', templates: 'Message Templates', guide: 'Guide', activity: 'Activity Log', team: 'Team Tracker', parking: 'Parking Credentials', transponders: 'Transponders', security: 'Incident Log', session: 'Login / Session', logbook: 'Logbook', supplies: 'Supplies' };
 var patrolFilter = 'amenity';
 var SEC_ACTIONS = {
   moves: '<button class="btn btn-secondary btn-sm" onclick="openLetterImport()">&#128231; Import Letter</button> <button class="btn btn-secondary btn-sm" onclick="openReconcile()">&#128269; Reconcile</button> <button class="btn btn-secondary btn-sm" onclick="printMovesReport()">&#128424; Print Report</button> <button class="btn btn-primary btn-sm" onclick="openAddMove()">+ Add Move</button>',
   keys: '<button class="btn btn-primary btn-sm" onclick="openAddKey()">+ Log Key</button>',
   amenities: '<button class="btn btn-primary btn-sm" onclick="openAddAmenity()">+ Add Booking</button>',
-  walkthrough: '<button class="btn btn-secondary btn-sm" onclick="openModal(\'modal-flag\')">Flag Issue</button>',
+  walkthrough: '<button class="btn btn-secondary btn-sm" onclick="openCameraCheckQR()">Camera Check QR Code</button> <button class="btn btn-primary btn-sm" onclick="openCameraCheckManual()">+ Log Check</button>',
   laf: '<button class="btn btn-primary btn-sm" onclick="openAddLAF()">+ Log Item</button>',
   concierge: '<button class="btn btn-primary btn-sm" onclick="openAddConcierge()">+ Log Request</button>',
   residents: '<button class="btn btn-primary btn-sm" onclick="openAddUnitRecord()">+ Add Unit Record</button>',
@@ -3544,7 +3545,7 @@ var SECTION_VOLATILE = {
   maintenance:['maint-stats','maint-tbody'], guests:['guests-stats','guests-tbody'],
   keys:['keys-stats','keys-tbody','keys-otk-cards','parking-tbody','tp-tbody','tp-history-tbody','drawer-body','vendor-drawer-body','sgt-body','cardpool-tbody'],
   amenities:['amenities-tbody'], tours:['tours-stats','tours-tbody'],
-  walkthrough:['patrol-body'], todos:['todo-list','todo-board'], laf:['laf-tbody'],
+  walkthrough:['cc-body'], todos:['todo-list','todo-board'], laf:['laf-tbody'],
   team:['team-body'], activity:['activity-tbody'], logbook:['logbook-body'], supplies:['supplies-body']
 };
 function releaseSectionDom(previousSec, nextSec) {
@@ -3965,14 +3966,16 @@ function renderDash() {
   html += '<div class="stat-card stat-clickable" onclick="navToSec(\'todos\')"><div class="stat-num">' + pendTd.length + '</div><div class="stat-lbl">Pending To-Dos</div></div>';
   html += '<div class="stat-card stat-clickable" onclick="navToSec(\'laf\')"><div class="stat-num">' + unclLAF.length + '</div><div class="stat-lbl">Lost &amp; Found</div></div>';
   html += '<div class="stat-card stat-clickable ' + (turnoverReady.length > 0 ? 'accent' : '') + '" onclick="navToMoves(\'turnover\')"><div class="stat-num">' + turnoverReady.length + '</div><div class="stat-lbl">&#128738; Ready to Turn</div></div>';
-  var checkpoints = (state.checkpoints || []);
-  var scans = (state.scans || []);
-  var alertHours = (state.patrolSettings && state.patrolSettings.alertHours) || 4;
-  var patrolOverdue = checkpoints.filter(function(cp) { var last = scans.filter(function(s) { return s.checkpointId === cp.id; }).sort(function(a,b) { return b.timestamp - a.timestamp; })[0]; return !last || (Date.now() - last.timestamp) > alertHours * 3600000; }).length;
-  if (checkpoints.length) html += '<div class="stat-card stat-clickable ' + (patrolOverdue > 0 ? 'red' : 'green') + '" onclick="navToSec(\'walkthrough\')"><div class="stat-num">' + patrolOverdue + '</div><div class="stat-lbl">&#128737; Patrol Overdue</div></div>';
   var supLow = (state.supplies||[]).filter(function(s){ return s.lowAt!=null && s.qty<=s.lowAt; }).length;
   if (supLow > 0) html += '<div class="stat-card stat-clickable" onclick="navToSec(\'supplies\')" style="border-color:var(--amber)"><div class="stat-num" style="color:var(--amber)">' + supLow + '</div><div class="stat-lbl">Supplies Low</div></div>';
   html += '</div>';
+  // Camera Check streak — replaces the old Patrol Overdue alert (2026-08-19). Live checks only,
+  // so this reads the same team-wide number ccTeamStreak()/renderCameraCheck() use.
+  var ccStreakDash = ccTeamStreak();
+  html += '<div class="stat-clickable" onclick="navToSec(\'walkthrough\')" style="cursor:pointer;background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);border-radius:var(--radius);padding:16px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:16px;margin-bottom:14px">'
+    + '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1 3-2 4-2 7a4 4 0 0 0 8 0c0-1.5-1-2.5-1-2.5s1 4-2 4-2-2-2-3.5c0-2.5 2-3 2-5.5-2 .5-4 2.5-4.5 5C9 9 8 10.5 8 13a4 4 0 0 0 4 4"/></svg>'
+    + '<div><div style="font-family:var(--font-mono);font-size:30px;font-weight:600;color:#fff;letter-spacing:-1px;line-height:1">' + ccStreakDash + '</div>'
+    + '<div style="font-size:11.5px;color:rgba(255,255,255,0.82);margin-top:3px">consecutive on-time camera checks — team streak</div></div></div>';
   // Building Map summary card
   var unitRecs = state.unitRecords || [];
   if (unitRecs.length > 0) {
@@ -8693,10 +8696,158 @@ function timeAgo(ts) {
   return Math.floor(hrs / 24) + 'd ago';
 }
 
-function renderWT() {
-  _applyPatrolTabVisibility();
-  if (patrolFilter === 'checkpoints') { renderCheckpoints(); return; }
-  renderPatrolByType(patrolFilter);
+function renderWT() { renderCameraCheck(); }
+
+// ── Camera Check — replaces the old Security Patrols section (2026-08-19).
+// "Live" checks exclude imported historical data on purpose: the team's streak and
+// the recent-activity feed start fresh at launch; admin's stats/history use everything.
+function ccLiveChecks() { return (state.cameraChecks || []).filter(function(c){ return !c.imported; }); }
+function ccAllChecks() { return state.cameraChecks || []; }
+var CC_GAP_MS = 90 * 60000; // >90 min between checks counts as a missed hour
+
+function ccTeamStreak() {
+  var checks = ccLiveChecks().slice().sort(function(a,b){ return b.ts - a.ts; });
+  var streak = 0;
+  for (var i = 0; i < checks.length; i++) {
+    if (checks[i].completed !== 'Yes') break;
+    streak++;
+    if (i < checks.length - 1 && (checks[i].ts - checks[i+1].ts) > CC_GAP_MS) break;
+  }
+  return streak;
+}
+function ccBestStreak() {
+  var checks = ccLiveChecks().slice().sort(function(a,b){ return a.ts - b.ts; });
+  var best = 0, run = 0, prevTs = null;
+  checks.forEach(function(c) {
+    if (c.completed !== 'Yes') { run = 0; prevTs = null; return; }
+    if (prevTs !== null && (c.ts - prevTs) > CC_GAP_MS) run = 0;
+    run++; prevTs = c.ts;
+    if (run > best) best = run;
+  });
+  return best;
+}
+function ccMissedGaps(checks, sinceTs) {
+  var list = (checks || []).filter(function(c){ return !sinceTs || c.ts >= sinceTs; }).slice().sort(function(a,b){ return a.ts - b.ts; });
+  var gaps = [];
+  for (var i = 1; i < list.length; i++) {
+    if ((list[i].ts - list[i-1].ts) > CC_GAP_MS) gaps.push({ from: list[i-1].ts, to: list[i].ts, shift: list[i].shift });
+  }
+  return gaps;
+}
+function ccComplianceStats() {
+  var all = ccAllChecks(), now = Date.now(), weekAgo = now - 7*86400000;
+  var recent = all.filter(function(c){ return c.ts >= weekAgo; });
+  var gaps = ccMissedGaps(all, weekAgo);
+  var compliance = Math.max(0, Math.round((1 - gaps.length/168) * 100));
+  var byShift = { AM:{total:0,blocked:0}, PM:{total:0,blocked:0}, Overnight:{total:0,blocked:0} };
+  recent.forEach(function(c) { var s = byShift[c.shift]; if (s) { s.total++; if (c.completed !== 'Yes') s.blocked++; } });
+  var bestShift = null, bestRate = -1;
+  Object.keys(byShift).forEach(function(s) {
+    var d = byShift[s]; if (!d.total) return;
+    var rate = Math.round((1 - d.blocked/d.total) * 100);
+    if (rate > bestRate) { bestRate = rate; bestShift = s; }
+  });
+  var locCounts = {};
+  all.forEach(function(c) { if (c.issuesObserved === 'Yes, issue observed' && c.location) { var k = c.location.trim(); if (k) locCounts[k] = (locCounts[k]||0)+1; } });
+  var topLoc = null, topLocN = 0;
+  Object.keys(locCounts).forEach(function(k) { if (locCounts[k] > topLocN) { topLocN = locCounts[k]; topLoc = k; } });
+  return { compliance: compliance, missedCount: gaps.length, bestShift: bestShift, bestShiftRate: bestRate, topLoc: topLoc, topLocN: topLocN, gaps: gaps };
+}
+function ccPersonCounts() {
+  var counts = {};
+  ccAllChecks().forEach(function(c) {
+    if (!counts[c.name]) counts[c.name] = { total: 0, blocked: 0 };
+    counts[c.name].total++;
+    if (c.completed !== 'Yes') counts[c.name].blocked++;
+  });
+  return counts;
+}
+function ccQrImgHtml(size) {
+  var scanUrl = 'https://gabinoserrano-cloud.github.io/FrontDesk-Chorus/?camerascan=1';
+  var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=' + size + 'x' + size + '&margin=6&data=' + encodeURIComponent(scanUrl);
+  return '<img src="' + qrUrl + '" style="width:' + size + 'px;height:' + size + 'px;border:1px solid var(--border);border-radius:4px" alt="Camera Check QR">';
+}
+
+function renderCameraCheck() {
+  var body = g('cc-body'); if (!body) return;
+  var isAdmin = currentUser && currentUser.role === 'admin';
+  var streak = ccTeamStreak(), best = ccBestStreak();
+  var recent = ccLiveChecks().slice().sort(function(a,b){ return b.ts - a.ts; }).slice(0, 8);
+
+  var html = '';
+  html += '<div style="background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow);display:flex;align-items:center;gap:20px;margin-bottom:14px">'
+    + '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1 3-2 4-2 7a4 4 0 0 0 8 0c0-1.5-1-2.5-1-2.5s1 4-2 4-2-2-2-3.5c0-2.5 2-3 2-5.5-2 .5-4 2.5-4.5 5C9 9 8 10.5 8 13a4 4 0 0 0 4 4"/></svg>'
+    + '<div><div style="font-family:var(--font-mono);font-size:38px;font-weight:600;color:#fff;letter-spacing:-1px;line-height:1">' + streak + '</div>'
+    + '<div style="font-size:12.5px;color:rgba(255,255,255,0.82);margin-top:4px">consecutive on-time checks — the whole team keeps this going</div></div>'
+    + '<div style="margin-left:auto;text-align:right"><div style="font-family:var(--font-mono);font-size:13px;color:rgba(255,255,255,0.75)">Best: ' + best + '</div><div style="font-size:10.5px;color:rgba(255,255,255,0.55);margin-top:2px">team record</div></div></div>';
+
+  html += '<div style="display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start;margin-bottom:16px">';
+  html += '<div class="card"><div class="card-hdr"><span class="card-title">Scan to Check In</span></div><div class="card-body" style="display:flex;flex-direction:column;align-items:center;gap:10px">'
+    + '<div id="cc-qr-img"></div>'
+    + '<div style="font-size:11.5px;color:var(--text3);text-align:center;line-height:1.5">Posted at the front desk, next to the camera monitors. Scan with any team phone to log this hour\'s check.</div></div></div>';
+
+  html += '<div class="card"><div class="card-hdr"><span class="card-title">Recent Check-Ins</span><span class="card-count">' + recent.length + ' shown</span></div><div class="card-body">';
+  if (!recent.length) {
+    html += '<div style="color:var(--text3);font-size:12px">No check-ins logged yet.</div>';
+  } else {
+    recent.forEach(function(c) {
+      var initials = (c.name||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+      var timeStr = new Date(c.ts).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      var statusPill = c.completed !== 'Yes'
+        ? '<span class="pill" style="background:var(--amber-light);color:var(--amber);margin-left:auto">Blocked</span>'
+        : (c.issuesObserved === 'Yes, issue observed'
+          ? '<span class="pill" style="background:var(--red-light);color:var(--red);margin-left:auto">Issue reported</span>'
+          : '<span class="pill" style="background:var(--green-light);color:var(--green);margin-left:auto">All clear</span>');
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border2)">'
+        + '<div style="width:28px;height:28px;border-radius:50%;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">' + esc(initials) + '</div>'
+        + '<div><div style="font-size:12.5px;font-weight:500">' + esc(c.name) + '</div><div style="font-size:10.5px;color:var(--text3);font-family:var(--font-mono)">' + esc(c.shift) + ' · ' + timeStr + '</div></div>'
+        + statusPill + '</div>';
+    });
+  }
+  html += '</div></div></div>';
+
+  if (isAdmin) {
+    var stats = ccComplianceStats();
+    var pc = ccPersonCounts();
+    html += '<div style="display:flex;align-items:baseline;gap:10px;margin:22px 0 4px"><h3 style="font-family:var(--font-serif);font-size:18px;margin:0">Camera Check History</h3><span style="font-size:9.5px;font-weight:700;letter-spacing:.5px;color:var(--accent);background:var(--accent-light);padding:2px 8px;border-radius:10px">ADMIN ONLY</span></div>';
+    html += '<div style="font-size:12px;color:var(--text3);margin-bottom:12px">Compliance, gaps, and patterns across the whole team, including imported history from before this feature launched.</div>';
+
+    html += '<div class="stat-grid">';
+    html += '<div class="stat-card"><div class="stat-num">' + stats.compliance + '%</div><div class="stat-lbl">Compliance, last 7 days</div></div>';
+    html += '<div class="stat-card' + (stats.missedCount>0?' red':'') + '"><div class="stat-num">' + stats.missedCount + '</div><div class="stat-lbl">Missed checks, last 7 days</div></div>';
+    html += '<div class="stat-card"><div class="stat-num">' + (stats.bestShift||'—') + '</div><div class="stat-lbl">Best shift' + (stats.bestShift? ' — '+stats.bestShiftRate+'% on time':'') + '</div></div>';
+    html += '<div class="stat-card"><div class="stat-num" style="font-size:16px">' + (stats.topLoc? esc(stats.topLoc.slice(0,18)) : '—') + '</div><div class="stat-lbl">Most flagged location' + (stats.topLoc? ' — '+stats.topLocN+'×':'') + '</div></div>';
+    html += '</div>';
+
+    if (stats.gaps.length) {
+      html += '<div class="card" style="margin-bottom:14px"><div class="card-hdr"><span class="card-title">Missed Checks</span><span class="card-count">' + stats.gaps.length + ' gap(s), last 7 days</span></div><div class="card-body" style="padding:0">';
+      stats.gaps.slice(0,10).forEach(function(g) {
+        html += '<div style="display:flex;align-items:center;gap:14px;padding:9px 13px;border-bottom:1px solid var(--border2);font-size:12px">'
+          + '<span class="mono">' + new Date(g.from).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) + ' – ' + new Date(g.to).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + '</span>'
+          + '<span class="pill" style="background:var(--amber-light);color:var(--amber)">' + esc(g.shift||'') + '</span>'
+          + '<span style="color:var(--text3);margin-left:auto">No check logged in this window</span></div>';
+      });
+      html += '</div></div>';
+    }
+
+    html += '<div style="display:grid;grid-template-columns:1fr 260px;gap:16px;align-items:start">';
+    html += '<div class="card"><div class="card-hdr"><span class="card-title">All Check-Ins</span><span class="card-count">' + ccAllChecks().length + ' total</span></div><div class="tbl-wrap"><table><thead><tr><th>Name</th><th>Shift</th><th>Date / Time</th><th>Completed</th><th>Issue</th><th>Location</th></tr></thead><tbody>';
+    ccAllChecks().slice().sort(function(a,b){return b.ts-a.ts;}).slice(0,60).forEach(function(c) {
+      html += '<tr><td>' + esc(c.name) + (c.imported?' <span style="font-size:9px;color:var(--text3)">(imported)</span>':'') + '</td><td class="mono">' + esc(c.shift) + '</td><td class="mono">' + new Date(c.ts).toLocaleString('en-US',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'}) + '</td><td>' + esc(c.completed) + '</td><td>' + (c.issuesObserved==='Yes, issue observed' ? '<span class="pill pill-high">Yes</span>' : '<span class="pill pill-low">No</span>') + '</td><td class="mono">' + esc(c.location||'—') + '</td></tr>';
+    });
+    html += '</tbody></table></div></div>';
+
+    html += '<div class="card"><div class="card-hdr"><span class="card-title">Completion Counts</span></div><div>';
+    Object.keys(pc).sort(function(a,b){return pc[b].total-pc[a].total;}).forEach(function(name) {
+      var d = pc[name];
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 13px;border-bottom:1px solid var(--border2);font-size:12px"><span>' + esc(name) + '</span><span><span class="mono" style="font-weight:600">' + d.total + '</span>' + (d.blocked>0?' <span style="font-size:10.5px;color:var(--red)">'+d.blocked+' blocked</span>':'') + '</span></div>';
+    });
+    html += '</div></div></div>';
+  }
+
+  body.innerHTML = html;
+  var qrHost = g('cc-qr-img');
+  if (qrHost) qrHost.innerHTML = ccQrImgHtml(140);
 }
 
 function renderPatrolByType(type) {
@@ -12682,6 +12833,181 @@ function setModalMode(titleId, btnId, titleText, btnText) {
 
 // ─── KEY EDIT ───
 var editingKeyId = null;
+function openCameraCheckQR() {
+  var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=8&data=' + encodeURIComponent('https://gabinoserrano-cloud.github.io/FrontDesk-Chorus/?camerascan=1');
+  var ov = g('modal-cc-qr');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.className = 'modal-ov'; ov.id = 'modal-cc-qr';
+    ov.innerHTML = '<div class="modal" style="max-width:360px">'
+      + '<div class="modal-hdr"><span class="modal-title">Camera Check QR Code</span><button class="modal-close" aria-label="Close" onclick="closeModal(\'modal-cc-qr\')">&#x2715;</button></div>'
+      + '<div class="modal-bdy" style="text-align:center">'
+      + '<img src="' + qrUrl + '" style="width:200px;height:200px;border-radius:6px;margin:4px auto 14px;display:block" alt="Camera Check QR code">'
+      + '<p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:4px">Print this and post it next to the camera monitors. Anyone on the team, including Kiran\'s guard team, can scan it to log the hourly check &mdash; no dashboard login needed.</p>'
+      + '</div>'
+      + '<div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal(\'modal-cc-qr\')">Close</button><button class="btn btn-primary" onclick="window.print()">Print</button></div>'
+      + '</div>';
+    document.body.appendChild(ov);
+  }
+  openModal('modal-cc-qr');
+}
+function openCameraCheckManual() { showCameraCheckOverlay(); }
+
+function showCameraCheckOverlay() {
+  var overlay = g('scan-overlay'); if (!overlay) return;
+  overlay.innerHTML = '<div style="text-align:left;max-width:340px;width:100%;padding:0 20px;max-height:90vh;overflow-y:auto">'
+    + '<div style="text-align:center;font-size:18px;font-weight:600;margin-bottom:16px;font-family:var(--font-serif)">Camera Check</div>'
+    + '<div class="fg"><label>Name</label><input type="text" id="cc-name" placeholder="Your name" style="width:100%;font-size:16px;padding:10px;border:1px solid var(--border);border-radius:var(--radius)"></div>'
+    + '<div class="fg" style="margin-top:14px"><label>Shift</label><div style="display:flex;gap:8px;margin-top:6px">'
+      + '<div class="cc-shift-btn" data-v="AM" onclick="ccPickShift(this)" style="flex:1;text-align:center;padding:9px 0;border-radius:20px;border:1px solid var(--border);cursor:pointer">AM</div>'
+      + '<div class="cc-shift-btn" data-v="PM" onclick="ccPickShift(this)" style="flex:1;text-align:center;padding:9px 0;border-radius:20px;border:1px solid var(--border);cursor:pointer">PM</div>'
+      + '<div class="cc-shift-btn" data-v="Overnight" onclick="ccPickShift(this)" style="flex:1;text-align:center;padding:9px 0;border-radius:20px;border:1px solid var(--border);cursor:pointer">Overnight</div>'
+    + '</div></div>'
+    + '<div class="fg" style="margin-top:14px"><label>Camera monitor check completed?</label><div style="display:flex;gap:8px;margin-top:6px">'
+      + '<div class="cc-yn-btn" data-v="Yes" onclick="ccPickCompleted(this)" style="flex:1;text-align:center;padding:10px 0;border-radius:var(--radius);border:1px solid var(--border);cursor:pointer">Yes</div>'
+      + '<div class="cc-yn-btn" data-v="No" onclick="ccPickCompleted(this)" style="flex:1;text-align:center;padding:10px 0;border-radius:var(--radius);border:1px solid var(--border);cursor:pointer">No</div>'
+    + '</div></div>'
+    + '<div id="cc-blocked-wrap" style="display:none;margin-top:14px"><label style="font-size:12.5px;font-weight:600;color:var(--text2)">What prevented the check? <span style="font-weight:400;color:var(--text3)">(optional)</span></label>'
+      + '<textarea id="cc-blocked-reason" placeholder="e.g. Magic Monitor frozen, monitors blank..." style="width:100%;margin-top:6px;font-size:13.5px;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius);min-height:52px"></textarea></div>'
+    + '<div id="cc-issues-wrap" style="display:none;margin-top:14px"><label style="font-size:12.5px;font-weight:600;color:var(--text2)">Were any issues observed?</label><div style="display:flex;flex-direction:column;gap:9px;margin-top:6px">'
+      + '<div class="cc-issue-btn" data-v="No issues observed" onclick="ccPickIssue(this)" style="border:1.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;cursor:pointer;font-size:13px">No issues observed</div>'
+      + '<div class="cc-issue-btn" data-v="Yes, issue observed" onclick="ccPickIssue(this)" style="border:1.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;cursor:pointer;font-size:13px">Yes, issue observed</div>'
+    + '</div>'
+    + '<div id="cc-issue-detail" style="display:none;border-left:2px solid var(--red);padding-left:13px;margin-top:13px">'
+      + '<div class="fg"><label>Location of issue</label><input type="text" id="cc-location" style="width:100%;font-size:13.5px;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius)"></div>'
+      + '<div class="fg" style="margin-top:12px"><label>What was observed</label><textarea id="cc-observed" style="width:100%;font-size:13.5px;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius);min-height:52px"></textarea></div>'
+      + '<div class="fg" style="margin-top:12px"><label>Action taken</label><textarea id="cc-action" style="width:100%;font-size:13.5px;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius);min-height:52px"></textarea></div>'
+      + '<div class="fg" style="margin-top:12px"><label>Is immediate follow-up required?</label><div style="display:flex;gap:8px;margin-top:6px">'
+        + '<div class="cc-followup-btn" data-v="Yes" onclick="ccPickFollowup(this)" style="flex:1;text-align:center;padding:9px 0;border-radius:var(--radius);border:1px solid var(--border);cursor:pointer;font-size:12.5px">Yes</div>'
+        + '<div class="cc-followup-btn" data-v="No" onclick="ccPickFollowup(this)" style="flex:1;text-align:center;padding:9px 0;border-radius:var(--radius);border:1px solid var(--border);cursor:pointer;font-size:12.5px">No</div>'
+      + '</div></div>'
+    + '</div></div>'
+    + '<div class="fg" style="margin-top:14px"><label>Comments <span style="font-weight:400;color:var(--text3)">(optional)</span></label><textarea id="cc-comments" style="width:100%;margin-top:6px;font-size:13.5px;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius);min-height:52px"></textarea></div>'
+    + '<button class="btn btn-primary" id="cc-submit" onclick="submitCameraCheck()" style="width:100%;justify-content:center;font-size:15px;padding:13px 0;margin-top:16px">Submit Check</button>'
+    + '<div style="margin-top:12px;text-align:center"><span style="font-size:12px;color:var(--text3);cursor:pointer" id="cc-cancel-lnk">Cancel</span></div>'
+    + '</div>';
+  overlay.style.display = 'flex';
+  window._ccState = { shift: null, completed: null, issues: null, followup: null };
+  var cancelLnk = g('cc-cancel-lnk');
+  if (cancelLnk) cancelLnk.addEventListener('click', closeCameraCheckOverlay);
+  var nameInp = g('cc-name'); if (nameInp) nameInp.focus();
+}
+function ccPickShift(el) {
+  document.querySelectorAll('.cc-shift-btn').forEach(function(b){ b.style.background=''; b.style.color=''; b.style.borderColor='var(--border)'; });
+  el.style.background = 'var(--accent)'; el.style.color = '#fff'; el.style.borderColor = 'var(--accent)';
+  window._ccState.shift = el.getAttribute('data-v');
+}
+function ccPickCompleted(el) {
+  document.querySelectorAll('.cc-yn-btn').forEach(function(b){ b.style.background=''; b.style.color=''; b.style.borderColor='var(--border)'; });
+  el.style.background = 'var(--accent)'; el.style.color = '#fff'; el.style.borderColor = 'var(--accent)';
+  window._ccState.completed = el.getAttribute('data-v');
+  var blockedWrap = g('cc-blocked-wrap'), issuesWrap = g('cc-issues-wrap');
+  if (window._ccState.completed === 'No') {
+    if (blockedWrap) blockedWrap.style.display = '';
+    if (issuesWrap) issuesWrap.style.display = 'none';
+  } else {
+    if (blockedWrap) blockedWrap.style.display = 'none';
+    if (issuesWrap) issuesWrap.style.display = '';
+  }
+}
+function ccPickIssue(el) {
+  document.querySelectorAll('.cc-issue-btn').forEach(function(b){ b.style.borderColor='var(--border)'; b.style.background=''; });
+  el.style.borderColor = 'var(--red)'; el.style.background = 'var(--red-light)';
+  window._ccState.issues = el.getAttribute('data-v');
+  var detail = g('cc-issue-detail');
+  if (detail) detail.style.display = window._ccState.issues === 'Yes, issue observed' ? '' : 'none';
+}
+function ccPickFollowup(el) {
+  document.querySelectorAll('.cc-followup-btn').forEach(function(b){ b.style.background=''; b.style.color=''; b.style.borderColor='var(--border)'; });
+  el.style.background = 'var(--accent)'; el.style.color = '#fff'; el.style.borderColor = 'var(--accent)';
+  window._ccState.followup = el.getAttribute('data-v');
+}
+function closeCameraCheckOverlay() {
+  var overlay = g('scan-overlay'); if (!overlay) return;
+  if (window._openedViaScan) {
+    overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
+      + '<div style="font-size:48px;margin-bottom:16px">&#128274;</div>'
+      + '<div style="font-size:20px;font-weight:600;margin-bottom:8px">Staff Access Only</div>'
+      + '<div style="font-size:14px;color:var(--text2)">If you are staff, please scan the Camera Check QR code at the front desk.</div></div>';
+  } else {
+    overlay.style.display = 'none';
+    if (window.history && window.history.replaceState) window.history.replaceState({}, '', window.location.pathname);
+  }
+}
+function submitCameraCheck() {
+  var name = (g('cc-name') ? g('cc-name').value.trim() : '');
+  var st = window._ccState || {};
+  if (!name) { toast('Enter your name'); return; }
+  if (!st.shift) { toast('Select a shift'); return; }
+  if (!st.completed) { toast('Answer whether the camera monitor check was completed'); return; }
+  if (st.completed === 'Yes' && !st.issues) { toast('Answer whether any issues were observed'); return; }
+
+  if (!state.cameraChecks) state.cameraChecks = [];
+  var rec = {
+    id: uid(),
+    ts: Date.now(),
+    name: name,
+    shift: st.shift,
+    completed: st.completed,
+    blockedReason: st.completed === 'No' ? (g('cc-blocked-reason')?g('cc-blocked-reason').value.trim():'') : '',
+    issuesObserved: st.completed === 'Yes' ? st.issues : null,
+    location: st.issues === 'Yes, issue observed' ? (g('cc-location')?g('cc-location').value.trim():'') : '',
+    whatObserved: st.issues === 'Yes, issue observed' ? (g('cc-observed')?g('cc-observed').value.trim():'') : '',
+    actionTaken: st.issues === 'Yes, issue observed' ? (g('cc-action')?g('cc-action').value.trim():'') : '',
+    followUpRequired: st.issues === 'Yes, issue observed' ? st.followup : null,
+    comments: (g('cc-comments') ? g('cc-comments').value.trim() : ''),
+    addedBy: currentUser ? currentUser.name : name,
+    imported: false
+  };
+  state.cameraChecks.push(rec);
+  logActivity('walkthrough', 'create', 'Camera check logged — ' + name + ' · ' + st.shift + (rec.issuesObserved==='Yes, issue observed' ? ' · issue observed' : (st.completed==='No' ? ' · check blocked' : '')));
+
+  // Issue observed → also create a Security/Logbook entry so it's passdown-visible immediately.
+  if (rec.issuesObserved === 'Yes, issue observed') {
+    if (!state.logbook) state.logbook = [];
+    state.logbook.push({
+      id: uid(), category: 'security', type: 'Camera Check — Issue Observed', unit: '', resident: '',
+      location: rec.location, status: 'open', handledBy: name,
+      notes: (rec.whatObserved || '') + (rec.actionTaken ? ' Action taken: ' + rec.actionTaken : ''),
+      nextAction: rec.followUpRequired === 'Yes' ? 'Immediate follow-up needed — see camera check log for details.' : 'No immediate follow-up flagged — reference only.',
+      createdAt: Date.now(), addedBy: currentUser ? currentUser.name : name, log: []
+    });
+  }
+  // Blocked + a reason given → likely a system problem, log it so IT/maintenance sees the pattern.
+  if (rec.completed === 'No' && rec.blockedReason) {
+    if (!state.logbook) state.logbook = [];
+    state.logbook.push({
+      id: uid(), category: 'request', type: 'Camera Check Blocked', unit: '', resident: '',
+      location: '', status: 'open', handledBy: name,
+      notes: 'Hourly camera check could not be completed (' + st.shift + ' shift): ' + rec.blockedReason,
+      nextAction: 'Confirm Magic Monitor / camera system is back up; escalate to IT if this recurs.',
+      createdAt: Date.now(), addedBy: currentUser ? currentUser.name : name, log: []
+    });
+  }
+
+  scheduleSave(); updateBadges();
+  if (curSec === 'walkthrough') renderCameraCheck();
+  if (curSec === 'dashboard') renderDash();
+
+  showCameraCheckSuccess(rec, ccTeamStreak());
+}
+function showCameraCheckSuccess(rec, streak) {
+  var overlay = g('scan-overlay'); if (!overlay) return;
+  var msg = rec.completed === 'No' ? 'Logged — thanks for flagging it.' : (rec.issuesObserved === 'Yes, issue observed' ? 'Check logged — issue reported and added to the logbook.' : 'Check logged — no issues, nice work.');
+  overlay.innerHTML = '<div style="text-align:center;max-width:320px;width:100%;padding:0 20px">'
+    + '<div style="width:76px;height:76px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;margin:0 auto 20px">'
+    + '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6"/></svg></div>'
+    + '<div style="font-family:var(--font-serif);font-size:21px;font-weight:600;margin-bottom:6px">Check logged</div>'
+    + '<div style="font-size:12.5px;color:var(--text2);margin-bottom:24px">' + esc(msg) + '</div>'
+    + (rec.completed === 'Yes' ? ('<div style="background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);border-radius:var(--radius);padding:20px 26px;margin-bottom:26px">'
+      + '<div style="font-family:var(--font-mono);font-size:40px;font-weight:600;color:#fff;letter-spacing:-1px">' + streak + '</div>'
+      + '<div style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:4px">consecutive on-time checks — team streak</div></div>') : '')
+    + '<button class="btn btn-primary" style="width:100%;justify-content:center;font-size:14.5px;padding:13px 0;margin-bottom:10px" onclick="showCameraCheckOverlay()">Log Another</button>'
+    + '<span style="font-size:12px;color:var(--text3);cursor:pointer" onclick="closeCameraCheckOverlay()">Done</span></div>';
+  overlay.style.display = 'flex';
+  if (window.history && window.history.replaceState) window.history.replaceState({}, '', window.location.pathname);
+}
+
 function openKeyScanQR() {
   var baseUrl = 'https://gabinoserrano-cloud.github.io/FrontDesk-Chorus/';
   var scanUrl = baseUrl + '?keyscan=1';
@@ -13753,7 +14079,7 @@ function openTeamEntryModal(entry) {
 
 var TOGGLEABLE_SECTIONS = [
   { id: 'moves', label: 'Move Ins / Outs' },
-  { id: 'walkthrough', label: 'Security Patrols' },
+  { id: 'walkthrough', label: 'Camera Check' },
   { id: 'logbook', label: 'Logbook' },
   { id: 'supplies', label: 'Supplies & Inventory' },
   { id: 'keys', label: 'Key Tracker' },
@@ -15279,8 +15605,8 @@ async function init() {
   ['mousemove','mousedown','keydown','touchstart','scroll'].forEach(function(ev) {
     document.addEventListener(ev, _resetActivity, { passive: true });
   });
-  var pendingScanId = null, pendingKeyScan = false;
-  try { var params = new URLSearchParams(window.location.search); pendingScanId = params.get('scan'); pendingKeyScan = params.get('keyscan') === '1'; } catch(e) {}
+  var pendingScanId = null, pendingKeyScan = false, pendingCameraScan = false;
+  try { var params = new URLSearchParams(window.location.search); pendingScanId = params.get('scan'); pendingKeyScan = params.get('keyscan') === '1'; pendingCameraScan = params.get('camerascan') === '1'; } catch(e) {}
   await pullCloud();
   await migratePinsToHashed();
   purgeDeadResidentProfiles();
@@ -15316,13 +15642,13 @@ async function init() {
   refreshUnitDatalist();
   updatePropertyUI();
   lastSyncTs = Date.now();
-  if (pendingScanId || pendingKeyScan) {
+  if (pendingScanId || pendingKeyScan || pendingCameraScan) {
     // Page opened via QR code — hide the dashboard entirely until after the scan
     window._openedViaScan = true;
     g('sidebar').style.display = 'none';
     g('main').style.display = 'none';
     if (g('mob-nav')) g('mob-nav').style.display = 'none';
-    if (pendingKeyScan) showKeyScanOverlay(); else showScanOverlay(pendingScanId);
+    if (pendingCameraScan) showCameraCheckOverlay(); else if (pendingKeyScan) showKeyScanOverlay(); else showScanOverlay(pendingScanId);
   } else {
     window._openedViaScan = false;
     showLogin();
