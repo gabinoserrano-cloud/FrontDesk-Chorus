@@ -927,7 +927,7 @@
         <div class="tbl-wrap"><table><thead><tr><th>Pool</th><th>Starting</th><th>Issued Out</th><th>In Stock (calc)</th><th>Last Count</th><th>Unaccounted</th><th></th></tr></thead><tbody id="cardpool-tbody"></tbody></table></div></div>
         <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">One-Time Card Drawer</span><span class="card-count" id="drawer-count"></span><button class="btn btn-secondary btn-sm ml-auto" onclick="printCardPoolLabels('oneTime')">&#128424; Print Labels</button></div><div class="card-body" id="drawer-body" style="padding:14px"></div></div>
         <!-- Self-Guided Tour keys: unit-owned pairs, labeled with the unit number -->
-        <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">Self-Guided Tour Keys</span><span class="card-count" id="sgt-count"></span><button class="btn btn-secondary btn-sm ml-auto" onclick="printSgtLabels()">&#128424; Print Labels</button><button class="btn btn-secondary btn-sm" onclick="openSgtRoster()">&#9881; Manage Units</button></div><div class="card-body" id="sgt-body" style="padding:14px"></div></div>
+        <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">Self-Guided Tour Keys</span><span class="card-count" id="sgt-count"></span><button class="btn btn-secondary btn-sm ml-auto" onclick="openSgtPrintPicker()">&#128424; Print Labels</button><button class="btn btn-secondary btn-sm" onclick="openSgtRoster()">&#9881; Manage Units</button></div><div class="card-body" id="sgt-body" style="padding:14px"></div></div>
         <div class="card"><div class="card-hdr"><span class="card-title">Vendor Cards</span><span class="card-count" id="vendor-drawer-count"></span><button class="btn btn-secondary btn-sm ml-auto" onclick="printCardPoolLabels('vendor')">&#128424; Print Labels</button></div><div class="card-body" id="vendor-drawer-body" style="padding:14px"></div></div>
       </div>
       <div id="parking-view" style="display:none">
@@ -1635,6 +1635,18 @@
     <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addSgtRosterRow()">+ Add Unit</button>
   </div>
   <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-sgt-roster')">Cancel</button><button class="btn btn-primary" onclick="saveSgtRoster()">Save</button></div>
+</div></div>
+
+<div class="modal-ov" id="modal-sgt-print"><div class="modal" style="max-width:480px">
+  <div class="modal-hdr"><span class="modal-title">Print Tour Key Labels</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-sgt-print')">&#x2715;</button></div>
+  <div class="modal-bdy">
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:6px;font-size:12px">
+      <a href="javascript:void(0)" onclick="sgtPrintToggleAll(true)">Select all</a>
+      <a href="javascript:void(0)" onclick="sgtPrintToggleAll(false)">Select none</a>
+    </div>
+    <div id="sgt-print-rows"></div>
+  </div>
+  <div class="modal-ftr"><button class="btn btn-secondary" onclick="closeModal('modal-sgt-print')">Cancel</button><button class="btn btn-primary" onclick="printSgtLabelsSelected()">&#128424; Print Selected</button></div>
 </div></div>
 
 <div class="modal-ov" id="modal-transponder"><div class="modal" style="max-width:520px">
@@ -6613,12 +6625,19 @@ function openLabelSheet(titleText, items, cellHtml) {
   if (!win) { toast('Pop-up blocked — allow pop-ups for this site to print labels'); return; }
   win.document.open(); win.document.write(doc); win.document.close();
 }
+// Embedded (not loaded from Binder/Icon-Navy.png) because that file is gitignored as a local-only
+// brand asset — it exists on disk here but never reaches the deployed site, so the print sheet's
+// seal showed as a broken image in production even though it worked when tested locally. A data
+// URI has no path/deploy dependency at all, so it renders identically everywhere.
+var LABEL_ICON_DATA_URI = 'data:image/png;base64,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';
 // ── Print SGT key labels (Avery 8460 / 5160-compatible: 2.625in x 1in, 3 cols x 10 rows) ──
 // Same layout as the standalone sgt-tour-key-labels-avery8460.html sheet, generated live from the
 // roster instead of a hand-edited unit list, and printing one label per physical key (a unit with
 // 3 keys gets 3 labels) rather than a fixed copy count. Paginates across multiple 30-label sheets.
-function printSgtLabels() {
-  var roster = sgtSortRoster(sgtUnits());
+// Accepts an optional pre-filtered `units` array (from the print picker); defaults to the full
+// roster so any other future caller can still print everything without passing anything.
+function printSgtLabels(units) {
+  var roster = units || sgtSortRoster(sgtUnits());
   if (!roster.length) { toast('No tour-key units set up yet — add units via Manage Units first'); return; }
   var labels = [];
   roster.forEach(function (u) {
@@ -6626,15 +6645,42 @@ function printSgtLabels() {
     for (var c = 0; c < copies; c++) labels.push(u);
   });
   if (!labels.length) { toast('No keys to print — check key counts in Manage Units'); return; }
-  // Resolved to an absolute URL so it still loads once written into a blank window
-  // (a relative path would otherwise resolve against about:blank, not this page).
-  var iconUrl = new URL('Binder/Icon-Navy.png', location.href).href;
   openLabelSheet('SGT Tour Key Labels — Avery 8460', labels, function (u) {
     var bedLine = String(u.bed || '').trim();
     var sqftLine = (u.sqft != null && u.sqft !== '') ? (parseInt(u.sqft, 10) + ' SF') : '';
     var metaLine = [bedLine, sqftLine].filter(Boolean).join(' &middot; ');
-    return labelCellHtml('Self-Guided Tour', iconUrl, esc(String(u.unit)), metaLine);
+    return labelCellHtml('Self-Guided Tour', LABEL_ICON_DATA_URI, esc(String(u.unit)), metaLine);
   });
+}
+// ── SGT label print picker — choose which units to print instead of always printing all ──
+function openSgtPrintPicker() {
+  var roster = sgtSortRoster(sgtUnits());
+  if (!roster.length) { toast('No tour-key units set up yet — add units via Manage Units first'); return; }
+  var wrap = g('sgt-print-rows'); if (!wrap) return;
+  wrap.innerHTML = roster.map(function (u) {
+    var bedLine = String(u.bed || '').trim();
+    var sqftLine = (u.sqft != null && u.sqft !== '') ? (parseInt(u.sqft, 10) + ' SF') : '';
+    var meta = [bedLine, sqftLine].filter(Boolean).join(' &middot; ');
+    var keys = parseInt(u.keys, 10) || 0;
+    return '<label style="display:flex;align-items:center;gap:8px;padding:6px 2px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)">'
+      + '<input type="checkbox" class="sgt-print-chk" value="' + esc(String(u.unit)) + '" checked style="accent-color:var(--accent)">'
+      + '<span style="font-family:var(--font-mono);font-weight:700;min-width:52px">' + esc(String(u.unit)) + '</span>'
+      + '<span style="color:var(--text3);font-size:12px">' + meta + '</span>'
+      + '<span style="margin-left:auto;color:var(--text3);font-size:11.5px">' + keys + ' key' + (keys === 1 ? '' : 's') + '</span>'
+      + '</label>';
+  }).join('');
+  openModal('modal-sgt-print');
+}
+function sgtPrintToggleAll(checked) {
+  document.querySelectorAll('#sgt-print-rows .sgt-print-chk').forEach(function (c) { c.checked = checked; });
+}
+function printSgtLabelsSelected() {
+  var chosen = {};
+  document.querySelectorAll('#sgt-print-rows .sgt-print-chk:checked').forEach(function (c) { chosen[c.value] = true; });
+  var roster = sgtSortRoster(sgtUnits()).filter(function (u) { return chosen[String(u.unit)]; });
+  if (!roster.length) { toast('Select at least one unit to print'); return; }
+  closeModal('modal-sgt-print');
+  printSgtLabels(roster);
 }
 // ── Print vendor/one-time card labels (same Avery 8460 sheet + Concept F design as SGT) ──
 // Vendor/one-time cards are pool-based, not unit-owned (see the SGT block's comment above), so
@@ -6650,9 +6696,8 @@ function printCardPoolLabels(poolKey) {
   var meta = CARD_LABEL_META[poolKey];
   var nums = [];
   for (var i = 1; i <= size; i++) nums.push(meta.numFmt(i));
-  var iconUrl = new URL('Binder/Icon-Navy.png', location.href).href;
   openLabelSheet(CARD_POOL_LABELS[poolKey] + ' Labels — Avery 8460', nums, function (num) {
-    return labelCellHtml(meta.kicker, iconUrl, esc(num), meta.meta);
+    return labelCellHtml(meta.kicker, LABEL_ICON_DATA_URI, esc(num), meta.meta);
   });
 }
 // ── Vendor card grid (mirrors the one-time drawer; pool size comes from its baseline) ──
