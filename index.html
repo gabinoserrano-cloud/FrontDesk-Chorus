@@ -6002,6 +6002,7 @@ function generatePassdownFromMoves() { var item = document.querySelector('.nav-i
 
 // ─── LOGBOOK ───
 var logbookFilter = 'all', logbookCatFilter = 'all', editingLogbookId = null;
+var logbookLogOpenIds = {}; // which entries have their Activity Log panel expanded, keyed by id
 
 function filterLogbookCat(f, item) {
   logbookCatFilter = f;
@@ -6154,12 +6155,18 @@ function addLogbookLog(id, note) {
   if (!e) return;
   if (!e.log) e.log = [];
   e.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: note });
+  logbookLogOpenIds[id] = true; // keep the panel open on re-render so the new entry is visible
   scheduleSave(); renderLogbook(); toast('Update logged');
 }
 
+// Fixed 2026-08-23: was flipping row.style.display between 'none' and '' directly.
+// .act-log-row has display:none in the stylesheet, so clearing the inline override
+// to '' just falls through to that rule — the panel never actually appeared, on any
+// click, ever. Driving this from state + a full re-render (same fix applied to the
+// analogous todoLogOpenIds/toggleTodoLog in the To-Do views) sidesteps the trap.
 function toggleLogbookLog(id) {
-  var row = g('logbook-log-' + id); if (!row) return;
-  row.style.display = row.style.display === 'none' ? '' : 'none';
+  logbookLogOpenIds[id] = !logbookLogOpenIds[id];
+  renderLogbook();
 }
 
 // One-time: fold the pre-migration concierge and security stores into state.logbook.
@@ -6340,9 +6347,9 @@ function renderLogbook() {
       var eid = e.id;
       var entriesHtml = log.map(function(le, idx) {
         var ld = new Date(le.ts); var lf = ld.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+ld.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-        return '<div class="act-log-entry" style="display:flex;align-items:flex-start;gap:4px"><div style="flex:1"><span class="act-log-meta">'+lf+(le.by?' · '+le.by:'')+'</span><span class="act-log-note"> '+le.note+'</span></div></div>';
+        return '<div class="act-log-entry" style="display:flex;align-items:flex-start;gap:4px"><div style="flex:1"><span class="act-log-meta">'+lf+(le.by?' · '+esc(le.by):'')+'</span><span class="act-log-note"> '+esc(le.note)+'</span></div></div>';
       }).join('');
-      html += '<div class="act-log-row" id="logbook-log-'+eid+'" style="display:none">';
+      html += '<div class="act-log-row" id="logbook-log-'+eid+'" style="display:'+(logbookLogOpenIds[eid]?'block':'none')+'">';
       html += '<div class="act-log-inner">';
       html += '<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Activity Log</div>';
       html += entriesHtml || '<div style="color:var(--text3);font-size:12px;padding:4px 0">No updates yet.</div>';
@@ -9512,6 +9519,7 @@ try { todosView = localStorage.getItem('chorus-todos-view') || 'list'; } catch (
 function setTodosView(v) { todosView = v; try { localStorage.setItem('chorus-todos-view', v); } catch (e) {} renderTodos(); }
 var todoWorkspace = 'shift';
 try { todoWorkspace = localStorage.getItem('chorus-todo-workspace') || 'shift'; } catch (e) {}
+var todoLogOpenIds = {}; // which to-dos have their Progress Log panel expanded, keyed by id
 var todoSearch = '';
 var todoCatFilter = 'all';
 var todoStatusFilter = 'all';
@@ -9859,10 +9867,12 @@ function renderTodos() {
     }
     if (!isViewingOther && !t.done) html += todoStatusQuickSelect(t);
     if (!isViewingOther) {
+      html += todoLogBtnHtml(t);
       html += '<button class="btn btn-ghost btn-xs" onclick="openEditTodo(\'' + t.id + '\')" title="Edit">&#9998;</button>';
       html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteTodo(\'' + t.id + '\')">&#x2715;</button>';
     }
     html += '</div>';
+    if (!isViewingOther) html += todoLogPanelHtml(t, { viewPrefix: 'l' });
   });
   if (showCL && clTasks.length) {
     html += '<div style="padding:10px 14px 6px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px'
@@ -9914,6 +9924,7 @@ function renderTodosDoneHistory(currentDone, listEl, cntEl) {
       + '<span class="text-xs text-3">' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + '</span>'
       + (r.archived ? '<span class="text-xs text-3">archived</span>' : '') + '</div>';
     html += '</div>';
+    if ((t.log || []).length) html += todoLogBtnHtml(t);
     if (r.archived && !readOnly) {
       html += '<button class="btn btn-ghost btn-xs" onclick="restoreArchivedTodo(\'' + t.id + '\')" title="Restore to Open">&#8617; Restore</button>';
     } else if (!r.archived && !readOnly) {
@@ -9921,6 +9932,7 @@ function renderTodosDoneHistory(currentDone, listEl, cntEl) {
       html += '<button class="btn btn-ghost btn-xs" style="color:var(--red);flex-shrink:0" onclick="deleteTodo(\'' + t.id + '\')">&#x2715;</button>';
     }
     html += '</div>';
+    if ((t.log || []).length) html += todoLogPanelHtml(t, { readOnly: true, viewPrefix: 'd' });
   });
   listEl.innerHTML = html;
 }
@@ -9951,7 +9963,12 @@ function renderTodosBoard(sorted) {
       if (t.owner) html += '<div class="td-bcard-owner">&#128100; ' + esc(t.owner) + '</div>';
       if (t.lastContactNote) html += '<div class="todo-followup-note"><strong>Last contact:</strong> ' + esc(t.lastContactNote) + '</div>';
       html += readOnly ? '<div class="td-bcard-meta">' + todoStatusChip(t) + '</div>' : '<div style="margin-top:7px" onclick="event.stopPropagation()">' + todoStatusQuickSelect(t) + '</div>';
-      html += '</div></div>';
+      html += '</div>'; // close clickable content
+      if (!readOnly) {
+        html += '<div style="margin-top:6px" onclick="event.stopPropagation()">' + todoLogBtnHtml(t) + '</div>';
+        html += '<div onclick="event.stopPropagation()">' + todoLogPanelHtml(t, { viewPrefix: 'b' }) + '</div>';
+      }
+      html += '</div>'; // close .td-bcard
     });
     html += '</div>';
   });
@@ -10073,12 +10090,65 @@ function renderTodosFocus(sorted) {
         + todoUnitChip(t) + todoOwnerChip(t) + todoCatChip(t)
         + '</div></div>'
         + (readOnly ? '' : '<button class="btn btn-ghost btn-xs" title="' + (tier ? 'Unpick' : 'Pick for today') + '"' + (tier ? ' style="color:var(--amber)"' : '') + ' onclick="toggleFocusPick(\'' + t.id + '\')">' + (tier ? '&#9733;' : '&#9734;') + '</button>')
+        + (readOnly ? '' : '<div style="margin-top:6px">' + todoLogBtnHtml(t) + '</div>')
+        + (readOnly ? '' : todoLogPanelHtml(t, { viewPrefix: 'f' }))
         + '</div>';
     });
     html += '</div>';
   });
   html += '</div>';
   el.innerHTML = html;
+}
+// Shared by every to-do view (list, board, focus, done-history) so the log markup
+// and its escaping/timestamp formatting lives in exactly one place.
+function todoLogBtnHtml(t) {
+  var n = (t.log || []).length;
+  return '<button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="toggleTodoLog(\'' + t.id + '\')" title="Progress log">' + (n > 1 ? '&#128221; ' + n + ' updates' : '&#128221; Log') + '</button>';
+}
+function todoLogPanelHtml(t, opts) {
+  opts = opts || {};
+  // viewPrefix is required and must be distinct per render function (list/board/focus/done).
+  // Board and Focus each keep their own container in the DOM at all times — only the wrapper's
+  // display is toggled, the innerHTML isn't cleared — so the same to-do's panel/input ids would
+  // otherwise collide across views and g()/getElementById would silently grab the wrong (often
+  // hidden, empty) copy. Same collision class as the buildCL() bug documented 2026-07-15.
+  var vp = opts.viewPrefix || 'x';
+  var tLog = t.log || [];
+  if (opts.readOnly && !tLog.length) return '';
+  var entriesHtml = tLog.map(function (le) {
+    var ld = new Date(le.ts); var lf = ld.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + ld.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    return '<div class="act-log-entry" style="display:flex;align-items:flex-start;gap:4px"><div style="flex:1"><span class="act-log-meta">' + lf + (le.by ? ' · ' + esc(le.by) : '') + '</span><span class="act-log-note"> ' + esc(le.note) + '</span></div></div>';
+  }).join('');
+  var html = '<div class="act-log-row" id="todo-log-' + vp + '-' + t.id + '" style="display:' + (todoLogOpenIds[t.id] ? 'block' : 'none') + '">';
+  html += '<div class="act-log-inner">';
+  html += '<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Progress Log</div>';
+  html += entriesHtml || '<div style="color:var(--text3);font-size:12px;padding:4px 0">No updates yet.</div>';
+  if (!opts.readOnly) {
+    var inputId = 'todo-log-input-' + vp + '-' + t.id;
+    html += '<div class="act-log-add"><input type="text" id="' + inputId + '" placeholder="Log an update…" style="flex:1;font-size:12px" onkeydown="if(event.key===\'Enter\')addTodoLog(\'' + t.id + '\',this.value)"><button class="btn btn-secondary btn-sm" onclick="addTodoLog(\'' + t.id + '\',g(\'' + inputId + '\').value)">Log update</button></div>';
+  }
+  html += '</div></div>';
+  return html;
+}
+function addTodoLog(id, note) {
+  if (todoReadOnlyView()) { toast('This team member\'s list is read-only'); return; }
+  note = (note||'').trim(); if (!note) { toast('Enter a note'); return; }
+  var t = getCurrentTodos().find(function (x) { return x.id === id; });
+  if (!t) return;
+  if (!t.log) t.log = [];
+  t.log.push({ ts: Date.now(), by: currentUser ? currentUser.name : '', note: note });
+  todoTouch(t);
+  todoLogOpenIds[id] = true; // keep the panel open on re-render so the new entry is visible
+  scheduleSave(); renderTodos(); toast('Update logged');
+}
+// Driven by state + re-render rather than flipping row.style.display directly: .act-log-row
+// has display:none in the stylesheet, so setting the inline style back to '' (as
+// toggleLogbookLog does, index.html ~6160) just falls through to that rule and never
+// actually shows the panel — that toggle has been silently non-functional in prod.
+// Re-rendering from todoLogOpenIds sidesteps the trap entirely.
+function toggleTodoLog(id) {
+  todoLogOpenIds[id] = !todoLogOpenIds[id];
+  renderTodos();
 }
 function toggleTodo(id, checked) {
   if (todoReadOnlyView()) { toast('This team member\'s list is read-only'); return; }
