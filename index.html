@@ -7285,8 +7285,11 @@ function renderKeys() {
         c += '</div>';
         c += '<div style="display:flex;gap:12px;font-size:12px;color:var(--text3);flex-wrap:wrap">';
         if (k.fob) c += '<span style="font-family:var(--font-mono)">Key #' + esc(k.fob) + '</span>';
-        if (k.timeout) c += '<span>Out since ' + fmtTime(k.timeout) + '</span>';
-        else if (k.issuedAt) c += '<span>Out since ' + new Date(k.issuedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + '</span>';
+        if (k.issuedAt) {
+          var outD2 = new Date(k.issuedAt);
+          var outDateLabel2 = outD2.toDateString() === new Date().toDateString() ? 'Today' : outD2.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+          c += '<span>Out since ' + outDateLabel2 + ' ' + outD2.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + '</span>';
+        } else if (k.timeout) c += '<span>Out since ' + fmtTime(k.timeout) + '</span>';
         c += kyBy2;
         c += '</div>';
         c += '</div>'; // end flex:1
