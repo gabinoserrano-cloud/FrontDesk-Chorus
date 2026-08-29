@@ -15655,7 +15655,11 @@ function pinKey(k) {
   if (loginPinEntry.length >= 8) return;
   loginPinEntry += k;
   renderPinPad(false);
-  if (loginPinEntry.length >= 4 && loginSelectedAccount && loginPinEntry === loginSelectedAccount.pin) { submitPin(); }
+  // No auto-submit: PINs are stored as PBKDF2 hashes and may be 4-8 digits, so the
+  // entered digits can never be compared to the stored value without deriving the
+  // hash first. The line that used to live here compared plaintext against
+  // 'pbkdf2$...' and could only ever have fired for an unmigrated plaintext PIN.
+  // Confirm with the check key.
 }
 function checkCarriedItemsOnLogin() {
   var shownKey = 'carried_shown_' + (currentUser ? currentUser.id : '') + '_' + today();
