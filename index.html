@@ -15661,17 +15661,36 @@ function pinKey(k) {
   // 'pbkdf2$...' and could only ever have fired for an unmigrated plaintext PIN.
   // Confirm with the check key.
 }
+// How far back a still-open one-time card counts as "carried over from the previous
+// shift" rather than backlog. Two days covers an overnight plus a day off.
+var CARRIED_LOOKBACK_MS = 48 * 3600 * 1000;
 function checkCarriedItemsOnLogin() {
   var shownKey = 'carried_shown_' + (currentUser ? currentUser.id : '') + '_' + today();
   try { if (sessionStorage.getItem(shownKey)) return; sessionStorage.setItem(shownKey, '1'); } catch(e) {}
   var openKeys = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued'; });
   var openConcierge = getAllLogbookEntries().filter(function(c){ return c.category==='request' && c.status==='open'; });
+  // Only cards issued in the last couple of days actually "carried over from the
+  // previous shift". Listing every open one-time key meant a checkbox per item in
+  // the long-standing card backlog — 149 of them on 2026-08-28 — which is a
+  // different problem tracked in the Key Tracker, not this shift's handover. A
+  // wall of checkboxes every morning just teaches everyone to hit Skip.
+  var carriedCutoff = Date.now() - CARRIED_LOOKBACK_MS;
+  var recentKeys = openKeys.filter(function(k){ return (k.issuedAt || k.createdAt || 0) >= carriedCutoff; });
+  var backlogCount = openKeys.length - recentKeys.length;
   var carriedItems = [];
-  openKeys.forEach(function(k){ carriedItems.push({ label: '🗝 Key still out — Unit ' + k.unit + ' (' + k.name + (k.guest?' / '+k.guest:'') + ')' }); });
+  recentKeys.forEach(function(k){ carriedItems.push({ label: '🗝 Key still out — Unit ' + k.unit + ' (' + k.name + (k.guest?' / '+k.guest:'') + ')' }); });
+  // Open desk requests stay in full: they are live work whatever their age, and
+  // there are few enough of them to act on.
   openConcierge.forEach(function(c){ carriedItems.push({ label: '🎭 Concierge request — Unit ' + c.unit + ': ' + c.type }); });
-  if (!carriedItems.length) return;
+  if (!carriedItems.length && !backlogCount) return;
   var firstName = currentUser.name.split(' ')[0];
   var html = '';
+  if (backlogCount) {
+    html += '<div style="display:flex;align-items:center;gap:9px;padding:9px 11px;margin-bottom:12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px">'
+      + '<span style="font-size:15px">&#128203;</span>'
+      + '<span style="font-size:12px;color:var(--text2)"><strong>' + backlogCount + '</strong> one-time card'
+      + (backlogCount === 1 ? '' : 's') + ' outstanding more than 48h &mdash; tracked in Key Tracker, not part of this shift\'s handover.</span></div>';
+  }
   if (carriedItems.length) {
     html += '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;display:flex;align-items:center;gap:6px">↩ Open items from previous shift <span style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1px 7px;font-size:10px;color:var(--text2)">' + carriedItems.length + '</span></div>';
     html += '<p style="font-size:12px;color:var(--text3);margin-bottom:10px">Check any you\'d like added to your to-do list for this shift.</p>';
