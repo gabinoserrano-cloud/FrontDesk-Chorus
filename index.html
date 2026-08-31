@@ -9811,7 +9811,7 @@ function renderAssignedByMe(listEl, cntEl) {
     html += '<div style="flex:1;min-width:0">';
     html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + esc(t.text) + '</div>';
     if (t.ack && t.ack.status === 'flagged' && t.ack.note) html += '<div style="font-size:11px;color:var(--red);margin-top:2px">&ldquo;' + esc(t.ack.note) + '&rdquo;</div>';
-    else if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + esc(t.note) + '</div>';
+    else if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px;white-space:pre-line">' + esc(t.note) + '</div>';
     html += '<div class="todo-meta">' + statusChip + due + todoShiftChip(t) + todoCatChip(t) + todoUnitChip(t) + todoStaleChip(t) + '</div>';
     html += '</div>';
     if (!t.done) html += '<button class="btn btn-ghost btn-xs" onclick="takeBackAssignedTodo(\'' + r.acct.id + '\',\'' + t.id + '\')" title="Take back to my list">&#8617; Take back</button>';
@@ -9866,7 +9866,7 @@ function renderAssignedAckModal() {
   pend.forEach(function (t) {
     html += '<div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px">';
     html += '<div style="font-size:13px;font-weight:600">' + esc(t.text) + '</div>';
-    if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + esc(t.note) + '</div>';
+    if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px;white-space:pre-line">' + esc(t.note) + '</div>';
     html += '<div class="todo-meta" style="margin-top:4px">' + todoFromChip(t) + (t.dueDate ? '<span class="todo-due">Due: ' + fmtShort(t.dueDate) + '</span>' : '') + todoShiftChip(t) + todoCatChip(t) + todoUnitChip(t) + '</div>';
     html += '<div style="display:flex;gap:6px;margin-top:8px">';
     html += '<button class="btn btn-sm btn-green" onclick="ackAssignedTodo(\'' + t.id + '\')">&#10003; Got it</button>';
@@ -9989,7 +9989,7 @@ function renderTodos() {
     html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + (isViewingOther ? ' disabled' : '') + ' onchange="toggleTodo(\'' + t.id + '\',this.checked)">';
     html += '<div style="flex:1;min-width:0">';
     html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + urgIcon + esc(t.text) + '</div>';
-    if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + esc(t.note) + '</div>';
+    if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px;white-space:pre-line">' + esc(t.note) + '</div>';
     if (t.lastContactNote) html += '<div class="todo-followup-note"><strong>Last contact:</strong> ' + esc(t.lastContactNote) + '</div>';
     if (t.blockerNote) html += '<div class="todo-followup-note"><strong>Blocked by:</strong> ' + esc(t.blockerNote) + '</div>';
     html += '<div class="todo-meta">' + todoPickChip(t) + due + todoFollowUpChip(t) + todoShiftChip(t) + todoCatChip(t) + (t.done ? '' : todoStatusChip(t)) + todoFromChip(t) + todoAckChip(t) + todoUnitChip(t) + todoOwnerChip(t) + todoStaleChip(t) + '<span class="text-xs text-3">' + new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span></div>';
@@ -10052,7 +10052,7 @@ function renderTodosDoneHistory(currentDone, listEl, cntEl) {
     }
     html += '<div style="flex:1;min-width:0">';
     html += '<div class="todo-text strk">' + esc(t.text) + '</div>';
-    if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px">' + esc(t.note) + '</div>';
+    if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:2px;white-space:pre-line">' + esc(t.note) + '</div>';
     html += '<div class="todo-meta">' + todoCatChip(t) + todoUnitChip(t) + todoOwnerChip(t)
       + '<span class="text-xs text-3">' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + '</span>'
       + (r.archived ? '<span class="text-xs text-3">archived</span>' : '') + '</div>';
@@ -10091,7 +10091,7 @@ function renderTodosBoard(sorted) {
       html += (readOnly ? '' : '<input type="checkbox" title="Mark done"' + (t.done ? ' checked' : '') + ' onchange="event.stopPropagation();toggleTodo(\'' + t.id + '\',this.checked)">');
       html += '<div style="flex:1;min-width:0;cursor:pointer"' + (readOnly ? '' : ' onclick="openEditTodo(\'' + t.id + '\')"') + '>';
       html += '<div class="td-bcard-text">' + (t.priority === 'urgent' && !t.done ? '<span style="color:var(--red)">! </span>' : '') + esc(t.text) + '</div>';
-      if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:3px">' + esc(t.note) + '</div>';
+      if (t.note) html += '<div style="font-size:11px;color:var(--accent);margin-top:3px;white-space:pre-line">' + esc(t.note) + '</div>';
       html += '<div class="td-bcard-meta">' + todoPickChip(t) + todoCatChip(t) + todoFromChip(t) + todoAckChip(t) + todoUnitChip(t) + (t.dueDate ? '<span class="pill" style="background:var(--surface2);color:var(--text2)">Due ' + fmtShort(t.dueDate) + '</span>' : '') + todoFollowUpChip(t) + todoShiftChip(t) + todoStaleChip(t) + '</div>';
       if (t.owner) html += '<div class="td-bcard-owner">&#128100; ' + esc(t.owner) + '</div>';
       if (t.lastContactNote) html += '<div class="todo-followup-note"><strong>Last contact:</strong> ' + esc(t.lastContactNote) + '</div>';
