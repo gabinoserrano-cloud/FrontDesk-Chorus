@@ -35,3 +35,15 @@ script_*.js
 # Word docs (reports/reconciliations) — routinely contain resident/staff PII, never publish
 *.docx
 ~$*.doc*
+
+# Spreadsheets and key/fee reconciliations — same reasoning as the .docx rule above.
+# These carry resident names, access-card registration numbers and fee amounts, and
+# this repo is PUBLIC. Globbed so a new dated export doesn't need a new line each time.
+*.xlsx
+*.xls
+~$*.xls*
+One-Time Key Archive*.csv
+One-Time Key Archive*.json
+One-Time Key Fee Ledger*.pdf
+*Master List*.pdf
+*Reconciliation*.pdf
