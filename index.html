@@ -17,7 +17,7 @@
     --accent-fill:#3E7A5E;--accent-fill-hover:#2F614A;--accent-soft:#4E8A70;--accent-soft-rgb:78,138,112;
     --accent-deep:#2A6050;--accent-on-dark:#8FC7AC;
     --green:#1A6640;--green-light:#E2EFE8;--red:#C03535;--red-light:#FAEBEB;
-    --amber:#B57020;--amber-light:#FBF0DC;--purple:#6044B2;--purple-light:#ECEAFA;
+    --amber:#8F5718;--amber-light:#FBF0DC;--purple:#6044B2;--purple-light:#ECEAFA;
     --sidebar-w:220px;--header-h:54px;--radius:6px;
     --font-serif:'Cormorant Garamond',Georgia,serif;--font-mono:'DM Mono',monospace;--font-sans:'DM Sans',sans-serif;
     --shadow:0 1px 4px rgba(26,24,20,0.07),0 1px 2px rgba(26,24,20,0.04);
@@ -25,7 +25,7 @@
     --ease-out:cubic-bezier(0.23,1,0.32,1);
     --ease-in-out:cubic-bezier(0.77,0,0.175,1);
   }
-  body.dark-mode{--bg:#0F1923;--surface:#162130;--surface2:#1C2A3A;--border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.05);--text:#E2EAF0;--text2:#8FA8BC;--text3:#6E8EA2;--green-light:rgba(26,102,64,0.18);--red-light:rgba(192,53,53,0.15);--amber-light:rgba(181,112,32,0.15);--purple-light:rgba(96,68,178,0.15);--accent-light:rgba(26,92,62,0.18);--shadow:0 1px 4px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);--shadow-md:0 4px 24px rgba(0,0,0,.5),0 2px 4px rgba(0,0,0,.4)}
+  body.dark-mode{--amber:#E0A55E;--bg:#0F1923;--surface:#162130;--surface2:#1C2A3A;--border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.05);--text:#E2EAF0;--text2:#8FA8BC;--text3:#6E8EA2;--green-light:rgba(26,102,64,0.18);--red-light:rgba(192,53,53,0.15);--amber-light:rgba(181,112,32,0.15);--purple-light:rgba(96,68,178,0.15);--accent-light:rgba(26,92,62,0.18);--shadow:0 1px 4px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);--shadow-md:0 4px 24px rgba(0,0,0,.5),0 2px 4px rgba(0,0,0,.4)}
   body.text-sm{font-size:12.5px}
   body.text-lg{font-size:16px}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -57,15 +57,15 @@
   }
   .sb-logo{padding:18px 16px 14px;border-bottom:0.5px solid rgba(255,255,255,0.09)}
   .sb-logo .bldg{font-size:16px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;font-family:var(--font-serif);color:#F0EBE0}
-  .sb-logo .sub{font-size:10px;color:rgba(255,255,255,0.55);margin-top:2px;font-family:var(--font-mono);letter-spacing:.4px}
-  .sb-logo .date-chip{display:inline-block;margin-top:8px;background:rgba(26,92,62,0.25);color:#7ECBA0;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;font-family:var(--font-mono)}
+  .sb-logo .sub{font-size:11px;color:rgba(255,255,255,0.55);margin-top:2px;font-family:var(--font-mono);letter-spacing:.4px}
+  .sb-logo .date-chip{display:inline-block;margin-top:8px;background:rgba(26,92,62,0.25);color:#7ECBA0;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;font-family:var(--font-mono)}
   .nav-group{padding:10px 0 4px}
-  .nav-label{font-size:9.5px;font-weight:600;color:rgba(148,185,215,0.70);text-transform:uppercase;letter-spacing:1px;padding:0 14px 4px;white-space:nowrap;overflow:hidden}
+  .nav-label{font-size:11px;font-weight:600;color:rgba(148,185,215,0.70);text-transform:uppercase;letter-spacing:1px;padding:0 14px 4px;white-space:nowrap;overflow:hidden}
   .nav-item{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;color:rgba(255,255,255,0.46);font-size:13px;font-weight:400;border-left:2px solid transparent;transition:background 120ms ease-out,color 120ms ease-out,border-left-color 120ms ease-out;position:relative;user-select:none;white-space:nowrap}
   .nav-item:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.80)}
   .nav-item.active{background:rgba(255,255,255,0.10);color:#FFFFFF;border-left-color:var(--accent);font-weight:500}
   .nav-item .icon{width:16px;text-align:center;font-size:14px;flex-shrink:0}
-  .badge{margin-left:auto;background:var(--accent);color:#FFFFFF;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;font-family:var(--font-mono);min-width:18px;text-align:center;display:none}
+  .badge{margin-left:auto;background:var(--accent);color:#FFFFFF;font-size:11px;font-weight:700;padding:1px 6px;border-radius:10px;font-family:var(--font-mono);min-width:18px;text-align:center;display:none}
   .badge.vis{display:block}
   /* Badges inside pill tabs must sit inline — the sidebar's margin-left:auto/display:block
      pushes them onto their own line and doubles the pill's height. */
@@ -75,7 +75,7 @@
   .sb-footer{margin-top:auto;padding:10px 10px 14px;border-top:0.5px solid rgba(255,255,255,0.09);display:flex;flex-direction:column;gap:4px}
   .footer-btn{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:var(--radius);font-size:11.5px;color:rgba(255,255,255,0.60);cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;width:100%;text-align:left;transition:background .1s;white-space:nowrap}
   .footer-btn:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.75)}
-  .save-status{font-size:10px;color:rgba(255,255,255,0.55);padding:0 8px 4px;font-family:var(--font-mono);white-space:nowrap;overflow:hidden}
+  .save-status{font-size:11px;color:rgba(255,255,255,0.55);padding:0 8px 4px;font-family:var(--font-mono);white-space:nowrap;overflow:hidden}
   .sync-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;background:rgba(255,255,255,0.25)}
   .sync-dot.synced{background:#6DBB5A}.sync-dot.syncing{background:var(--accent);animation:pulse 1s infinite}.sync-dot.error{background:#E05A5A}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
@@ -108,9 +108,9 @@
   /* MOBILE BOTTOM NAV */
   #mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:150;padding:6px 0 env(safe-area-inset-bottom,6px);justify-content:space-around}
   @media(max-width:700px){#mob-nav{display:flex}}
-  .mn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 8px;cursor:pointer;color:var(--text3);font-size:10px;min-width:44px;position:relative}
+  .mn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 8px;cursor:pointer;color:var(--text3);font-size:11px;min-width:44px;position:relative}
   .mn-item.active{color:var(--accent)}.mn-item .icon{font-size:20px}
-  .mn-badge{position:absolute;top:2px;right:8px;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:8px;min-width:14px;text-align:center;display:none}
+  .mn-badge{position:absolute;top:2px;right:8px;background:var(--red);color:#fff;font-size:11px;font-weight:700;padding:1px 4px;border-radius:8px;min-width:14px;text-align:center;display:none}
   .mn-badge.vis{display:block}
 
   /* STAT GRID */
@@ -133,7 +133,7 @@
   .sup-unit{font-size:11px;color:var(--text3);flex-shrink:0}
   .sup-name{flex:1;font-weight:500}
   .sup-updated{font-size:11px;color:var(--text3);white-space:nowrap}
-  .sup-start-info{font-size:10px;color:var(--text3);margin-top:2px}
+  .sup-start-info{font-size:11px;color:var(--text3);margin-top:2px}
   .cl-parking-hdr{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);padding:6px 0 2px 2px;margin-top:4px;border-top:1px solid var(--border2);display:flex;align-items:center;gap:5px}
   .cl-item-parking{padding-left:14px;border-left:2px solid var(--border2);margin-left:4px}
 
@@ -141,7 +141,7 @@
   #notepad-tab{position:fixed;right:-1px;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;text-orientation:mixed;background:var(--surface);border:1px solid var(--border);border-right:none;border-radius:8px 0 0 8px;padding:14px 8px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:7px;box-shadow:-3px 0 12px rgba(0,0,0,.3);transition:background .12s,color .12s;z-index:1000;user-select:none}
   #notepad-tab:hover{background:var(--accent);color:#fff}
   /* Mobile: dock the edge tab above the bottom nav instead of over mid-screen content, and keep it under modals */
-  @media(max-width:700px){#notepad-tab{top:auto;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:none;padding:10px 7px;font-size:10px;letter-spacing:.5px;z-index:140}}
+  @media(max-width:700px){#notepad-tab{top:auto;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:none;padding:10px 7px;font-size:11px;letter-spacing:.5px;z-index:140}}
   #notepad-tab .np-dot{width:6px;height:6px;border-radius:50%;background:#e53e3e;flex-shrink:0;display:none}
   #notepad-panel{position:fixed;right:0;top:50%;transform:translateY(-50%);width:300px;background:var(--surface);border:1px solid var(--border);border-right:none;border-radius:10px 0 0 10px;box-shadow:-8px 0 32px rgba(0,0,0,.4);z-index:1001;display:none;overflow:hidden;min-width:240px;min-height:180px}
   #notepad-panel.np-free{border-right:1px solid var(--border);border-radius:10px;transform:none}
@@ -153,8 +153,8 @@
   #notepad-txt{width:100%;height:260px;border:none;outline:none;resize:none;background:var(--surface);padding:12px 14px;font-size:13px;line-height:1.7;color:var(--text);font-family:var(--font-mono)}
   #notepad-txt::placeholder{color:var(--text3)}
   #notepad-ftr{padding:6px 12px;background:var(--bg);border-top:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
-  #notepad-ftr span{font-size:10px;color:var(--text3)}
-  #notepad-ftr button{font-size:10px;background:none;border:none;color:var(--text3);cursor:pointer;padding:0}
+  #notepad-ftr span{font-size:11px;color:var(--text3)}
+  #notepad-ftr button{font-size:11px;background:none;border:none;color:var(--text3);cursor:pointer;padding:0}
   #notepad-ftr button:hover{color:var(--red)}
 
   /* CARD */
@@ -181,7 +181,10 @@
   .confirm-msg{font-size:14px;line-height:1.55;color:var(--text);white-space:pre-line;margin-bottom:18px}
   .confirm-actions{display:flex;gap:8px;justify-content:flex-end}
   @media(max-width:599px){.confirm-actions{flex-direction:column-reverse}.confirm-actions .btn{width:100%;justify-content:center;padding:11px}}
-  .btn-sm{padding:5px 10px;font-size:12px}.btn-xs{padding:3px 7px;font-size:11px;border-radius:5px}
+  .btn-sm{padding:5px 10px;font-size:12px}
+  /* min box keeps icon-only actions (✎ / ×) clickable — they measured 20×21 before,
+     which put delete a few pixels from edit. Text buttons already exceed 28px wide. */
+  .btn-xs{padding:3px 7px;font-size:11px;border-radius:5px;min-height:28px;min-width:28px}
   @media(max-width:700px){.btn-sm,.btn-xs{min-height:36px;display:inline-flex;align-items:center;justify-content:center}}
 
   /* FORM */
@@ -278,8 +281,8 @@
   .cl-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border2)}.cl-item:last-child{border-bottom:none}
   .cl-item input[type=checkbox]{width:16px;height:16px;flex-shrink:0;accent-color:var(--accent);cursor:pointer}
   .cl-text{font-size:13px;flex:1}.cl-text.done{text-decoration:line-through;color:var(--text3)}
-  .cl-cat{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;flex-shrink:0}
-  .cl-due{font-size:10px;color:var(--accent);font-family:'DM Mono',monospace;flex-shrink:0}
+  .cl-cat{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;flex-shrink:0}
+  .cl-due{font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;flex-shrink:0}
   /* .cl-text-input / .cl-due-input / .cl-cat-input are defined once, under TASK INLINE EDIT
      INPUTS below — a second copy used to live here and was fully overridden by it. */
 
@@ -321,7 +324,7 @@
   .guide-card-hdr:hover{background:var(--bg)}
   .guide-card-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
   .guide-card-title{font-weight:600;flex:1}
-  .guide-card-meta{font-size:10px;font-weight:600;letter-spacing:.3px;padding:1px 5px;border-radius:3px;background:var(--accent);color:#fff;margin-right:4px}
+  .guide-card-meta{font-size:11px;font-weight:600;letter-spacing:.3px;padding:1px 5px;border-radius:3px;background:var(--accent);color:#fff;margin-right:4px}
   .guide-card-chevron{color:var(--text3);font-size:11px;transition:transform 150ms ease-out;flex-shrink:0}
   .guide-card.open .guide-card-chevron{transform:rotate(90deg)}
   .guide-card-body{display:none;padding:2px 16px 14px 44px;font-size:13px;line-height:1.75;color:var(--text2);border-top:1px solid var(--border2)}
@@ -354,13 +357,13 @@
   .cal-week-tbl td{border:1px solid var(--border2);padding:4px 5px;vertical-align:top;min-height:50px;background:var(--surface)}
   .cal-week-tbl td.today-col{background:#F0F6FC}
   .cal-week-tbl .unit-lbl{font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:var(--text2);padding:5px 7px;background:var(--bg);border:1px solid var(--border);white-space:nowrap}
-  .cal-chip{display:block;padding:2px 5px;border-radius:4px;font-size:10px;font-weight:500;margin:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cal-chip{display:block;padding:2px 5px;border-radius:4px;font-size:11px;font-weight:500;margin:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .cal-chip-in{background:var(--green-light);color:var(--green)}.cal-chip-out{background:var(--red-light);color:var(--red)}
   .cal-chip-task{background:var(--accent-light);color:var(--accent)}.cal-chip-todo{background:var(--purple-light);color:var(--purple)}
   .cal-chip-amenity{background:#FFF3E0;color:var(--amber)}
   /* Logbook + Incident Reports on the calendar (2026-08-21). */
   .cal-chip-logbook{background:rgba(100,116,139,0.13);color:#475569}
-  .cal-chip-incident{background:rgba(220,38,38,0.13);color:#dc2626;font-weight:600}
+  .cal-chip-incident{background:rgba(220,38,38,0.13);color:#B91C1C;font-weight:600}
   body.dark-mode .cal-chip-logbook{background:rgba(148,163,184,0.18);color:#cbd5e1}
   body.dark-mode .cal-chip-incident{background:rgba(220,38,38,0.28);color:#fca5a5}
   /* Week view rebuilt 2026-08-21: was a unit x day spreadsheet, now seven day columns. */
@@ -374,12 +377,12 @@
   .cal-week-col.is-today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
   .cal-week-dh{padding:5px 7px;border-bottom:1px solid var(--border2);background:var(--bg);text-align:center}
   .cal-week-col.is-today .cal-week-dh{background:var(--accent-light);color:var(--accent)}
-  .cal-week-dow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3)}
+  .cal-week-dow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3)}
   .cal-week-col.is-today .cal-week-dow{color:var(--accent)}
   .cal-week-dnum{font-family:var(--font-mono);font-size:16px;font-weight:600;line-height:1.15}
   .cal-week-items{padding:4px 5px;display:flex;flex-direction:column;gap:1px;flex:1}
-  .cal-week-empty{font-size:10px;color:var(--text3);text-align:center;padding:10px 2px}
-  .cal-week-unit{font-size:9px;font-weight:700;color:var(--text3);font-family:var(--font-mono);margin:3px 0 0;letter-spacing:.4px}
+  .cal-week-empty{font-size:11px;color:var(--text3);text-align:center;padding:10px 2px}
+  .cal-week-unit{font-size:11px;font-weight:700;color:var(--text3);font-family:var(--font-mono);margin:3px 0 0;letter-spacing:.4px}
   @media(max-width:860px){.cal-week-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
   @media(max-width:480px){.cal-week-grid{grid-template-columns:1fr}}
   .cal-month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
@@ -422,7 +425,7 @@
   .tar{text-align:right}.tabnum{font-variant-numeric:tabular-nums}
   .done-text{text-decoration:line-through;color:var(--text3)}.archive-row td{opacity:.55}
   /* MOVE APPOINTMENT STATES */
-  .appt-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+  .appt-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
   .appt-badge.no-appt{background:var(--amber-light);color:var(--amber)}
   .appt-badge.has-appt{background:var(--green-light);color:var(--green)}
   .appt-badge.conflict{background:var(--red-light);color:var(--red)}
@@ -455,7 +458,7 @@
   .import-row.new-row{background:var(--green-light)}
   .import-row.update-row{background:var(--amber-light)}
   .import-row.skip-row{background:var(--surface2);opacity:.6}
-  .import-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;flex-shrink:0;font-family:'DM Mono',monospace}
+  .import-badge{font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;flex-shrink:0;font-family:'DM Mono',monospace}
   .badge-new{background:var(--green);color:#fff}
   .badge-update{background:var(--amber);color:#fff}
   .badge-skip{background:var(--text3);color:#fff}
@@ -468,10 +471,10 @@
   .cl-text-input{border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;flex:1;padding:2px 5px;border-radius:4px;min-width:0;cursor:text}
   .cl-text-input:hover,.cl-text-input:focus{background:var(--accent-light)}
   .cl-text-input.done{text-decoration:line-through;color:var(--text2);opacity:0.6}
-  .cl-due-input{border:1px solid transparent;background:transparent;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);outline:none;width:110px;flex-shrink:0;padding:1px 3px;border-radius:4px;cursor:pointer}
+  .cl-due-input{border:1px solid transparent;background:transparent;font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);outline:none;width:110px;flex-shrink:0;padding:1px 3px;border-radius:4px;cursor:pointer}
   .cl-due-input:hover,.cl-due-input:focus{border-color:var(--accent);background:var(--accent-light)}
   .cl-due-input::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer}
-  .cl-cat-input{border:none;background:transparent;font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);outline:none;flex-shrink:0;padding:1px 3px;border-radius:4px;cursor:pointer;max-width:90px}
+  .cl-cat-input{border:none;background:transparent;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);outline:none;flex-shrink:0;padding:1px 3px;border-radius:4px;cursor:pointer;max-width:90px}
   .cl-cat-input:hover,.cl-cat-input:focus{background:var(--bg)}
 
   /* CALENDAR POPOVER */
@@ -483,7 +486,7 @@
   .cal-pop-body{padding:10px 14px}
   .cal-pop-item{padding:6px 0;border-bottom:1px solid var(--border2);font-size:12.5px}
   .cal-pop-item:last-child{border-bottom:none}
-  .cal-pop-item .pop-type{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:2px}
+  .cal-pop-item .pop-type{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:2px}
   .cal-pop-item .pop-main{font-weight:500}
   .cal-pop-item .pop-sub{font-size:11px;color:var(--text2);margin-top:1px}
   .cal-pop-goto{display:block;margin-top:10px;font-size:12px;color:var(--accent);cursor:pointer;text-align:center;padding:6px;border:1px solid var(--accent-light);border-radius:6px;background:var(--accent-light)}
@@ -508,9 +511,9 @@
   .pin-key:hover{background:var(--accent-light);color:var(--accent)}
   .pin-key:active{transform:scale(.94)}
   .user-info-bar{font-size:11px;color:var(--text3);padding:2px 8px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .viewer-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:3px;font-size:9.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:rgba(255,255,255,0.14);color:rgba(255,255,255,0.82);vertical-align:middle}
+  .viewer-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:rgba(255,255,255,0.14);color:rgba(255,255,255,0.82);vertical-align:middle}
   body.sc .user-info-bar{display:none}
-  .by-tag{font-size:10px;color:var(--text3);background:var(--bg);border-radius:3px;padding:1px 5px;white-space:nowrap;margin-left:4px;display:inline-block}
+  .by-tag{font-size:11px;color:var(--text3);background:var(--bg);border-radius:3px;padding:1px 5px;white-space:nowrap;margin-left:4px;display:inline-block}
 
   /* ── ICON SPANS ── */
   .icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex-shrink:0}
@@ -570,7 +573,7 @@
   .pd-preview{background:#F7F5F0;border-color:rgba(26,24,20,0.09)}
   /* ── Stale key row ── */
   .key-stale-row>td:first-child{border-left:3px solid var(--amber)}
-  .stale-badge{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:var(--amber);background:var(--amber-light);border-radius:4px;padding:1px 6px;margin-left:5px}
+  .stale-badge{display:inline-flex;align-items:center;font-size:11px;font-weight:700;color:var(--amber);background:var(--amber-light);border-radius:4px;padding:1px 6px;margin-left:5px}
   .key-note-row td{padding:4px 10px 8px;background:var(--surface2)}
   .key-note-row .note-trail{font-size:11px;color:var(--text2);margin-bottom:5px}
   .key-note-row .note-trail-entry{padding:2px 0;border-bottom:1px solid var(--border2)}
@@ -584,7 +587,7 @@
   .act-log-inner{padding:10px 14px}
   .act-log-entry{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border2);font-size:12px}
   .act-log-entry:last-child{border-bottom:none}
-  .act-log-meta{font-size:10.5px;color:var(--text3);font-family:var(--font-mono);flex-shrink:0;white-space:nowrap}
+  .act-log-meta{font-size:11px;color:var(--text3);font-family:var(--font-mono);flex-shrink:0;white-space:nowrap}
   .act-log-note{flex:1;color:var(--text)}
   .act-log-add{display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
   /* ── Amenity close-out ── */
@@ -592,11 +595,11 @@
   .amenity-closeout-row.open{display:table-row}
   .amenity-closeout-row td{padding:0;border-bottom:2px solid var(--amber)}
   .closeout-inner{padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .pending-closeout-badge{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:var(--amber);background:var(--amber-light);border-radius:4px;padding:2px 8px}
+  .pending-closeout-badge{display:inline-flex;align-items:center;font-size:11px;font-weight:700;color:var(--amber);background:var(--amber-light);border-radius:4px;padding:2px 8px}
   /* Pill reservation — sage tint */
   .pill-reservation{background:rgba(var(--accent-soft-rgb),0.14);color:var(--accent-deep)}
   /* Cal chip amenity — warm amber */
-  .cal-chip-amenity{background:#FBF0DC;color:#9E6300}
+  .cal-chip-amenity{background:#FBF0DC;color:#8F5718}
   .nav-item [style*="background:var(--accent)"]{color:#141C1C!important}
   /* Stat card tints */
   .stat-card.green{background:#E2EFE8;border-color:#A8D4B8}
@@ -655,7 +658,7 @@
   .appt-badge.no-appt{cursor:pointer}.appt-badge.no-appt:hover{background:rgba(217,119,6,0.22)}
   .moves-note-cell{max-width:180px;white-space:normal;line-height:1.35;word-break:break-word}
   /* Stage pills */
-  .stage-pill{display:inline-flex;align-items:center;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;text-transform:uppercase;letter-spacing:.5px;margin-top:3px;white-space:nowrap}
+  .stage-pill{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:1px 6px;border-radius:8px;text-transform:uppercase;letter-spacing:.5px;margin-top:3px;white-space:nowrap}
   .stage-pending{background:var(--border2);color:var(--text3)}
   .stage-confirmed{background:#EBF0F8;color:#4A6FA5}
   .stage-scheduled{background:var(--accent-light);color:var(--accent)}
@@ -668,25 +671,25 @@
   /* ─── Moves pipeline board ─── */
   .mv-board-cols{display:grid;gap:8px}
   .mv-board-col{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:8px;min-height:70px}
-  .mv-board-col-hdr{display:flex;justify-content:space-between;gap:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding:2px 4px 8px}
+  .mv-board-col-hdr{display:flex;justify-content:space-between;gap:4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding:2px 4px 8px}
   .mv-bcard{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:8px;cursor:pointer;box-shadow:var(--shadow)}
   .mv-bcard:hover{border-color:var(--accent)}
   .mv-bcard:last-child{margin-bottom:0}
   .mv-bcard.stuck{border:1.5px solid var(--red)}
   .mv-bcard-top{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
   .mv-bcard-unit{font-size:14.5px;font-weight:700;font-family:var(--font-mono)}
-  .mv-bcard-chip{font-size:10px;padding:1px 7px;border-radius:9px;white-space:nowrap;font-weight:600;flex-shrink:0}
+  .mv-bcard-chip{font-size:11px;padding:1px 7px;border-radius:9px;white-space:nowrap;font-weight:600;flex-shrink:0}
   .mv-bcard-res{font-size:12px;color:var(--text2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .mv-bcard-block{font-size:11px;color:var(--text3);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .mv-bcard-block.red{color:var(--red);font-weight:600}
   .mv-bcard-prog{height:3px;background:var(--border2);border-radius:2px;margin-top:6px;overflow:hidden}
   .mv-bcard-prog>div{height:3px}
-  .mv-bcard-cnt{font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--font-mono)}
+  .mv-bcard-cnt{font-size:11px;color:var(--text3);margin-top:3px;font-family:var(--font-mono)}
   @media(max-width:650px){.mv-board-cols{display:flex;overflow-x:auto;padding-bottom:4px}.mv-board-col{flex:0 0 172px}}
   /* ─── To-Do loop tracker ─── */
   .td-board-cols{display:grid;gap:8px;grid-template-columns:repeat(4,minmax(0,1fr))}
   .td-board-col{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:8px;min-height:70px}
-  .td-board-col-hdr{display:flex;justify-content:space-between;gap:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding:2px 4px 8px}
+  .td-board-col-hdr{display:flex;justify-content:space-between;gap:4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding:2px 4px 8px}
   .td-bcard{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:8px;cursor:pointer;box-shadow:var(--shadow)}
   .td-bcard:hover{border-color:var(--accent)}
   .td-bcard:last-child{margin-bottom:0}
@@ -704,7 +707,7 @@
   .focus-slot{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;box-shadow:var(--shadow)}
   .focus-slot input[type=checkbox]{width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:var(--accent);cursor:pointer}
   .focus-slot.empty{border-style:dashed;background:transparent;box-shadow:none;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:12px;min-height:52px}
-  .focus-tier-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);padding:0 2px 6px}
+  .focus-tier-tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);padding:0 2px 6px}
   @media(max-width:900px){.focus-strip{grid-template-columns:1fr}}
   @media(max-width:650px){.focus-grid{grid-template-columns:1fr}}
   .pill-cat-resident{background:var(--accent-light);color:var(--accent)}
@@ -728,7 +731,7 @@
   .todo-list-tools.open{display:flex}
   .todo-list-tools input{flex:1;min-width:180px}
   .todo-followup-note{font-size:11px;color:var(--text2);margin-top:3px;line-height:1.4}
-  .todo-status-quick{font-size:10px;padding:2px 5px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text2);max-width:105px}
+  .todo-status-quick{font-size:11px;padding:2px 5px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text2);max-width:105px}
   .todo-project-banner{padding:10px 12px;margin-bottom:10px;border:1px solid rgba(96,68,178,.22);border-radius:var(--radius);background:var(--purple-light);color:var(--purple);font-size:12px}
   @media(max-width:650px){.todo-capture-main{flex-wrap:wrap}.todo-capture-main input{flex-basis:100%}.todo-capture-main .btn{flex:1;justify-content:center}.todo-list-tools>*{flex:1;min-width:140px}.todo-list-tools input{flex-basis:100%}}
   /* ─── Settings ─── */
@@ -741,13 +744,13 @@
   .set-hint{font-size:11.5px;color:var(--text3);margin-top:2px;line-height:1.45}
   .set-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--border2)}
   .set-row>div:first-child{min-width:0}
-  .set-group-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:10px 2px 8px}
+  .set-group-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:10px 2px 8px}
   @media(max-width:650px){.set-row{flex-direction:column;align-items:flex-start;gap:8px}}
   /* Payment task inline fields */
   .pay-task-row{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
   .pay-type-sel{font-size:11px;padding:2px 5px;border:1px solid var(--border2);border-radius:4px;background:var(--surface);color:var(--text);flex-shrink:0}
   .pay-amt{font-size:11px;padding:2px 5px;border:1px solid var(--border2);border-radius:4px;background:var(--surface);color:var(--text);width:72px;text-align:right}
-  .pay-mismatch{color:var(--red);font-size:10px;font-weight:700}
+  .pay-mismatch{color:var(--red);font-size:11px;font-weight:700}
 
   @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.stat-clickable:hover,.unit-dot:hover{transform:none!important}}
   @media(max-width:420px){
@@ -784,16 +787,16 @@
   .unit-map-section{margin-bottom:14px}
   .unit-map-floors{display:flex;flex-direction:column;gap:4px}
   .unit-map-floor{display:flex;align-items:center;gap:6px}
-  .unit-map-lbl{font-size:10px;font-weight:600;color:var(--text3);font-family:var(--font-mono);width:32px;text-align:right;flex-shrink:0}
+  .unit-map-lbl{font-size:11px;font-weight:600;color:var(--text3);font-family:var(--font-mono);width:32px;text-align:right;flex-shrink:0}
   .unit-map-cells{display:flex;flex-wrap:wrap;gap:3px}
   .unit-dot{width:24px;height:22px;border-radius:4px;cursor:pointer;position:relative;transition:transform 100ms ease-out,box-shadow 100ms ease-out;flex-shrink:0}
   .unit-dot:hover{transform:translateY(-2px) scale(1.15);box-shadow:0 4px 10px rgba(0,0,0,0.2);z-index:10}
-  .unit-dot .unit-tip{display:none;position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:#1a2632;color:#fff;font-size:10px;font-family:var(--font-mono);padding:4px 8px;border-radius:4px;white-space:nowrap;z-index:100;pointer-events:none;line-height:1.5}
+  .unit-dot .unit-tip{display:none;position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:#1a2632;color:#fff;font-size:11px;font-family:var(--font-mono);padding:4px 8px;border-radius:4px;white-space:nowrap;z-index:100;pointer-events:none;line-height:1.5}
   .unit-dot:hover .unit-tip{display:block}
   .unit-dot.ud-occupied{background:var(--green-light);border:1px solid #C8E4B0}
   .unit-dot.ud-vacant{background:var(--red-light);border:1px solid #F0BFBF}
   .unit-dot.ud-blueground{background:#E8F0FF;border:1px solid #B8CCEE}
-  .unit-map-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:10px;color:var(--text3)}
+  .unit-map-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:11px;color:var(--text3)}
   .unit-map-legend span{display:flex;align-items:center;gap:4px}
   .unit-map-legend .leg-dot{width:10px;height:10px;border-radius:2px;display:inline-block;flex-shrink:0}
 
@@ -808,28 +811,28 @@
   .lb-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px}
   .lb-unit{font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
   .lb-res{color:var(--text2);font-size:13px}
-  .lb-st{font-size:9.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-left:auto}
+  .lb-st{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-left:auto}
   /* The status <select> is styled for table cells elsewhere (full width); pin it
      compact and right-aligned so it sits on the header line, not its own row. */
   .lb-top .ie-sel{margin-left:auto;width:auto;min-width:96px;flex:0 0 auto;font-size:11px;padding:2px 6px;border:1px solid var(--border);border-radius:5px;background:var(--card);color:var(--text2)}
   .lb-notes{font-size:12.5px;color:var(--text2);margin:7px 0 9px;white-space:pre-wrap;word-break:break-word}
   .lb-next{background:var(--bg);border-radius:6px;padding:7px 10px;font-size:12.5px;display:flex;gap:8px;align-items:flex-start}
-  .lb-next-lbl{color:var(--accent);font-weight:650;white-space:nowrap;font-size:10.5px;letter-spacing:.3px;text-transform:uppercase;padding-top:2px}
+  .lb-next-lbl{color:var(--accent);font-weight:650;white-space:nowrap;font-size:11px;letter-spacing:.3px;text-transform:uppercase;padding-top:2px}
   .lb-next-in{flex:1;border:none;border-bottom:1px dashed var(--border);background:transparent;font:inherit;font-size:12.5px;color:var(--text);padding:1px 0;outline:none}
   .lb-next-in:focus{border-bottom-color:var(--accent)}
   .lb-foot{display:flex;gap:12px;margin-top:9px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);flex-wrap:wrap;align-items:center}
   .lb-foot .lb-acts{margin-left:auto;display:flex;gap:5px;align-items:center}
   .lb-empty{color:var(--text3);font-style:italic;padding:18px 4px;font-size:13px}
-  .lb-fu{font-size:10px;font-weight:600;margin-top:3px}
+  .lb-fu{font-size:11px;font-weight:600;margin-top:3px}
   @media(max-width:640px){ .lb-st{margin-left:0} .lb-foot .lb-acts{margin-left:0;width:100%;margin-top:4px} }
   #moves-print-report .mr-hdr{margin-bottom:16px;border-bottom:2px solid #000;padding-bottom:10px;display:flex;justify-content:space-between;align-items:baseline}
   #moves-print-report .mr-title{font-size:18px;font-weight:700;font-family:var(--font-serif,serif);color:#000}
-  #moves-print-report .mr-note{font-size:9px;color:#444;margin-top:2px}
-  #moves-print-report .mr-sub{font-size:10px;color:#444}
+  #moves-print-report .mr-note{font-size:11px;color:#444;margin-top:2px}
+  #moves-print-report .mr-sub{font-size:11px;color:#444}
   #moves-print-report .mr-section{margin-bottom:22px}
   #moves-print-report .mr-section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;border-bottom:1px solid #000;padding-bottom:3px;color:#000}
   #moves-print-report table{width:100%;border-collapse:collapse}
-  #moves-print-report th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #000;padding:4px 6px;color:#000}
+  #moves-print-report th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #000;padding:4px 6px;color:#000}
   #moves-print-report td{padding:4px 6px;border-bottom:1px solid #ccc;font-size:12px;color:#000}
   #moves-print-report tr{page-break-inside:avoid}
   #moves-print-report tr.mr-flag td{font-weight:700}
@@ -1426,17 +1429,17 @@
         </div>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius)">
-        <span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-right:4px;flex-shrink:0">Key</span>
-        <span class="cal-chip cal-chip-in" style="pointer-events:none;cursor:default;font-size:10px">Move In</span>
-        <span class="cal-chip cal-chip-out" style="pointer-events:none;cursor:default;font-size:10px">Move Out</span>
-        <span class="cal-chip cal-chip-in" style="pointer-events:none;cursor:default;font-size:10px;border-style:dashed">Lease Start</span>
-        <span class="cal-chip cal-chip-out" style="pointer-events:none;cursor:default;font-size:10px;border-style:dashed">Lease End</span>
-        <span class="cal-chip cal-chip-task" style="pointer-events:none;cursor:default;font-size:10px">Task</span>
-        <span class="cal-chip cal-chip-todo" style="pointer-events:none;cursor:default;font-size:10px">To-Do</span>
-        <span class="cal-chip cal-chip-amenity" style="pointer-events:none;cursor:default;font-size:10px">Booking</span>
-        <span class="cal-chip cal-chip-logbook" style="pointer-events:none;cursor:default;font-size:10px">Logbook</span>
-        <span class="cal-chip cal-chip-incident" style="pointer-events:none;cursor:default;font-size:10px">Incident</span>
-        <span style="font-size:10px;color:var(--text3);margin-left:4px;font-style:italic">Dashed border = lease date only</span>
+        <span style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-right:4px;flex-shrink:0">Key</span>
+        <span class="cal-chip cal-chip-in" style="pointer-events:none;cursor:default;font-size:11px">Move In</span>
+        <span class="cal-chip cal-chip-out" style="pointer-events:none;cursor:default;font-size:11px">Move Out</span>
+        <span class="cal-chip cal-chip-in" style="pointer-events:none;cursor:default;font-size:11px;border-style:dashed">Lease Start</span>
+        <span class="cal-chip cal-chip-out" style="pointer-events:none;cursor:default;font-size:11px;border-style:dashed">Lease End</span>
+        <span class="cal-chip cal-chip-task" style="pointer-events:none;cursor:default;font-size:11px">Task</span>
+        <span class="cal-chip cal-chip-todo" style="pointer-events:none;cursor:default;font-size:11px">To-Do</span>
+        <span class="cal-chip cal-chip-amenity" style="pointer-events:none;cursor:default;font-size:11px">Booking</span>
+        <span class="cal-chip cal-chip-logbook" style="pointer-events:none;cursor:default;font-size:11px">Logbook</span>
+        <span class="cal-chip cal-chip-incident" style="pointer-events:none;cursor:default;font-size:11px">Incident</span>
+        <span style="font-size:11px;color:var(--text3);margin-left:4px;font-style:italic">Dashed border = lease date only</span>
       </div>
       <div id="cal-body"></div>
     </div>
@@ -1688,7 +1691,7 @@
   <div class="modal-hdr"><span class="modal-title">Tour Key Units</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-sgt-roster')">&#x2715;</button></div>
   <div class="modal-bdy">
     <p class="set-hint" style="margin-bottom:10px">Which units currently have self-guided tour keys, and how many of each. Keys are labeled by unit (e.g. <strong>530-1</strong>, <strong>530-2</strong>) to match your printed labels. Bed type + sq ft feed the printed labels too — leave sq ft blank if unknown. Removing a unit here only stops tracking it &mdash; it never deletes issue history.</p>
-    <div style="display:flex;gap:6px;margin-bottom:5px;font-size:10.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.3px">
+    <div style="display:flex;gap:6px;margin-bottom:5px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.3px">
       <div style="flex:1.1">Unit #</div><div style="flex:1.3">Bed Type</div><div style="width:72px;text-align:center">Sq Ft</div><div style="width:64px;text-align:center"># Keys</div><div style="width:26px"></div>
     </div>
     <div id="sgt-roster-rows"></div>
@@ -1805,7 +1808,7 @@
   <div class="modal-hdr"><span class="modal-title" id="modal-amenity-title">Add Amenity Booking</span><button class="modal-close" aria-label="Close" onclick="closeModal('modal-amenity')">&#x2715;</button></div>
   <div class="modal-bdy">
     <div class="fr"><div class="fg"><label>Resident Name</label><input id="am-resident" type="text"></div><div class="fg"><label>Unit #</label><input id="am-unit" type="text"></div></div>
-    <div class="fg"><label>Amenity Space(s) <span style="font-size:10px;color:var(--text3);font-weight:400">(select all that apply)</span></label><div id="am-space-wrap" style="border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;display:grid;grid-template-columns:1fr 1fr;gap:5px 14px;font-size:12.5px;background:var(--bg)"></div></div>
+    <div class="fg"><label>Amenity Space(s) <span style="font-size:11px;color:var(--text3);font-weight:400">(select all that apply)</span></label><div id="am-space-wrap" style="border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;display:grid;grid-template-columns:1fr 1fr;gap:5px 14px;font-size:12.5px;background:var(--bg)"></div></div>
     <div class="fr"><div class="fg"><label>Date</label><input id="am-date" type="date"></div><div class="fg"><label>Type</label><select id="am-type"><option value="reservation">Reservation</option><option value="event">Resident Event</option></select></div></div>
     <div class="fr"><div class="fg"><label>Start Time</label><input id="am-start" type="time"></div><div class="fg"><label>End Time</label><input id="am-end" type="time"></div></div>
     <div class="fr"><div class="fg"><label>Fee (reference)</label><input id="am-fee" type="text" placeholder="e.g. $150"></div><div class="fg"><label>Notes</label><textarea id="am-notes" class="ta-auto" rows="2"></textarea></div></div>
@@ -1880,7 +1883,7 @@
     <div class="fg" id="ur-unit-field" style="display:none"><label>Unit #</label><input id="ur-unit-num" type="text" placeholder="e.g. 617"></div>
     <div class="fg"><label>Unit Type</label><select id="ur-unit-type"><option value="">— Select —</option><option value="studio">Studio</option><option value="1br">1 Bedroom</option><option value="2br">2 Bedroom</option><option value="3br">3 Bedroom</option><option value="other">Other</option></select></div>
     <div class="fg"><label>Leaseholder</label><input id="ur-leaseholder" type="text" placeholder="Primary resident name"></div>
-    <div class="fg"><label>Roommates <span style="font-size:10px;color:var(--text3);font-weight:400">(comma-separated)</span></label><input id="ur-roommates" type="text" placeholder="Additional residents&#8230;"></div>
+    <div class="fg"><label>Roommates <span style="font-size:11px;color:var(--text3);font-weight:400">(comma-separated)</span></label><input id="ur-roommates" type="text" placeholder="Additional residents&#8230;"></div>
     <div class="fg"><label>&#128230; Package Delivery Preference</label><select id="ur-pte"><option value="not-set">Not Set</option><option value="inside">Leave Inside (PTE) — OK to enter for package delivery</option><option value="outside">Leave Outside — leave at the unit door</option><option value="package-room">Leave in Package Room</option></select></div>
     <div style="border-top:1px solid var(--border2);margin:14px 0 12px;padding-top:12px">
       <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">&#128273; Keys</div>
@@ -4394,7 +4397,7 @@ function renderDash() {
   html += '<div class="dash-grid">';
   html += '<div class="card"><div class="card-hdr"><span class="card-title">Today\'s Moves</span><span class="card-count">' + todayM.length + ' scheduled</span></div><div class="card-body" style="padding:8px 14px">';
   if (!todayM.length) html += '<div class="text-3 text-sm">No moves today</div>';
-  else todayM.forEach(function (m) { var dn = (m.tasks || []).filter(function (t) { return t.done; }).length, tot = (m.tasks || []).length; var pct2 = tot ? Math.round(dn/tot*100) : 0; var apptStr = m.apptTime ? fmtTime(m.apptTime) : (m.apptDate ? 'Appt confirmed' : ''); html += '<div class="mrd"><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'IN' : 'OUT') + '</span><span class="mono text-sm">Unit ' + esc(m.unit) + '</span><span style="flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(m.resident) + (apptStr ? ' <span style="font-weight:400;color:var(--text3)">· ' + apptStr + '</span>' : '') + '</span>' + (pct2===100 ? '<span class="pill pill-resolved" style="font-size:10px">Done</span>' : '<span class="text-xs text-3">' + dn + '/' + tot + '</span>') + '</div>'; });
+  else todayM.forEach(function (m) { var dn = (m.tasks || []).filter(function (t) { return t.done; }).length, tot = (m.tasks || []).length; var pct2 = tot ? Math.round(dn/tot*100) : 0; var apptStr = m.apptTime ? fmtTime(m.apptTime) : (m.apptDate ? 'Appt confirmed' : ''); html += '<div class="mrd"><span class="pill ' + (m.type === 'in' ? 'pill-in' : 'pill-out') + '">' + (m.type === 'in' ? 'IN' : 'OUT') + '</span><span class="mono text-sm">Unit ' + esc(m.unit) + '</span><span style="flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(m.resident) + (apptStr ? ' <span style="font-weight:400;color:var(--text3)">· ' + apptStr + '</span>' : '') + '</span>' + (pct2===100 ? '<span class="pill pill-resolved" style="font-size:11px">Done</span>' : '<span class="text-xs text-3">' + dn + '/' + tot + '</span>') + '</div>'; });
   html += '</div></div>';
   var d30 = new Date(); d30.setDate(d30.getDate()+30); var wEnd30 = localDateStr(d30);
   var withP = active.filter(function (m) { return (m.tasks || []).length > 0 && m.date >= t && m.date <= wEnd30; });
@@ -4403,9 +4406,9 @@ function renderDash() {
   else withP.slice(0, 5).forEach(function (m) { var dn = (m.tasks || []).filter(function (t) { return t.done; }).length, tot = (m.tasks || []).length, pct = Math.round(dn / tot * 100); var bc = pct < 30 ? 'var(--red)' : pct < 70 ? 'var(--amber)' : 'var(--green)'; html += '<div style="margin-bottom:8px"><div class="flex items-center gap-4" style="margin-bottom:3px"><span class="text-sm font-600" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(m.resident) + '</span><span class="mono text-xs text-3">Unit ' + esc(m.unit) + '</span><span class="mono text-xs text-3 ml-auto">' + dn + '/' + tot + '</span></div><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div></div>'; });
   html += '</div></div></div><div class="dash-grid3">';
   var fobCount = issuedK.length - activeOut.length;
-  var fobNote = fobCount > 0 ? '<div style="font-size:10px;color:var(--text3);padding-top:6px;text-align:center">+ ' + fobCount + ' resident fob' + (fobCount > 1 ? 's' : '') + ' held — see Key Tracker</div>' : '';
+  var fobNote = fobCount > 0 ? '<div style="font-size:11px;color:var(--text3);padding-top:6px;text-align:center">+ ' + fobCount + ' resident fob' + (fobCount > 1 ? 's' : '') + ' held — see Key Tracker</div>' : '';
   html += '<div class="card"><div class="card-hdr"><span class="card-title">Keys Out</span>'
-    + (overdueOut.length ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:10px;padding:2px 8px;margin-left:6px">⚠ ' + overdueOut.length + ' overdue</span>' : '')
+    + (overdueOut.length ? '<span style="font-size:11px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:10px;padding:2px 8px;margin-left:6px">⚠ ' + overdueOut.length + ' overdue</span>' : '')
     + '</div><div class="card-body" style="padding:8px 14px">';
   if (!activeOut.length) html += '<div class="text-3 text-sm">No temporary keys out</div>' + fobNote;
   else {
@@ -4421,9 +4424,9 @@ function renderDash() {
         + (k.fob ? '<span class="mono" style="font-size:11px;color:var(--text3)">#' + k.fob + ' </span>' : '')
         + 'Unit ' + esc(k.unit) + (k.name ? ' — ' + esc(k.name) : '') + (k.guest ? ' <span style="color:var(--text3);font-size:11px">/ ' + esc(k.guest) + '</span>' : '')
         + '</div>'
-        + (timeStr ? '<div style="font-size:10px;color:' + (isOD ? 'var(--red)' : 'var(--text3)') + '">' + timeStr + ' out · ' + k.type + '</div>' : '<div style="font-size:10px;color:var(--text3)">' + k.type + '</div>')
+        + (timeStr ? '<div style="font-size:11px;color:' + (isOD ? 'var(--red)' : 'var(--text3)') + '">' + timeStr + ' out · ' + k.type + '</div>' : '<div style="font-size:11px;color:var(--text3)">' + k.type + '</div>')
         + '</div>'
-        + (isViewerUser() ? '' : '<button onclick="dashReturnKey(\'' + k.id + '\')" style="flex-shrink:0;font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-family:inherit;transition:background 120ms ease-out,color 120ms ease-out,border-color 120ms ease-out;white-space:nowrap" onmouseover="this.style.background=\'var(--green-light)\';this.style.color=\'var(--green)\';this.style.borderColor=\'rgba(26,102,64,0.3)\'" onmouseout="this.style.background=\'var(--surface2)\';this.style.color=\'var(--text2)\';this.style.borderColor=\'var(--border)\'">✓ Return</button>')
+        + (isViewerUser() ? '' : '<button onclick="dashReturnKey(\'' + k.id + '\')" style="flex-shrink:0;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-family:inherit;transition:background 120ms ease-out,color 120ms ease-out,border-color 120ms ease-out;white-space:nowrap" onmouseover="this.style.background=\'var(--green-light)\';this.style.color=\'var(--green)\';this.style.borderColor=\'rgba(26,102,64,0.3)\'" onmouseout="this.style.background=\'var(--surface2)\';this.style.color=\'var(--text2)\';this.style.borderColor=\'var(--border)\'">✓ Return</button>')
         + '</div>';
     });
     if (activeOut.length > 6) html += '<div style="font-size:11px;color:var(--text3);padding-top:5px;text-align:center;cursor:pointer" onclick="navToSec(\'keys\')">+' + (activeOut.length - 6) + ' more — view all →</div>';
@@ -4439,7 +4442,7 @@ function renderDash() {
     html += '<div class="card" style="margin-top:14px"><div class="card-hdr"><span class="card-title">Ready for Turnover</span><span class="card-count">' + turnoverReady.length + ' unit' + (turnoverReady.length > 1 ? 's' : '') + '</span><button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="navToMoves(\'turnover\')">View all &rarr;</button></div><div class="card-body" style="padding:8px 14px">';
     turnoverReady.forEach(function (m) {
       var tasksTotal = (m.tasks || []).length;
-      html += '<div class="flex items-center gap-8" style="padding:5px 0;border-bottom:1px solid var(--border2);cursor:pointer" onclick="navToMoves(\'turnover\')"><span class="pill pill-out" style="font-size:10px">OUT</span><span class="mono font-600 text-sm">Unit ' + esc(m.unit) + '</span><span class="text-sm" style="flex:1">' + esc(m.resident) + '</span><span class="text-xs text-3 mono">Out: ' + fmtShort(m.date) + '</span><span class="pill pill-resolved" style="font-size:10px;margin-left:6px">' + tasksTotal + '/' + tasksTotal + ' done</span></div>';
+      html += '<div class="flex items-center gap-8" style="padding:5px 0;border-bottom:1px solid var(--border2);cursor:pointer" onclick="navToMoves(\'turnover\')"><span class="pill pill-out" style="font-size:11px">OUT</span><span class="mono font-600 text-sm">Unit ' + esc(m.unit) + '</span><span class="text-sm" style="flex:1">' + esc(m.resident) + '</span><span class="text-xs text-3 mono">Out: ' + fmtShort(m.date) + '</span><span class="pill pill-resolved" style="font-size:11px;margin-left:6px">' + tasksTotal + '/' + tasksTotal + ' done</span></div>';
     });
     html += '</div></div>';
   }
@@ -5339,7 +5342,7 @@ function buildCL(m, filterCat) {
   var done = tasks.filter(function (t) { return t.done; }).length;
   var allTasksTotal = (m.tasks || []).length;
   var allTasksDone = (m.tasks || []).filter(function(t){ return t.done; }).length;
-  var filteredNote = (tasks.length < allTasksTotal) ? ' <span style="font-size:10px;color:var(--text3);font-weight:400">(' + tasks.length + ' shown)</span>' : '';
+  var filteredNote = (tasks.length < allTasksTotal) ? ' <span style="font-size:11px;color:var(--text3);font-weight:400">(' + tasks.length + ' shown)</span>' : '';
   var coRes = m.coResidents || [];
   var totalResidents = 1 + coRes.length;
   var html = '<div class="cl-hdr"><span class="cl-title">' + esc(m.resident) + ' - Unit ' + esc(m.unit) + '</span><span class="cl-prog-txt">' + allTasksDone + '/' + allTasksTotal + ' tasks' + filteredNote + '</span>';
@@ -5383,7 +5386,7 @@ function buildCL(m, filterCat) {
     }
     html += '<div class="cl-item' + (isParkingTask ? ' cl-item-parking' : '') + '" onclick="event.stopPropagation()">';
     html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + (isViewerUser() ? ' disabled' : '') + ' onchange="toggleTask(\'' + m.id + '\',\'' + t.id + '\',this.checked)">';
-    if (getTaskAutomationId(t)) html += '<span title="Connected task: renaming it will not break its workflow" aria-label="Connected task" style="font-size:10px;color:var(--accent);flex-shrink:0">&#128279;</span>';
+    if (getTaskAutomationId(t)) html += '<span title="Connected task: renaming it will not break its workflow" aria-label="Connected task" style="font-size:11px;color:var(--accent);flex-shrink:0">&#128279;</span>';
     // Editable task text
     html += '<input type="text" class="cl-text-input ' + (t.done ? 'done' : '') + '" value="' + (t.text || t.label || '').replace(/"/g, '&quot;') + '" onblur="updateTaskField(\'' + m.id + '\',\'' + t.id + '\',\'text\',this.value)" onclick="event.stopPropagation()">';
     // Quantity field (only for key tasks)
@@ -5420,7 +5423,7 @@ function buildCL(m, filterCat) {
       var parts = [];
       if (t.completedBy) parts.push('by ' + t.completedBy);
       if (doneTag) parts.push(doneTag);
-      html += '<span style="font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0">' + parts.join(' · ') + '</span>';
+      html += '<span style="font-size:11px;color:var(--text3);white-space:nowrap;flex-shrink:0">' + parts.join(' · ') + '</span>';
     }
     // Note button
     var hasNote = t.note && t.note.trim();
@@ -5713,7 +5716,7 @@ function renderMoves() {
         var rowStuck = moveIsStuck(m, t);
         var stuckDays = rowStuck && m.date ? Math.round((new Date(t + 'T12:00:00') - new Date(m.date + 'T12:00:00')) / 86400000) : 0;
         rows += '<td class="mono text-sm">' + fmtShort(m.date)
-          + (stuckDays > 0 ? '<div style="margin-top:3px"><span class="pill" style="background:var(--red-light);color:var(--red);font-size:9px;font-weight:700">&#9888; ' + stuckDays + 'd overdue</span></div>' : '')
+          + (stuckDays > 0 ? '<div style="margin-top:3px"><span class="pill" style="background:var(--red-light);color:var(--red);font-size:11px;font-weight:700">&#9888; ' + stuckDays + 'd overdue</span></div>' : '')
           + '</td>';
         var stage = getMoveStage(m);
         var archBtn = (!m.archivedAt && !isStaffUser)
@@ -5725,11 +5728,11 @@ function renderMoves() {
         rows += '<td>' + apptBadge + '</td>';
         var payTask = (m.tasks||[]).find(function(tk){ return tk.paymentTask; });
         var payMismatch = payTask && m.total && payTask.paymentReceived && String(payTask.paymentReceived).replace(/[$,\s]/g,'') !== String(m.total).replace(/[$,\s]/g,'');
-        rows += '<td class="mono text-sm tar tabnum">' + (m.total ? '$' + esc(m.total) : '-') + (payMismatch ? '<br><span style="font-size:9px;color:var(--red);font-weight:700">⚠ MISMATCH</span>' : '') + '</td>';
+        rows += '<td class="mono text-sm tar tabnum">' + (m.total ? '$' + esc(m.total) : '-') + (payMismatch ? '<br><span style="font-size:11px;color:var(--red);font-weight:700">⚠ MISMATCH</span>' : '') + '</td>';
         rows += '<td class="text-sm text-2 moves-note-cell" title="' + (m.notes ? esc(m.notes).replace(/"/g,'&quot;') : '') + '">' + (m.notes ? esc(m.notes) : '-') + '</td>';
         if (moveShowLogged) rows += '<td class="text-xs text-3">' + fmtByTag(m.addedBy, m.createdAt) + '</td>';
         rows += '<td><div class="flex gap-4" style="justify-content:flex-end;align-items:center">';
-        rows += pct === 100 ? '<span class="pill pill-resolved" style="font-size:10px">Done</span>' : '<div style="width:64px"><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div><div class="text-xs mono" style="text-align:right;margin-top:2px;color:' + bc + ';font-weight:600">' + dn + '/' + tot + '</div></div>';
+        rows += pct === 100 ? '<span class="pill pill-resolved" style="font-size:11px">Done</span>' : '<div style="width:64px"><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div><div class="text-xs mono" style="text-align:right;margin-top:2px;color:' + bc + ';font-weight:600">' + dn + '/' + tot + '</div></div>';
         if (!isStaffUser) rows += '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openEditMove(\'' + m.id + '\')" title="Edit">&#9998;</button>';
         rows += archBtn;
         rows += '</div></td></tr>';
@@ -6440,23 +6443,23 @@ function renderLogbook() {
   list.forEach(function(e) {
     var cat = e.category || 'request';
     var cc = catColors[cat] || catColors.other;
-    var pill = '<span style="background:'+cc.bg+';color:'+cc.color+';font-size:10px;font-weight:600;border-radius:4px;padding:2px 7px;white-space:nowrap">'+esc(e.type)+'</span>';
+    var pill = '<span style="background:'+cc.bg+';color:'+cc.color+';font-size:11px;font-weight:600;border-radius:4px;padding:2px 7px;white-space:nowrap">'+esc(e.type)+'</span>';
     // 24-hour follow-up indicator for concern entries
     var fuHtml = '';
     if (cat === 'concern' && e.status !== 'resolved') {
       var nowMs = Date.now(); var dueMs = (e.createdAt||0) + 86400000;
       if (nowMs > dueMs) {
-        fuHtml = '<div style="color:var(--red);font-size:10px;font-weight:600;margin-top:3px">⚠ Follow-up overdue</div>';
+        fuHtml = '<div style="color:var(--red);font-size:11px;font-weight:600;margin-top:3px">⚠ Follow-up overdue</div>';
       } else {
         var dueD = new Date(dueMs);
-        fuHtml = '<div style="color:#92400e;font-size:10px;margin-top:3px">Follow-up due '+dueD.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+dueD.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})+'</div>';
+        fuHtml = '<div style="color:#92400e;font-size:11px;margin-top:3px">Follow-up due '+dueD.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+dueD.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})+'</div>';
       }
     }
     // Flag badges
     var flagHtml = '';
-    if (e.managerNotified) flagHtml += '<span style="font-size:9px;font-weight:600;background:rgba(34,197,94,0.12);color:#15803d;border-radius:3px;padding:1px 5px;margin-right:3px">✓ Mgr</span>';
-    if (e.footagePreserved) flagHtml += '<span style="font-size:9px;font-weight:600;background:rgba(99,102,241,0.12);color:#4338ca;border-radius:3px;padding:1px 5px;margin-right:3px">📷 Footage</span>';
-    if (e.incidentReport) flagHtml += '<span style="font-size:9px;font-weight:600;background:rgba(239,68,68,0.1);color:#b91c1c;border-radius:3px;padding:1px 5px">📋 IR</span>';
+    if (e.managerNotified) flagHtml += '<span style="font-size:11px;font-weight:600;background:rgba(34,197,94,0.12);color:#15803d;border-radius:3px;padding:1px 5px;margin-right:3px">✓ Mgr</span>';
+    if (e.footagePreserved) flagHtml += '<span style="font-size:11px;font-weight:600;background:rgba(99,102,241,0.12);color:#4338ca;border-radius:3px;padding:1px 5px;margin-right:3px">📷 Footage</span>';
+    if (e.incidentReport) flagHtml += '<span style="font-size:11px;font-weight:600;background:rgba(239,68,68,0.1);color:#b91c1c;border-radius:3px;padding:1px 5px">📋 IR</span>';
     var flagRow = flagHtml ? '<div style="margin-top:4px">'+flagHtml+'</div>' : '';
 
     var d = new Date(e.createdAt||Date.now());
@@ -6492,7 +6495,7 @@ function renderLogbook() {
       ? '<button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="toggleLogbookLog(\''+e.id+'\')" title="Activity log">'+logBtnLabel+'</button> '
         + '<button class="btn btn-ghost btn-xs" onclick="openEditLogbook(\''+e.id+'\')" title="Edit">&#9998;</button>'
         + '<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteLogbook(\''+e.id+'\')">&#215;</button>'
-      : '<span style="font-size:10px;color:var(--text3);font-style:italic">legacy</span>';
+      : '<span style="font-size:11px;color:var(--text3);font-style:italic">legacy</span>';
 
     // Status drives the card's left edge so state reads at a glance without
     // hunting the dropdown; 'resolved' also dims the whole card.
@@ -6766,16 +6769,16 @@ function renderSgtKeys() {
         var overdue = ms >= 3 * 3600000; // a self-guided tour running 3h+ is worth a look
         var nc = overdue ? 'var(--red)' : 'var(--amber)';
         html += '<div style="width:74px;min-height:68px;background:' + (overdue ? 'rgba(192,53,53,0.08)' : 'rgba(181,112,32,0.07)') + ';border:1.5px solid ' + (overdue ? 'rgba(192,53,53,0.4)' : 'rgba(181,112,32,0.35)') + ';border-radius:6px;padding:5px 3px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;position:relative" onclick="dashReturnKey(\'' + k.id + '\')" title="' + esc(lbl) + ' — out to ' + esc(k.name || '') + '\nClick to mark returned">'
-          + (overdue ? '<span style="position:absolute;top:2px;right:3px;font-size:8px;color:var(--red)">&#9888;</span>' : '')
+          + (overdue ? '<span style="position:absolute;top:2px;right:3px;font-size:11px;color:var(--red)">&#9888;</span>' : '')
           + '<span style="font-size:11px;font-weight:700;font-family:var(--font-mono);color:' + nc + '">' + esc(lbl) + '</span>'
-          + '<span style="font-size:8px;font-weight:600;color:' + nc + ';text-align:center;line-height:1.2;word-break:break-word">' + esc((k.name || '—').split(' ')[0]) + '</span>'
-          + '<span style="font-size:7px;color:' + (overdue ? 'var(--red)' : 'var(--text3)') + '">' + fmtDurOut(ms) + '</span>'
-          + '<span style="font-size:7px;color:var(--accent);font-weight:600">&#8617; return</span>'
+          + '<span style="font-size:11px;font-weight:600;color:' + nc + ';text-align:center;line-height:1.2;word-break:break-word">' + esc((k.name || '—').split(' ')[0]) + '</span>'
+          + '<span style="font-size:11px;color:' + (overdue ? 'var(--red)' : 'var(--text3)') + '">' + fmtDurOut(ms) + '</span>'
+          + '<span style="font-size:11px;color:var(--accent);font-weight:600">&#8617; return</span>'
           + '</div>';
       } else {
         html += '<div style="width:74px;min-height:68px;background:var(--surface);border:1.5px solid var(--border);border-radius:6px;padding:5px 3px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transition:border-color .12s,background .12s" onclick="openSgtIssue(\'' + esc(String(u.unit)) + '\',' + i + ')" title="' + esc(lbl) + ' — available. Click to issue." onmouseover="this.style.borderColor=\'var(--accent)\';this.style.background=\'var(--accent-light)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.background=\'var(--surface)\'">'
           + '<span style="font-size:11px;font-weight:700;font-family:var(--font-mono);color:var(--text3)">' + esc(lbl) + '</span>'
-          + '<span style="font-size:7.5px;color:var(--text3)">available</span>'
+          + '<span style="font-size:11px;color:var(--text3)">available</span>'
           + '</div>';
       }
     }
@@ -7025,16 +7028,16 @@ function renderVendorDrawer() {
       var overdue = ms >= 8 * 3600000; // vendor cards are day-use; 8h+ means it likely never came back
       var nc = overdue ? 'var(--red)' : 'var(--amber)';
       html += '<div style="width:84px;min-height:78px;background:' + (overdue ? 'rgba(192,53,53,0.08)' : 'rgba(181,112,32,0.07)') + ';border:1.5px solid ' + (overdue ? 'rgba(192,53,53,0.4)' : 'rgba(181,112,32,0.35)') + ';border-radius:6px;padding:7px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative" onclick="dashReturnKey(\'' + k.id + '\')" title="' + esc(lbl) + ' — ' + esc(k.company || k.name || '') + '\nClick to mark returned">'
-        + (overdue ? '<span style="position:absolute;top:3px;right:4px;font-size:9px;color:var(--red)">&#9888;</span>' : '')
+        + (overdue ? '<span style="position:absolute;top:3px;right:4px;font-size:11px;color:var(--red)">&#9888;</span>' : '')
         + '<span style="font-size:13px;font-weight:700;font-family:var(--font-mono);color:' + nc + '">' + esc(lbl) + '</span>'
-        + '<span style="font-size:9px;font-weight:600;color:' + nc + ';text-align:center;line-height:1.3;word-break:break-word">' + esc((k.company || k.name || '—').split(' ')[0]) + '</span>'
-        + '<span style="font-size:8px;color:' + (overdue ? 'var(--red)' : 'var(--text3)') + ';margin-top:1px">' + fmtDurOut(ms) + ' out</span>'
-        + '<span style="font-size:8px;color:var(--accent);margin-top:2px;font-weight:600">&#8617; return</span>'
+        + '<span style="font-size:11px;font-weight:600;color:' + nc + ';text-align:center;line-height:1.3;word-break:break-word">' + esc((k.company || k.name || '—').split(' ')[0]) + '</span>'
+        + '<span style="font-size:11px;color:' + (overdue ? 'var(--red)' : 'var(--text3)') + ';margin-top:1px">' + fmtDurOut(ms) + ' out</span>'
+        + '<span style="font-size:11px;color:var(--accent);margin-top:2px;font-weight:600">&#8617; return</span>'
         + '</div>';
     } else {
       html += '<div style="width:84px;min-height:78px;background:var(--surface);border:1.5px solid var(--border);border-radius:6px;padding:7px 5px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">'
         + '<span style="font-size:13px;font-weight:700;font-family:var(--font-mono);color:var(--text3)">' + lbl + '</span>'
-        + '<span style="font-size:8px;color:var(--text3)">available</span>'
+        + '<span style="font-size:11px;color:var(--text3)">available</span>'
         + '</div>';
     }
   }
@@ -7052,7 +7055,7 @@ function renderCardPoolTable() {
     var unacc = (last && last.physical != null && rem != null) ? (rem - last.physical) : null;
     var sgtUnset = key === 'sgt' && !sgtUnits().length;
     var startCell = start == null ? '<span style="color:var(--text3)">not set</span>'
-      : start + (key === 'sgt' && sgtUnits().length ? ' <span style="font-size:10px;color:var(--text3)">from roster</span>' : '');
+      : start + (key === 'sgt' && sgtUnits().length ? ' <span style="font-size:11px;color:var(--text3)">from roster</span>' : '');
     if (sgtUnset) {
       rows += '<tr>'
         + '<td style="font-weight:600">' + esc(CARD_POOL_LABELS[key]) + '</td>'
@@ -7067,13 +7070,13 @@ function renderCardPoolTable() {
       + '<td>' + startCell + '</td>'
       + '<td>' + out + '</td>'
       + '<td style="font-weight:700">' + (rem == null ? '—' : rem) + '</td>'
-      + '<td>' + (last ? last.physical + ' <span style="font-size:10px;color:var(--text3)">' + fmtShort(last.date) + '</span>' : '<span style="color:var(--text3)">never</span>') + '</td>'
+      + '<td>' + (last ? last.physical + ' <span style="font-size:11px;color:var(--text3)">' + fmtShort(last.date) + '</span>' : '<span style="color:var(--text3)">never</span>') + '</td>'
       // A gap with a logged reason is accounted for — show it in amber as "unlogged" rather than
       // red "missing", so a known paper-trail backlog doesn't read as lost stock every time.
       + '<td>' + (unacc == null ? '—'
         : unacc === 0 ? '<span style="color:var(--green);font-weight:700">&#10003; match</span>'
         : (last && last.note
-          ? '<span style="color:var(--amber);font-weight:700">' + (unacc > 0 ? unacc + ' unlogged' : Math.abs(unacc) + ' over') + '</span><div style="font-size:10px;color:var(--text3);line-height:1.35;margin-top:2px;max-width:200px">' + esc(last.note) + '</div>'
+          ? '<span style="color:var(--amber);font-weight:700">' + (unacc > 0 ? unacc + ' unlogged' : Math.abs(unacc) + ' over') + '</span><div style="font-size:11px;color:var(--text3);line-height:1.35;margin-top:2px;max-width:200px">' + esc(last.note) + '</div>'
           : '<span style="color:var(--red);font-weight:700">' + (unacc > 0 ? unacc + ' missing' : Math.abs(unacc) + ' over') + '</span>')) + '</td>'
       + '<td style="text-align:right"><button class="btn btn-ghost btn-xs" onclick="openCardPoolReconcile(\'' + key + '\')">&#128290; Reconcile</button></td>'
       + '</tr>';
@@ -7200,16 +7203,16 @@ function renderCardDrawer() {
       var nc = overdue ? 'var(--red)' : 'var(--amber)';
       var unitLbl = k.unit ? 'Unit ' + k.unit : (k.name ? k.name.split(' ')[0] : '—');
       html += '<div style="width:74px;min-height:76px;background:' + bg + ';border:' + bd + ';border-radius:6px;padding:7px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative" onclick="dashReturnKey(\'' + k.id + '\')" title="Card #' + cn + ' — ' + esc(k.name||'') + ' Unit ' + esc(k.unit||'') + (k.guest ? ' / ' + k.guest : '') + '\nClick to mark returned">'
-        + (overdue ? '<span style="position:absolute;top:3px;right:4px;font-size:9px;color:var(--red)">⚠</span>' : '')
+        + (overdue ? '<span style="position:absolute;top:3px;right:4px;font-size:11px;color:var(--red)">⚠</span>' : '')
         + '<span style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:' + nc + '">#' + cn + '</span>'
-        + '<span style="font-size:9px;font-weight:600;color:' + nc + ';text-align:center;line-height:1.3;word-break:break-word">' + esc(unitLbl) + '</span>'
-        + '<span style="font-size:8px;color:' + (overdue ? 'var(--red)' : 'var(--text3)') + ';margin-top:1px">' + timeStr + ' out</span>'
-        + '<span style="font-size:8px;color:var(--accent);margin-top:2px;font-weight:600">↩ return</span>'
+        + '<span style="font-size:11px;font-weight:600;color:' + nc + ';text-align:center;line-height:1.3;word-break:break-word">' + esc(unitLbl) + '</span>'
+        + '<span style="font-size:11px;color:' + (overdue ? 'var(--red)' : 'var(--text3)') + ';margin-top:1px">' + timeStr + ' out</span>'
+        + '<span style="font-size:11px;color:var(--accent);margin-top:2px;font-weight:600">↩ return</span>'
         + '</div>';
     } else {
       html += '<div style="width:74px;min-height:76px;background:var(--surface);border:1.5px solid var(--border);border-radius:6px;padding:7px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:border-color .12s,background .12s" onclick="openQuickKeyIssue(' + i + ')" title="Card #' + cn + ' — in drawer. Click to issue." onmouseover="this.style.borderColor=\'var(--accent)\';this.style.background=\'var(--accent-light)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.background=\'var(--surface)\'">'
         + '<span style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:var(--text3)">#' + cn + '</span>'
-        + '<span style="font-size:8px;color:var(--text3)">in drawer</span>'
+        + '<span style="font-size:11px;color:var(--text3)">in drawer</span>'
         + '</div>';
     }
   }
@@ -7434,14 +7437,14 @@ function renderKeys() {
         var staleCount2 = isStale2 ? countStaleShifts(k) : 0;
         var contacts2 = k.contacts || (k.reachedOut ? [{ts: k.reachedOutAt || k.issuedAt || now, by: 'Previous'}] : []);
         var contactCount2 = contacts2.length;
-        var overdueTag2 = isOverdue2 ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + fmtOverdueDuration(overdueMs2) + ' OUT</span>' : '';
+        var overdueTag2 = isOverdue2 ? '<span style="font-size:11px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + fmtOverdueDuration(overdueMs2) + ' OUT</span>' : '';
         var staleTag2 = isStale2 ? '<span class="stale-badge">&#9888; Stale &mdash; ' + staleCount2 + ' shift' + (staleCount2 !== 1 ? 's' : '') + '</span>' : '';
         var feeBadge2 = keyFeeBadgesHtml(k);
         var oneTimeFee2 = '';
         if (isOverdue2 && !k.feeAddedToLedger && !k.feeWaived && contactCount2 >= 3) {
-          oneTimeFee2 = '<div style="margin-top:6px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:var(--amber);font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">&#128179; $' + ONE_TIME_KEY_FEE + ' &mdash; Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px" onclick="markFeeToLedger(\'' + k.id + '\')">&#10003; Added</button><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px;color:var(--text3)" onclick="waiveKeyFee(\'' + k.id + '\')">Waive</button></div>';
+          oneTimeFee2 = '<div style="margin-top:6px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:var(--amber);font-size:11px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">&#128179; $' + ONE_TIME_KEY_FEE + ' &mdash; Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:11px;padding:1px 6px" onclick="markFeeToLedger(\'' + k.id + '\')">&#10003; Added</button><button class="btn btn-ghost btn-xs" style="font-size:11px;padding:1px 6px;color:var(--text3)" onclick="waiveKeyFee(\'' + k.id + '\')">Waive</button></div>';
         } else if (k.feeAddedToLedger) {
-          oneTimeFee2 = '<div style="margin-top:3px"><span style="font-size:10px;color:var(--green);font-weight:600">&#10003; $' + ONE_TIME_KEY_FEE + ' added to ledger</span></div>';
+          oneTimeFee2 = '<div style="margin-top:3px"><span style="font-size:11px;color:var(--green);font-weight:600">&#10003; $' + ONE_TIME_KEY_FEE + ' added to ledger</span></div>';
         }
         var borderColor2 = isOverdue2 ? '#fca5a5' : (isStale2 ? 'rgba(217,119,6,.5)' : 'var(--border)');
         var cardBg2 = isOverdue2 ? '#fef2f2' : 'var(--surface)';
@@ -7483,12 +7486,12 @@ function renderKeys() {
           c += '<div class="note-trail">' + notes2.slice(-3).map(function(n) {
             var d = new Date(n.ts);
             var tf = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-            return '<div class="note-trail-entry"><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px">' + tf + (n.by ? ' &middot; ' + n.by : '') + (n.shift ? ' [' + n.shift + ']' : '') + '</span><span style="margin-left:8px">' + n.note + '</span></div>';
+            return '<div class="note-trail-entry"><span style="color:var(--text3);font-family:var(--font-mono);font-size:11px">' + tf + (n.by ? ' &middot; ' + n.by : '') + (n.shift ? ' [' + n.shift + ']' : '') + '</span><span style="margin-left:8px">' + n.note + '</span></div>';
           }).join('') + '</div>';
         }
         // Contact history
         if (isOverdue2 && contactCount2 > 0) {
-          c += '<div style="font-size:10px;color:var(--text3);margin:6px 0;display:flex;flex-wrap:wrap;gap:10px">';
+          c += '<div style="font-size:11px;color:var(--text3);margin:6px 0;display:flex;flex-wrap:wrap;gap:10px">';
           contacts2.slice(0, 3).forEach(function(ct, i) {
             var d = new Date(ct.ts);
             var tf = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
@@ -7545,7 +7548,7 @@ function renderKeys() {
     var rowClass = (isStale ? ' key-stale-row' : '') + (isOverdue ? ' key-overdue-row' : '');
     var rowBg = isOverdue ? 'background:var(--red-light)' : '';
     var rowStyle = rowBg ? ' style="' + rowBg + '"' : '';
-    var overdueTag = isOverdue ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + fmtOverdueDuration(overdueMs) + ' OUT</span>' : '';
+    var overdueTag = isOverdue ? '<span style="font-size:11px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 5px;margin-left:4px">&#9888; ' + fmtOverdueDuration(overdueMs) + ' OUT</span>' : '';
     var staleTag = isStale ? '<span class="stale-badge">&#9888; Stale &mdash; ' + staleCount + ' shift' + (staleCount !== 1 ? 's' : '') + '</span>' : '';
     var isVendor = k.type === 'vendor';
     var vendorLine = isVendor && k.company ? '<div style="font-size:11px;color:var(--text3)">' + esc(k.company) + (k.workArea ? ' · ' + esc(k.workArea) : '') + '</div>' : '';
@@ -7564,15 +7567,15 @@ function renderKeys() {
     var oneTimeFee = '';
     if (isOneTime && isIssued && isOverdue && !k.feeAddedToLedger && !k.feeWaived) {
       if (contactCount >= 3) {
-        oneTimeFee = '<div style="margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:var(--amber);font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">💳 $' + ONE_TIME_KEY_FEE + ' — Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px" onclick="event.stopPropagation();markFeeToLedger(\'' + k.id + '\')">✓ Added</button><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px;color:var(--text3)" onclick="event.stopPropagation();waiveKeyFee(\'' + k.id + '\')">Waive</button></div>';
+        oneTimeFee = '<div style="margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:var(--amber);font-size:11px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">💳 $' + ONE_TIME_KEY_FEE + ' — Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:11px;padding:1px 6px" onclick="event.stopPropagation();markFeeToLedger(\'' + k.id + '\')">✓ Added</button><button class="btn btn-ghost btn-xs" style="font-size:11px;padding:1px 6px;color:var(--text3)" onclick="event.stopPropagation();waiveKeyFee(\'' + k.id + '\')">Waive</button></div>';
       }
     } else if (isOneTime && k.feeAddedToLedger) {
-      oneTimeFee = '<div style="margin-top:3px"><span style="font-size:10px;color:var(--green);font-weight:600">✓ $' + ONE_TIME_KEY_FEE + ' added to ledger</span></div>';
+      oneTimeFee = '<div style="margin-top:3px"><span style="font-size:11px;color:var(--green);font-weight:600">✓ $' + ONE_TIME_KEY_FEE + ' added to ledger</span></div>';
     }
     var isVendorIssued = isVendor && isIssued;
     var vendorOverdueMs = isVendorIssued && k.issuedAt ? now - k.issuedAt : 0;
     var vendorOverdue = vendorOverdueMs >= 8*3600000; // 8h for vendor
-    var vendorOverdueTag = vendorOverdue ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 5px;margin-left:4px">⚠ ' + fmtOverdueDuration(vendorOverdueMs) + ' OUT</span>' : '';
+    var vendorOverdueTag = vendorOverdue ? '<span style="font-size:11px;font-weight:700;color:var(--red);background:var(--red-light);border-radius:4px;padding:1px 5px;margin-left:4px">⚠ ' + fmtOverdueDuration(vendorOverdueMs) + ' OUT</span>' : '';
     var timeOutCell = (isOneTime && k.timeout) ? '<span class="mono text-xs">' + fmtTime(k.timeout) + '</span>' : (isOneTime && k.issuedAt ? '<span class="mono text-xs text-3">' + new Date(k.issuedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + '</span>' : (isVendor && k.vendorReturn ? '<span class="mono text-xs">Back by ' + fmtTime(k.vendorReturn) + '</span>' : '<span class="text-xs text-3">-</span>'));
     html += '<tr class="' + rowClass + '"' + (isVendorIssued ? ' style="background:rgba(55,138,221,0.10)"' : rowStyle ? rowStyle : '') + '>';
     html += '<td class="mono font-600">' + esc(k.unit) + '</td>';
@@ -7593,7 +7596,7 @@ function renderKeys() {
       if (notes.length) {
         trailHtml = '<div class="note-trail">' + notes.slice(-3).map(function (n) {
           var d = new Date(n.ts); var tf = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-          return '<div class="note-trail-entry"><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px">' + tf + (n.by ? ' · ' + n.by : '') + (n.shift ? ' [' + n.shift + ']' : '') + '</span><span style="margin-left:8px">' + n.note + '</span></div>';
+          return '<div class="note-trail-entry"><span style="color:var(--text3);font-family:var(--font-mono);font-size:11px">' + tf + (n.by ? ' · ' + n.by : '') + (n.shift ? ' [' + n.shift + ']' : '') + '</span><span style="margin-left:8px">' + n.note + '</span></div>';
         }).join('') + '</div>';
       }
       var noteInputId = 'key-note-input-' + k.id;
@@ -7604,7 +7607,7 @@ function renderKeys() {
       html += '<button class="btn btn-secondary btn-sm" onclick="addKeyShiftNote(\'' + k.id + '\',g(\'' + noteInputId + '\').value)">Save note</button>';
       if (isOverdue && !k.feeAddedToLedger && !k.feeWaived) {
         if (contactCount > 0) {
-          html += '<div style="font-size:10px;color:var(--text3);display:flex;flex-wrap:wrap;gap:8px;margin-right:4px">';
+          html += '<div style="font-size:11px;color:var(--text3);display:flex;flex-wrap:wrap;gap:8px;margin-right:4px">';
           contacts.slice(0, 3).forEach(function(ct, i) {
             var d = new Date(ct.ts);
             var tf = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
@@ -7803,17 +7806,17 @@ async function waiveUnreturnedFee(id) {
 function keyFeeBadgesHtml(k) {
   var out = '';
   function badge(amountLabel, addFn, waiveFn) {
-    return '<div style="margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:var(--amber);font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">💳 ' + amountLabel + ' — Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px" onclick="event.stopPropagation();' + addFn + '(\'' + k.id + '\')">✓ Added</button><button class="btn btn-ghost btn-xs" style="font-size:10px;padding:1px 6px;color:var(--text3)" onclick="event.stopPropagation();' + waiveFn + '(\'' + k.id + '\')">Waive</button></div>';
+    return '<div style="margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="background:rgba(217,119,6,0.12);color:var(--amber);font-size:11px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid rgba(217,119,6,0.25)">💳 ' + amountLabel + ' — Add to ledger</span><button class="btn btn-ghost btn-xs" style="font-size:11px;padding:1px 6px" onclick="event.stopPropagation();' + addFn + '(\'' + k.id + '\')">✓ Added</button><button class="btn btn-ghost btn-xs" style="font-size:11px;padding:1px 6px;color:var(--text3)" onclick="event.stopPropagation();' + waiveFn + '(\'' + k.id + '\')">Waive</button></div>';
   }
   if (k.isReplacement && k.fee) {
     if (!k.feeAddedToLedger && !k.feeWaived) out += badge('$' + k.fee, 'markFeeToLedger', 'waiveKeyFee');
-    else if (k.feeAddedToLedger) out += '<div style="margin-top:3px"><span style="font-size:10px;color:var(--green);font-weight:600">✓ $' + k.fee + ' added to ledger</span></div>';
-    else if (k.feeWaived) out += '<div style="margin-top:3px"><span style="font-size:10px;color:var(--text3)">$' + k.fee + ' waived</span></div>';
+    else if (k.feeAddedToLedger) out += '<div style="margin-top:3px"><span style="font-size:11px;color:var(--green);font-weight:600">✓ $' + k.fee + ' added to ledger</span></div>';
+    else if (k.feeWaived) out += '<div style="margin-top:3px"><span style="font-size:11px;color:var(--text3)">$' + k.fee + ' waived</span></div>';
   }
   if (k.unreturnedFee) {
     if (!k.unreturnedFeeAddedToLedger && !k.unreturnedFeeWaived) out += badge('$' + k.unreturnedFee + ' unreturned (' + unreturnedDaysOut(k) + 'd)', 'markUnreturnedFeeToLedger', 'waiveUnreturnedFee');
-    else if (k.unreturnedFeeAddedToLedger) out += '<div style="margin-top:3px"><span style="font-size:10px;color:var(--green);font-weight:600">✓ $' + k.unreturnedFee + ' unreturned fee added to ledger</span></div>';
-    else if (k.unreturnedFeeWaived) out += '<div style="margin-top:3px"><span style="font-size:10px;color:var(--text3)">$' + k.unreturnedFee + ' unreturned fee waived</span></div>';
+    else if (k.unreturnedFeeAddedToLedger) out += '<div style="margin-top:3px"><span style="font-size:11px;color:var(--green);font-weight:600">✓ $' + k.unreturnedFee + ' unreturned fee added to ledger</span></div>';
+    else if (k.unreturnedFeeWaived) out += '<div style="margin-top:3px"><span style="font-size:11px;color:var(--text3)">$' + k.unreturnedFee + ' unreturned fee waived</span></div>';
   }
   return out;
 }
@@ -8105,7 +8108,7 @@ function tpCatBadge(cat) {
     'Adjustment / Other': ['rgba(107,114,128,0.10)', 'var(--text3)']
   };
   var c = colors[cat] || colors['Adjustment / Other'];
-  return '<span style="background:' + c[0] + ';color:' + c[1] + ';font-size:10px;font-weight:600;border-radius:4px;padding:2px 7px;white-space:nowrap">' + esc(cat || 'Other') + '</span>';
+  return '<span style="background:' + c[0] + ';color:' + c[1] + ';font-size:11px;font-weight:600;border-radius:4px;padding:2px 7px;white-space:nowrap">' + esc(cat || 'Other') + '</span>';
 }
 // Entries issued / returned on a given YYYY-MM-DD (local) — feeds the passdown builder.
 function tpEventsForDate(t) {
@@ -8168,7 +8171,7 @@ function renderTransponders() {
         + '<td class="mono">' + (tpCompDamaged(c) || '<span style="color:var(--text3)">—</span>') + '</td>'
         + '<td class="mono">' + (tpCompReturned(c) || '<span style="color:var(--text3)">—</span>') + '</td>'
         + '<td class="mono font-600">' + rem + '</td>'
-        + '<td class="mono">' + (lcc ? lcc.count + ' <span style="color:var(--text3);font-size:10px">(' + fmtShort(lcc.date) + ')</span>' : '<span style="color:var(--text3)">—</span>') + '</td>'
+        + '<td class="mono">' + (lcc ? lcc.count + ' <span style="color:var(--text3);font-size:11px">(' + fmtShort(lcc.date) + ')</span>' : '<span style="color:var(--text3)">—</span>') + '</td>'
         + '<td>' + diffCell + '</td></tr>';
     });
     compBody.innerHTML = ch;
@@ -8781,7 +8784,7 @@ var PK_CAT_COLORS = {
 function pkCategoryBadge(cat) {
   if (!cat || cat === 'Resident') return '';
   var c = PK_CAT_COLORS[cat] || PK_CAT_COLORS['CBSF'];
-  return ' <span style="background:' + c[0] + ';color:' + c[1] + ';font-size:10px;font-weight:600;border-radius:4px;padding:1px 6px;white-space:nowrap">' + esc(cat) + '</span>';
+  return ' <span style="background:' + c[0] + ';color:' + c[1] + ';font-size:11px;font-weight:600;border-radius:4px;padding:1px 6px;white-space:nowrap">' + esc(cat) + '</span>';
 }
 function renderParking() {
   var all = state.parking||[];
@@ -8811,8 +8814,8 @@ function renderParking() {
       return '<span style="font-size:11px;font-weight:600;color:var(--accent)">✓</span>' + (c.num ? '<span style="font-size:11px;color:var(--text2);margin-left:4px">#' + c.num + '</span>' : '');
     }
     var byTag = fmtByTag(p.addedBy, p.createdAt);
-    var preexistingBadge = p.preexisting ? ' <span style="background:rgba(107,114,128,0.12);color:var(--text3);font-size:10px;font-weight:600;border-radius:4px;padding:1px 6px;border:1px solid rgba(107,114,128,0.25);white-space:nowrap" title="Registered before the March 2026 transponder bundle — added from the TEZ registrant list, not part of the Credentials stock ledger">Pre-existing</span>' : '';
-    var flagBadge = p.flaggedDeparted ? ' <span style="background:rgba(192,53,53,0.12);color:var(--red);font-size:10px;font-weight:600;border-radius:4px;padding:1px 6px;border:1px solid rgba(192,53,53,0.3);white-space:nowrap" title="Flagged — may be a past resident or former employee, needs review">🚩 Flagged</span>' : '';
+    var preexistingBadge = p.preexisting ? ' <span style="background:rgba(107,114,128,0.12);color:var(--text3);font-size:11px;font-weight:600;border-radius:4px;padding:1px 6px;border:1px solid rgba(107,114,128,0.25);white-space:nowrap" title="Registered before the March 2026 transponder bundle — added from the TEZ registrant list, not part of the Credentials stock ledger">Pre-existing</span>' : '';
+    var flagBadge = p.flaggedDeparted ? ' <span style="background:rgba(192,53,53,0.12);color:var(--red);font-size:11px;font-weight:600;border-radius:4px;padding:1px 6px;border:1px solid rgba(192,53,53,0.3);white-space:nowrap" title="Flagged — may be a past resident or former employee, needs review">🚩 Flagged</span>' : '';
     html += '<tr style="' + rowOpacity + '">';
     html += '<td class="mono font-600" style="white-space:nowrap">' + (p.unit ? esc(p.unit) : '<span style="color:var(--text3);font-weight:400">—</span>') + '</td>';
     html += '<td>' + esc(p.resident) + pkCategoryBadge(p.category) + preexistingBadge + flagBadge + byTag + '</td>';
@@ -8960,7 +8963,7 @@ function renderAmenities() {
     var amBy = fmtByTag(a.addedBy, a.createdAt);
     var typePill = '<span class="pill ' + (a.type === 'event' ? 'pill-event' : 'pill-reservation') + '">' + (a.type === 'event' ? 'Event' : 'Reservation') + '</span>';
     var clashPill = clashMoves ? ' <span class="pill" style="background:var(--red-light);color:var(--red);font-weight:600" title="' + esc(clashMoves.map(function(m){ return 'Unit ' + m.unit + (m.apptTime ? ' at ' + fmtTime(m.apptTime) : ' (no time set)'); }).join(', ')) + '">&#9888; Elevator clash</span>' : '';
-    var closeoutPill = pendingCloseout ? ' <span class="pending-closeout-badge">&#9888; Pending close-out</span>' : (isClosed ? ' <span style="font-size:10px;color:var(--green);background:var(--green-light);border-radius:4px;padding:1px 6px;font-weight:600">&#10003; Closed out</span>' : '');
+    var closeoutPill = pendingCloseout ? ' <span class="pending-closeout-badge">&#9888; Pending close-out</span>' : (isClosed ? ' <span style="font-size:11px;color:var(--green);background:var(--green-light);border-radius:4px;padding:1px 6px;font-weight:600">&#10003; Closed out</span>' : '');
     html += '<tr' + rowStyle + '>';
     html += '<td class="font-600">' + esc(a.resident) + amBy + '</td>';
     html += '<td class="mono">' + esc(a.unit) + '</td>';
@@ -9119,7 +9122,7 @@ function renderCameraCheck() {
     + '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1 3-2 4-2 7a4 4 0 0 0 8 0c0-1.5-1-2.5-1-2.5s1 4-2 4-2-2-2-3.5c0-2.5 2-3 2-5.5-2 .5-4 2.5-4.5 5C9 9 8 10.5 8 13a4 4 0 0 0 4 4"/></svg>'
     + '<div><div style="font-family:var(--font-mono);font-size:38px;font-weight:600;color:#fff;letter-spacing:-1px;line-height:1">' + streak + '</div>'
     + '<div style="font-size:12.5px;color:rgba(255,255,255,0.82);margin-top:4px">consecutive on-time checks — the whole team keeps this going</div></div>'
-    + '<div style="margin-left:auto;text-align:right"><div style="font-family:var(--font-mono);font-size:13px;color:rgba(255,255,255,0.75)">Best: ' + best + '</div><div style="font-size:10.5px;color:rgba(255,255,255,0.55);margin-top:2px">team record</div></div></div>';
+    + '<div style="margin-left:auto;text-align:right"><div style="font-family:var(--font-mono);font-size:13px;color:rgba(255,255,255,0.75)">Best: ' + best + '</div><div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:2px">team record</div></div></div>';
 
   html += '<div style="display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start;margin-bottom:16px">';
   html += '<div class="card"><div class="card-hdr"><span class="card-title">Scan to Check In</span></div><div class="card-body" style="display:flex;flex-direction:column;align-items:center;gap:10px">'
@@ -9140,7 +9143,7 @@ function renderCameraCheck() {
           : '<span class="pill" style="background:var(--green-light);color:var(--green);margin-left:auto">All clear</span>');
       html += '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border2)">'
         + '<div style="width:28px;height:28px;border-radius:50%;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">' + esc(initials) + '</div>'
-        + '<div><div style="font-size:12.5px;font-weight:500">' + esc(c.name) + '</div><div style="font-size:10.5px;color:var(--text3);font-family:var(--font-mono)">' + esc(c.shift) + ' · ' + timeStr + '</div></div>'
+        + '<div><div style="font-size:12.5px;font-weight:500">' + esc(c.name) + '</div><div style="font-size:11px;color:var(--text3);font-family:var(--font-mono)">' + esc(c.shift) + ' · ' + timeStr + '</div></div>'
         + statusPill + '</div>';
     });
   }
@@ -9149,7 +9152,7 @@ function renderCameraCheck() {
   if (isAdmin) {
     var stats = ccComplianceStats();
     var pc = ccPersonCounts();
-    html += '<div style="display:flex;align-items:baseline;gap:10px;margin:22px 0 4px"><h3 style="font-family:var(--font-serif);font-size:18px;margin:0">Camera Check History</h3><span style="font-size:9.5px;font-weight:700;letter-spacing:.5px;color:var(--accent);background:var(--accent-light);padding:2px 8px;border-radius:10px">ADMIN ONLY</span></div>';
+    html += '<div style="display:flex;align-items:baseline;gap:10px;margin:22px 0 4px"><h3 style="font-family:var(--font-serif);font-size:18px;margin:0">Camera Check History</h3><span style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--accent);background:var(--accent-light);padding:2px 8px;border-radius:10px">ADMIN ONLY</span></div>';
     html += '<div style="font-size:12px;color:var(--text3);margin-bottom:12px">Compliance, gaps, and patterns across the whole team, including imported history from before this feature launched.</div>';
 
     html += '<div class="stat-grid">';
@@ -9173,14 +9176,14 @@ function renderCameraCheck() {
     html += '<div style="display:grid;grid-template-columns:1fr 260px;gap:16px;align-items:start">';
     html += '<div class="card"><div class="card-hdr"><span class="card-title">All Check-Ins</span><span class="card-count">' + ccAllChecks().length + ' total</span></div><div class="tbl-wrap"><table><thead><tr><th>Name</th><th>Shift</th><th>Date / Time</th><th>Completed</th><th>Issue</th><th>Location</th></tr></thead><tbody>';
     ccAllChecks().slice().sort(function(a,b){return b.ts-a.ts;}).slice(0,60).forEach(function(c) {
-      html += '<tr><td>' + esc(c.name) + (c.imported?' <span style="font-size:9px;color:var(--text3)">(imported)</span>':'') + '</td><td class="mono">' + esc(c.shift) + '</td><td class="mono">' + new Date(c.ts).toLocaleString('en-US',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'}) + '</td><td>' + esc(c.completed) + '</td><td>' + (c.issuesObserved==='Yes, issue observed' ? '<span class="pill pill-high">Yes</span>' : '<span class="pill pill-low">No</span>') + '</td><td class="mono">' + esc(c.location||'—') + '</td></tr>';
+      html += '<tr><td>' + esc(c.name) + (c.imported?' <span style="font-size:11px;color:var(--text3)">(imported)</span>':'') + '</td><td class="mono">' + esc(c.shift) + '</td><td class="mono">' + new Date(c.ts).toLocaleString('en-US',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'}) + '</td><td>' + esc(c.completed) + '</td><td>' + (c.issuesObserved==='Yes, issue observed' ? '<span class="pill pill-high">Yes</span>' : '<span class="pill pill-low">No</span>') + '</td><td class="mono">' + esc(c.location||'—') + '</td></tr>';
     });
     html += '</tbody></table></div></div>';
 
     html += '<div class="card"><div class="card-hdr"><span class="card-title">Completion Counts</span></div><div>';
     Object.keys(pc).sort(function(a,b){return pc[b].total-pc[a].total;}).forEach(function(name) {
       var d = pc[name];
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 13px;border-bottom:1px solid var(--border2);font-size:12px"><span>' + esc(name) + '</span><span><span class="mono" style="font-weight:600">' + d.total + '</span>' + (d.blocked>0?' <span style="font-size:10.5px;color:var(--red)">'+d.blocked+' blocked</span>':'') + '</span></div>';
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 13px;border-bottom:1px solid var(--border2);font-size:12px"><span>' + esc(name) + '</span><span><span class="mono" style="font-weight:600">' + d.total + '</span>' + (d.blocked>0?' <span style="font-size:11px;color:var(--red)">'+d.blocked+' blocked</span>':'') + '</span></div>';
     });
     html += '</div></div></div>';
   }
@@ -10065,7 +10068,7 @@ function renderTodos() {
       html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + (isViewerUser() ? ' disabled' : '') + ' onchange="toggleTask(\'' + m.id + '\',\'' + t.id + '\',this.checked);renderTodos()">';
       html += '<div style="flex:1;min-width:0">';
       html += '<div class="todo-text ' + (t.done ? 'strk' : '') + '">' + esc(t.text) + '</div>';
-      html += '<div class="todo-meta">' + due + '<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:4px;padding:1px 5px">'
+      html += '<div class="todo-meta">' + due + '<span style="font-size:11px;background:var(--accent-light);color:var(--accent);border-radius:4px;padding:1px 5px">'
         + 'Unit ' + esc(m.unit) + ' \u00b7 ' + esc(m.resident.split(' ')[0]) + '</span></div>';
       html += '<button class="btn btn-ghost btn-xs" onclick="openEditMove(\'' + m.id + '\')" title="Open move">&#8599;</button>';
       html += '</div>';
@@ -10474,10 +10477,10 @@ function renderLAF() {
       statusCell = '<button class="btn btn-secondary btn-xs" onclick="claimLAF(\'' + i.id + '\')">Mark Claimed</button>';
       if (overdue) statusCell += ' <button class="btn btn-secondary btn-xs" style="border-color:var(--amber);color:var(--amber);margin-left:4px" onclick="disposeLAF(\'' + i.id + '\')">Dispose&hellip;</button>';
     }
-    if (overdue) statusCell += ' <span style="background:var(--amber-light);color:var(--amber);font-size:10px;border-radius:4px;padding:1px 6px;margin-left:4px">Held ' + days + 'd</span>';
+    if (overdue) statusCell += ' <span style="background:var(--amber-light);color:var(--amber);font-size:11px;border-radius:4px;padding:1px 6px;margin-left:4px">Held ' + days + 'd</span>';
     html += '<tr ' + ((i.claimedAt || i.disposedAt) ? 'style="opacity:0.55"' : (overdue ? 'style="background:var(--amber-light)"' : '')) + '>';
     var lafBy = fmtByTag(i.addedBy, i.createdAt || i.loggedAt);
-    var lafUnitTag = i.unit ? ' <span style="font-size:10px;background:var(--bg2);color:var(--text3);border:1px solid var(--border);border-radius:4px;padding:1px 5px;margin-left:4px">Unit ' + esc(i.unit) + '</span>' : '';
+    var lafUnitTag = i.unit ? ' <span style="font-size:11px;background:var(--bg2);color:var(--text3);border:1px solid var(--border);border-radius:4px;padding:1px 5px;margin-left:4px">Unit ' + esc(i.unit) + '</span>' : '';
     html += '<td class="mono text-sm">' + fmtShort(i.date) + '</td><td class="text-sm">' + esc(i.location || '-') + '</td><td class="font-600">' + esc(i.desc) + lafUnitTag + lafBy + '</td>';
     html += '<td class="text-sm text-2">' + esc(i.condition || '') + '</td><td class="text-sm">' + esc(i.foundBy || '-') + '</td>';
     var pdBtn = !i.claimedAt ? (i.flaggedForPassdown ? '<button class="btn btn-ghost btn-xs" onclick="toggleLAFPassdown(\'' + i.id + '\')" title="Remove from passdown" style="color:var(--green)">&#10003; Passdown</button> ' : '<button class="btn btn-ghost btn-xs" onclick="toggleLAFPassdown(\'' + i.id + '\')" title="Flag for passdown" style="color:var(--text3)">+ Passdown</button> ') : '';
@@ -10702,7 +10705,7 @@ function openUnitView(unit) {
   html += '<span class="unit-num" style="font-size:15px">Unit ' + esc(unit) + '</span>';
   if (rec) {
     html += pteBadgeHtml(rec.pte);
-    if (rec.blueground) html += '<span style="font-size:10px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600">&#128309; Blueground</span>';
+    if (rec.blueground) html += '<span style="font-size:11px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600">&#128309; Blueground</span>';
     html += '<button class="btn btn-primary btn-xs ml-auto" onclick="closeModal(\'modal-unit-view\');openEditUnitRecord(\'' + rec.id + '\')">&#9998; Edit</button>';
   }
   html += '</div>';
@@ -10729,7 +10732,7 @@ function openUnitView(unit) {
   function uvSection(icon, label, rows, emptyMsg) {
     if (!rows.length) return '';
     var s = '<div style="padding:10px 16px;border-bottom:1px solid var(--border)">';
-    s += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-bottom:6px">' + icon + ' ' + label + ' <span style="font-weight:400">(' + rows.length + ')</span></div>';
+    s += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-bottom:6px">' + icon + ' ' + label + ' <span style="font-weight:400">(' + rows.length + ')</span></div>';
     rows.forEach(function(r){ s += '<div style="font-size:12px;color:var(--text2);padding:3px 0;border-bottom:1px dashed var(--border2)">' + r + '</div>'; });
     s += '</div>';
     return s;
@@ -10934,7 +10937,7 @@ function renderSupplies() {
           var lld = new Date(lastLog.ts);
           var llTime = lld.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' · ' + lld.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
           var llDelta = (lastLog.delta > 0 ? '+' : '') + lastLog.delta;
-          lastLogLine = '<div style="font-size:10px;color:var(--text3);margin-top:4px;line-height:1.4;border-top:1px solid var(--border2);padding-top:4px">'
+          lastLogLine = '<div style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.4;border-top:1px solid var(--border2);padding-top:4px">'
             + '<span style="font-weight:600;color:' + (lastLog.delta < 0 ? 'var(--red)' : 'var(--green)') + '">' + llDelta + '</span>'
             + ' ' + (lastLog.note || '') + '<br>' + llTime + (lastLog.by ? ' · ' + lastLog.by.split(' ')[0] : '') + '</div>';
         }
@@ -10979,13 +10982,13 @@ function renderSupplies() {
         var isSynced = !!supplyComputedFor(s.name);
         var statusBadge;
         if (s.qty == null) {
-          statusBadge = '<span class="pill" style="background:var(--surface2);color:var(--text3);font-size:10px">Not counted</span>';
+          statusBadge = '<span class="pill" style="background:var(--surface2);color:var(--text3);font-size:11px">Not counted</span>';
         } else if (s.lowAt != null) {
-          if (s.qty === 0) statusBadge = '<span class="pill" style="background:var(--red-light,#fef2f2);color:var(--red);border:1px solid var(--red);font-size:10px">Out</span>';
-          else if (s.qty <= s.lowAt) statusBadge = '<span class="pill" style="background:#fef9c3;color:#92400e;border:1px solid #fcd34d;font-size:10px">Low</span>';
-          else statusBadge = '<span class="pill" style="background:var(--green-light);color:var(--green);border:1px solid #C8E4B0;font-size:10px">In Stock</span>';
+          if (s.qty === 0) statusBadge = '<span class="pill" style="background:var(--red-light,#fef2f2);color:var(--red);border:1px solid var(--red);font-size:11px">Out</span>';
+          else if (s.qty <= s.lowAt) statusBadge = '<span class="pill" style="background:#fef9c3;color:#92400e;border:1px solid #fcd34d;font-size:11px">Low</span>';
+          else statusBadge = '<span class="pill" style="background:var(--green-light);color:var(--green);border:1px solid #C8E4B0;font-size:11px">In Stock</span>';
         } else {
-          statusBadge = '<span class="pill" style="background:var(--surface2);color:var(--text3);font-size:10px">&mdash;</span>';
+          statusBadge = '<span class="pill" style="background:var(--surface2);color:var(--text3);font-size:11px">&mdash;</span>';
         }
         var updTag = '';
         if (s.updatedAt) {
@@ -10994,7 +10997,7 @@ function renderSupplies() {
         }
         var slog = s.log || [];
         var logBtn = slog.length
-          ? '<button class="btn btn-ghost btn-xs" onclick="toggleSupplyLog(\'' + s.id + '\')" style="padding:2px 5px;font-size:10px" title="Activity log">🕐 ' + slog.length + '</button>'
+          ? '<button class="btn btn-ghost btn-xs" onclick="toggleSupplyLog(\'' + s.id + '\')" style="padding:2px 5px;font-size:11px" title="Activity log">🕐 ' + slog.length + '</button>'
           : '';
         var logRows = slog.slice().reverse().map(function(e) {
           var ed = new Date(e.ts);
@@ -11485,23 +11488,23 @@ function renderResidents() {
     // Header
     html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">';
     html += '<span class="unit-num" style="font-size:15px">Unit '+esc(r.unit)+'</span>';
-    if (r.unitType) { var utLabels={'studio':'Studio','1br':'1BR','2br':'2BR','3br':'3BR','other':'Other'}; html += '<span style="font-size:10px;background:var(--surface2);color:var(--text2);border-radius:3px;padding:1px 6px;font-weight:500">'+esc(utLabels[r.unitType]||r.unitType)+'</span>'; }
-    if (r.blueground) html += '<span style="font-size:10px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600">&#128309; BG</span>';
+    if (r.unitType) { var utLabels={'studio':'Studio','1br':'1BR','2br':'2BR','3br':'3BR','other':'Other'}; html += '<span style="font-size:11px;background:var(--surface2);color:var(--text2);border-radius:3px;padding:1px 6px;font-weight:500">'+esc(utLabels[r.unitType]||r.unitType)+'</span>'; }
+    if (r.blueground) html += '<span style="font-size:11px;background:#eff6ff;color:#1e40af;border-radius:3px;padding:1px 6px;font-weight:600">&#128309; BG</span>';
     html += '</div>';
     // Leaseholder + roommates
     if (r.leaseholder) html += '<div style="font-size:13px;font-weight:600;margin-bottom:2px">'+esc(r.leaseholder)+'</div>';
-    if (r.pte && r.pte !== 'not-set') html += pteBadgeHtml(r.pte, 'font-size:10px;margin-bottom:6px;display:inline-block');
+    if (r.pte && r.pte !== 'not-set') html += pteBadgeHtml(r.pte, 'font-size:11px;margin-bottom:6px;display:inline-block');
     if (r.roommates) html += '<div style="font-size:11px;color:var(--text3);margin-bottom:8px">&#43; '+esc(r.roommates)+'</div>';
     // Keys (only when set)
     var unitTotal = (r.unitKeysIssued||0)+(r.unitKeysReplacement||0);
     var mailTotal = (r.mailboxKeysIssued||0)+(r.mailboxKeysReplacement||0);
-    if (unitTotal || mailTotal) html += '<div style="font-size:12px;color:var(--text2);margin-bottom:6px">&#128273; Unit: <strong>'+unitTotal+'</strong>'+(r.unitKeysReplacement?'<span style="font-size:10px;color:#92400e"> (+'+r.unitKeysReplacement+' repl)</span>':'')+' &nbsp;&middot;&nbsp; &#128236; Mailbox: <strong>'+mailTotal+'</strong>'+(r.mailboxKeysReplacement?'<span style="font-size:10px;color:#92400e"> (+'+r.mailboxKeysReplacement+' repl)</span>':'')+'</div>';
+    if (unitTotal || mailTotal) html += '<div style="font-size:12px;color:var(--text2);margin-bottom:6px">&#128273; Unit: <strong>'+unitTotal+'</strong>'+(r.unitKeysReplacement?'<span style="font-size:11px;color:#92400e"> (+'+r.unitKeysReplacement+' repl)</span>':'')+' &nbsp;&middot;&nbsp; &#128236; Mailbox: <strong>'+mailTotal+'</strong>'+(r.mailboxKeysReplacement?'<span style="font-size:11px;color:#92400e"> (+'+r.mailboxKeysReplacement+' repl)</span>':'')+'</div>';
     // Parking (computed from the Parking tab — see unitParkingIssued)
     var parkBits = [];
     var rPk = unitParkingIssued(r.unit);
-    if (rPk.transponder) parkBits.push('Transponder'+(r.transponderReplacement?'<span style="font-size:9px;opacity:.7"> +'+r.transponderReplacement+'r</span>':''));
-    if (rPk.xpressSticker) parkBits.push('Xpress'+(r.xpressReplacement?'<span style="font-size:9px;opacity:.7"> +'+r.xpressReplacement+'r</span>':''));
-    if (rPk.keyTag) parkBits.push('Key Tag'+(r.keyTagReplacement?'<span style="font-size:9px;opacity:.7"> +'+r.keyTagReplacement+'r</span>':''));
+    if (rPk.transponder) parkBits.push('Transponder'+(r.transponderReplacement?'<span style="font-size:11px;opacity:.7"> +'+r.transponderReplacement+'r</span>':''));
+    if (rPk.xpressSticker) parkBits.push('Xpress'+(r.xpressReplacement?'<span style="font-size:11px;opacity:.7"> +'+r.xpressReplacement+'r</span>':''));
+    if (rPk.keyTag) parkBits.push('Key Tag'+(r.keyTagReplacement?'<span style="font-size:11px;opacity:.7"> +'+r.keyTagReplacement+'r</span>':''));
     if (r.hasBike) parkBits.push('&#128690; Bike'+(r.bikeSticker?' #'+esc(r.bikeSticker):''));
     if (parkBits.length) html += '<div style="margin-bottom:6px"><span style="font-size:11px;background:var(--accent-light);color:var(--accent);border-radius:3px;padding:2px 7px;font-weight:600">&#128664; '+parkBits.join(' &middot; ')+'</span></div>';
     // WiFi
@@ -11778,7 +11781,7 @@ function pdHasNote(key) { return !!(pdNotes[key] && pdNotes[key].trim()); }
 function pdYouBadge(obj) {
   if (!currentUser || !obj || !obj.addedBy) return '';
   return obj.addedBy === currentUser.name
-    ? '<span style="font-size:9px;background:rgba(34,197,94,0.1);color:#16a34a;border:1px solid rgba(34,197,94,0.25);border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:600;white-space:nowrap">you</span>'
+    ? '<span style="font-size:11px;background:rgba(34,197,94,0.1);color:#166534;border:1px solid rgba(34,197,94,0.25);border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:600;white-space:nowrap">you</span>'
     : '';
 }
 function pdAutoRowInput(input, exKey, isPrompt) {
@@ -11806,7 +11809,7 @@ function pdNoUpdate(exKey, defaultText) {
   var btn = row.querySelector('.pd-noupdate-btn');
   if (btn) {
     btn.textContent = '✓ Done';
-    btn.style.cssText = 'flex-shrink:0;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid rgba(26,102,64,0.25);background:var(--green-light);color:var(--green);cursor:default;font-family:inherit;white-space:nowrap';
+    btn.style.cssText = 'flex-shrink:0;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid rgba(26,102,64,0.25);background:var(--green-light);color:var(--green);cursor:default;font-family:inherit;white-space:nowrap';
     btn.onclick = null;
   }
 }
@@ -11824,13 +11827,13 @@ function pdAutoRow(exKey, content, defaultNextStep, isCarried, optional) {
   var noUpdateBtn = (!excl && !isPrompt && isEmpty && defaultNextStep)
     ? '<button class="pd-noupdate-btn" onclick="pdNoUpdate(\'' + exKey + '\',' + JSON.stringify(defaultNextStep) + ')" '
       + 'title="Fill with default note — no update this shift" '
-      + 'style="flex-shrink:0;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text3);cursor:pointer;font-family:inherit;white-space:nowrap;transition:background 120ms ease-out,color 120ms ease-out,border-color 120ms ease-out" '
+      + 'style="flex-shrink:0;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text3);cursor:pointer;font-family:inherit;white-space:nowrap;transition:background 120ms ease-out,color 120ms ease-out,border-color 120ms ease-out" '
       + 'onmouseover="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\';this.style.background=\'var(--accent-light)\'" '
       + 'onmouseout="this.style.borderColor=\'var(--border)\';this.style.color=\'var(--text3)\';this.style.background=\'var(--surface2)\'">'
       + '✓ No update</button>'
     : '';
   var noteHtml = excl ? '' : '<div style="display:flex;align-items:center;gap:5px;margin-top:5px">'
-    + '<span class="pd-note-label" style="font-size:10px;font-weight:600;color:' + labelColor + ';white-space:nowrap;flex-shrink:0">' + labelText + '</span>'
+    + '<span class="pd-note-label" style="font-size:11px;font-weight:600;color:' + labelColor + ';white-space:nowrap;flex-shrink:0">' + labelText + '</span>'
     + '<input class="pd-note-input" type="text" value="' + pdAttrEsc(noteVal) + '" placeholder="' + notePlaceholder + '" '
     + 'style="flex:1;font-size:11.5px;color:var(--text);background:transparent;border:none;border-bottom:1px solid ' + borderColor + ';padding:2px 0;font-family:inherit;outline:none;min-width:0" '
     + 'oninput="pdAutoRowInput(this,\'' + exKey + '\',' + (isPrompt ? 'true' : 'false') + ')" '
@@ -11839,11 +11842,11 @@ function pdAutoRow(exKey, content, defaultNextStep, isCarried, optional) {
     + noUpdateBtn
     + '</div>';
   var editFn = isCarried ? pdAutoRowEditFn(exKey) : '';
-  var editBtn = (isCarried && editFn && !excl) ? '<button onclick="' + editFn + '" style="font-size:10px;color:var(--accent);background:none;border:1px solid var(--accent);border-radius:3px;cursor:pointer;padding:1px 7px;margin-left:6px;white-space:nowrap;flex-shrink:0">✏ Edit record</button>' : '';
-  var carriedBadge = (isCarried && !excl) ? '<span style="font-size:10px;background:rgba(201,164,94,0.15);color:var(--accent);border-radius:3px;padding:1px 6px;margin-right:5px;font-weight:600;white-space:nowrap">↩ carried over</span>' : '';
+  var editBtn = (isCarried && editFn && !excl) ? '<button onclick="' + editFn + '" style="font-size:11px;color:var(--accent);background:none;border:1px solid var(--accent);border-radius:3px;cursor:pointer;padding:1px 7px;margin-left:6px;white-space:nowrap;flex-shrink:0">✏ Edit record</button>' : '';
+  var carriedBadge = (isCarried && !excl) ? '<span style="font-size:11px;background:rgba(201,164,94,0.15);color:var(--accent);border-radius:3px;padding:1px 6px;margin-right:5px;font-weight:600;white-space:nowrap">↩ carried over</span>' : '';
   return '<div class="pd-auto-row' + (excl ? ' pd-auto-excl' : '') + '" data-pd-key="' + exKey + '" style="display:flex;align-items:flex-start;gap:6px">'
     + '<div style="flex:1' + (excl ? ';opacity:.4;text-decoration:line-through' : '') + '">' + carriedBadge + content + (editBtn ? '<div style="display:flex;align-items:center;margin-top:4px">' + editBtn + '</div>' : '') + noteHtml + '</div>'
-    + '<button onclick="pdToggleExclude(\'' + exKey + '\')" title="' + (excl ? 'Re-include' : 'Exclude from passdown') + '" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:13px;padding:0;color:var(--text3);line-height:1">'
+    + '<button onclick="pdToggleExclude(\'' + exKey + '\')" title="' + (excl ? 'Re-include' : 'Exclude from passdown') + '" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:13px;padding:0;color:var(--text3);line-height:1;min-width:28px;min-height:28px;display:inline-flex;align-items:center;justify-content:center">'
     + (excl ? '<span style="color:var(--accent)">＋</span>' : '–') + '</button>'
     + '</div>';
 }
@@ -11916,11 +11919,11 @@ function renderPdAutoBlocks(isLead) {
     if (!allIns.length) html += '<div style="color:var(--text3)">None today' + (isLead ? ' or upcoming' : '') + '</div>';
     else allIns.forEach(function(m) {
       var apptD = m.apptDate || m.date;
-      var tag = apptD !== t ? '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>' : '';
+      var tag = apptD !== t ? '<span style="font-size:11px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>' : '';
       var content = tag + '<strong>Unit ' + esc(m.unit) + ' – ' + esc(m.resident) + '</strong>' + pdYouBadge(m);
-      if (isMoveCompleted(m)) content += ' <span style="font-size:10px;background:#D1FAE5;color:#065F46;border-radius:3px;padding:1px 5px;margin-left:2px">✓ Completed</span>';
+      if (isMoveCompleted(m)) content += ' <span style="font-size:11px;background:#D1FAE5;color:#065F46;border-radius:3px;padding:1px 5px;margin-left:2px">✓ Completed</span>';
       content += ' | Lease: ' + dayLblAuto(m.date);
-      if (m.apptDate) { content += ' | Move-In Reservation: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); } else content += ' <span style="font-size:10px;background:var(--amber-light);color:var(--amber);border-radius:3px;padding:1px 5px">No Reservation</span>';
+      if (m.apptDate) { content += ' | Move-In Reservation: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); } else content += ' <span style="font-size:11px;background:var(--amber-light);color:var(--amber);border-radius:3px;padding:1px 5px">No Reservation</span>';
       if (m.total) content += ' | $' + m.total;
       var postPendingNs = (m.tasks||[]).filter(function(tk){ return (tk.cat==='Post Move-In')&&!tk.done; });
       var ns = isMoveCompleted(m)
@@ -11938,11 +11941,11 @@ function renderPdAutoBlocks(isLead) {
     if (!allOuts.length && !outstandingKeyMoves.length) html += '<div style="color:var(--text3)">None today' + (isLead ? ' or upcoming' : '') + '</div>';
     allOuts.forEach(function(m) {
       var apptD = m.apptDate || m.date;
-      var tag = apptD !== t ? '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>' : '';
+      var tag = apptD !== t ? '<span style="font-size:11px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(apptD) + '</span>' : '';
       var content = tag + '<strong>Unit ' + esc(m.unit) + ' – ' + esc(m.resident) + '</strong>' + pdYouBadge(m);
-      if (isMoveCompleted(m)) content += ' <span style="font-size:10px;background:#D1FAE5;color:#065F46;border-radius:3px;padding:1px 5px;margin-left:2px">✓ Completed</span>';
+      if (isMoveCompleted(m)) content += ' <span style="font-size:11px;background:#D1FAE5;color:#065F46;border-radius:3px;padding:1px 5px;margin-left:2px">✓ Completed</span>';
       content += ' | Lease end: ' + dayLblAuto(m.date);
-      if (m.apptDate) { content += ' | Move-Out Reservation: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); } else content += ' <span style="font-size:10px;background:var(--amber-light);color:var(--amber);border-radius:3px;padding:1px 5px">No Reservation</span>';
+      if (m.apptDate) { content += ' | Move-Out Reservation: ' + dayLblAuto(m.apptDate); if (m.apptTime) content += ' @ ' + fmtTime(m.apptTime); } else content += ' <span style="font-size:11px;background:var(--amber-light);color:var(--amber);border-radius:3px;padding:1px 5px">No Reservation</span>';
       var postPendingOut = (m.tasks||[]).filter(function(tk){ return (tk.cat==='Post Move-Out')&&!tk.done; });
       var nsOut = isMoveCompleted(m)
         ? ('Move-out completed' + (postPendingOut.length ? ' — ' + postPendingOut.length + ' post move-out task(s) still pending.' : ' — all tasks done.'))
@@ -11956,7 +11959,7 @@ function renderPdAutoBlocks(isLead) {
       outstandingKeyMoves.forEach(function(m) {
         var koKey = 'keys_out_' + m.id;
         var content = '<strong>Unit ' + esc(m.unit) + ' – ' + esc(m.resident) + '</strong>'
-          + ' <span style="font-size:10px;background:rgba(217,119,6,0.12);color:var(--amber);border:1px solid rgba(217,119,6,0.3);border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:600">⚠ Keys not collected</span>'
+          + ' <span style="font-size:11px;background:rgba(217,119,6,0.12);color:var(--amber);border:1px solid rgba(217,119,6,0.3);border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:600">⚠ Keys not collected</span>'
           + ' | Lease ended: ' + dayLblAuto(m.date)
           + (m.apptDate ? ' | Move-Out Reservation: ' + dayLblAuto(m.apptDate) : '');
         html += pdAutoRow(koKey, content, 'Keys not yet collected — follow up with resident to confirm return.', !!carriedSet[koKey]);
@@ -11973,7 +11976,7 @@ function renderPdAutoBlocks(isLead) {
   html += '<div class="pd-auto-block" id="pd-blk-am"><div class="pd-auto-hdr">🎉 Amenity Bookings</div>';
   if (!allAm.length) html += '<div style="color:var(--text3)">None today' + (isLead ? ' or upcoming' : '') + '</div>';
   else allAm.forEach(function(a) {
-    var tag = a.date!==t ? '<span style="font-size:10px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(a.date) + '</span>' : '';
+    var tag = a.date!==t ? '<span style="font-size:11px;background:var(--bg);color:var(--text3);border-radius:3px;padding:1px 5px;margin-right:4px">' + dayLblAuto(a.date) + '</span>' : '';
     var content = tag + '<strong>' + esc(a.space) + '</strong> – ' + esc(a.resident) + ' (Unit ' + esc(a.unit) + ')' + pdYouBadge(a);
     if (a.start) content += ' ' + fmtTime(a.start) + (a.end ? '–' + fmtTime(a.end) : '');
     if (a.notes) content += ' | ' + a.notes;
@@ -11992,7 +11995,7 @@ function renderPdAutoBlocks(isLead) {
   else openLb.forEach(function(e) {
     var who = e.resident ? 'Unit ' + esc(e.unit) + ' – ' + esc(e.resident) : (e.location || '');
     var content = '<strong>' + esc(e.type) + '</strong>' + pdYouBadge(e) + (who ? ' — ' + who : '') + (e.notes ? ': ' + esc(stripTriageStamp(e.notes)) : '');
-    if (e.status==='in-progress') content += ' <span style="font-size:10px;background:rgba(217,119,6,0.12);color:var(--amber);border-radius:3px;padding:1px 5px;font-weight:600">In Progress</span>';
+    if (e.status==='in-progress') content += ' <span style="font-size:11px;background:rgba(217,119,6,0.12);color:var(--amber);border-radius:3px;padding:1px 5px;font-weight:600">In Progress</span>';
     var defNs = e.nextAction || 'Follow up and update status once resolved.';
     var lbKey = 'lb_' + e.id;
     if (e.nextAction && pdNotes[lbKey] === undefined) pdNotes[lbKey] = e.nextAction;
@@ -12093,12 +12096,12 @@ function renderPdAutoBlocks(isLead) {
   if (pdSections.length) {
     var needsNote = activeIds.filter(function(id){ return !pdNotes[id] || !pdNotes[id].trim(); }).length;
     var navHtml = '<div id="pd-section-nav" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;align-items:center">';
-    navHtml += '<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-right:2px;white-space:nowrap">' + pdSections.length + ' section' + (pdSections.length!==1?'s':'') + '</span>';
+    navHtml += '<span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-right:2px;white-space:nowrap">' + pdSections.length + ' section' + (pdSections.length!==1?'s':'') + '</span>';
     pdSections.forEach(function(s) {
       var hasItems = s.count > 0;
-      navHtml += '<button onclick="(function(){var el=document.getElementById(\'' + s.id + '\');if(el)el.scrollIntoView({behavior:\'smooth\',block:\'nearest\'});})()" style="font-size:11px;padding:2px 8px;border:1px solid var(--border' + (hasItems?'2':'') + ');border-radius:10px;background:' + (hasItems?'var(--surface)':'var(--bg)') + ';color:' + (hasItems?'var(--text2)':'var(--text3)') + ';cursor:pointer;white-space:nowrap;line-height:1.6">' + s.icon + ' ' + s.label + (hasItems?' <span style="font-size:10px;opacity:.7">(' + s.count + ')</span>':'') + '</button>';
+      navHtml += '<button onclick="(function(){var el=document.getElementById(\'' + s.id + '\');if(el)el.scrollIntoView({behavior:\'smooth\',block:\'nearest\'});})()" style="font-size:11px;padding:2px 8px;border:1px solid var(--border' + (hasItems?'2':'') + ');border-radius:10px;background:' + (hasItems?'var(--surface)':'var(--bg)') + ';color:' + (hasItems?'var(--text2)':'var(--text3)') + ';cursor:pointer;white-space:nowrap;line-height:1.6">' + s.icon + ' ' + s.label + (hasItems?' <span style="font-size:11px;opacity:.7">(' + s.count + ')</span>':'') + '</button>';
     });
-    if (needsNote) navHtml += '<span style="margin-left:auto;font-size:10px;color:var(--amber);font-weight:600;white-space:nowrap">✏ ' + needsNote + ' need' + (needsNote===1?'s':'') + ' a note</span>';
+    if (needsNote) navHtml += '<span style="margin-left:auto;font-size:11px;color:var(--amber);font-weight:600;white-space:nowrap">✏ ' + needsNote + ' need' + (needsNote===1?'s':'') + ' a note</span>';
     navHtml += '</div>';
     html = navHtml + html;
   }
@@ -12122,7 +12125,7 @@ function renderPdFreeSections(isLead) {
   var html = '';
   secs.forEach(function(s) {
     var lbl = s.adminOnly
-      ? s.emoji + ' ' + s.label + ' <span style="font-size:10px;font-weight:400;color:var(--text3)">(lead only)</span>'
+      ? s.emoji + ' ' + s.label + ' <span style="font-size:11px;font-weight:400;color:var(--text3)">(lead only)</span>'
       : s.emoji + ' ' + s.label;
     html += '<div class="pd-sec-block"><div class="pd-sec-hdr"><span class="pd-sec-lbl">' + lbl + '</span>'
       + '<button class="btn btn-ghost btn-xs" onclick="openPdItem(\'' + s.key + '\')">+ Add Item</button></div>'
@@ -13128,7 +13131,7 @@ function renderIncidentList(body) {
         + '<td>' + fmtShort(r.incidentDate) + '</td>'
         + '<td>' + esc(r.location || '—') + '</td>'
         + '<td>' + esc(nature) + '</td>'
-        + '<td>' + irStatusPill(r) + (irIsStale(r) ? ' <span style="font-size:9px;color:var(--red)">&#9888; stale</span>' : '') + '</td>'
+        + '<td>' + irStatusPill(r) + (irIsStale(r) ? ' <span style="font-size:11px;color:var(--red)">&#9888; stale</span>' : '') + '</td>'
         + '<td style="color:var(--accent);font-size:12px">View &rarr;</td></tr>';
     });
     html += '</tbody></table></div>';
@@ -13421,7 +13424,7 @@ function printIncidentReport(id) {
     + '<div class="fld"><span class="k">Printed name</span><span class="v">' + pf(r.printedName) + '</span></div>'
     + '<div class="fld"><span class="k">Date / Shift</span><span class="v">' + pf([r.signOffDate, r.shift].filter(Boolean).join(' &middot; ')) + '</span></div>'
     + '</div>'
-    + '<div style="font-size:10.5px;color:#94a3b8;margin-top:0.1in">This dashboard record is the report of record — printing this page is optional.'
+    + '<div style="font-size:11px;color:#94a3b8;margin-top:0.1in">This dashboard record is the report of record — printing this page is optional.'
     + (r.status==='filed' ? ' <strong style="color:#1a7a4c">&mdash; Finalized' + (r.filedBy?' by '+esc(r.filedBy)+(r.filedAt?' on '+fmtShort(localDateStr(new Date(r.filedAt))):''):'') + '</strong>' : '') + '</div>';
   var doc = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Incident Report ' + esc(r.reportNumber) + '</title>'
     + '<link rel="preconnect" href="https://fonts.googleapis.com">'
@@ -13436,7 +13439,7 @@ function printIncidentReport(id) {
     + '.doc-header-sub{font-size:11px;color:#64748b;margin-top:2px}'
     + '.doc-header-right{text-align:right}'
     + '.report-num{font-family:\'DM Sans\',monospace;font-weight:700;font-size:13px;color:#1a2232}'
-    + '.status-pill{display:inline-block;margin-top:4px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 9px;border-radius:20px}'
+    + '.status-pill{display:inline-block;margin-top:4px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 9px;border-radius:20px}'
     + '.status-preliminary{background:#fdf1d6;color:#8A5510}.status-completed{background:#dcf3e6;color:#1a7a4c}.status-filed{background:#1a2232;color:#f0dfa8}'
     + '.prelim-banner{background:rgba(201,168,76,0.12);border-left:3px solid #c9a84c;padding:9px 14px;font-size:12px;color:#7a5a1a;font-weight:600;margin-bottom:0.28in}'
     + '.sec{margin-bottom:0.26in;page-break-inside:avoid}'
@@ -13444,8 +13447,8 @@ function printIncidentReport(id) {
     + '.fld{font-size:12.5px;padding:3px 0;display:flex;gap:8px}.fld .k{color:#64748b;min-width:1.9in;flex-shrink:0}.fld .v{color:#1e293b;flex:1}'
     + '.ir-chk{font-size:12.5px;padding:2px 0;color:#1e293b}'
     + '.note-block{font-size:12.5px;color:#1e293b;white-space:pre-wrap;line-height:1.55;background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:10px 12px;margin-top:4px}'
-    + '.legal{font-size:10.5px;color:#94a3b8;font-style:italic;line-height:1.5;margin:0.25in 0;border-top:1px solid #e2e8f0;padding-top:0.15in}'
-    + '.doc-footer{background:#1a2232;padding:0.16in 0;text-align:center;margin-top:0.3in}.doc-footer span{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(201,168,76,0.8)}'
+    + '.legal{font-size:11px;color:#94a3b8;font-style:italic;line-height:1.5;margin:0.25in 0;border-top:1px solid #e2e8f0;padding-top:0.15in}'
+    + '.doc-footer{background:#1a2232;padding:0.16in 0;text-align:center;margin-top:0.3in}.doc-footer span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(201,168,76,0.8)}'
     + '.print-bar{padding:14px;background:#f4f4f4;border-bottom:1px solid #ddd;font-family:Arial,sans-serif;font-size:13px;color:#333}'
     + '.print-bar button{font-size:13px;padding:7px 16px;border-radius:6px;border:none;background:#111;color:#fff;cursor:pointer;margin-left:10px}'
     + '@media print{.print-bar{display:none}}'
@@ -13921,7 +13924,7 @@ function showImportPreview(prefix, preview) {
   var html = '<div style="font-size:12px;max-height:160px;overflow-y:auto;background:var(--bg);border-radius:var(--radius);padding:8px 12px;border:1px solid var(--border)">';
   show.forEach(function (p) {
     var color = p.action === 'added' ? 'var(--green)' : 'var(--amber)';
-    html += '<div style="padding:2px 0;color:var(--text2)"><span style="color:' + color + ';font-weight:600;margin-right:6px;font-size:10px;text-transform:uppercase">' + esc(p.action) + '</span>' + esc(p.label) + '</div>';
+    html += '<div style="padding:2px 0;color:var(--text2)"><span style="color:' + color + ';font-weight:600;margin-right:6px;font-size:11px;text-transform:uppercase">' + esc(p.action) + '</span>' + esc(p.label) + '</div>';
   });
   if (preview.length > 12) html += '<div style="color:var(--text3);margin-top:4px;font-size:11px">...and ' + (preview.length - 12) + ' more</div>';
   html += '</div>';
@@ -14084,7 +14087,7 @@ function openCalPop(dateStr, evt) {
   } else {
     items.forEach(function (item) {
       html += '<div class="cal-pop-item">';
-      html += '<div class="pop-type"><span class="pill ' + esc(item.typeClass) + '" style="font-size:10px;padding:1px 6px">' + esc(item.type) + '</span></div>';
+      html += '<div class="pop-type"><span class="pill ' + esc(item.typeClass) + '" style="font-size:11px;padding:1px 6px">' + esc(item.type) + '</span></div>';
       html += '<div class="pop-main">' + esc(item.main) + '</div>';
       if (item.sub) html += '<div class="pop-sub">' + esc(item.sub) + '</div>';
       html += '</div>';
@@ -14198,7 +14201,7 @@ function getChips(dateStr, unit, viewMode, maxShow, scope) {
   }
   if (maxShow && items.length > maxShow) {
     var extra = items.length - maxShow;
-    return items.slice(0, maxShow).join('') + '<div class="cal-chip" style="background:var(--surface2);color:var(--text2);cursor:pointer;font-size:10px" onclick="openCalPop(\'' + dateStr + '\',event)">+' + extra + ' more</div>';
+    return items.slice(0, maxShow).join('') + '<div class="cal-chip" style="background:var(--surface2);color:var(--text2);cursor:pointer;font-size:11px" onclick="openCalPop(\'' + dateStr + '\',event)">+' + extra + ' more</div>';
   }
   return items.join('');
 }
@@ -14319,7 +14322,7 @@ function renderAgendaCal() {
     var dayFmt = new Date(ds + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     html += '<div style="margin-bottom:16px">';
     html += '<div style="font-size:11px;font-weight:700;color:' + (isToday ? 'var(--accent)' : 'var(--text3)') + ';text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:flex;align-items:center;gap:6px">';
-    if (isToday) html += '<span style="background:var(--accent);color:#fff;border-radius:4px;padding:1px 7px;font-size:10px">TODAY</span>';
+    if (isToday) html += '<span style="background:var(--accent);color:#fff;border-radius:4px;padding:1px 7px;font-size:11px">TODAY</span>';
     html += dayFmt + '</div>';
     dayItems.forEach(function (item) {
       html += '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:4px;cursor:pointer" onclick="navToSec(\'' + item.sec + '\')">';
@@ -14382,7 +14385,7 @@ var GUIDE_DATA = [
     html:'<h4>What It Stores</h4><p>One record per unit — 410 of them — covering what the front desk controls: leaseholder and roommates, unit and mailbox keys issued (plus replacement counts), parking credentials (transponder, key tag, Xpress sticker), WiFi service expiry, Blueground status, bike sticker, and notes. It is a record of the <em>unit</em>, not a personal profile.</p><h4>Finding a Unit</h4><p>Search by unit number or leaseholder, filter by floor, or use the quick filters: <strong>All</strong>, <strong>BG</strong> (Blueground), <strong>WiFi Expiring</strong>, <strong>Vacant</strong>. The <strong>Map</strong> button switches to a floor-by-floor grid where each dot is a unit — green occupied, red vacant — and clicking one opens its record.</p><h4>WiFi Renewals</h4><p>An amber banner lists units whose WiFi is expiring soon or has recently lapsed. It counts only what you can act on: units expiring within the lookahead window, or expired inside the grace period. Vacant units are excluded — there is nobody to activate service for — but Blueground units are included. Anything older than the grace period is listed separately as <em>old data worth clearing</em> and is deliberately not counted, so the alert can actually reach zero. Both windows are set in <strong>Settings → Alert Windows</strong>.</p><h4>Deleting a Unit</h4><p>Admin only, and rare — for a decommissioned or duplicated unit. Other sections key off the unit <em>number</em>, so removing a record leaves that unit\'s Keys, Parking and Moves history intact.</p>' },
 
   { id:'g-passdown', icon:'📋', title:'Daily Passdown', keywords:'passdown shift generate preview save copy history build draft am pm overnight lead staff next step move key amenity logbook edit exclude override midnight',
-    html:'<h4>Overview</h4><p>The Daily Passdown section lets you build, preview, and save shift handoff notes. The left column is the <strong>Build</strong> panel; the right column is <strong>Passdown History</strong>.</p><h4>Selecting a Shift</h4><p>Choose AM, PM, or Overnight from the Shift dropdown. This filters auto-populated items to only show entries relevant to that shift\'s time window.</p><h4>Auto-Populated Blocks</h4><p>These pull live data automatically — no manual entry needed:</p><ul><li>🗝 <strong>One-Time Keys Still Out</strong> — any keys currently in "issued" status</li><li>🗝 <strong>Outstanding Key Returns</strong> — move-outs whose lease has ended and key collection task is still unchecked</li><li>🚛 <strong>Move-Ins</strong> — today\'s move-ins for this shift (admins also see upcoming days)</li><li>📦 <strong>Move-Outs</strong> — today\'s move-outs for this shift (admins also see upcoming)</li><li>🎉 <strong>Amenity Bookings</strong> — today\'s bookings during the selected shift window</li><li>📓 <strong>Open Logbook Entries</strong> — all open and in-progress logbook entries regardless of shift</li><li>📦 <strong>L&amp;F Follow Up</strong> — lost &amp; found items manually flagged for passdown</li><li>💳 <strong>Charges to Add to Ledger</strong> — replacement key cards ($100) and unreturned one-time keys ($75) with outstanding fees</li></ul><p>Completed moves (appointment passed + all main tasks done) show a green <strong>✓ Completed</strong> badge automatically.</p><h4>Editing Next Steps in the Draft</h4><p>Every auto-block item has an editable <strong>Next step…</strong> field below it. The field is pre-filled with a smart default. Click it and type to override — your custom text carries into the generated passdown when you click Generate. Leave it as-is to use the default.</p><h4>Excluding Items</h4><p>Click the <strong>–</strong> button on any item to exclude it from the passdown. The item grays out with a strikethrough. Click <strong>＋</strong> to re-include it. Exclusions persist while the draft is active.</p><h4>Look Ahead <span style="font-size:10px;font-weight:400;color:var(--text3)">(admin only)</span></h4><p>Set to "Today + Tomorrow" or "Today + 2 days" to pull upcoming moves and amenities into the passdown for advance notice.</p><h4>Free-Entry Sections</h4><p>These sections are for items you add manually:</p><ul><li><strong>Admin users:</strong> 🔑 Keys / Access, 🅿️ Parking, 👤 Resident Matters, 📢 Policy Reminders</li><li><strong>Staff users:</strong> 📝 Shift Notes</li></ul><p>Click <strong>+ Add Item</strong> in any section, fill in the form (unit, resident, description, next step), and save. Items appear as cards and can be removed with ×.</p><h4>Generating</h4><p>Click <strong>Generate</strong> to build the formatted passdown text in the Preview area. The preview is a fully editable textarea — type freely to add context, adjust wording, or remove anything before saving.</p><h4>Saving &amp; Sending</h4><ul><li><strong>Save Draft</strong> — saves the passdown to History as a draft, attributed to your account</li><li><strong>Review &amp; Send</strong> — runs quality checks, saves the passdown as sent, and opens Gmail with default recipients</li><li><strong>Copy</strong> — copies the text to your clipboard for pasting elsewhere</li><li><strong>Clear draft</strong> — resets all build blocks and clears the preview</li></ul><h4>Passdown History</h4><p>Passdowns appear on the right with Draft/Sent and read-count badges. Admins see all staff passdowns; staff see the last 48 hours. Each entry can be expanded, copied, edited (loads it back into the preview for revision), or deleted (author or admin only).</p><div class="guide-tip">💡 Clicking <strong>Passdown</strong> from the Move Ins / Outs section jumps here with today\'s moves already loaded.</div><h4>Overnight Shifts</h4><p>An Overnight passdown belongs to the day the shift <em>started</em>, not the calendar date when you finish it. Work past midnight and your draft stays put, the saved record files under the correct date, and the emailed subject line carries the shift&apos;s date rather than tomorrow&apos;s.</p>' },
+    html:'<h4>Overview</h4><p>The Daily Passdown section lets you build, preview, and save shift handoff notes. The left column is the <strong>Build</strong> panel; the right column is <strong>Passdown History</strong>.</p><h4>Selecting a Shift</h4><p>Choose AM, PM, or Overnight from the Shift dropdown. This filters auto-populated items to only show entries relevant to that shift\'s time window.</p><h4>Auto-Populated Blocks</h4><p>These pull live data automatically — no manual entry needed:</p><ul><li>🗝 <strong>One-Time Keys Still Out</strong> — any keys currently in "issued" status</li><li>🗝 <strong>Outstanding Key Returns</strong> — move-outs whose lease has ended and key collection task is still unchecked</li><li>🚛 <strong>Move-Ins</strong> — today\'s move-ins for this shift (admins also see upcoming days)</li><li>📦 <strong>Move-Outs</strong> — today\'s move-outs for this shift (admins also see upcoming)</li><li>🎉 <strong>Amenity Bookings</strong> — today\'s bookings during the selected shift window</li><li>📓 <strong>Open Logbook Entries</strong> — all open and in-progress logbook entries regardless of shift</li><li>📦 <strong>L&amp;F Follow Up</strong> — lost &amp; found items manually flagged for passdown</li><li>💳 <strong>Charges to Add to Ledger</strong> — replacement key cards ($100) and unreturned one-time keys ($75) with outstanding fees</li></ul><p>Completed moves (appointment passed + all main tasks done) show a green <strong>✓ Completed</strong> badge automatically.</p><h4>Editing Next Steps in the Draft</h4><p>Every auto-block item has an editable <strong>Next step…</strong> field below it. The field is pre-filled with a smart default. Click it and type to override — your custom text carries into the generated passdown when you click Generate. Leave it as-is to use the default.</p><h4>Excluding Items</h4><p>Click the <strong>–</strong> button on any item to exclude it from the passdown. The item grays out with a strikethrough. Click <strong>＋</strong> to re-include it. Exclusions persist while the draft is active.</p><h4>Look Ahead <span style="font-size:11px;font-weight:400;color:var(--text3)">(admin only)</span></h4><p>Set to "Today + Tomorrow" or "Today + 2 days" to pull upcoming moves and amenities into the passdown for advance notice.</p><h4>Free-Entry Sections</h4><p>These sections are for items you add manually:</p><ul><li><strong>Admin users:</strong> 🔑 Keys / Access, 🅿️ Parking, 👤 Resident Matters, 📢 Policy Reminders</li><li><strong>Staff users:</strong> 📝 Shift Notes</li></ul><p>Click <strong>+ Add Item</strong> in any section, fill in the form (unit, resident, description, next step), and save. Items appear as cards and can be removed with ×.</p><h4>Generating</h4><p>Click <strong>Generate</strong> to build the formatted passdown text in the Preview area. The preview is a fully editable textarea — type freely to add context, adjust wording, or remove anything before saving.</p><h4>Saving &amp; Sending</h4><ul><li><strong>Save Draft</strong> — saves the passdown to History as a draft, attributed to your account</li><li><strong>Review &amp; Send</strong> — runs quality checks, saves the passdown as sent, and opens Gmail with default recipients</li><li><strong>Copy</strong> — copies the text to your clipboard for pasting elsewhere</li><li><strong>Clear draft</strong> — resets all build blocks and clears the preview</li></ul><h4>Passdown History</h4><p>Passdowns appear on the right with Draft/Sent and read-count badges. Admins see all staff passdowns; staff see the last 48 hours. Each entry can be expanded, copied, edited (loads it back into the preview for revision), or deleted (author or admin only).</p><div class="guide-tip">💡 Clicking <strong>Passdown</strong> from the Move Ins / Outs section jumps here with today\'s moves already loaded.</div><h4>Overnight Shifts</h4><p>An Overnight passdown belongs to the day the shift <em>started</em>, not the calendar date when you finish it. Work past midnight and your draft stays put, the saved record files under the correct date, and the emailed subject line carries the shift&apos;s date rather than tomorrow&apos;s.</p>' },
 
   { id:'g-todos', icon:'✅', title:'To-Do List', keywords:'todo to do task personal list shift top three waiting follow up assigned completed admin project board search',
     html:'<h4>Capture First</h4><p>Type a task in the capture bar and press Enter. Open <strong>Options</strong> for a category, due date, or priority, or choose <strong>More details</strong> for notes, status, ownership, follow-up information, assignment, or an admin project.</p><h4>Workspaces</h4><ul><li><strong>This Shift</strong> — urgency-based Do now, Scheduled, Waiting, and Someday groups plus a strict Top 3</li><li><strong>All Tasks</strong> — searchable list or status board with category and status filters</li><li><strong>Follow-Ups</strong> — Waiting and Blocked tasks with an owner, follow-up date, last contact, and blocker details</li><li><strong>Assigned</strong> — work assigned to you and, for admins, delegated work</li><li><strong>Completed</strong> — completion history, including archived tasks</li><li><strong>Admin Projects</strong> — longer dashboard, documentation, security, and improvement work kept out of the shift queue</li></ul><h4>Changing Status</h4><p>Use the status menu on any list or board card. Waiting requires an owner and follow-up date; Blocked requires a blocker note. Completing a task frees its Top 3 slot automatically.</p><h4>Privacy &amp; Oversight</h4><p>Each user has a personal list. Admins can switch to another team member for coverage and review.</p>' },
@@ -14569,7 +14572,7 @@ function renderTeam() {
         + '<div style="flex:1">'
         + '<div class="flex gap-6 items-center" style="margin-bottom:3px">'
         + '<span class="font-600 text-sm">' + esc(entry.staffName) + '</span>'
-        + '<span class="pill ' + pillClass + '" style="font-size:10px">' + esc(entry.type) + '</span>'
+        + '<span class="pill ' + pillClass + '" style="font-size:11px">' + esc(entry.type) + '</span>'
         + (entry.minutesLate ? '<span class="mono text-xs" style="color:var(--amber)">+' + entry.minutesLate + ' min late</span>' : '')
         + '</div>'
         + (entry.note ? '<div class="text-sm text-2">' + esc(entry.note) + '</div>' : '')
@@ -15324,8 +15327,8 @@ function renderTeamStaff() {
   staff.forEach(function (name, i) {
     html += '<div class="stask-row flex items-center gap-8" style="padding:8px 14px;border-bottom:1px solid var(--border2)">'
       + '<div style="display:flex;flex-direction:column;gap:1px;margin-right:2px">'
-      + '<button class="btn btn-ghost btn-xs" style="padding:1px 5px;font-size:10px;line-height:1" onclick="moveStaff(' + i + ',-1)" title="Move up" ' + (i===0?'disabled style="opacity:.3"':' ') + '>▲</button>'
-      + '<button class="btn btn-ghost btn-xs" style="padding:1px 5px;font-size:10px;line-height:1" onclick="moveStaff(' + i + ',1)" title="Move down" ' + (i===staff.length-1?'disabled style="opacity:.3"':' ') + '>▼</button>'
+      + '<button class="btn btn-ghost btn-xs" style="padding:1px 5px;font-size:11px;line-height:1" onclick="moveStaff(' + i + ',-1)" title="Move up" ' + (i===0?'disabled style="opacity:.3"':' ') + '>▲</button>'
+      + '<button class="btn btn-ghost btn-xs" style="padding:1px 5px;font-size:11px;line-height:1" onclick="moveStaff(' + i + ',1)" title="Move down" ' + (i===staff.length-1?'disabled style="opacity:.3"':' ') + '>▼</button>'
       + '</div>'
       + '<span class="text-sm" style="flex:1" id="staff-lbl-' + i + '">' + esc(name) + '</span>'
       + '<button class="btn btn-ghost btn-xs" onclick="editStaff(' + i + ')" title="Rename">&#9998;</button>'
@@ -15747,7 +15750,7 @@ function checkCarriedItemsOnLogin() {
       + (backlogCount === 1 ? '' : 's') + ' outstanding more than 48h &mdash; tracked in Key Tracker, not part of this shift\'s handover.</span></div>';
   }
   if (carriedItems.length) {
-    html += '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;display:flex;align-items:center;gap:6px">↩ Open items from previous shift <span style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1px 7px;font-size:10px;color:var(--text2)">' + carriedItems.length + '</span></div>';
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;display:flex;align-items:center;gap:6px">↩ Open items from previous shift <span style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1px 7px;font-size:11px;color:var(--text2)">' + carriedItems.length + '</span></div>';
     html += '<p style="font-size:12px;color:var(--text3);margin-bottom:10px">Check any you\'d like added to your to-do list for this shift.</p>';
     html += '<div style="display:flex;flex-direction:column;gap:7px">';
     carriedItems.forEach(function(item, i) {
@@ -16022,8 +16025,8 @@ function renderTeamAccounts() {
     var isMe = a.id === currentUser.id;
     html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">'
       + '<div style="display:flex;flex-direction:column;gap:1px">'
-      + '<button class="btn btn-ghost btn-xs" style="padding:1px 4px;font-size:10px;line-height:1" onclick="moveAccount(' + i + ',-1)" ' + (i===0?'disabled style="opacity:.3"':'') + '>▲</button>'
-      + '<button class="btn btn-ghost btn-xs" style="padding:1px 4px;font-size:10px;line-height:1" onclick="moveAccount(' + i + ',1)" ' + (i===accounts.length-1?'disabled style="opacity:.3"':'') + '>▼</button>'
+      + '<button class="btn btn-ghost btn-xs" style="padding:1px 4px;font-size:11px;line-height:1" onclick="moveAccount(' + i + ',-1)" ' + (i===0?'disabled style="opacity:.3"':'') + '>▲</button>'
+      + '<button class="btn btn-ghost btn-xs" style="padding:1px 4px;font-size:11px;line-height:1" onclick="moveAccount(' + i + ',1)" ' + (i===accounts.length-1?'disabled style="opacity:.3"':'') + '>▼</button>'
       + '</div>'
       + '<div class="acct-avatar" style="width:32px;height:32px;font-size:12px">' + initials + '</div>'
       + '<div style="flex:1"><div class="font-600 text-sm">' + esc(a.name) + '</div>'
@@ -16583,7 +16586,7 @@ function renderTemplates() {
   orderedCats.forEach(function(cat) {
     var items = grouped[cat]; if (!items || !items.length) return;
     if (tmplActiveCat === 'All') {
-      html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:4px 2px 8px'
+      html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:4px 2px 8px'
         + (html ? ';margin-top:18px;border-top:1px solid var(--border2)' : '') + '">' + esc(cat) + '</div>';
     }
     html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin-bottom:4px">';
@@ -16601,7 +16604,7 @@ function renderTemplates() {
         +   '</div>'
         + '</div>'
         + '<div style="padding:8px 14px;border-top:1px solid var(--border2);display:flex;align-items:center;gap:6px">'
-        +   '<span style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;flex:1">' + esc(t.category) + '</span>'
+        +   '<span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;flex:1">' + esc(t.category) + '</span>'
         +   '<button class="btn btn-ghost btn-xs" id="tmpl-exp-' + t.id + '" onclick="tmplExpand(\'' + t.id + '\')">Expand</button>'
         +   '<button class="btn btn-secondary btn-xs" onclick="tmplCopy(\'' + t.id + '\')">&#128203; Copy</button>'
         + '</div>'
