@@ -508,6 +508,7 @@
   .pin-key:hover{background:var(--accent-light);color:var(--accent)}
   .pin-key:active{transform:scale(.94)}
   .user-info-bar{font-size:11px;color:var(--text3);padding:2px 8px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .viewer-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:3px;font-size:9.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:rgba(255,255,255,0.14);color:rgba(255,255,255,0.82);vertical-align:middle}
   body.sc .user-info-bar{display:none}
   .by-tag{font-size:10px;color:var(--text3);background:var(--bg);border-radius:3px;padding:1px 5px;white-space:nowrap;margin-left:4px;display:inline-block}
 
@@ -4354,7 +4355,7 @@ function renderDash() {
     rrDue.map(function (r) {
       var dLeft = rrDaysUntil(r);
       var label = dLeft < 0 ? '<span style="color:var(--red);font-weight:600">' + (-dLeft) + 'd overdue</span>' : '<span style="color:var(--amber)">Due today</span>';
-      return '<div class="tight-row"><span class="tr-main"><strong>' + esc(r.label) + '</strong> &nbsp;' + label + '</span><button class="btn btn-xs btn-secondary" onclick="promptCompleteRecurring(\'' + r.id + '\')">Complete</button></div>';
+      return '<div class="tight-row"><span class="tr-main"><strong>' + esc(r.label) + '</strong> &nbsp;' + label + '</span>' + (isViewerUser() ? '' : '<button class="btn btn-xs btn-secondary" onclick="promptCompleteRecurring(\'' + r.id + '\')">Complete</button>') + '</div>';
     }), 0, '');
 
   addAttn('amber', '&#128666; Tight Turnovers &mdash; ' + tights.length + ' unit' + (tights.length > 1 ? 's' : '') + ' need attention',
@@ -4422,7 +4423,7 @@ function renderDash() {
         + '</div>'
         + (timeStr ? '<div style="font-size:10px;color:' + (isOD ? 'var(--red)' : 'var(--text3)') + '">' + timeStr + ' out · ' + k.type + '</div>' : '<div style="font-size:10px;color:var(--text3)">' + k.type + '</div>')
         + '</div>'
-        + '<button onclick="dashReturnKey(\'' + k.id + '\')" style="flex-shrink:0;font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-family:inherit;transition:background 120ms ease-out,color 120ms ease-out,border-color 120ms ease-out;white-space:nowrap" onmouseover="this.style.background=\'var(--green-light)\';this.style.color=\'var(--green)\';this.style.borderColor=\'rgba(26,102,64,0.3)\'" onmouseout="this.style.background=\'var(--surface2)\';this.style.color=\'var(--text2)\';this.style.borderColor=\'var(--border)\'">✓ Return</button>'
+        + (isViewerUser() ? '' : '<button onclick="dashReturnKey(\'' + k.id + '\')" style="flex-shrink:0;font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-family:inherit;transition:background 120ms ease-out,color 120ms ease-out,border-color 120ms ease-out;white-space:nowrap" onmouseover="this.style.background=\'var(--green-light)\';this.style.color=\'var(--green)\';this.style.borderColor=\'rgba(26,102,64,0.3)\'" onmouseout="this.style.background=\'var(--surface2)\';this.style.color=\'var(--text2)\';this.style.borderColor=\'var(--border)\'">✓ Return</button>')
         + '</div>';
     });
     if (activeOut.length > 6) html += '<div style="font-size:11px;color:var(--text3);padding-top:5px;text-align:center;cursor:pointer" onclick="navToSec(\'keys\')">+' + (activeOut.length - 6) + ' more — view all →</div>';
@@ -7264,6 +7265,7 @@ function saveQuickKey() {
 
 var _krId = null, _krCondition = 'good';
 function dashReturnKey(id) {
+  if (isViewerUser()) { toast('View-only access'); return; }
   var k = (state.keys || []).find(function(x) { return x.id === id; }); if (!k) return;
   _krId = id; _krCondition = 'good';
   var ms = k.issuedAt ? Date.now() - k.issuedAt : 0;
@@ -7285,6 +7287,7 @@ function krSelectCondition(val) {
   if (db) { db.style.borderColor = val === 'damaged' ? 'var(--red)' : 'var(--border)'; db.style.background = val === 'damaged' ? 'rgba(220,38,38,0.08)' : 'transparent'; db.style.color = val === 'damaged' ? 'var(--red)' : 'var(--text2)'; }
 }
 function confirmKeyReturn() {
+  if (isViewerUser()) { toast('View-only access'); return; }
   if (!_krId) return;
   var k = (state.keys || []).find(function(x) { return x.id === _krId; }); if (!k) return;
   if (_krCondition === 'damaged') k.notes = (k.notes ? k.notes + '\n' : '') + 'Returned damaged — noted by ' + (currentUser ? currentUser.name : 'staff') + ' on ' + new Date().toLocaleDateString();
@@ -15127,6 +15130,7 @@ async function deleteRecurring(id) {
   scheduleSave(); renderRecurringReminders(); renderDash(); toast('Deleted');
 }
 function promptCompleteRecurring(id) {
+  if (isViewerUser()) { toast('View-only access'); return; }
   var r = rrData().find(function(x) { return x.id === id; }); if (!r) return;
   if (!r.requireValue) { completeRecurring(id, null); return; }
   var val = prompt((r.valueLabel || 'Value') + ' for "' + r.label + '":', '');
@@ -15134,6 +15138,7 @@ function promptCompleteRecurring(id) {
   completeRecurring(id, val);
 }
 function completeRecurring(id, enteredValue) {
+  if (isViewerUser()) { toast('View-only access'); return; }
   var r = rrData().find(function(x) { return x.id === id; }); if (!r) return;
   var cmds = [];
   var _rb = { lastCompletedAt: r.lastCompletedAt, lastCompletedBy: r.lastCompletedBy, dueDate: r.dueDate };
@@ -15956,7 +15961,17 @@ function updateSidebarForRole() {
   var isStaff = currentUser && currentUser.role === 'staff';
   var uil = g('user-info-line'), uin = g('user-info-name');
   if (uil) uil.style.display = currentUser ? '' : 'none';
-  if (uin && currentUser) uin.textContent = currentUser.name;
+  // Viewers get an explicit read-only marker — without it there is no way to tell the role
+  // apart from a broken install, since every add/edit control is simply absent.
+  if (uin && currentUser) {
+    uin.textContent = currentUser.name;
+    if (isViewerUser()) {
+      var vb = document.createElement('span');
+      vb.className = 'viewer-badge';
+      vb.textContent = 'View only';
+      uin.appendChild(vb);
+    }
+  }
   var footerBtns = ['footer-export','footer-import','footer-reset'];
   footerBtns.forEach(function(id) {
     var el = g(id); if (el) el.style.display = (isStaff || isViewerUser()) ? 'none' : '';
