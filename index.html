@@ -72,7 +72,10 @@
   .sub-tab .badge{margin-left:6px;vertical-align:baseline}
   .sub-tab .badge.vis{display:inline-block}
   .badge.badge-red{background:var(--red);color:#fff}
-  .sb-footer{margin-top:auto;padding:10px 10px 14px;border-top:0.5px solid rgba(255,255,255,0.09);display:flex;flex-direction:column;gap:4px}
+  /* Sticky so Log Out, sync status and Guide stay on screen: #sidebar is the scroll
+     container and the nav list overflows it below ~900px tall, which pushed the footer
+     (and Guide, the last nav item) out of view on every common laptop. */
+  .sb-footer{margin-top:auto;position:sticky;bottom:0;background:#0D1B2A;flex-shrink:0;padding:10px 10px 14px;border-top:0.5px solid rgba(255,255,255,0.09);display:flex;flex-direction:column;gap:4px}
   .footer-btn{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:var(--radius);font-size:11.5px;color:rgba(255,255,255,0.60);cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;width:100%;text-align:left;transition:background .1s;white-space:nowrap}
   .footer-btn:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.75)}
   .save-status{font-size:11px;color:rgba(255,255,255,0.55);padding:0 8px 4px;font-family:var(--font-mono);white-space:nowrap;overflow:hidden}
@@ -891,9 +894,9 @@
     <div class="nav-label">System</div>
     <div class="nav-item" data-sec="import" onclick="nav(this)"><span class="icon" data-icon="upload"></span><span class="nav-txt">Import Center</span></div>
     <div class="nav-item" data-sec="settings" onclick="nav(this)"><span class="icon" data-icon="sliders"></span><span class="nav-txt">Settings</span></div>
-    <div class="nav-item" data-sec="guide" onclick="nav(this)"><span class="icon" data-icon="book"></span><span class="nav-txt">Guide</span></div>
   </div>
   <div class="sb-footer">
+    <div class="nav-item" data-sec="guide" onclick="nav(this)" style="margin-bottom:2px"><span class="icon" data-icon="book"></span><span class="nav-txt">Guide</span></div>
     <div id="user-info-line" style="display:none">
       <div class="user-info-bar" id="user-info-name"></div>
       <button class="footer-btn" style="color:var(--accent)" onclick="doLogout()"><span class="icon" data-icon="logout"></span><span>Log Out</span></button>
@@ -3389,6 +3392,15 @@ async function resetData() {
 // ===== [CORE UTILITIES] ======================================================
 function uid() { try { return crypto.randomUUID(); } catch(e) { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); } }
 function esc(s) { return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+// Avatar initials. Only word-initial letters/digits count — the setup form prefills
+// "Gabino — Lead", and taking the first character of every whitespace-separated token
+// turned the em-dash into an initial ("G—"). Falls back to "?" for an empty name.
+function nameInitials(name) {
+  var parts = String(name || '').split(/\s+/)
+    .map(function (w) { return (w.match(/[A-Za-z0-9]/) || [''])[0]; })
+    .filter(Boolean);
+  return parts.join('').toUpperCase().slice(0, 2) || '?';
+}
 // mergeTodoInbox() appends a trailing "\n[triage:<id>]" line to a logbook entry's notes as its
 // dedupe marker (checked via indexOf against the stored string, so it can't be moved to its own
 // field without breaking that check) — strip it wherever notes are shown to a human: the Logbook
@@ -9134,7 +9146,7 @@ function renderCameraCheck() {
     html += '<div style="color:var(--text3);font-size:12px">No check-ins logged yet.</div>';
   } else {
     recent.forEach(function(c) {
-      var initials = (c.name||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+      var initials = nameInitials(c.name);
       var timeStr = new Date(c.ts).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
       var statusPill = c.completed !== 'Yes'
         ? '<span class="pill" style="background:var(--amber-light);color:var(--amber);margin-left:auto">Blocked</span>'
@@ -15666,7 +15678,7 @@ function renderLoginScreen() {
   }
   var html = '';
   accounts.forEach(function(a) {
-    var initials = esc(a.name.split(/\s+/).map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2));
+    var initials = esc(nameInitials(a.name));
     html += '<button class="acct-btn" onclick="selectAccount(\'' + esc(a.id) + '\')">'
       + '<div class="acct-avatar">' + initials + '</div>'
       + '<div><div>' + esc(a.name) + '</div><div class="acct-role-tag">' + (a.role==='admin'?'&#128737; Admin':a.role==='viewer'?'Viewer':'Staff') + '</div></div>'
@@ -15723,6 +15735,9 @@ function pinKey(k) {
 // shift" rather than backlog. Two days covers an overnight plus a day off.
 var CARRIED_LOOKBACK_MS = 48 * 3600 * 1000;
 function checkCarriedItemsOnLogin() {
+  // Viewers can't add to-dos and can't open Key Tracker or Logbook, so this prompt
+  // offered them a checklist of items they had no way to act on or even look at.
+  if (isViewerUser()) return;
   var shownKey = 'carried_shown_' + (currentUser ? currentUser.id : '') + '_' + today();
   try { if (sessionStorage.getItem(shownKey)) return; sessionStorage.setItem(shownKey, '1'); } catch(e) {}
   var openKeys = (state.keys||[]).filter(function(k){ return k.type==='one-time' && k.status==='issued'; });
@@ -15861,6 +15876,31 @@ async function submitChangePin() {
   toast('PIN updated successfully');
 }
 
+// ===== [POST-LOGIN PROMPTS] ==================================================
+// These used to be four fixed timers (300/600/1200/2000ms) that each opened a modal
+// regardless of what was already on screen, so a first-time user could meet four
+// stacked dialogs and dismiss every one of them unread. Now they run strictly one at
+// a time, each waiting for the previous to be closed.
+var _loginPromptQueue = [];
+var _loginPromptWaits = 0;
+function runLoginPrompts(fns) {
+  _loginPromptQueue = (fns || []).slice();
+  _loginPromptWaits = 0;
+  setTimeout(nextLoginPrompt, 300);
+}
+function nextLoginPrompt() {
+  if (!_loginPromptQueue.length) return;
+  if (_modalStack.length) {                       // something is still open — wait for it
+    if (++_loginPromptWaits > 750) { _loginPromptQueue = []; return; } // ~5 min, then give up
+    setTimeout(nextLoginPrompt, 400);
+    return;
+  }
+  _loginPromptWaits = 0;
+  var fn = _loginPromptQueue.shift();
+  try { fn(); } catch (e) { console.warn('login prompt failed:', e); }
+  setTimeout(nextLoginPrompt, 400);
+}
+
 // ===== [WELCOME MODAL] =======================================================
 function checkFirstLoginWelcome() {
   if (!currentUser) return;
@@ -15881,7 +15921,7 @@ function checkFirstLoginWelcome() {
     + '<p style="font-size:13px;color:var(--text2)">Start with <strong>Guide → Getting Started</strong> for a full walkthrough of every section.</p>'
     + '</div>'
     + '<div class="modal-ftr" style="justify-content:space-between;align-items:center">'
-    + '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer"><input type="checkbox" id="welcome-dont-show" style="cursor:pointer;accent-color:var(--accent)"> Don\'t show this again</label>'
+    + '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer;white-space:nowrap;flex-shrink:0"><input type="checkbox" id="welcome-dont-show" style="cursor:pointer;accent-color:var(--accent)"> Don\'t show this again</label>'
     + '<button class="btn btn-primary" onclick="closeWelcomeModal(true)">Got it</button>'
     + '</div></div>';
   openModal('modal-welcome');
@@ -15934,10 +15974,12 @@ async function submitPin() {
     renderDash(); updateBadges();
     toast('Welcome, ' + currentUser.name + '!');
     applyUserDisplay();
-    setTimeout(checkFirstLoginWelcome, 300);
-    setTimeout(checkCarriedItemsOnLogin, 600);
-    setTimeout(checkPassdownAcknowledgementOnLogin, 1200);
-    setTimeout(checkAssignedTodosOnLogin, 2000);
+    runLoginPrompts([
+      checkFirstLoginWelcome,
+      checkCarriedItemsOnLogin,
+      checkPassdownAcknowledgementOnLogin,
+      checkAssignedTodosOnLogin
+    ]);
   } else {
     loginPinEntry = '';
     var fails = parseInt(sessionStorage.getItem(failKey) || '0') + 1;
@@ -16021,7 +16063,7 @@ function renderTeamAccounts() {
   if (!accounts.length) { el.innerHTML = '<div class="text-3 text-sm" style="padding:10px 14px">No accounts yet.</div>'; return; }
   var html = '';
   accounts.forEach(function(a, i) {
-    var initials = esc(a.name.split(/\s+/).map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2));
+    var initials = esc(nameInitials(a.name));
     var isMe = a.id === currentUser.id;
     html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">'
       + '<div style="display:flex;flex-direction:column;gap:1px">'
