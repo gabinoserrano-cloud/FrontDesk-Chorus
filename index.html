@@ -6366,6 +6366,41 @@ function toggleLogbookLog(id) {
 // the entry stayed put. Copying them in makes every row a real, editable record.
 // Deliberately non-destructive: state.concierge / state.security are left untouched as a
 // fallback. They are no longer read anywhere once this has run.
+// The Logbook UI only understands these three. Anything else is invisible to every
+// status filter while still counting toward the total, so a row with a legacy status
+// like 'held' or 'picked' can only be found by scrolling "All".
+var LOGBOOK_STATUSES = ['open', 'in-progress', 'resolved'];
+function normalizeLogbookStatus(s) {
+  if (LOGBOOK_STATUSES.indexOf(s) !== -1) return s;
+  if (s === 'completed' || s === 'closed' || s === 'picked' || s === 'delivered') return 'resolved';
+  if (s === 'monitoring' || s === 'pending') return 'in-progress';
+  return 'open'; // unknown or missing — surface it rather than hide it
+}
+
+// One-time repair for rows the original migration let through with a status the UI
+// can't filter on. The migration mapped exactly one legacy value per store
+// ('completed'->resolved, 'monitoring'->in-progress) and passed everything else
+// through verbatim, and it is guarded to run once — so those rows are stuck until
+// something corrects them.
+function repairLogbookStatusesV1() {
+  if (state.logbookStatusRepairV1) return;
+  var fixed = 0, sample = {};
+  (state.logbook || []).forEach(function (e) {
+    if (!e) return;
+    if (LOGBOOK_STATUSES.indexOf(e.status) === -1) {
+      sample[e.status === undefined ? '(missing)' : String(e.status)] = 1;
+      e.status = normalizeLogbookStatus(e.status);
+      fixed++;
+    }
+  });
+  state.logbookStatusRepairV1 = true;
+  if (fixed) {
+    logActivity('logbook', 'edit', 'Repaired ' + fixed + ' logbook entr' + (fixed === 1 ? 'y' : 'ies') + ' with an unrecognized status',
+      'Was: ' + Object.keys(sample).join(', ') + '. These counted toward the total but matched no status filter.');
+    scheduleSave();
+  }
+}
+
 function migrateLegacyLogbookV1() {
   if (state.legacyLogbookMigrationV1) return;
   if (!state.logbook) state.logbook = [];
@@ -6378,7 +6413,7 @@ function migrateLegacyLogbookV1() {
     state.logbook.push(Object.assign({}, c, {
       category: 'request',
       location: c.location || '',
-      status: c.status === 'completed' ? 'resolved' : (c.status || 'open'),
+      status: normalizeLogbookStatus(c.status),
       createdAt: c.createdAt || Date.now(),
       migratedFrom: 'concierge'
     }));
@@ -6393,7 +6428,7 @@ function migrateLegacyLogbookV1() {
       unit: sx.unit || '',
       resident: sx.resident || '',
       notes: sx.notes || sx.description || '',
-      status: sx.status === 'monitoring' ? 'in-progress' : (sx.status || 'open'),
+      status: normalizeLogbookStatus(sx.status),
       createdAt: sx.createdAt || Date.now(),
       migratedFrom: 'security'
     }));
@@ -15805,7 +15840,17 @@ function resetPassdownState() {
   var pv = g('pd-preview'); if (pv) pv.value = '';
 }
 // ===== [DISPLAY SETTINGS] ====================================================
+// The search placeholder advertises "(⌘K)", which is noise on a phone — there is no ⌘
+// key, and it is the first part of the string to truncate on a narrow field.
+function syncSearchPlaceholder() {
+  var el = g('dash-search-input'); if (!el) return;
+  var narrow = window.matchMedia && window.matchMedia('(max-width:700px)').matches;
+  el.placeholder = narrow ? 'Search residents, units, keys…' : 'Search residents, units, keys… (⌘K)';
+}
+window.addEventListener('resize', syncSearchPlaceholder);
+
 function applyUserDisplay() {
+  syncSearchPlaceholder();
   if (!currentUser) return;
   var theme = localStorage.getItem('theme_' + currentUser.id) || 'light';
   var fontSize = localStorage.getItem('fontsize_' + currentUser.id) || 'md';
@@ -16221,6 +16266,7 @@ async function init() {
   migrateKeyCardsToManualCountV1();
   migrateKeyKindV1();
   migrateLegacyLogbookV1();
+  repairLogbookStatusesV1();
   autoCloseStaleAmenities();
   checkUnreturnedKeyFees();
   seedRecurringRemindersV1();
