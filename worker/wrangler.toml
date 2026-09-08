@@ -1,0 +1,14 @@
+name = "chorus-sync"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+# Serve the API from the same hostname as the dashboard so it inherits the
+# Cloudflare Access policy already protecting chorusfd.com. A separate subdomain
+# would need its own Access application plus CORS headers.
+[[routes]]
+pattern = "chorusfd.com/api/*"
+zone_name = "chorusfd.com"
+
+# Secrets are NOT set here — they are set once via `wrangler secret put` so they
+# never touch the repo. See DEPLOY.md:
+#   SUPA_URL, SUPA_KEY, SUPA_SYNC_EMAIL, SUPA_SYNC_PASS
