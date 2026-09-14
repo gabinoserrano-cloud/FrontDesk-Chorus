@@ -972,11 +972,11 @@
       <div class="card" id="keys-log-card"><div class="card-hdr"><span class="card-title" id="keys-log-title">Key Log</span><span class="card-count" id="keys-count">0 entries</span><button class="btn btn-secondary btn-sm ml-auto" onclick="openKeyScanQR()">Key Scan QR Code</button><button class="btn btn-primary btn-sm" onclick="openAddKey()">+ Log Key</button></div><div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Resident / Guest</th><th>Type</th><th>Key #</th><th>Time Out</th><th>Status</th><th></th></tr></thead><tbody id="keys-tbody"></tbody></table></div></div>
       <!-- Card Drawer view -->
       <div id="card-drawer-view">
-        <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">Stock by Pool</span><span class="card-count" id="cardpool-hint"></span><button class="btn btn-ghost btn-sm ml-auto" onclick="openCardPoolBaselines()" title="Edit starting counts for each pool">&#9998; Baselines</button></div>
+        <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">Stock by Pool</span><span class="card-count" id="cardpool-hint"></span><button class="btn btn-ghost btn-sm ml-auto" id="btn-cardpool-baselines" onclick="openCardPoolBaselines()" title="Edit starting counts for each pool">&#9998; Baselines</button></div>
         <div class="tbl-wrap"><table><thead><tr><th>Pool</th><th>Starting</th><th>Issued Out</th><th>In Stock (calc)</th><th>Last Count</th><th>Unaccounted</th><th></th></tr></thead><tbody id="cardpool-tbody"></tbody></table></div></div>
         <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">One-Time Card Drawer</span><span class="card-count" id="drawer-count"></span><button class="btn btn-secondary btn-sm ml-auto" onclick="printCardPoolLabels('oneTime')">&#128424; Print Labels</button></div><div class="card-body" id="drawer-body" style="padding:14px"></div></div>
         <!-- Self-Guided Tour keys: unit-owned pairs, labeled with the unit number -->
-        <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">Self-Guided Tour Keys</span><span class="card-count" id="sgt-count"></span><button class="btn btn-secondary btn-sm ml-auto" onclick="openSgtPrintPicker()">&#128424; Print Labels</button><button class="btn btn-secondary btn-sm" onclick="openSgtRoster()">&#9881; Manage Units</button></div><div class="card-body" id="sgt-body" style="padding:14px"></div></div>
+        <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">Self-Guided Tour Keys</span><span class="card-count" id="sgt-count"></span><button class="btn btn-secondary btn-sm ml-auto" onclick="openSgtPrintPicker()">&#128424; Print Labels</button><button class="btn btn-secondary btn-sm" id="btn-sgt-roster" onclick="openSgtRoster()">&#9881; Manage Units</button></div><div class="card-body" id="sgt-body" style="padding:14px"></div></div>
         <div class="card"><div class="card-hdr"><span class="card-title">Vendor Cards</span><span class="card-count" id="vendor-drawer-count"></span><button class="btn btn-secondary btn-sm ml-auto" onclick="printCardPoolLabels('vendor')">&#128424; Print Labels</button></div><div class="card-body" id="vendor-drawer-body" style="padding:14px"></div></div>
       </div>
       <div id="parking-view" style="display:none">
@@ -16065,6 +16065,12 @@ function updateSidebarForRole() {
   var footerBtns = ['footer-export','footer-import','footer-reset'];
   footerBtns.forEach(function(id) {
     var el = g(id); if (el) el.style.display = (isStaff || isViewerUser()) ? 'none' : '';
+  });
+  // Key Tracker's pool-baseline and SGT-roster editors are admin-gated in their handlers.
+  // Leaving the buttons visible meant staff clicked them and got a dead-end
+  // "Admin access required" toast, which reads as the app being broken.
+  ['btn-cardpool-baselines','btn-sgt-roster'].forEach(function(id) {
+    var el = g(id); if (el) el.style.display = (currentUser && currentUser.role === 'admin') ? '' : 'none';
   });
 }
 
