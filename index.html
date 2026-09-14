@@ -2184,7 +2184,7 @@ var SUPA_SYNC_PASS = 'yQI4RdhdSD2Rko9xpOaqRkFK5crSDEDHeRdGrQza';
 // cutover; flipping it back is the entire rollback. Once it is live and verified,
 // SUPA_KEY / SUPA_SYNC_EMAIL / SUPA_SYNC_PASS above can be deleted outright — the
 // Worker holds them, and the browser never sees them again. See worker/DEPLOY.md.
-var SYNC_API = null;
+var SYNC_API = '/api';
 var LOCAL_KEY = 'chorus-fd-v3';
 var syncTO = null, isSyncing = false, lastSyncTs = null, localDirty = false;
 var _supaSession = null;
