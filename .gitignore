@@ -53,3 +53,4 @@ One-Time Key Fee Ledger*.html
 index.html.backup-*
 rotate-credentials.py
 rotate.sql
+worker-secrets.txt
