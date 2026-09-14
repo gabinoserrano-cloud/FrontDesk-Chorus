@@ -2179,6 +2179,12 @@ var SUPA_URL = 'https://adovwmwpvwomljggscge.supabase.co';
 var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkb3Z3bXdwdndvbWxqZ2dzY2dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNzkxNjcsImV4cCI6MjA5MDg1NTE2N30.dZgl3jEL1FbBSe_gM3LN9Tc3wGGmsf_Bq6YaKJf4dyk';
 var SUPA_SYNC_EMAIL = 'sync@chorusfd.internal';
 var SUPA_SYNC_PASS = 'yQI4RdhdSD2Rko9xpOaqRkFK5crSDEDHeRdGrQza';
+// Set to '/api' once the Cloudflare Worker in worker/ is deployed. While null, the
+// legacy direct-to-Supabase path below runs unchanged. Flipping this is the entire
+// cutover; flipping it back is the entire rollback. Once it is live and verified,
+// SUPA_KEY / SUPA_SYNC_EMAIL / SUPA_SYNC_PASS above can be deleted outright — the
+// Worker holds them, and the browser never sees them again. See worker/DEPLOY.md.
+var SYNC_API = null;
 var LOCAL_KEY = 'chorus-fd-v3';
 var syncTO = null, isSyncing = false, lastSyncTs = null, localDirty = false;
 var _supaSession = null;
@@ -2211,6 +2217,11 @@ async function getSupaHdr(extra) {
 }
 
 async function supaGet() {
+  if (SYNC_API) {
+    var wres = await fetch(SYNC_API + '/data', { headers: { 'Accept': 'application/json' } });
+    if (!wres.ok) throw new Error('fetch ' + wres.status);
+    return await wres.json();
+  }
   var hdrs = await getSupaHdr();
   var res = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.main&select=data,updated_at', { headers: hdrs });
   if (!res.ok) throw new Error('fetch ' + res.status);
@@ -2220,6 +2231,11 @@ async function supaGet() {
 // Timestamp-only probe (~60 bytes). The full row is >1MB, so the 30s poll checks
 // this first and only downloads the data when another device actually saved.
 async function supaGetMeta() {
+  if (SYNC_API) {
+    var wres = await fetch(SYNC_API + '/data?meta=1', { headers: { 'Accept': 'application/json' } });
+    if (!wres.ok) throw new Error('fetch ' + wres.status);
+    return await wres.json();
+  }
   var hdrs = await getSupaHdr();
   var res = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.main&select=updated_at', { headers: hdrs });
   if (!res.ok) throw new Error('fetch ' + res.status);
@@ -2232,6 +2248,15 @@ async function supaGetMeta() {
 // their data. Returns the new row on success, null when the race was lost.
 // select=updated_at keeps the response ~60 bytes rather than echoing the ~1.5MB row.
 async function supaPush(d, expected) {
+  if (SYNC_API) {
+    var wres = await fetch(SYNC_API + '/data', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: d, expected: expected || null })
+    });
+    if (!wres.ok) throw new Error('push ' + wres.status);
+    return await wres.json(); // null when the CAS filter matched nothing
+  }
   var hdrs = await getSupaHdr({ 'Prefer': 'return=representation' });
   var q = '/rest/v1/fd_data?id=eq.main&select=updated_at';
   if (expected) q += '&updated_at=eq.' + encodeURIComponent(expected);
@@ -2253,14 +2278,40 @@ async function supaPush(d, expected) {
 // the same drain (dedupe via a stamp inside notes instead, since a logbook entry
 // isn't tied to one account) and land in state.logbook, surfacing in the passdown's
 // Logbook section once a nextAction is present to seed pdNotes.
+// Inbox row accessors — one place that knows whether we're going through the Worker.
+async function inboxGet() {
+  if (SYNC_API) {
+    var wres = await fetch(SYNC_API + '/inbox', { headers: { 'Accept': 'application/json' } });
+    if (!wres.ok) return null;
+    return await wres.json();
+  }
+  var res = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox&select=data', { headers: await getSupaHdr() });
+  if (!res.ok) return null;
+  var rows = await res.json();
+  return rows[0] || null;
+}
+async function inboxPut(cleared) {
+  if (SYNC_API) {
+    await fetch(SYNC_API + '/inbox', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: cleared })
+    });
+    return;
+  }
+  await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox', {
+    method: 'PATCH',
+    headers: await getSupaHdr({ 'Prefer': 'return=minimal' }),
+    body: JSON.stringify({ data: cleared, updated_at: new Date().toISOString() })
+  });
+}
+
 async function mergeTodoInbox() {
   if (!cloudPullOk) return;
   try {
-    var hdrs = await getSupaHdr();
-    var res = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox&select=data', { headers: hdrs });
-    if (!res.ok) return;
-    var rows = await res.json();
-    var rowData = (rows[0] && rows[0].data) || {};
+    var row = await inboxGet();
+    if (!row) return;
+    var rowData = row.data || {};
     var inbox = Array.isArray(rowData.todos) ? rowData.todos : [];
     var moveUpdates = Array.isArray(rowData.moveUpdates) ? rowData.moveUpdates : [];
     var amenityUpdates = Array.isArray(rowData.amenityUpdates) ? rowData.amenityUpdates : [];
@@ -2668,11 +2719,8 @@ async function mergeTodoInbox() {
     cameraCheckEntries.forEach(function (cc) { if (cc && cc.id) seenCameraCheckIds[cc.id] = true; });
     var freshRowData = rowData;
     try {
-      var freshRes = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox&select=data', { headers: await getSupaHdr() });
-      if (freshRes.ok) {
-        var freshRows = await freshRes.json();
-        freshRowData = (freshRows[0] && freshRows[0].data) || rowData;
-      }
+      var freshRow = await inboxGet();
+      if (freshRow) freshRowData = freshRow.data || rowData;
     } catch (e) { /* fall back to the original snapshot below */ }
     var remainTodos = (Array.isArray(freshRowData.todos) ? freshRowData.todos : []).filter(function (t) { return !(t && seenTodoIds[t.id]); });
     var remainMoves = (Array.isArray(freshRowData.moveUpdates) ? freshRowData.moveUpdates : []).filter(function (m) { return !(m && seenMoveIds[m.id]); });
@@ -2684,11 +2732,7 @@ async function mergeTodoInbox() {
     var remainParking = (Array.isArray(freshRowData.parkingEntries) ? freshRowData.parkingEntries : []).filter(function (pe) { return !(pe && seenParkingIds[pe.id]); });
     var remainCameraChecks = (Array.isArray(freshRowData.cameraCheckEntries) ? freshRowData.cameraCheckEntries : []).filter(function (cc) { return !(cc && seenCameraCheckIds[cc.id]); });
     var cleared = Object.assign({}, freshRowData, { todos: remainTodos, moveUpdates: remainMoves, amenityUpdates: remainAmens, logbookEntries: remainLogs, keyEntries: remainKeys, moveCreates: remainMoveCreates, edits: remainEdits, parkingEntries: remainParking, cameraCheckEntries: remainCameraChecks });
-    await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox', {
-      method: 'PATCH',
-      headers: await getSupaHdr({ 'Prefer': 'return=minimal' }),
-      body: JSON.stringify({ data: cleared, updated_at: new Date().toISOString() })
-    });
+    await inboxPut(cleared);
   } catch (e) { console.warn('mergeTodoInbox failed:', e); }
 }
 setInterval(function () { mergeTodoInbox(); }, 300000);
