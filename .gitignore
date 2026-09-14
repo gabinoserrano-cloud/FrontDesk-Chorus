@@ -54,3 +54,15 @@ index.html.backup-*
 rotate-credentials.py
 rotate.sql
 worker-secrets.txt
+
+# Working files holding resident names / unit numbers — never publish to this public repo
+card-recovery-review.html
+key-card-quick-reference.html
+one-time-card-outreach.md
+riseio-access-notice.html
+riseio-access-notice.pdf
+belvedere-closed-sign.pdf
+preview-screenshot.png
+# Large source images kept locally, not part of the deployed site
+golden-veined-*.jpg
+marble-didot-*.jpg
