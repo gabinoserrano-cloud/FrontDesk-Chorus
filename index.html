@@ -17,7 +17,7 @@
     --accent-fill:#3E7A5E;--accent-fill-hover:#2F614A;--accent-soft:#4E8A70;--accent-soft-rgb:78,138,112;
     --accent-deep:#2A6050;--accent-on-dark:#8FC7AC;
     --green:#1A6640;--green-light:#E2EFE8;--red:#C03535;--red-light:#FAEBEB;
-    --amber:#8F5718;--amber-light:#FBF0DC;--purple:#6044B2;--purple-light:#ECEAFA;
+    --amber:#8F5718;--amber-light:#FBF0DC;--on-accent:#FFFFFF;--ink-slate:#475569;--ink-amber:#92400e;--ink-green:#166534;--purple:#6044B2;--purple-light:#ECEAFA;
     --sidebar-w:220px;--header-h:54px;--radius:6px;
     --font-serif:'Cormorant Garamond',Georgia,serif;--font-mono:'DM Mono',monospace;--font-sans:'DM Sans',sans-serif;
     --shadow:0 1px 4px rgba(26,24,20,0.07),0 1px 2px rgba(26,24,20,0.04);
@@ -25,7 +25,7 @@
     --ease-out:cubic-bezier(0.23,1,0.32,1);
     --ease-in-out:cubic-bezier(0.77,0,0.175,1);
   }
-  body.dark-mode{--amber:#E0A55E;--bg:#0F1923;--surface:#162130;--surface2:#1C2A3A;--border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.05);--text:#E2EAF0;--text2:#8FA8BC;--text3:#6E8EA2;--green-light:rgba(26,102,64,0.18);--red-light:rgba(192,53,53,0.15);--amber-light:rgba(181,112,32,0.15);--purple-light:rgba(96,68,178,0.15);--accent-light:rgba(26,92,62,0.18);--shadow:0 1px 4px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);--shadow-md:0 4px 24px rgba(0,0,0,.5),0 2px 4px rgba(0,0,0,.4)}
+  body.dark-mode{--on-accent:#0F1923;--ink-slate:#CBD5E1;--ink-amber:#F0B45E;--ink-green:#7FBF9F;--accent:#8FC7AC;--primary:#8FC7AC;--accent-deep:#A8D4BF;--accent-soft:#6FB894;--accent-fill:#8FC7AC;--accent-fill-hover:#A8D4BF;--accent2:#7FBF9F;--green:#7FBF9F;--red:#FCA5A5;--purple:#B5A3E8;--amber:#E0A55E;--bg:#0F1923;--surface:#162130;--surface2:#1C2A3A;--border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.05);--text:#E2EAF0;--text2:#8FA8BC;--text3:#8AA6B8;--green-light:rgba(26,102,64,0.18);--red-light:rgba(192,53,53,0.15);--amber-light:rgba(181,112,32,0.15);--purple-light:rgba(96,68,178,0.15);--accent-light:rgba(26,92,62,0.18);--shadow:0 1px 4px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);--shadow-md:0 4px 24px rgba(0,0,0,.5),0 2px 4px rgba(0,0,0,.4)}
   body.text-sm{font-size:12.5px}
   body.text-lg{font-size:16px}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -65,7 +65,7 @@
   .nav-item:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.80)}
   .nav-item.active{background:rgba(255,255,255,0.10);color:#FFFFFF;border-left-color:var(--accent);font-weight:500}
   .nav-item .icon{width:16px;text-align:center;font-size:14px;flex-shrink:0}
-  .badge{margin-left:auto;background:var(--accent);color:#FFFFFF;font-size:11px;font-weight:700;padding:1px 6px;border-radius:10px;font-family:var(--font-mono);min-width:18px;text-align:center;display:none}
+  .badge{margin-left:auto;background:var(--accent);color:var(--on-accent);font-size:11px;font-weight:700;padding:1px 6px;border-radius:10px;font-family:var(--font-mono);min-width:18px;text-align:center;display:none}
   .badge.vis{display:block}
   /* Badges inside pill tabs must sit inline — the sidebar's margin-left:auto/display:block
      pushes them onto their own line and doubles the pill's height. */
@@ -142,7 +142,7 @@
 
   /* FLOATING NOTEPAD */
   #notepad-tab{position:fixed;right:-1px;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;text-orientation:mixed;background:var(--surface);border:1px solid var(--border);border-right:none;border-radius:8px 0 0 8px;padding:14px 8px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:7px;box-shadow:-3px 0 12px rgba(0,0,0,.3);transition:background .12s,color .12s;z-index:1000;user-select:none}
-  #notepad-tab:hover{background:var(--accent);color:#fff}
+  #notepad-tab:hover{background:var(--accent);color:var(--on-accent)}
   /* Mobile: dock the edge tab above the bottom nav instead of over mid-screen content, and keep it under modals */
   @media(max-width:700px){#notepad-tab{top:auto;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:none;padding:10px 7px;font-size:11px;letter-spacing:.5px;z-index:140}}
   #notepad-tab .np-dot{width:6px;height:6px;border-radius:50%;background:#e53e3e;flex-shrink:0;display:none}
@@ -171,7 +171,7 @@
   .btn:active{transform:scale(0.97)}
   .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .btn:focus:not(:focus-visible){outline:none}
-  .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}.btn-primary:hover{background:var(--accent2)}
+  .btn-primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}.btn-primary:hover{background:var(--accent2)}
   .btn-secondary{background:var(--surface);color:var(--text);border-color:var(--border)}.btn-secondary:hover{background:var(--bg)}
   .btn-ghost{background:none;color:var(--text2);border:none;padding:5px 8px}.btn-ghost:hover{background:var(--bg);color:var(--text)}
   .ks-btn{border:1px solid var(--border2)!important;border-radius:20px!important;padding:3px 10px!important;font-size:11px!important}.ks-btn.active{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}
@@ -220,7 +220,7 @@
   /* TABS */
   .sub-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px}
   .sub-tab{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text2);transition:background 100ms ease-out,color 100ms ease-out,border-color 100ms ease-out,transform 100ms ease-out;white-space:nowrap}
-  .sub-tab:hover{background:var(--bg)}.sub-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}.sub-tab:active{transform:scale(0.97)}
+  .sub-tab:hover{background:var(--bg)}.sub-tab.active{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}.sub-tab:active{transform:scale(0.97)}
 
   /* PILLS */
   .pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
@@ -327,7 +327,7 @@
   .guide-card-hdr:hover{background:var(--bg)}
   .guide-card-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
   .guide-card-title{font-weight:600;flex:1}
-  .guide-card-meta{font-size:11px;font-weight:600;letter-spacing:.3px;padding:1px 5px;border-radius:3px;background:var(--accent);color:#fff;margin-right:4px}
+  .guide-card-meta{font-size:11px;font-weight:600;letter-spacing:.3px;padding:1px 5px;border-radius:3px;background:var(--accent);color:var(--on-accent);margin-right:4px}
   .guide-card-chevron{color:var(--text3);font-size:11px;transition:transform 150ms ease-out;flex-shrink:0}
   .guide-card.open .guide-card-chevron{transform:rotate(90deg)}
   .guide-card-body{display:none;padding:2px 16px 14px 44px;font-size:13px;line-height:1.75;color:var(--text2);border-top:1px solid var(--border2)}
@@ -367,6 +367,27 @@
   /* Logbook + Incident Reports on the calendar (2026-08-21). */
   .cal-chip-logbook{background:rgba(100,116,139,0.13);color:#475569}
   .cal-chip-incident{background:rgba(220,38,38,0.13);color:#B91C1C;font-weight:600}
+
+  /* Those tokens are light in dark mode, so every element that uses one as a FILL
+     needs dark text on it — white on light sage/red is worse than what we fixed. */
+  body.dark-mode .btn-primary,
+  body.dark-mode .badge,
+  body.dark-mode .badge-new,
+  body.dark-mode .badge.badge-red,
+  body.dark-mode .mn-badge,
+  body.dark-mode .btn-danger,
+  body.dark-mode .sub-tab.active,
+  body.dark-mode .import-tab.active,
+  body.dark-mode .ks-btn.active,
+  body.dark-mode .qa-chip.active,
+  body.dark-mode .td-filter-pill.active,
+  body.dark-mode .cal-pop-goto:hover,
+  body.dark-mode .cal-month-day.today .cal-day-num,
+  body.dark-mode .guide-card-meta,
+  body.dark-mode #notepad-tab:hover { color:#0F1923 !important; }
+  body.dark-mode .stat-card.accent { color:#0F1923; }
+  body.dark-mode .stat-card.accent .stat-num,
+  body.dark-mode .stat-card.accent .stat-lbl { color:#0F1923; }
   body.dark-mode .cal-chip-logbook{background:rgba(148,163,184,0.18);color:#cbd5e1}
   body.dark-mode .cal-chip-incident{background:rgba(220,38,38,0.28);color:#fca5a5}
   /* Week view rebuilt 2026-08-21: was a unit x day spreadsheet, now seven day columns. */
@@ -451,7 +472,7 @@
   /* SMART IMPORT MODAL */
   .import-tabs{display:flex;gap:0;margin-bottom:14px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
   .import-tab{flex:1;padding:8px;font-size:12.5px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--text2);border:none;font-family:'DM Sans',sans-serif;text-align:center;transition:background .1s}
-  .import-tab.active{background:var(--accent);color:#fff}
+  .import-tab.active{background:var(--accent);color:var(--on-accent)}
   .import-tab:not(.active):hover{background:var(--bg)}
   .import-preview{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-top:12px}
   .import-preview-hdr{padding:8px 12px;background:var(--bg);font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);display:flex;gap:12px}
@@ -493,7 +514,7 @@
   .cal-pop-item .pop-main{font-weight:500}
   .cal-pop-item .pop-sub{font-size:11px;color:var(--text2);margin-top:1px}
   .cal-pop-goto{display:block;margin-top:10px;font-size:12px;color:var(--accent);cursor:pointer;text-align:center;padding:6px;border:1px solid var(--accent-light);border-radius:6px;background:var(--accent-light)}
-  .cal-pop-goto:hover{background:var(--accent);color:#fff}
+  .cal-pop-goto:hover{background:var(--accent);color:var(--on-accent)}
   .cal-chip{cursor:pointer}.cal-chip:hover{opacity:.8}
 
   /* LOGIN OVERLAY */
@@ -534,10 +555,10 @@
   /* Hairline card borders + warm shadow */
   .card{border-color:rgba(26,24,20,0.09);box-shadow:0 1px 4px rgba(26,24,20,0.06),0 1px 2px rgba(26,24,20,0.03)}
   /* Primary button — sage green */
-  .btn-primary{background:var(--accent-fill);color:#fff;border-color:var(--accent-fill)}
+  .btn-primary{background:var(--accent-fill);color:var(--on-accent);border-color:var(--accent-fill)}
   .btn-primary:hover{background:var(--accent-fill-hover);color:#fff}
   /* Active tab — sage fill */
-  .sub-tab.active{background:var(--accent-fill);color:#fff;border-color:var(--accent-fill);font-weight:600}
+  .sub-tab.active{background:var(--accent-fill);color:var(--on-accent);border-color:var(--accent-fill);font-weight:600}
   .sub-tab:hover{background:var(--surface2)}
   /* Focus rings — sage */
   input:focus,select:focus,textarea:focus{border-color:var(--accent-fill);box-shadow:0 0 0 2px rgba(62,122,94,0.40)}
@@ -561,12 +582,12 @@
   .cal-month-day.today{border-color:var(--accent-soft);background:rgba(var(--accent-soft-rgb),0.05)}
   .cal-month-day.today .cal-day-num{color:var(--accent-soft)}
   .cal-pop-goto{border-color:rgba(var(--accent-soft-rgb),0.28);background:rgba(var(--accent-soft-rgb),0.07);color:var(--accent-deep)}
-  .cal-pop-goto:hover{background:var(--accent-fill);color:#fff}
+  .cal-pop-goto:hover{background:var(--accent-fill);color:var(--on-accent)}
   /* Guide tip — sage tint */
   .guide-tip{background:rgba(var(--accent-soft-rgb),0.09);border-left-color:var(--accent-soft);color:var(--accent-deep)}
-  .guide-card-meta{background:var(--accent-fill);color:#fff}
+  .guide-card-meta{background:var(--accent-fill);color:var(--on-accent)}
   /* Import tab active — sage fill */
-  .import-tab.active{background:var(--accent-fill);color:#fff}
+  .import-tab.active{background:var(--accent-fill);color:var(--on-accent)}
   /* Alert banners warm */
   .tight-alert{background:#FBF0DC;border-color:rgba(var(--accent-soft-rgb),0.50)}
   .needs-appt-alert{background:#FBF0DC;border-color:rgba(var(--accent-soft-rgb),0.50)}
@@ -649,7 +670,7 @@
   body.dark-mode .cal-view-btn.active{box-shadow:0 1px 4px rgba(0,0,0,0.45)}
   .cal-month-day{min-height:82px;padding:6px 5px}
   .cal-month-day.today{border-color:rgba(var(--accent-soft-rgb),0.4)!important;background:rgba(var(--accent-soft-rgb),0.04)!important}
-  .cal-month-day.today .cal-day-num{background:var(--accent-fill);color:#fff!important;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;margin-bottom:3px}
+  .cal-month-day.today .cal-day-num{background:var(--accent-fill);color:var(--on-accent)!important;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;margin-bottom:3px}
   .cal-month-day.today .cal-chip-in{background:#bbf7d0;color:#14532d;font-weight:600}
   .cal-month-day.today .cal-chip-out{background:#fecaca;color:var(--red);font-weight:600}
   .cal-month-grid{gap:4px}
@@ -723,7 +744,7 @@
   .pill-status-done{background:var(--green-light);color:var(--green)}
   .td-filter-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
   .td-filter-pill{font-size:11px;padding:3px 10px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;white-space:nowrap}
-  .td-filter-pill.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .td-filter-pill.active{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
   .todo-capture-main{display:flex;gap:8px;align-items:center}
   .todo-capture-main input{flex:1;min-width:0}
   .todo-quick-options{display:none;gap:8px;align-items:center;flex-wrap:wrap;padding-top:10px;margin-top:10px;border-top:1px solid var(--border2)}
@@ -1092,7 +1113,7 @@
             <input id="ut-search" type="text" placeholder="&#128269; Search unit or resident&#8230;" oninput="searchUnitRecords(this.value)" style="font-size:13px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);width:220px">
             <select id="ut-floor-filter" onchange="filterUnitFloor(this.value)" style="font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text)"><option value="all">All floors</option></select>
             <div style="display:flex;gap:4px">
-              <button class="btn btn-xs" id="ut-filter-all" onclick="filterUnitRecords('all',this)" style="background:var(--accent);color:#fff;border-color:var(--accent)">All</button>
+              <button class="btn btn-xs" id="ut-filter-all" onclick="filterUnitRecords('all',this)" style="background:var(--accent);color:var(--on-accent);border-color:var(--accent)">All</button>
               <button class="btn btn-xs btn-secondary" id="ut-filter-bg" onclick="filterUnitRecords('blueground',this)">&#128309; BG</button>
               <button class="btn btn-xs btn-secondary" id="ut-filter-wifi" onclick="filterUnitRecords('wifi',this)">&#128246; WiFi Expiring</button>
               <button class="btn btn-xs btn-secondary" id="ut-filter-unassigned" onclick="filterUnitRecords('unassigned',this)">&#127968; Vacant</button>
@@ -1631,7 +1652,7 @@
       </select>
     </div>
     <div id="lb-other-wrap" style="display:none"><div class="fg"><label>Describe type</label><input id="lb-other" type="text" placeholder="Describe the type"></div></div>
-    <div id="lb-followup-hint" style="display:none;margin-bottom:8px"><div style="font-size:11px;color:#92400e;background:rgba(217,119,6,0.1);border-radius:4px;padding:6px 10px">24-hour follow-up standard applies — set a next action and update the resident by the same time tomorrow.</div></div>
+    <div id="lb-followup-hint" style="display:none;margin-bottom:8px"><div style="font-size:11px;color:var(--ink-amber);background:rgba(217,119,6,0.1);border-radius:4px;padding:6px 10px">24-hour follow-up standard applies — set a next action and update the resident by the same time tomorrow.</div></div>
     <div id="lb-manager-wrap" style="display:none;margin-bottom:8px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500"><input type="checkbox" id="lb-manager-notified" style="width:auto;accent-color:var(--accent)"> Manager notified via Teams</label></div>
     <div id="lb-footage-wrap" style="display:none;margin-bottom:8px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500"><input type="checkbox" id="lb-footage-preserved" style="width:auto;accent-color:var(--accent)"> Footage preserved (Magic Monitor)</label></div>
     <div id="lb-ir-wrap" style="display:none;margin-bottom:8px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500"><input type="checkbox" id="lb-incident-report" style="width:auto;accent-color:var(--accent)"> Needs an Incident Report</label></div>
@@ -2062,7 +2083,7 @@
     <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
         <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.04em">Card #</span>
-        <span id="kr-fob" style="font-size:13px;font-weight:700;font-family:var(--font-mono);background:var(--accent);color:#fff;border-radius:5px;padding:1px 9px"></span>
+        <span id="kr-fob" style="font-size:13px;font-weight:700;font-family:var(--font-mono);background:var(--accent);color:var(--on-accent);border-radius:5px;padding:1px 9px"></span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
         <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.04em">Unit</span>
@@ -3282,7 +3303,7 @@ function showRefreshNotice() {
   if (!n) { n = document.createElement('div'); n.id = 'refresh-notice'; document.body.appendChild(n); }
   n.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:99999;background:var(--surface);color:var(--text);border:1px solid var(--border);padding:12px 16px;border-radius:10px;box-shadow:var(--shadow-md,0 8px 28px rgba(0,0,0,.35));font-size:14px;display:flex;align-items:center;gap:14px;max-width:92vw';
   n.innerHTML = '<span>&#x21bb; Refreshed &mdash; another device made changes.</span>'
-    + '<button onclick="restorePreSync()" style="background:var(--accent);color:#fff;border:none;padding:6px 13px;border-radius:6px;font-weight:600;cursor:pointer">Undo my changes back</button>'
+    + '<button onclick="restorePreSync()" style="background:var(--accent);color:var(--on-accent);border:none;padding:6px 13px;border-radius:6px;font-weight:600;cursor:pointer">Undo my changes back</button>'
     + '<button onclick="(function(){var e=g(\'refresh-notice\');if(e)e.remove();})()" style="background:transparent;color:var(--text2);border:1px solid var(--border);padding:6px 11px;border-radius:6px;cursor:pointer">Dismiss</button>';
   clearTimeout(window._refreshNoticeTO);
   window._refreshNoticeTO = setTimeout(function () { var e = g('refresh-notice'); if (e) e.remove(); }, 15000);
@@ -5339,7 +5360,7 @@ function toggleMoveLogged() {
   moveShowLogged = !moveShowLogged;
   var th = g('moves-th-logged'); if (th) th.style.display = moveShowLogged ? '' : 'none';
   var btn = g('btn-move-logged');
-  if (btn) { btn.style.background = moveShowLogged ? 'var(--accent)' : ''; btn.style.color = moveShowLogged ? '#fff' : ''; btn.style.borderColor = moveShowLogged ? 'var(--accent)' : ''; }
+  if (btn) { btn.style.background = moveShowLogged ? 'var(--accent)' : ''; btn.style.color = moveShowLogged ? 'var(--on-accent)' : ''; btn.style.borderColor = moveShowLogged ? 'var(--accent)' : ''; }
   renderMoves();
 }
 
@@ -6450,7 +6471,17 @@ function getAllLogbookEntries() {
 }
 
 function renderLogbook() {
-  var catColors = {
+  // These pills are built as inline styles, so a dark-mode CSS rule can't override them.
+  // The light set is mid-dark ink on a pale tint, which lands at ~2:1 on a near-black
+  // surface, so dark mode needs its own pass: same hues, lifted.
+  var catColors = document.body.classList.contains('dark-mode') ? {
+    request:  { bg: 'rgba(59,130,246,0.22)',  color: '#93C5FD' },
+    concern:  { bg: 'rgba(217,119,6,0.22)',   color: '#F0B45E' },
+    security: { bg: 'rgba(220,38,38,0.24)',   color: '#FCA5A5' },
+    property: { bg: 'rgba(139,92,246,0.22)',  color: '#C4B5F0' },
+    medical:  { bg: 'rgba(239,68,68,0.24)',   color: '#FDA4AF' },
+    other:    { bg: 'rgba(148,163,184,0.22)', color: '#CBD5E1' }
+  } : {
     request:  { bg: 'rgba(59,130,246,0.1)',  color: '#1d4ed8' },
     concern:  { bg: 'rgba(217,119,6,0.1)',   color: '#92400e' },
     security: { bg: 'rgba(220,38,38,0.1)',   color: '#dc2626' },
@@ -6499,7 +6530,7 @@ function renderLogbook() {
         fuHtml = '<div style="color:var(--red);font-size:11px;font-weight:600;margin-top:3px">⚠ Follow-up overdue</div>';
       } else {
         var dueD = new Date(dueMs);
-        fuHtml = '<div style="color:#92400e;font-size:11px;margin-top:3px">Follow-up due '+dueD.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+dueD.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})+'</div>';
+        fuHtml = '<div style="color:var(--ink-amber);font-size:11px;margin-top:3px">Follow-up due '+dueD.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+dueD.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})+'</div>';
       }
     }
     // Flag badges
@@ -10587,7 +10618,7 @@ var utFilter = 'all', utSearch = '', utFloor = 'all', utView = 'list', editingUn
 function setUtView(v) {
   utView = v;
   var mapBtn = g('ut-view-map');
-  if (mapBtn) { mapBtn.style.background = v==='map' ? 'var(--accent)' : ''; mapBtn.style.color = v==='map' ? '#fff' : ''; mapBtn.style.borderColor = v==='map' ? 'var(--accent)' : ''; }
+  if (mapBtn) { mapBtn.style.background = v==='map' ? 'var(--accent)' : ''; mapBtn.style.color = v==='map' ? 'var(--on-accent)' : ''; mapBtn.style.borderColor = v==='map' ? 'var(--accent)' : ''; }
   renderResidents();
 }
 function openBuildingMap() {
@@ -10602,7 +10633,7 @@ function filterUnitRecords(f, btn) {
     var b = g(id); if (!b) return;
     b.style.background = ''; b.style.color = ''; b.style.borderColor = '';
   });
-  if (btn) { btn.style.background = 'var(--accent)'; btn.style.color = '#fff'; btn.style.borderColor = 'var(--accent)'; }
+  if (btn) { btn.style.background = 'var(--accent)'; btn.style.color = 'var(--on-accent)'; btn.style.borderColor = 'var(--accent)'; }
   var mapBtn = g('ut-view-map'); if (mapBtn) { mapBtn.style.background = ''; mapBtn.style.color = ''; mapBtn.style.borderColor = ''; }
   renderResidents();
 }
@@ -11828,7 +11859,7 @@ function pdHasNote(key) { return !!(pdNotes[key] && pdNotes[key].trim()); }
 function pdYouBadge(obj) {
   if (!currentUser || !obj || !obj.addedBy) return '';
   return obj.addedBy === currentUser.name
-    ? '<span style="font-size:11px;background:rgba(34,197,94,0.1);color:#166534;border:1px solid rgba(34,197,94,0.25);border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:600;white-space:nowrap">you</span>'
+    ? '<span style="font-size:11px;background:rgba(34,197,94,0.1);color:var(--ink-green);border:1px solid rgba(34,197,94,0.25);border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:600;white-space:nowrap">you</span>'
     : '';
 }
 function pdAutoRowInput(input, exKey, isPrompt) {
@@ -11867,7 +11898,7 @@ function pdAutoRow(exKey, content, defaultNextStep, isCarried, optional) {
   var notePlaceholder = pdAttrEsc(defaultNextStep || 'Add a note (optional)…');
   var isEmpty = noteVal.trim() === '';
   var isPrompt = isCarried && !optional && isEmpty;
-  var labelColor = isEmpty ? (isPrompt ? '#92400E' : 'var(--text3)') : 'var(--accent)';
+  var labelColor = isEmpty ? (isPrompt ? 'var(--ink-amber)' : 'var(--text3)') : 'var(--accent)';
   var labelText = isEmpty ? (isPrompt ? '↓ Add update to include' : '+ Update / Next Step') : '➤ Update / Next Step';
   var borderColor = isEmpty ? (isPrompt ? 'rgba(201,164,94,0.6)' : 'var(--border)') : 'var(--border)';
   // "No update" button — only for always-included items (not carried prompts) with a non-empty default and an empty note
@@ -11911,7 +11942,7 @@ function renderPdAutoBlocks(isLead) {
   var carriedSet = getCarriedItemIds();
   var activeIds = getActiveAutoBlockIds();
   var carriedCount = activeIds.filter(function(id){ return carriedSet[id]; }).length;
-  var html = '<div style="font-size:12px;background:rgba(100,116,139,0.07);color:#475569;border:1px solid rgba(100,116,139,0.18);border-radius:6px;padding:8px 12px;margin-bottom:8px;line-height:1.5">✏ Items marked <em>↓ Add update to include</em> only appear in your passdown if you write a note — leave blank to skip.</div>'
+  var html = '<div style="font-size:12px;background:rgba(100,116,139,0.07);color:var(--ink-slate);border:1px solid rgba(100,116,139,0.18);border-radius:6px;padding:8px 12px;margin-bottom:8px;line-height:1.5">✏ Items marked <em>↓ Add update to include</em> only appear in your passdown if you write a note — leave blank to skip.</div>'
     + (carriedCount ? '<div style="font-size:12px;background:rgba(59,130,246,0.08);color:#1e40af;border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:8px 12px;margin-bottom:12px">↩ <strong>' + carriedCount + ' item' + (carriedCount > 1 ? 's' : '') + ' carried over from a previous shift</strong> — add an update below to include in your passdown, or leave blank to skip.</div>' : '');
 
   var pdSections = []; // section nav tracker: { id, icon, label, count }
@@ -12753,7 +12784,7 @@ function renderPassdownHistory() {
     var canDelete = isAdmin || (currentUser && p.authorId === currentUser.id);
     var authorBadge = p.authorName ? '<span class="by-tag" style="margin-left:6px">by ' + esc(p.authorName) + '</span>' : '';
     var statusBadge = p.status === 'sent'
-      ? '<span class="by-tag" style="margin-left:6px;background:rgba(34,197,94,0.12);color:#166534">Sent</span>'
+      ? '<span class="by-tag" style="margin-left:6px;background:rgba(34,197,94,0.12);color:var(--ink-green)">Sent</span>'
       : p.status === 'gmail-opened'
         ? '<span class="by-tag" style="margin-left:6px;background:var(--amber-light);color:var(--amber)">Gmail opened</span>'
         : p.status === 'ready'
@@ -12896,12 +12927,12 @@ function showCameraCheckOverlay() {
 }
 function ccPickShift(el) {
   document.querySelectorAll('.cc-shift-btn').forEach(function(b){ b.style.background=''; b.style.color=''; b.style.borderColor='var(--border)'; });
-  el.style.background = 'var(--accent)'; el.style.color = '#fff'; el.style.borderColor = 'var(--accent)';
+  el.style.background = 'var(--accent)'; el.style.color = 'var(--on-accent)'; el.style.borderColor = 'var(--accent)';
   window._ccState.shift = el.getAttribute('data-v');
 }
 function ccPickCompleted(el) {
   document.querySelectorAll('.cc-yn-btn').forEach(function(b){ b.style.background=''; b.style.color=''; b.style.borderColor='var(--border)'; });
-  el.style.background = 'var(--accent)'; el.style.color = '#fff'; el.style.borderColor = 'var(--accent)';
+  el.style.background = 'var(--accent)'; el.style.color = 'var(--on-accent)'; el.style.borderColor = 'var(--accent)';
   window._ccState.completed = el.getAttribute('data-v');
   var blockedWrap = g('cc-blocked-wrap'), issuesWrap = g('cc-issues-wrap');
   if (window._ccState.completed === 'No') {
@@ -12921,7 +12952,7 @@ function ccPickIssue(el) {
 }
 function ccPickFollowup(el) {
   document.querySelectorAll('.cc-followup-btn').forEach(function(b){ b.style.background=''; b.style.color=''; b.style.borderColor='var(--border)'; });
-  el.style.background = 'var(--accent)'; el.style.color = '#fff'; el.style.borderColor = 'var(--accent)';
+  el.style.background = 'var(--accent)'; el.style.color = 'var(--on-accent)'; el.style.borderColor = 'var(--accent)';
   window._ccState.followup = el.getAttribute('data-v');
 }
 function closeCameraCheckOverlay() {
@@ -14369,7 +14400,7 @@ function renderAgendaCal() {
     var dayFmt = new Date(ds + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     html += '<div style="margin-bottom:16px">';
     html += '<div style="font-size:11px;font-weight:700;color:' + (isToday ? 'var(--accent)' : 'var(--text3)') + ';text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:flex;align-items:center;gap:6px">';
-    if (isToday) html += '<span style="background:var(--accent);color:#fff;border-radius:4px;padding:1px 7px;font-size:11px">TODAY</span>';
+    if (isToday) html += '<span style="background:var(--accent);color:var(--on-accent);border-radius:4px;padding:1px 7px;font-size:11px">TODAY</span>';
     html += dayFmt + '</div>';
     dayItems.forEach(function (item) {
       html += '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:4px;cursor:pointer" onclick="navToSec(\'' + item.sec + '\')">';
@@ -15864,6 +15895,9 @@ function setTheme(theme) {
   try { localStorage.setItem('theme_' + currentUser.id, theme); } catch(e) {}
   applyUserDisplay();
   renderDisplaySettings();
+  // Logbook category pills are inline-styled from a theme-dependent table, so they
+  // keep the old palette until the section is drawn again.
+  try { if (typeof renderLogbook === 'function') renderLogbook(); } catch (e) {}
 }
 function setFontSize(size) {
   if (!currentUser) return;
@@ -15879,14 +15913,14 @@ function renderDisplaySettings() {
     var btn = g('theme-btn-' + t);
     if (!btn) return;
     btn.style.background = theme === t ? 'var(--accent)' : '';
-    btn.style.color = theme === t ? '#fff' : '';
+    btn.style.color = theme === t ? 'var(--on-accent)' : '';
     btn.style.borderColor = theme === t ? 'var(--accent)' : '';
   });
   ['sm','md','lg'].forEach(function(s) {
     var btn = g('font-btn-' + s);
     if (!btn) return;
     btn.style.background = fontSize === s ? 'var(--accent)' : '';
-    btn.style.color = fontSize === s ? '#fff' : '';
+    btn.style.color = fontSize === s ? 'var(--on-accent)' : '';
     btn.style.borderColor = fontSize === s ? 'var(--accent)' : '';
   });
 }
