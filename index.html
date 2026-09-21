@@ -2347,9 +2347,10 @@ async function mergeTodoInbox() {
     var keyEntries = Array.isArray(rowData.keyEntries) ? rowData.keyEntries : [];
     var moveCreates = Array.isArray(rowData.moveCreates) ? rowData.moveCreates : [];
     var edits = Array.isArray(rowData.edits) ? rowData.edits : [];
+    var completions = Array.isArray(rowData.completions) ? rowData.completions : [];
     var parkingEntries = Array.isArray(rowData.parkingEntries) ? rowData.parkingEntries : [];
     var cameraCheckEntries = Array.isArray(rowData.cameraCheckEntries) ? rowData.cameraCheckEntries : [];
-    if (!inbox.length && !moveUpdates.length && !amenityUpdates.length && !logbookEntries.length && !keyEntries.length && !moveCreates.length && !edits.length && !parkingEntries.length && !cameraCheckEntries.length) return;
+    if (!inbox.length && !moveUpdates.length && !amenityUpdates.length && !logbookEntries.length && !keyEntries.length && !moveCreates.length && !edits.length && !parkingEntries.length && !cameraCheckEntries.length && !completions.length) return;
     var resolved = [];
     for (var i = 0; i < inbox.length; i++) {
       var item = inbox[i];
@@ -2646,16 +2647,14 @@ async function mergeTodoInbox() {
         if (!state.userTodos[gabAcct.id]) state.userTodos[gabAcct.id] = [];
         var glist2 = state.userTodos[gabAcct.id];
         if (mc.type === 'out') {
-          var outReminderDate = '';
-          try { var dOut = new Date(); dOut.setDate(dOut.getDate() + 1); outReminderDate = dOut.getFullYear() + '-' + String(dOut.getMonth()+1).padStart(2,'0') + '-' + String(dOut.getDate()).padStart(2,'0'); } catch(e) {}
+          var outReminderDate = derivedDue(mc.date, -14, true) ||
+            (function () { var d = new Date(); d.setDate(d.getDate() + 1); return localDateStr(d); })();
           glist2.push({ id: uid(), text: 'Send move-out reminders — ' + mc.resident + ', Unit ' + mc.unit, dueDate: outReminderDate, priority: 'normal', done: false, status: 'open', category: 'resident', linkedUnit: String(mc.unit), note: 'Remind resident: book move-out time slot + inspection work order + return all keys & parking credentials to front desk', createdAt: Date.now(), lastUpdated: Date.now(), moveRef: newMove.id, srcThread: mc.srcThread || '', addedBy: mc.addedBy || 'Email Triage' });
         } else {
           var preCallDate = '', postCallDate = '';
           try {
-            var dPre = new Date(mc.date + 'T12:00:00'); dPre.setDate(dPre.getDate() - 7);
-            preCallDate = dPre.getFullYear() + '-' + String(dPre.getMonth()+1).padStart(2,'0') + '-' + String(dPre.getDate()).padStart(2,'0');
-            var dPost = new Date(mc.date + 'T12:00:00'); dPost.setDate(dPost.getDate() + 3);
-            postCallDate = dPost.getFullYear() + '-' + String(dPost.getMonth()+1).padStart(2,'0') + '-' + String(dPost.getDate()).padStart(2,'0');
+            preCallDate = derivedDue(mc.date, -7, true);
+            postCallDate = derivedDue(mc.date, 3, false);
           } catch(e) {}
           glist2.push({ id: uid(), text: 'Pre-move call — ' + mc.resident + ', Unit ' + mc.unit, dueDate: preCallDate, priority: 'normal', done: false, status: 'open', category: 'resident', linkedUnit: String(mc.unit), note: '1 week before lease start — confirm everything is ready, any remaining tasks on their end', createdAt: Date.now(), lastUpdated: Date.now(), moveRef: newMove.id, srcThread: mc.srcThread || '', addedBy: mc.addedBy || 'Email Triage' });
           glist2.push({ id: uid(), text: 'Post move-in call — ' + mc.resident + ', Unit ' + mc.unit, dueDate: postCallDate, priority: 'normal', done: false, status: 'open', category: 'resident', linkedUnit: String(mc.unit), note: '3 days after lease start — how did the move go? any questions?', createdAt: Date.now(), lastUpdated: Date.now(), moveRef: newMove.id, srcThread: mc.srcThread || '', addedBy: mc.addedBy || 'Email Triage' });
@@ -2673,9 +2672,10 @@ async function mergeTodoInbox() {
     // touches state, and every edit was confirmed by Gabino in chat before being
     // pushed. Deliberately can't mark anything done/resolved or delete a record
     // (inbox_push.py already blocks those fields in patch; this re-checks as
-    // defense in depth) — closing a loop still has to happen by hand in the UI.
+    // defense in depth). Closing a to-do goes through the separate `completions`
+    // queue below, which is scoped to to-dos only and records its own reason.
     var editsTouched = 0;
-    var editsByQueue = { todos: 0, moves: 0, amenities: 0, logbook: 0, keys: 0, parking: 0 };
+    var editsByQueue = { todos: 0, moves: 0, amenities: 0, logbook: 0, keys: 0, parking: 0, unitRecords: 0 };
     edits.forEach(function (ed) {
       if (!ed || !ed.queue || !ed.targetId || !ed.patch || !editsByQueue.hasOwnProperty(ed.queue)) return;
       var target = null;
@@ -2695,6 +2695,12 @@ async function mergeTodoInbox() {
         target = (state.keys || []).find(function (k) { return k.id === ed.targetId; });
       } else if (ed.queue === 'parking') {
         target = (state.parking || []).find(function (p) { return p.id === ed.targetId; });
+      } else if (ed.queue === 'unitRecords') {
+        // Unit Tracker rows. Matched by id, falling back to unit number — the
+        // migrated rows carry ids like "migr-<unit>-<ts>" that are easy to mistype,
+        // and unit is unique in this list.
+        target = (state.unitRecords || []).find(function (u) { return u.id === ed.targetId; })
+              || (state.unitRecords || []).find(function (u) { return String(u.unit) === String(ed.targetId); });
       }
       if (!target) return; // record gone/never existed — drop the request rather than retry forever
       Object.keys(ed.patch).forEach(function (k) {
@@ -2706,17 +2712,45 @@ async function mergeTodoInbox() {
       editsByQueue[ed.queue]++;
       editsTouched++;
     });
-    var merged = added + movesTouched + amenitiesTouched + logsTouched + keysTouched + movesCreated + editsTouched + parkingTouched;
+    // Close out a to-do Gabino explicitly asked to close in chat. Kept separate
+    // from `edits` on purpose: `edits` means "correct a field" and its activity
+    // log line says so, while a closure is the one action that looks final to
+    // anyone reading the list later, so it earns its own queue, its own required
+    // `reason`, and its own activity-log entry. Scoped to to-dos only —
+    // resolving a logbook entry or returning a key has downstream effects
+    // (passdown generation, fee tracking) and still happens by hand.
+    var completionsTouched = 0;
+    completions.forEach(function (cp) {
+      if (!cp || !cp.targetId) return;
+      var target = null;
+      var accts2 = state.userTodos || {};
+      for (var acctId2 in accts2) {
+        var hit = (accts2[acctId2] || []).find(function (t) { return t.id === cp.targetId; });
+        if (hit) { target = hit; break; }
+      }
+      if (!target || target.done) return; // gone, or already closed by hand
+      target.done = true;
+      target.status = 'done';
+      target.completedAt = Date.now();
+      target.completedBy = cp.addedBy || 'Email Triage';
+      target.lastUpdated = Date.now();
+      logActivity('todos', 'complete', 'Completed to-do — ' + (target.text || '') +
+        (cp.reason ? ' (' + cp.reason + ')' : ''), cp.addedBy || 'Email Triage');
+      completionsTouched++;
+    });
+
+    var merged = added + movesTouched + amenitiesTouched + logsTouched + keysTouched + movesCreated + editsTouched + parkingTouched + completionsTouched;
     if (merged) {
       if (added) logActivity('todos', 'create', 'Imported ' + added + ' to-do(s) from email triage inbox', (resolved.length + moveUpdates.length + amenityUpdates.length - merged) ? 'duplicates skipped' : '');
       scheduleSave();
       await pushCloud();
       if (localDirty) return; // save didn't land — keep the inbox row so the next cycle retries (drain is idempotent)
-      if ((added || editsByQueue.todos) && typeof curSec !== 'undefined' && curSec === 'todos') renderTodos();
+      if ((added || editsByQueue.todos || completionsTouched) && typeof curSec !== 'undefined' && curSec === 'todos') renderTodos();
       if ((movesTouched || movesCreated || editsByQueue.moves) && typeof curSec !== 'undefined' && curSec === 'moves') renderMoves();
       if ((amenitiesTouched || editsByQueue.amenities) && typeof curSec !== 'undefined' && curSec === 'amenities') renderAmenities();
       if (amenitiesTouched && typeof renderCalendar === 'function') renderCalendar();
       if ((logsTouched || editsByQueue.logbook) && typeof curSec !== 'undefined' && curSec === 'logbook' && typeof renderLogbook === 'function') renderLogbook();
+      if (editsByQueue.unitRecords && typeof curSec !== 'undefined' && curSec === 'residents' && typeof renderResidents === 'function') renderResidents();
       if (keysTouched || editsByQueue.keys) { if (typeof renderCardDrawer === 'function') renderCardDrawer(); if (typeof curSec !== 'undefined' && curSec === 'keys' && typeof renderKeys === 'function') renderKeys(); }
       if ((parkingTouched || editsByQueue.parking) && typeof curSec !== 'undefined' && curSec === 'keys') { if (typeof renderParking === 'function') renderParking(); if (typeof renderTransponders === 'function') renderTransponders(); }
       updateBadges();
@@ -5307,8 +5341,14 @@ async function saveMove() {
     pushUndo({ sec: 'moves', type: 'EDIT', id: m.id, before: _mb, after: Object.assign({}, m), label: 'move edit — Unit ' + unit });
     editingMoveId = null;
     logActivity('moves', 'edit', 'Updated move — Unit ' + unit + ' (' + (moveType === 'in' ? 'Move In' : 'Move Out') + ') · ' + resident);
+    var _moved = (_mb.date !== date) ? rescheduleMoveTodos(m.id, date) : [];
+    if (_moved.length) {
+      logActivity('todos', 'edit', 'Rescheduled ' + _moved.length + ' reminder(s) to follow Unit ' + unit + "'s new move date",
+        _moved.map(function (x) { return x.text + ': ' + (x.from || 'no date') + ' → ' + x.to; }).join(' · '));
+    }
     scheduleSave(); closeModal('modal-move'); renderMoves(); updateBadges(); renderDash();
-    toast('Move updated'); return;
+    if (typeof renderTodos === 'function' && typeof curSec !== 'undefined' && curSec === 'todos') renderTodos();
+    toast('Move updated' + (_moved.length ? ' · moved ' + _moved.length + ' reminder' + (_moved.length === 1 ? '' : 's') : '')); return;
   }
   // New move
   var customIn = state.customInTasks || DEFAULT_IN_TASKS;
@@ -5321,10 +5361,8 @@ async function saveMove() {
   if (moveType === 'in') {
     var preCallDate = '', postCallDate = '';
     try {
-      var dPre = new Date(date + 'T12:00:00'); dPre.setDate(dPre.getDate() - 7);
-      preCallDate = dPre.getFullYear() + '-' + String(dPre.getMonth()+1).padStart(2,'0') + '-' + String(dPre.getDate()).padStart(2,'0');
-      var dPost = new Date(date + 'T12:00:00'); dPost.setDate(dPost.getDate() + 3);
-      postCallDate = dPost.getFullYear() + '-' + String(dPost.getMonth()+1).padStart(2,'0') + '-' + String(dPost.getDate()).padStart(2,'0');
+      preCallDate = derivedDue(date, -7, true);
+      postCallDate = derivedDue(date, 3, false);
     } catch(e) {}
     var myTodos = getCurrentTodos();
     myTodos.push({ id: uid(), text: 'Pre-move call \u2014 ' + resident + ', Unit ' + unit, dueDate: preCallDate, priority: 'normal', done: false, status: 'open', category: 'resident', linkedUnit: unit, note: '1 week before lease start \u2014 confirm everything is ready, any remaining tasks on their end', createdAt: Date.now(), lastUpdated: Date.now(), moveRef: m.id });
@@ -5332,8 +5370,8 @@ async function saveMove() {
   }
   if (moveType === 'out') {
     var outTodosRef = getCurrentTodos();
-    var outReminderDate = '';
-    try { var dOut = new Date(); dOut.setDate(dOut.getDate() + 1); outReminderDate = localDateStr(dOut); } catch(e) {}
+    var outReminderDate = derivedDue(date, -14, true) ||
+      (function () { var d = new Date(); d.setDate(d.getDate() + 1); return localDateStr(d); })();
     outTodosRef.push({ id: uid(), text: 'Send move-out reminders \u2014 ' + resident + ', Unit ' + unit, dueDate: outReminderDate, priority: 'normal', done: false, status: 'open', category: 'resident', linkedUnit: unit, note: 'Remind resident: book move-out time slot + inspection work order + return all keys & parking credentials to front desk', createdAt: Date.now(), lastUpdated: Date.now(), moveRef: m.id });
   }
   pushUndo({ sec: 'moves', type: 'ADD', id: m.id, data: Object.assign({}, m), label: 'add move \u2014 Unit ' + unit });
@@ -6063,6 +6101,82 @@ function removeCoResident(moveId, coId) {
   var mci = document.querySelector('#mc-' + moveId + ' .mc-cl'); if (mci) mci.innerHTML = buildCL(m, moveFilter);
   boardTaskRefresh(moveId);
 }
+// --- Autogenerated move reminders -------------------------------------------
+// Pre-move call, post-move-in call, welcome call and move-out reminder are all
+// created with moveRef pointing at their move. Until 2026-09-21 nothing ever read
+// moveRef back, so the reminders fired correctly but had no way to stop: archiving
+// or deleting a move left them open forever, and editing a move's date left them
+// pointing at dates derived from the old one. That is why overdue to-dos piled up
+// faster than they were worked.
+function moveTodos(moveId) {
+  var out = [], accts = state.userTodos || {};
+  for (var a in accts) {
+    (accts[a] || []).forEach(function (t) { if (t && t.moveRef === moveId) out.push(t); });
+  }
+  return out;
+}
+// Archiving means the move is finished, so a reminder whose due date has already
+// passed is moot. Future-dated ones survive on purpose — a post-move-in call three
+// days out is still worth making after the card is filed. opts.all closes both,
+// which is what deleting a move wants. Each one is tagged so unarchiving can
+// reopen exactly what this closed and nothing else.
+function closeMoveTodos(moveId, opts) {
+  var t0 = today();
+  var open = moveTodos(moveId).filter(function (t) { return !t.done; });
+  var hit = (opts && opts.all) ? open
+          : open.filter(function (t) { return t.dueDate && t.dueDate < t0; });
+  hit.forEach(function (t) {
+    t.done = true; t.status = 'done'; t.completedAt = Date.now();
+    t.completedBy = currentUser ? currentUser.name : 'System';
+    t.closedByMove = moveId; t.lastUpdated = Date.now();
+  });
+  return hit;
+}
+function reopenMoveTodos(moveId) {
+  var hit = moveTodos(moveId).filter(function (t) { return t.closedByMove === moveId; });
+  hit.forEach(function (t) {
+    t.done = false; t.status = 'open'; t.completedAt = null; t.completedBy = null;
+    delete t.closedByMove; t.lastUpdated = Date.now();
+  });
+  return hit;
+}
+// A reminder must never be born already overdue. When a move is booked with less
+// than the normal lead time — a card created the day before the move-in, whose
+// "1 week before" call computes to six days in the past — the derived date is
+// clamped forward to today instead.
+function derivedDue(dateStr, days, clamp) {
+  var d = shiftDate(dateStr, days);
+  if (!d) return '';
+  return (clamp && d < today()) ? today() : d;
+}
+function shiftDate(dateStr, days) {
+  try {
+    var d = new Date(dateStr + 'T12:00:00');
+    if (isNaN(d.getTime())) return '';
+    d.setDate(d.getDate() + days);
+    return localDateStr(d);
+  } catch (e) { return ''; }
+}
+// A reminder's due date is derived from the move date, so when the move moves, the
+// open reminders move with it. Completed ones are left alone — a call already made
+// does not get re-dated.
+function rescheduleMoveTodos(moveId, newDate) {
+  if (!newDate || newDate === 'TBD') return [];
+  var moved = [];
+  moveTodos(moveId).filter(function (t) { return !t.done; }).forEach(function (t) {
+    var off = /Pre-move call/.test(t.text) ? -7
+            : /Post move-in call/.test(t.text) ? 3
+            : /Send move-out reminders/.test(t.text) ? -14
+            : null;
+    if (off === null) return;
+    var nd = derivedDue(newDate, off, off < 0);
+    if (nd && nd !== t.dueDate) {
+      moved.push({ text: t.text, from: t.dueDate, to: nd });
+      t.dueDate = nd; t.lastUpdated = Date.now();
+    }
+  });
+  return moved;
+}
 function archiveMove(id) {
   var m = (state.moves || []).find(function (x) { return x.id === id; }); if (!m) return;
   if (m.type === 'out') {
@@ -6086,7 +6200,14 @@ function _doArchiveMove(id) {
   m.archivedAt = Date.now(); if (openMoveId === id) openMoveId = null;
   pushUndo({ sec: 'moves', type: 'EDIT', id: m.id, before: { archivedAt: _arch }, after: { archivedAt: m.archivedAt }, label: 'archive move — Unit ' + m.unit });
   logActivity('moves', 'archive', 'Archived move — Unit ' + m.unit + ' (' + (m.type === 'in' ? 'Move In' : 'Move Out') + ') · ' + m.resident);
-  scheduleSave(); renderMoves(); updateBadges(); renderDash(); toast('Archived');
+  var _closedT = closeMoveTodos(id);
+  if (_closedT.length) {
+    logActivity('todos', 'complete', 'Closed ' + _closedT.length + ' overdue reminder(s) with the archived move — Unit ' + m.unit,
+      _closedT.map(function (t) { return t.text; }).join(' · '));
+  }
+  scheduleSave(); renderMoves(); updateBadges(); renderDash();
+  if (typeof renderTodos === 'function' && typeof curSec !== 'undefined' && curSec === 'todos') renderTodos();
+  toast('Archived' + (_closedT.length ? ' · closed ' + _closedT.length + ' overdue reminder' + (_closedT.length === 1 ? '' : 's') : ''));
   if (m.type === 'in') {
     var _archMIn = m;
     showConfirm(
@@ -6131,6 +6252,11 @@ function unarchiveMove(id) {
   var m = (state.moves || []).find(function (x) { return x.id === id; }); if (!m) return;
   var _arch = m.archivedAt;
   m.archivedAt = null;
+  var _reopened = reopenMoveTodos(id);
+  if (_reopened.length) {
+    logActivity('todos', 'reopen', 'Reopened ' + _reopened.length + ' reminder(s) with the unarchived move — Unit ' + m.unit,
+      _reopened.map(function (t) { return t.text; }).join(' · '));
+  }
   pushUndo({ sec: 'moves', type: 'EDIT', id: m.id, before: { archivedAt: _arch }, after: { archivedAt: null }, label: 'unarchive move — Unit ' + m.unit });
   logActivity('moves', 'edit', 'Unarchived move — Unit ' + m.unit + ' (' + (m.type === 'in' ? 'Move In' : 'Move Out') + ') · ' + m.resident);
   scheduleSave(); renderMoves(); updateBadges(); renderDash(); toast('Restored to active moves');
@@ -6140,6 +6266,11 @@ async function deleteMove(id) {
   var m = (state.moves || []).find(function(x){ return x.id === id; });
   if (m) pushUndo({ sec: 'moves', type: 'DELETE', id: id, data: Object.assign({}, m), label: 'delete move — Unit ' + m.unit });
   logActivity('moves', 'delete', 'Deleted move' + (m ? ' — Unit ' + m.unit + ' · ' + m.resident : ''));
+  var _orphans = closeMoveTodos(id, { all: true });
+  if (_orphans.length) {
+    logActivity('todos', 'complete', 'Closed ' + _orphans.length + ' reminder(s) orphaned by the deleted move' + (m ? ' — Unit ' + m.unit : ''),
+      _orphans.map(function (t) { return t.text; }).join(' · '));
+  }
   state.moves = (state.moves || []).filter(function (m) { return m.id !== id; });
   if (!state.deletedMoveIds) state.deletedMoveIds = [];
   state.deletedMoveIds.push(id); if (openMoveId === id) openMoveId = null;
