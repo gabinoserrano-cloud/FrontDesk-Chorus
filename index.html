@@ -2548,16 +2548,22 @@ async function mergeTodoInbox() {
       if (!state.keys) state.keys = [];
       if (state.keys.some(function (k) { return (k.notes || '').indexOf(stamp) !== -1; })) return; // already applied
       var noteLines = [String(ke.notes || ''), '[' + stamp + ']'].filter(Boolean);
+      // type defaults to 'one-time' (the card-audit-backfill case this queue was built
+      // for) but a caller can pass 'resident' for a permanent/replacement resident key —
+      // whitelisted so a bad value can't slip an unrecognized type into state.keys, which
+      // would silently break the type==='one-time' filters elsewhere (overdue badge, fee
+      // tracking, supply-count exclusion).
+      var keType = ke.type === 'resident' ? 'resident' : 'one-time';
       state.keys.push({
         id: ke.id || uid(), unit: String(ke.unit), name: ke.name || 'Guest', guest: '',
-        fob: ke.fob || '', type: 'one-time',
+        fob: ke.fob || '', type: keType,
         status: ['issued', 'returned'].indexOf(ke.status) !== -1 ? ke.status : 'issued',
         issuedAt: ke.issuedAt || Date.now(), timeout: '', notes: noteLines.join('\n'),
         reachedOut: false, reachedOutAt: null, contacts: [],
         feeAddedToLedger: false, feeWaived: false, feeAddedAt: null, feeAddedBy: '',
         addedBy: ke.addedBy || 'Email Triage', createdAt: Date.now(), returnedAt: null
       });
-      logActivity('keys', 'create', 'Added one-time key from card-audit outreach — Unit ' + ke.unit + (ke.fob ? ' · Card #' + ke.fob : ''), ke.addedBy || 'Email Triage');
+      logActivity('keys', 'create', 'Added ' + keType + ' key from card-audit outreach — Unit ' + ke.unit + (ke.fob ? ' · Card #' + ke.fob : ''), ke.addedBy || 'Email Triage');
       keysTouched++;
     });
     // Camera Check entries — always a fresh state.cameraChecks record, one per hourly
