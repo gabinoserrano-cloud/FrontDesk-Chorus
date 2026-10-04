@@ -976,7 +976,7 @@
       <div class="card" id="tight-panel" style="display:none"><div class="card-hdr"><span class="card-title">Tight Turnovers</span></div><div class="card-body" id="tight-body"></div></div>
     </div>
     <div class="section" id="section-keys">
-      <div class="sub-tabs"><div class="sub-tab active" onclick="filterKeys('drawer',this)">🗝 Card Drawer</div><div class="sub-tab" onclick="filterKeys('issued',this)">Currently Out</div><div class="sub-tab" onclick="filterKeys('fobs',this)">Resident Fobs</div><div class="sub-tab" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('parking',this)">🚗 Parking</div><div class="sub-tab" onclick="filterKeys('transponders',this)">📡 Credentials</div></div>
+      <div class="sub-tabs"><div class="sub-tab active" onclick="filterKeys('drawer',this)">🗝 One-Time Cards</div><div class="sub-tab" onclick="filterKeys('issued',this)">Currently Out</div><div class="sub-tab" onclick="filterKeys('fobs',this)">Resident Keys</div><div class="sub-tab" onclick="filterKeys('all',this)">All</div><div class="sub-tab" onclick="filterKeys('parking',this)">🚗 Parking</div><div class="sub-tab" onclick="filterKeys('transponders',this)">📡 Credentials</div></div>
       <div id="keys-dupe-banner" style="display:none"></div>
       <div class="key-stat-row" id="keys-stats" style="display:none"></div>
       <div id="keys-sort-bar" style="display:none;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
@@ -995,7 +995,7 @@
       <div id="card-drawer-view">
         <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">Stock by Pool</span><span class="card-count" id="cardpool-hint"></span><button class="btn btn-ghost btn-sm ml-auto" id="btn-cardpool-baselines" onclick="openCardPoolBaselines()" title="Edit starting counts for each pool">&#9998; Baselines</button></div>
         <div class="tbl-wrap"><table><thead><tr><th>Pool</th><th>Starting</th><th>Issued Out</th><th>In Stock (calc)</th><th>Last Count</th><th>Unaccounted</th><th></th></tr></thead><tbody id="cardpool-tbody"></tbody></table></div></div>
-        <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">One-Time Card Drawer</span><span class="card-count" id="drawer-count"></span><button class="btn btn-secondary btn-sm ml-auto" onclick="printCardPoolLabels('oneTime')">&#128424; Print Labels</button></div><div class="card-body" id="drawer-body" style="padding:14px"></div></div>
+        <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">One-Time Cards</span><span class="card-count" id="drawer-count"></span><button class="btn btn-secondary btn-sm ml-auto" onclick="exportOneTimeCsv()" title="Download the one-time card log as a spreadsheet (same columns as the Excel tracker)">&#11015; CSV</button></div><div class="card-body" id="drawer-body" style="padding:14px"></div></div>
         <!-- Self-Guided Tour keys: unit-owned pairs, labeled with the unit number -->
         <div class="card" style="margin-bottom:12px"><div class="card-hdr"><span class="card-title">Self-Guided Tour Keys</span><span class="card-count" id="sgt-count"></span><button class="btn btn-secondary btn-sm ml-auto" onclick="openSgtPrintPicker()">&#128424; Print Labels</button><button class="btn btn-secondary btn-sm" id="btn-sgt-roster" onclick="openSgtRoster()">&#9881; Manage Units</button></div><div class="card-body" id="sgt-body" style="padding:14px"></div></div>
         <div class="card"><div class="card-hdr"><span class="card-title">Vendor Cards</span><span class="card-count" id="vendor-drawer-count"></span><button class="btn btn-secondary btn-sm ml-auto" onclick="printCardPoolLabels('vendor')">&#128424; Print Labels</button></div><div class="card-body" id="vendor-drawer-body" style="padding:14px"></div></div>
@@ -7384,71 +7384,125 @@ function renderCardPoolSettings() {
 }
 var _quickKeyCardNum = null;
 
+// One-Time Cards (2026-10-04): a plain issue/return log modeled on the front desk's
+// "One-Time Key Tracker" Excel sheet (Unit, Name, Date/Time Issued, Issued By,
+// Visionline Reg #, Status, Date Returned, Received By, Fee). Replaces the numbered
+// drawer grid, which stopped matching reality once cards started being reprogrammed
+// rather than drawn from a fixed numbered set — the Reg # is what ties a row back to
+// a Visionline export. Records are ordinary state.keys entries of type 'one-time', so
+// the overdue badge, passdown "still out" list and supply counts keep working.
+function fmtOtkTs(ts) {
+  if (!ts) return '';
+  var d = new Date(ts);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+function otkFeeCell(k, overdue) {
+  if (k.feeAddedToLedger) return '<span style="color:var(--green);font-weight:600">Charged $' + ONE_TIME_KEY_FEE + '</span>';
+  if (k.feeWaived) return '<span style="color:var(--text3)">Waived</span>';
+  if (!overdue) return '<span class="text-3">—</span>';
+  return '<span style="color:var(--amber);font-weight:600">$' + ONE_TIME_KEY_FEE + ' pending</span> '
+    + '<button class="btn btn-ghost btn-xs" onclick="markFeeToLedger(\'' + k.id + '\')" title="Management added the fee to the ledger">Charged</button>'
+    + '<button class="btn btn-ghost btn-xs" style="color:var(--text3)" onclick="waiveKeyFee(\'' + k.id + '\')">Waive</button>';
+}
 function renderCardDrawer() {
   var body = g('drawer-body'); if (!body) return;
-  var issued = (state.keys || []).filter(function(k) { return k.type === 'one-time' && k.status === 'issued'; });
-  var drawerSize = oneTimeDrawerSize();
-  // A card can fail to land on the grid three ways: a number outside 1..drawerSize, no
-  // number at all, or a second card logged on a number already taken (the grid keeps one
-  // per tile). Those used to vanish from this view while still counting in "N out", so the
-  // header read "36 in drawer · 4 out" above a single returnable tile (2026-08-21).
-  var issuedMap = {}, offGrid = [];
-  issued.forEach(function(k) {
-    var fob = String(k.fob == null ? '' : k.fob).trim();
-    var n = /^\d+$/.test(fob) ? parseInt(fob, 10) : NaN;
-    if (!fob || isNaN(n) || n < 1 || n > drawerSize || issuedMap[fob]) { offGrid.push(k); return; }
-    issuedMap[fob] = k;
-  });
-  var cntEl = g('drawer-count');
-  if (cntEl) {
-    var inDrawer = Math.max(0, drawerSize - Object.keys(issuedMap).length);
-    cntEl.textContent = inDrawer + ' in drawer · ' + issued.length + ' out'
-      + (offGrid.length ? ' · ' + offGrid.length + ' not on the grid' : '');
-  }
+  var all = (state.keys || []).filter(function(k) { return k.type === 'one-time'; });
+  var out = all.filter(function(k) { return k.status === 'issued'; }).sort(function(a, b) { return (a.issuedAt || 0) - (b.issuedAt || 0); });
+  var cutoff = Date.now() - 14 * 86400000;
+  var back = all.filter(function(k) { return k.status === 'returned' && (k.returnedAt || 0) >= cutoff; }).sort(function(a, b) { return (b.returnedAt || 0) - (a.returnedAt || 0); });
   var now = Date.now();
-  var html = '<div style="display:flex;flex-wrap:wrap;gap:8px">';
-  for (var i = 1; i <= drawerSize; i++) {
-    var cn = String(i), k = issuedMap[cn];
-    if (k) {
-      var overdue = k.issuedAt && (now - k.issuedAt) >= 2 * 3600000;
-      var ms = k.issuedAt ? now - k.issuedAt : 0, hrs = Math.floor(ms/3600000), mins = Math.floor((ms%3600000)/60000);
-      var timeStr = fmtDurOut(ms);
-      var bg = overdue ? 'rgba(192,53,53,0.08)' : 'rgba(181,112,32,0.07)';
-      var bd = overdue ? '1.5px solid rgba(192,53,53,0.4)' : '1.5px solid rgba(181,112,32,0.35)';
-      var nc = overdue ? 'var(--red)' : 'var(--amber)';
-      var unitLbl = k.unit ? 'Unit ' + k.unit : (k.name ? k.name.split(' ')[0] : '—');
-      html += '<div style="width:74px;min-height:76px;background:' + bg + ';border:' + bd + ';border-radius:6px;padding:7px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative" onclick="dashReturnKey(\'' + k.id + '\')" title="Card #' + cn + ' — ' + esc(k.name||'') + ' Unit ' + esc(k.unit||'') + (k.guest ? ' / ' + k.guest : '') + '\nClick to mark returned">'
-        + (overdue ? '<span style="position:absolute;top:3px;right:4px;font-size:11px;color:var(--red)">⚠</span>' : '')
-        + '<span style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:' + nc + '">#' + cn + '</span>'
-        + '<span style="font-size:11px;font-weight:600;color:' + nc + ';text-align:center;line-height:1.3;word-break:break-word">' + esc(unitLbl) + '</span>'
-        + '<span style="font-size:11px;color:' + (overdue ? 'var(--red)' : 'var(--text3)') + ';margin-top:1px">' + timeStr + ' out</span>'
-        + '<span style="font-size:11px;color:var(--accent);margin-top:2px;font-weight:600">↩ return</span>'
-        + '</div>';
-    } else {
-      html += '<div style="width:74px;min-height:76px;background:var(--surface);border:1.5px solid var(--border);border-radius:6px;padding:7px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:border-color .12s,background .12s" onclick="openQuickKeyIssue(' + i + ')" title="Card #' + cn + ' — in drawer. Click to issue." onmouseover="this.style.borderColor=\'var(--accent)\';this.style.background=\'var(--accent-light)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.background=\'var(--surface)\'">'
-        + '<span style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:var(--text3)">#' + cn + '</span>'
-        + '<span style="font-size:11px;color:var(--text3)">in drawer</span>'
-        + '</div>';
-    }
+  var overdueN = out.filter(function(k) { return k.issuedAt && now - k.issuedAt >= 2 * 3600000; }).length;
+  var cntEl = g('drawer-count');
+  if (cntEl) cntEl.textContent = out.length + ' out' + (overdueN ? ' · ' + overdueN + ' past 2 hrs' : '') + ' · ' + back.length + ' returned (14 days)';
+  var viewer = typeof isViewerUser === 'function' && isViewerUser();
+  var html = '';
+  if (!viewer) {
+    html += '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">'
+      + '<div class="fg" style="margin:0;width:80px"><label>Unit #</label><input id="otk-unit" type="text" placeholder="e.g. 933"></div>'
+      + '<div class="fg" style="margin:0;flex:1;min-width:160px"><label>Resident / Guest Name</label><input id="otk-name" type="text"></div>'
+      + '<div class="fg" style="margin:0;width:130px"><label>Visionline Reg #</label><input id="otk-reg" type="text" inputmode="numeric"></div>'
+      + '<div class="fg" style="margin:0;flex:1;min-width:140px"><label>Notes</label><input id="otk-notes" type="text" placeholder="optional" onkeydown="if(event.key===\'Enter\')issueOneTimeCard()"></div>'
+      + '<button class="btn btn-primary btn-sm" onclick="issueOneTimeCard()">Issue Card</button>'
+      + '</div>'
+      + '<div style="font-size:11.5px;color:var(--text3);margin:-6px 0 12px">Date, time and your name are filled in automatically. Use the Reg # shown in Visionline when you program the card.</div>';
   }
-  html += '</div>';
-  if (offGrid.length) {
-    html += '<div style="margin-top:14px;border:1px solid var(--amber);background:var(--amber-light);border-radius:var(--radius);padding:10px 12px">'
-      + '<div style="font-size:12px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Also out &mdash; not on the grid</div>'
-      + '<div style="font-size:11.5px;color:var(--text2);margin-bottom:8px">Issued cards the numbered grid can\'t show: no card number, a number outside 1&ndash;' + drawerSize + ', or a number already in use.</div>';
-    offGrid.forEach(function (k) {
-      var fob = String(k.fob == null ? '' : k.fob).trim();
-      var why = !fob ? 'no card number' : (issuedMap[fob] ? 'card #' + esc(fob) + ' already issued to Unit ' + esc((issuedMap[fob].unit) || '?') : 'card #' + esc(fob) + ' is outside 1&ndash;' + drawerSize);
-      var ms = k.issuedAt ? (now - k.issuedAt) : 0;
-      html += '<div class="tight-row"><span class="tr-main"><strong>Unit ' + esc(k.unit || '?') + '</strong> &mdash; ' + esc(k.name || '') 
-        + ' <span style="color:var(--text3)">&middot; ' + why + (k.issuedAt ? ' &middot; ' + fmtDurOut(ms) + ' out' : '') + '</span></span>'
-        + '<button class="btn btn-xs btn-secondary" onclick="dashReturnKey(\'' + k.id + '\')">&#8617; Return</button></div>';
+  html += '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Out now</div>';
+  if (!out.length) {
+    html += '<div style="font-size:13px;color:var(--text3);padding:6px 0 14px">No one-time cards out.</div>';
+  } else {
+    html += '<div class="tbl-wrap" style="margin-bottom:16px"><table><thead><tr><th>Unit</th><th>Name</th><th>Issued</th><th>By</th><th>Reg #</th><th>Out For</th><th>Fee</th><th></th></tr></thead><tbody>';
+    out.forEach(function(k) {
+      var ms = k.issuedAt ? now - k.issuedAt : 0, overdue = ms >= 2 * 3600000;
+      html += '<tr' + (overdue ? ' style="background:var(--red-light)"' : '') + '>'
+        + '<td class="mono font-600">' + esc(k.unit || '') + '</td>'
+        + '<td>' + esc(k.name || '') + (k.guest ? '<div class="text-xs text-3">Guest: ' + esc(k.guest) + '</div>' : '') + (k.notes ? '<div class="text-xs text-3">' + esc(k.notes) + '</div>' : '') + '</td>'
+        + '<td class="text-sm">' + fmtOtkTs(k.issuedAt) + '</td>'
+        + '<td class="text-sm">' + esc(k.addedBy || '') + '</td>'
+        + '<td class="mono text-sm">' + esc(k.regNo || k.fob || '—') + '</td>'
+        + '<td class="text-sm" style="' + (overdue ? 'color:var(--red);font-weight:700' : '') + '">' + (k.issuedAt ? fmtDurOut(ms) : '—') + '</td>'
+        + '<td class="text-sm">' + otkFeeCell(k, overdue) + '</td>'
+        + '<td>' + (viewer ? '' : '<button class="btn btn-secondary btn-xs" onclick="dashReturnKey(\'' + k.id + '\')">&#8617; Return</button>') + '</td>'
+        + '</tr>';
     });
-    html += '</div>';
+    html += '</tbody></table></div>';
+  }
+  html += '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Returned &mdash; last 14 days</div>';
+  if (!back.length) {
+    html += '<div style="font-size:13px;color:var(--text3);padding:6px 0">None yet.</div>';
+  } else {
+    html += '<div class="tbl-wrap"><table><thead><tr><th>Unit</th><th>Name</th><th>Issued</th><th>Returned</th><th>Received By</th><th>Reg #</th><th>Fee</th></tr></thead><tbody>';
+    back.forEach(function(k) {
+      html += '<tr><td class="mono font-600">' + esc(k.unit || '') + '</td><td>' + esc(k.name || '') + '</td>'
+        + '<td class="text-sm">' + fmtOtkTs(k.issuedAt) + '</td><td class="text-sm">' + fmtOtkTs(k.returnedAt) + '</td>'
+        + '<td class="text-sm">' + esc(k.returnedBy || '—') + '</td><td class="mono text-sm">' + esc(k.regNo || k.fob || '—') + '</td>'
+        + '<td class="text-sm">' + otkFeeCell(k, false) + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
   }
   body.innerHTML = html;
   renderVendorDrawer();
   renderCardPoolTable();
+}
+function issueOneTimeCard() {
+  if (isViewerUser()) { toast('View-only access'); return; }
+  var unit = (g('otk-unit').value || '').trim(), name = (g('otk-name').value || '').trim();
+  var reg = (g('otk-reg').value || '').trim(), notes = (g('otk-notes').value || '').trim();
+  if (!unit) { toast('Enter a unit number'); g('otk-unit').focus(); return; }
+  if (!name) { toast('Enter the resident or guest name'); g('otk-name').focus(); return; }
+  if (reg && (state.keys || []).some(function(k) { return k.type === 'one-time' && k.status === 'issued' && k.regNo === reg; })) {
+    toast('Reg #' + reg + ' is already logged as out — check the list'); return;
+  }
+  if (!state.keys) state.keys = [];
+  var k = { id: uid(), unit: unit, name: name, guest: '', fob: '', regNo: reg, type: 'one-time', status: 'issued',
+    issuedAt: Date.now(), notes: notes, addedBy: currentUser ? currentUser.name : '', createdAt: Date.now(), returnedAt: null,
+    contacts: [], feeAddedToLedger: false, feeWaived: false };
+  state.keys.push(k);
+  var cmds = [{ sec: 'keys', type: 'ADD', id: k.id, data: Object.assign({}, k), label: 'issue one-time card — Unit ' + unit }];
+  var sup = applySupplyAdjustment('One-Time Cards – Active Issued', +1, 'Issued — Unit ' + unit + ' · ' + name + (reg ? ' · Reg #' + reg : ''));
+  if (sup) cmds.push(sup);
+  pushBatchUndo('keys', 'issue one-time card — Unit ' + unit, cmds);
+  logActivity('keys', 'create', 'Issued one-time card — Unit ' + unit + ' · ' + name + (reg ? ' · Reg #' + reg : ''));
+  scheduleSave(); renderCardDrawer(); renderKeys(); updateBadges(); renderDash();
+  ['otk-unit', 'otk-name', 'otk-reg', 'otk-notes'].forEach(function(id) { var el = g(id); if (el) el.value = ''; });
+  toast('One-time card issued — Unit ' + unit);
+}
+function exportOneTimeCsv() {
+  var rows = [['Unit #', 'Resident / Guest Name', 'Date Issued', 'Time Issued', 'Issued By', 'Visionline Reg #', 'Status', 'Date Returned', 'Received By', 'Fee Charged?', 'Fee Status', 'Notes']];
+  var d = function(ts) { if (!ts) return ''; var x = new Date(ts); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
+  var t = function(ts) { if (!ts) return ''; var x = new Date(ts); return String(x.getHours()).padStart(2, '0') + ':' + String(x.getMinutes()).padStart(2, '0'); };
+  (state.keys || []).filter(function(k) { return k.type === 'one-time'; })
+    .sort(function(a, b) { return (a.issuedAt || 0) - (b.issuedAt || 0); })
+    .forEach(function(k) {
+      var overdue = k.status === 'issued' && k.issuedAt && Date.now() - k.issuedAt >= 2 * 3600000;
+      rows.push([k.unit || '', k.name + (k.guest ? ' / ' + k.guest : ''), d(k.issuedAt), t(k.issuedAt), k.addedBy || '', k.regNo || k.fob || '',
+        k.status === 'issued' ? 'Issued' : 'Returned', d(k.returnedAt), k.returnedBy || '',
+        k.feeAddedToLedger ? 'Y' : 'N', k.feeAddedToLedger ? 'Charged' : (k.feeWaived ? 'Waived' : (overdue ? 'Pending' : 'N/A')), (k.notes || '').replace(/\n/g, ' ')]);
+    });
+  var csv = rows.map(function(r) { return r.map(function(v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(','); }).join('\r\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' })); // BOM so Excel reads the dashes as UTF-8
+  a.download = 'One-Time Cards ' + today() + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
 }
 
 function openQuickKeyIssue(cardNum) {
@@ -7608,6 +7662,16 @@ function saveKey() {
   ['ky-unit', 'ky-name', 'ky-fob', 'ky-notes', 'ky-guest', 'ky-timeout'].forEach(function (id) { var el=g(id); if(el) el.value=''; }); g('ky-expiry').value = ''; toast('Key logged');
 }
 // ===== [KEY TRACKER] =========================================================
+// Resident keys come in two kinds (unit key, mail key) stored as separate records, and
+// the Type column used to print just "resident" for both — so every resident looked
+// listed twice. Show the kind.
+function keyTypeLabel(k) {
+  if (k.type === 'resident' || k.type === 'joiner') {
+    var base = k.type === 'joiner' ? 'Joiner' : 'Resident';
+    return base + (k.keyKind === 'mail' ? ' · mail key' : (k.keyKind === 'unit' ? ' · unit key' : ' · key'));
+  }
+  return k.type;
+}
 function renderKeys() {
   var list = (state.keys || []).slice();
   if (keyFilter === 'issued') list = list.filter(function (k) { return k.status === 'issued'; });
@@ -7629,7 +7693,7 @@ function renderKeys() {
     return b.createdAt - a.createdAt;
   });
   var allK = state.keys || [];
-  var stats = [{ label: 'Resident Fobs', val: allK.filter(function (k) { return k.type === 'resident' && k.status === 'issued'; }).length }, { label: 'Joiner Keys Out', val: allK.filter(function (k) { return k.type === 'joiner' && k.status === 'issued'; }).length }, { label: 'One-Time Out', val: allK.filter(function (k) { return k.type === 'one-time' && k.status === 'issued'; }).length }, { label: 'Vendor Cards Out', val: allK.filter(function (k) { return k.type === 'vendor' && k.status === 'issued'; }).length }, { label: 'Tour Keys Out', val: allK.filter(function (k) { return k.type === 'sgt' && k.status === 'issued'; }).length }, { label: 'Mobile Active', val: allK.filter(function (k) { return k.type === 'mobile' && k.status === 'issued'; }).length }];
+  var stats = [{ label: 'Residents Holding Keys', val: Object.keys(allK.filter(function (k) { return k.type === 'resident' && k.status === 'issued'; }).reduce(function (o, k) { o[k.unit + '|' + (k.name || '').trim().toLowerCase()] = 1; return o; }, {})).length }, { label: 'Joiner Keys Out', val: allK.filter(function (k) { return k.type === 'joiner' && k.status === 'issued'; }).length }, { label: 'One-Time Out', val: allK.filter(function (k) { return k.type === 'one-time' && k.status === 'issued'; }).length }, { label: 'Vendor Cards Out', val: allK.filter(function (k) { return k.type === 'vendor' && k.status === 'issued'; }).length }, { label: 'Tour Keys Out', val: allK.filter(function (k) { return k.type === 'sgt' && k.status === 'issued'; }).length }, { label: 'Mobile Active', val: allK.filter(function (k) { return k.type === 'mobile' && k.status === 'issued'; }).length }];
   g('keys-stats').innerHTML = stats.map(function (s) { return '<div class="key-stat"><div class="key-stat-num">' + s.val + '</div><div class="key-stat-lbl">' + s.label + '</div></div>'; }).join('');
   var tbody = g('keys-tbody'), cnt = g('keys-count');
   var now = Date.now();
@@ -7641,7 +7705,7 @@ function renderKeys() {
     list = list.filter(function(k){ return k.type !== 'one-time'; });
     if (otkSection) otkSection.style.display = otkList.length ? '' : 'none';
     if (keyCard) keyCard.style.display = list.length ? '' : 'none';
-    if (keyTitle) keyTitle.textContent = 'Other Issued Keys';
+    if (keyTitle) keyTitle.textContent = otkList.length ? 'Other Issued Keys' : 'Keys Out';
     if (otkCards) {
       var otkHtml = '';
       otkList.forEach(function(k) {
@@ -7748,6 +7812,42 @@ function renderKeys() {
     return;
   }
   var html = '';
+  if (keyFilter === 'issued') {
+    // One row per resident (unit + name) holding their own keys, with a chip per key —
+    // co-residents stay separate rows since each person holds their own set.
+    var groups = [], gIdx = {}, others = [];
+    list.forEach(function (k) {
+      if (k.type !== 'resident' && k.type !== 'joiner') { others.push(k); return; }
+      var gk = k.unit + '|' + (k.name || '').trim().toLowerCase();
+      if (!gIdx[gk]) { gIdx[gk] = { unit: k.unit, name: k.name, keys: [] }; groups.push(gIdx[gk]); }
+      gIdx[gk].keys.push(k);
+    });
+    if (keySort === 'name') groups.sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
+    else groups.sort(function (a, b) { return (parseInt(a.unit, 10) || 0) - (parseInt(b.unit, 10) || 0) || (a.name || '').localeCompare(b.name || ''); });
+    var kindOrder = { unit: 0, mail: 1 };
+    groups.forEach(function (gr) {
+      gr.keys.sort(function (a, b) { return (kindOrder[a.keyKind] != null ? kindOrder[a.keyKind] : 2) - (kindOrder[b.keyKind] != null ? kindOrder[b.keyKind] : 2); });
+      var chips = gr.keys.map(function (k) {
+        var lbl = k.keyKind === 'mail' ? 'Mail key' : (k.keyKind === 'unit' ? 'Unit key' : 'Key');
+        if (k.type === 'joiner') lbl = 'Joiner ' + lbl.toLowerCase();
+        return '<span style="display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:12px;padding:1px 4px 1px 8px;margin:0 4px 3px 0;font-size:12px;white-space:nowrap">'
+          + esc(lbl) + (k.fob ? ' <span class="mono text-3">#' + esc(k.fob) + '</span>' : '')
+          + '<button class="btn btn-ghost btn-xs" style="padding:0 5px" onclick="logKeyReturn(\'' + k.id + '\')" title="Log ' + esc(lbl.toLowerCase()) + ' returned">&#8617;</button>'
+          + '<button class="btn btn-ghost btn-xs" style="padding:0 4px" onclick="openEditKey(\'' + k.id + '\')" title="Edit">&#9998;</button>'
+          + '</span>';
+      }).join('');
+      var fees = gr.keys.map(function (k) { return keyFeeBadgesHtml(k); }).join('');
+      var first = gr.keys.reduce(function (m, k) { return Math.min(m, k.issuedAt || k.createdAt || Infinity); }, Infinity);
+      html += '<tr><td class="mono font-600">' + esc(gr.unit) + '</td>'
+        + '<td>' + esc(gr.name || '') + fees + '</td>'
+        + '<td colspan="2">' + chips + '</td>'
+        + '<td class="text-xs text-3">' + (isFinite(first) ? 'Since ' + new Date(first).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-') + '</td>'
+        + '<td class="text-sm">Issued</td>'
+        + '<td>' + (gr.unit ? '<button class="btn btn-ghost btn-xs" onclick="openUnitView(\'' + gr.unit + '\')" title="Unit profile" style="color:var(--accent)">&#128100;</button>' : '') + '</td></tr>';
+    });
+    if (cnt) cnt.textContent = groups.length + ' resident' + (groups.length !== 1 ? 's' : '') + ' · ' + (list.length - others.length) + ' keys' + (others.length ? ' · ' + others.length + ' other' : '');
+    list = others;
+  }
   list.forEach(function (k) {
     var kyBy = fmtByTag(k.addedBy, k.createdAt);
     var isOneTime = k.type === 'one-time';
@@ -7795,7 +7895,7 @@ function renderKeys() {
     html += '<tr class="' + rowClass + '"' + (isVendorIssued ? ' style="background:rgba(55,138,221,0.10)"' : rowStyle ? rowStyle : '') + '>';
     html += '<td class="mono font-600">' + esc(k.unit) + '</td>';
     html += '<td>' + nameCell + feeBadge + oneTimeFee + '</td>';
-    html += '<td class="text-sm">' + k.type + overdueTag + staleTag + vendorOverdueTag + '</td>';
+    html += '<td class="text-sm">' + esc(keyTypeLabel(k)) + overdueTag + staleTag + vendorOverdueTag + '</td>';
     html += '<td class="mono text-sm">' + (k.fob || '-') + '</td>';
     html += '<td>' + timeOutCell + '</td>';
     html += '<td><select class="ie-sel" onchange="updateKeyStatus(\'' + k.id + '\',this.value)"><option value="issued" ' + (isIssued ? 'selected' : '') + '>Issued</option><option value="returned" ' + (k.status === 'returned' ? 'selected' : '') + '>Returned</option></select></td>';
@@ -7873,7 +7973,7 @@ function logKeyReturn(id) {
   k.shiftNotes.push({ shiftId: getCurrentShiftId(), shift: getCurrentShiftLabel(), note: 'Key returned — logged at ' + ts, by: currentUser ? currentUser.name : '', ts: Date.now() });
   var wasIssued = k.status === 'issued';
   var _krb = { status: k.status, returnedAt: k.returnedAt };
-  k.status = 'returned'; k.returnedAt = Date.now();
+  k.status = 'returned'; k.returnedAt = Date.now(); k.returnedBy = currentUser ? currentUser.name : '';
   var krCmds = [];
   if (k.type !== 'mobile' && wasIssued) {
     if (k.type === 'one-time') { var krSupCmd2 = applySupplyAdjustment('One-Time Cards – Active Issued', -1, 'Returned — Unit ' + k.unit + ' · ' + k.name); if (krSupCmd2) krCmds.push(krSupCmd2); }
@@ -14584,7 +14684,7 @@ var GUIDE_DATA = [
 
 
   { id:'g-keys', icon:'🔑', title:'Key Tracker', keywords:'key fob card drawer one-time resident vendor issued returned overdue guest unit parking transponder sgt tour off grid',
-    html:'<h4>Card Drawer</h4><p>The default view: a numbered grid of the physical one-time cards. A grey tile is in the drawer — click it to issue. A coloured tile is out — click it to return. Amber means out, red means out past 2 hours.</p><h4>Also Out — Not On The Grid</h4><p>An amber panel below the grid catches any issued card the numbered grid cannot show: no card number recorded, a number outside the drawer range, or a second card logged on a number already in use. Each row says why and has its own Return button. <strong>If this panel is showing, those cards are genuinely still out</strong> — do not treat the grid alone as a complete count when doing a sweep.</p><h4>Key Types</h4><ul><li><strong>Resident fob</strong> — permanent, tracked for records, not time-sensitive.</li><li><strong>One-time card</strong> — guests, vendors, contractors. Overdue after 2 hours.</li><li><strong>Vendor card</strong> — tracked separately with company and work area.</li><li><strong>Self-guided tour keys</strong> — owned by a unit rather than drawn from the pool.</li></ul><h4>One Card, One Place</h4><p>A card number already issued cannot be issued again — both the drawer and <strong>+ Log Key</strong> will refuse it and name the unit holding it. Return it first.</p><h4>Other Tabs</h4><p><strong>Currently Out</strong> lists everything outstanding with contact history and fee tracking. <strong>Resident Fobs</strong>, <strong>All</strong>, <strong>Parking</strong> and <strong>Credentials</strong> cover the standing records.</p><h4>Supplies Link</h4><p>Issuing and returning cards adjusts the card-pool counts shown in Supplies automatically. Those tiles are derived from here — do not hand-count them.</p>' },
+    html:'<h4>One-Time Cards</h4><p>The default view, laid out like the front desk&rsquo;s One-Time Key Tracker sheet. To issue a card, fill in the unit, name and the Visionline Reg # shown when you program it, then click <strong>Issue Card</strong> — date, time and your name are filled in for you. <strong>Out now</strong> lists every card still out; rows turn red after 2 hours and show the $75 fee status. Click <strong>Return</strong> when a card comes back — it records the time and who received it. <strong>CSV</strong> downloads the whole log as a spreadsheet with the same columns as the Excel sheet.</p><h4>Key Types</h4><ul><li><strong>Resident fob</strong> — permanent, tracked for records, not time-sensitive.</li><li><strong>One-time card</strong> — guests, vendors, contractors. Overdue after 2 hours.</li><li><strong>Vendor card</strong> — tracked separately with company and work area.</li><li><strong>Self-guided tour keys</strong> — owned by a unit rather than drawn from the pool.</li></ul><h4>One Card, One Place</h4><p>A card number already issued cannot be issued again — both the drawer and <strong>+ Log Key</strong> will refuse it and name the unit holding it. Return it first.</p><h4>Other Tabs</h4><p><strong>Currently Out</strong> lists everything outstanding: one row per resident, with a tag for each key they hold (unit key, mail key) and its own return button. <strong>Resident Keys</strong>, <strong>All</strong>, <strong>Parking</strong> and <strong>Credentials</strong> cover the standing records.</p><h4>Supplies Link</h4><p>Issuing and returning cards adjusts the card-pool counts shown in Supplies automatically. Those tiles are derived from here — do not hand-count them.</p>' },
 
   { id:'g-amenities', icon:'🎉', title:'Amenity Bookings', keywords:'amenity booking rooftop gym event space resident unit date time start end notes past upcoming shift passdown',
     html:'<h4>Adding a Booking</h4><p>Click <strong>+ Add Booking</strong>. Select the space, resident name, unit, booking date, start and end time, and any notes.</p><h4>Tabs</h4><ul><li><strong>Upcoming</strong> — bookings from today forward</li><li><strong>Past</strong> — bookings with a date already passed</li></ul><h4>Passdown Integration</h4><p>Today\'s bookings that fall within the selected shift automatically appear in the Daily Passdown auto-blocks. Admin users with the lookahead setting enabled also see upcoming bookings for the next 1–2 days.</p>' },
