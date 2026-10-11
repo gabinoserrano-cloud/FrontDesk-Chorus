@@ -680,7 +680,10 @@
   /* ─── Moves section improvements ─── */
   .move-row.today-move>td:first-child{border-left:3px solid var(--accent)}
   .appt-badge.no-appt{cursor:pointer}.appt-badge.no-appt:hover{background:rgba(217,119,6,0.22)}
-  .moves-note-cell{max-width:180px;white-space:normal;line-height:1.35;word-break:break-word}
+  .moves-note-cell{max-width:240px;min-width:180px;white-space:normal;line-height:1.35;word-break:break-word}
+  .mv-note-line{margin:0 0 3px}.mv-note-flag{display:block;background:var(--amber-light);color:var(--ink-amber);font-weight:600;border-radius:6px;padding:2px 6px;margin:0 0 3px}
+  .moves-note-cell .mv-note-more{display:none}.moves-note-cell.expanded .mv-note-more{display:block}
+  .mv-note-toggle{background:none;border:0;padding:0;color:var(--accent);font-size:11px;font-weight:600;cursor:pointer}
   /* Stage pills */
   .stage-pill{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:1px 6px;border-radius:8px;text-transform:uppercase;letter-spacing:.5px;margin-top:3px;white-space:nowrap}
   .stage-pending{background:var(--border2);color:var(--text3)}
@@ -5408,6 +5411,25 @@ function toggleMoveLogged() {
   renderMoves();
 }
 
+// Move card notes carry machine stamps ([created:…], [booking:…], [triage:…]) that the
+// inbox drain uses for dedupe, plus "Added via confirmed triage request" provenance lines.
+// Hide those from the table, show ⚠ lines as flags, and collapse anything past two lines.
+function moveNoteLines(notes) {
+  return String(notes || '')
+    .replace(/\[(?:created|booking|triage):[^\]]*\]/g, '')
+    .split(/\n+/)
+    .map(function (l) { return l.trim(); })
+    .filter(function (l) { return l && !/^Added via confirmed triage request/i.test(l) && !/^RiseIO booking auto-imported/i.test(l); });
+}
+function moveNoteCell(notes) {
+  var lines = moveNoteLines(notes);
+  if (!lines.length) return '<td class="text-sm text-2 moves-note-cell">-</td>';
+  var line = function (l) { return /^⚠/.test(l) ? '<span class="mv-note-flag">' + esc(l) + '</span>' : '<div class="mv-note-line">' + esc(l) + '</div>'; };
+  var shown = lines.slice(0, 2).map(line).join('');
+  var rest = lines.slice(2);
+  var more = rest.length ? '<div class="mv-note-more">' + rest.map(line).join('') + '</div><button class="mv-note-toggle" onclick="event.stopPropagation();var c=this.parentNode;c.classList.toggle(\'expanded\');this.textContent=c.classList.contains(\'expanded\')?\'less\':\'+' + rest.length + ' more\'">+' + rest.length + ' more</button>' : '';
+  return '<td class="text-sm text-2 moves-note-cell" title="' + esc(lines.join('\n')).replace(/"/g, '&quot;') + '">' + shown + more + '</td>';
+}
 function buildCL(m, filterCat) {
   var tasks = m.tasks || [];
   // In Move In tab: hide Post Move-In tasks. In Post Move-In tab: show only Post Move-In tasks.
@@ -5806,7 +5828,7 @@ function renderMoves() {
         var payTask = (m.tasks||[]).find(function(tk){ return tk.paymentTask; });
         var payMismatch = payTask && m.total && payTask.paymentReceived && String(payTask.paymentReceived).replace(/[$,\s]/g,'') !== String(m.total).replace(/[$,\s]/g,'');
         rows += '<td class="mono text-sm tar tabnum">' + (m.total ? '$' + esc(m.total) : '-') + (payMismatch ? '<br><span style="font-size:11px;color:var(--red);font-weight:700">⚠ MISMATCH</span>' : '') + '</td>';
-        rows += '<td class="text-sm text-2 moves-note-cell" title="' + (m.notes ? esc(m.notes).replace(/"/g,'&quot;') : '') + '">' + (m.notes ? esc(m.notes) : '-') + '</td>';
+        rows += moveNoteCell(m.notes);
         if (moveShowLogged) rows += '<td class="text-xs text-3">' + fmtByTag(m.addedBy, m.createdAt) + '</td>';
         rows += '<td><div class="flex gap-4" style="justify-content:flex-end;align-items:center">';
         rows += pct === 100 ? '<span class="pill pill-resolved" style="font-size:11px">Done</span>' : '<div style="width:64px"><div class="prog-wrap"><div class="prog-bar" style="width:' + pct + '%;background:' + bc + '"></div></div><div class="text-xs mono" style="text-align:right;margin-top:2px;color:' + bc + ';font-weight:600">' + dn + '/' + tot + '</div></div>';
