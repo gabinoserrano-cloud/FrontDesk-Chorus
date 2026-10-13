@@ -2205,100 +2205,49 @@
 // ╚══════════════════════════════════════════════════════════════════════════╝
 
 // ===== [SUPABASE CONFIG] =====================================================
-// ─── SUPABASE CONFIG ───
-var SUPA_URL = 'https://adovwmwpvwomljggscge.supabase.co';
-var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkb3Z3bXdwdndvbWxqZ2dzY2dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNzkxNjcsImV4cCI6MjA5MDg1NTE2N30.dZgl3jEL1FbBSe_gM3LN9Tc3wGGmsf_Bq6YaKJf4dyk';
-var SUPA_SYNC_EMAIL = 'sync@chorusfd.internal';
-var SUPA_SYNC_PASS = 'yQI4RdhdSD2Rko9xpOaqRkFK5crSDEDHeRdGrQza';
-// Set to '/api' once the Cloudflare Worker in worker/ is deployed. While null, the
-// legacy direct-to-Supabase path below runs unchanged. Flipping this is the entire
-// cutover; flipping it back is the entire rollback. Once it is live and verified,
-// SUPA_KEY / SUPA_SYNC_EMAIL / SUPA_SYNC_PASS above can be deleted outright — the
-// Worker holds them, and the browser never sees them again. See worker/DEPLOY.md.
+// ─── SYNC CONFIG ───
+// All cloud sync goes through the Cloudflare Worker at /api (worker/worker.js), which
+// sits behind the same Cloudflare Access login as this page and holds the Supabase
+// credentials as Worker secrets — the browser never sees a database credential.
+// The old direct-to-Supabase path and its keys were removed 2026-10-12 after the
+// Worker had run clean for a month. See worker/DEPLOY.md.
 var SYNC_API = '/api';
+// Set once a newer build of this page has been deployed than the one running in
+// this tab (see checkForNewBuild). An old tab can't be trusted to drain the triage
+// queue — on 2026-09-21 one silently threw away an edit type it didn't know yet.
+var _staleBuild = false, _buildSig = null, _buildSigPending = null;
 var LOCAL_KEY = 'chorus-fd-v3';
 var syncTO = null, isSyncing = false, lastSyncTs = null, localDirty = false;
-var _supaSession = null;
 // Sync guard (added after the 2026-07-09 cloud wipe): a device may only push
 // once it has pulled a real cloud baseline this session, and any push/pull
 // that would erase a large share of the data is intercepted for confirmation.
 var cloudPullOk = false, lastGoodCounts = null, _allowRiskyPush = false, _wipeWarnTs = 0, _pendingRemote = null;
 var SYNC_WATCH = ['moves', 'keys', 'unitRecords', 'amenities', 'supplies', 'concierge', 'todos', 'accounts', 'logbook', 'parking'];
 
-async function supaSignIn() {
-  var res = await fetch(SUPA_URL + '/auth/v1/token?grant_type=password', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY },
-    body: JSON.stringify({ email: SUPA_SYNC_EMAIL, password: SUPA_SYNC_PASS })
-  });
-  if (!res.ok) throw new Error('auth ' + res.status);
-  _supaSession = await res.json();
-  return _supaSession.access_token;
-}
-async function getSupaToken() {
-  if (_supaSession && _supaSession.access_token) {
-    var expiresAt = (_supaSession.created_at ? _supaSession.created_at * 1000 : 0) + ((_supaSession.expires_in || 3600) - 60) * 1000;
-    if (Date.now() < expiresAt) return _supaSession.access_token;
-  }
-  return await supaSignIn();
-}
-async function getSupaHdr(extra) {
-  var token = await getSupaToken();
-  return Object.assign({ 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + token }, extra || {});
-}
-
 async function supaGet() {
-  if (SYNC_API) {
-    var wres = await fetch(SYNC_API + '/data', { headers: { 'Accept': 'application/json' } });
-    if (!wres.ok) throw new Error('fetch ' + wres.status);
-    return await wres.json();
-  }
-  var hdrs = await getSupaHdr();
-  var res = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.main&select=data,updated_at', { headers: hdrs });
-  if (!res.ok) throw new Error('fetch ' + res.status);
-  var rows = await res.json();
-  return rows[0] || null;
+  var wres = await fetch(SYNC_API + '/data', { headers: { 'Accept': 'application/json' } });
+  if (!wres.ok) throw new Error('fetch ' + wres.status);
+  return await wres.json();
 }
 // Timestamp-only probe (~60 bytes). The full row is >1MB, so the 30s poll checks
 // this first and only downloads the data when another device actually saved.
 async function supaGetMeta() {
-  if (SYNC_API) {
-    var wres = await fetch(SYNC_API + '/data?meta=1', { headers: { 'Accept': 'application/json' } });
-    if (!wres.ok) throw new Error('fetch ' + wres.status);
-    return await wres.json();
-  }
-  var hdrs = await getSupaHdr();
-  var res = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.main&select=updated_at', { headers: hdrs });
-  if (!res.ok) throw new Error('fetch ' + res.status);
-  var rows = await res.json();
-  return rows[0] || null;
+  var wres = await fetch(SYNC_API + '/data?meta=1', { headers: { 'Accept': 'application/json' } });
+  if (!wres.ok) throw new Error('fetch ' + wres.status);
+  return await wres.json();
 }
 // Compare-and-swap write. `expected` is the updated_at we believe the row still
-// holds; PostgREST turns it into a filter, so if another device wrote in the
-// meantime the PATCH matches zero rows and returns [] instead of overwriting
+// holds; the Worker turns it into a filter, so if another device wrote in the
+// meantime the write matches zero rows and returns null instead of overwriting
 // their data. Returns the new row on success, null when the race was lost.
-// select=updated_at keeps the response ~60 bytes rather than echoing the ~1.5MB row.
 async function supaPush(d, expected) {
-  if (SYNC_API) {
-    var wres = await fetch(SYNC_API + '/data', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: d, expected: expected || null })
-    });
-    if (!wres.ok) throw new Error('push ' + wres.status);
-    return await wres.json(); // null when the CAS filter matched nothing
-  }
-  var hdrs = await getSupaHdr({ 'Prefer': 'return=representation' });
-  var q = '/rest/v1/fd_data?id=eq.main&select=updated_at';
-  if (expected) q += '&updated_at=eq.' + encodeURIComponent(expected);
-  var res = await fetch(SUPA_URL + q, {
-    method: 'PATCH',
-    headers: hdrs,
-    body: JSON.stringify({ data: d, updated_at: new Date().toISOString() })
+  var wres = await fetch(SYNC_API + '/data', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: d, expected: expected || null })
   });
-  if (!res.ok) throw new Error('push ' + res.status);
-  var rows = await res.json();
-  return (Array.isArray(rows) && rows.length) ? rows[0] : null;
+  if (!wres.ok) throw new Error('push ' + wres.status);
+  return await wres.json(); // null when the CAS filter matched nothing
 }
 // ─── Email-triage inbox ───
 // External triage sessions drop to-dos into a side row (id='todo-inbox') instead of
@@ -2311,34 +2260,51 @@ async function supaPush(d, expected) {
 // Logbook section once a nextAction is present to seed pdNotes.
 // Inbox row accessors — one place that knows whether we're going through the Worker.
 async function inboxGet() {
-  if (SYNC_API) {
-    var wres = await fetch(SYNC_API + '/inbox', { headers: { 'Accept': 'application/json' } });
-    if (!wres.ok) return null;
-    return await wres.json();
-  }
-  var res = await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox&select=data', { headers: await getSupaHdr() });
-  if (!res.ok) return null;
-  var rows = await res.json();
-  return rows[0] || null;
+  var wres = await fetch(SYNC_API + '/inbox', { headers: { 'Accept': 'application/json' } });
+  if (!wres.ok) return null;
+  return await wres.json();
 }
 async function inboxPut(cleared) {
-  if (SYNC_API) {
-    await fetch(SYNC_API + '/inbox', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: cleared })
-    });
-    return;
-  }
-  await fetch(SUPA_URL + '/rest/v1/fd_data?id=eq.todo-inbox', {
-    method: 'PATCH',
-    headers: await getSupaHdr({ 'Prefer': 'return=minimal' }),
-    body: JSON.stringify({ data: cleared, updated_at: new Date().toISOString() })
+  await fetch(SYNC_API + '/inbox', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: cleared })
   });
 }
 
+// Dedupe stamp for a queued item. It used to be srcThread alone, which made every
+// item from one email share a stamp, so only the first ever landed and the rest
+// were dropped as "already applied" (amenity events from one announcement, several
+// logbook items from one guard passdown). Thread + item id keeps it unique while
+// still starting with the thread id, so stripping and provenance lookups work as before.
+function queueStamp(prefix, item) {
+  var t = item.srcThread || '', id = item.id || '';
+  return prefix + (t && id ? t + '#' + id : (t || id));
+}
+// Already applied? Either this exact item's stamp is present, or a record from the
+// same email thread that is evidently the same item (sameItem) is — so a re-push
+// that arrives with a fresh id still can't create a duplicate. Matches old-style
+// "[prefix:<thread>]" stamps as well as "[prefix:<thread>#<id>]".
+function queueSeen(records, prefix, item, sameItem) {
+  var exact = '[' + queueStamp(prefix, item) + ']';
+  var t = item.srcThread ? '[' + prefix + item.srcThread : null;
+  return (records || []).some(function (r) {
+    var n = r.notes || '';
+    if (n.indexOf(exact) !== -1) return true;
+    if (!t) return false;
+    var i = n.indexOf(t);
+    if (i === -1) return false;
+    var next = n.charAt(i + t.length);
+    return (next === ']' || next === '#') && sameItem(r);
+  });
+}
+function queueUnit(u) { return String(u || '').replace(/^0+(?=\d)/, ''); }
+
 async function mergeTodoInbox() {
   if (!cloudPullOk) return;
+  // A tab still running an older build may not understand newer queue fields and
+  // would silently drop them — leave the queue for an up-to-date tab to drain.
+  if (_staleBuild) return;
   try {
     var row = await inboxGet();
     if (!row) return;
@@ -2395,17 +2361,35 @@ async function mergeTodoInbox() {
     moveUpdates.forEach(function (mu) {
       if (!mu || !mu.unit) return;
       var isBooking = mu.kind === 'booking'; // RiseIO booking vs welcome letter
-      var stamp = (isBooking ? 'booking:' : 'letter:') + (mu.srcThread || mu.id || '');
+      var stamp = queueStamp(isBooking ? 'booking:' : 'letter:', mu);
       var unitNorm = function (u) { return String(u || '').replace(/^0+(?=\d)/, ''); }; // letters/passdowns zero-pad units, Moves cards don't
-      var card = (state.moves || []).find(function (mv) { return !mv.archivedAt && mv.type === 'in' && unitNorm(mv.unit) === unitNorm(mu.unit); });
+      var unitCards = (state.moves || []).filter(function (mv) { return !mv.archivedAt && unitNorm(mv.unit) === unitNorm(mu.unit); });
+      var card;
+      if (!isBooking) {
+        // Welcome letters are always about the incoming resident.
+        card = unitCards.find(function (mv) { return mv.type === 'in'; });
+      } else if (mu.moveType === 'in' || mu.moveType === 'out') {
+        card = unitCards.find(function (mv) { return mv.type === mu.moveType; });
+      } else if (unitCards.length === 1) {
+        // Move-outs are when residents book the dock most — this used to look at
+        // move-in cards only, so every move-out booking fell through to a to-do.
+        card = unitCards[0];
+      } else if (unitCards.length > 1) {
+        // Unit turning over (outgoing + incoming card): the booking belongs to
+        // whichever move is dated closest to it.
+        var apptMs = mu.apptDate ? new Date(mu.apptDate + 'T12:00').getTime() : Date.now();
+        var dist = function (mv) { var t = mv.date ? new Date(mv.date + 'T12:00').getTime() : NaN; return isNaN(t) ? Infinity : Math.abs(t - apptMs); };
+        card = unitCards.slice().sort(function (a, b) { return dist(a) - dist(b); })[0];
+      }
       if (card) {
-        if ((card.notes || '').indexOf(stamp) !== -1) return; // already applied
+        // Per card: any stamp from the same thread on THIS card means already applied.
+        if (queueSeen([card], isBooking ? 'booking:' : 'letter:', mu, function () { return true; })) return;
         var flags = [];
-        if (mu.leaseStart) {
+        if (mu.leaseStart && card.type === 'in') {
           if (!card.date || card.date === 'TBD') card.date = mu.leaseStart;
           else if (card.date !== mu.leaseStart) flags.push('⚠ Letter lease start ' + mu.leaseStart + ' differs from this entry (' + card.date + ') — verify');
         }
-        if (mu.total) {
+        if (mu.total && card.type === 'in') {
           var curTotal = String(card.total || '').trim();
           if (!curTotal) card.total = mu.total;
           else if (curTotal.replace(/[,$\s]/g, '') !== String(mu.total).replace(/[,$\s]/g, '')) flags.push('⚠ Letter total $' + mu.total + ' differs from this entry ($' + curTotal + ') — verify');
@@ -2426,7 +2410,7 @@ async function mergeTodoInbox() {
         if (mu.note) addNote.push(String(mu.note));
         addNote = addNote.concat(flags);
         card.notes = (card.notes || '').trim() ? (card.notes.trim() + '\n' + addNote.join('\n')) : addNote.join('\n');
-        logActivity('moves', 'edit', srcLabel + ' data applied — Unit ' + mu.unit + (flags.length ? ' (' + flags.length + ' flag(s) to verify)' : ''), mu.addedBy || 'Email Triage');
+        logActivity('moves', 'edit', srcLabel + ' data applied — Unit ' + mu.unit + (card.type === 'out' ? ' (move-out)' : '') + (flags.length ? ' (' + flags.length + ' flag(s) to verify)' : ''), mu.addedBy || 'Email Triage');
         movesTouched++;
       } else {
         if (!state.userTodos) state.userTodos = {};
@@ -2462,10 +2446,12 @@ async function mergeTodoInbox() {
     var amenitiesTouched = 0;
     amenityUpdates.forEach(function (au) {
       if (!au || !au.unit || !au.space || !au.date) return;
-      var stamp = 'booking:' + (au.srcThread || au.id || '');
+      var stamp = queueStamp('booking:', au);
       var unorm = function (u) { return String(u || '').replace(/^0+(?=\d)/, ''); };
       if (!state.amenities) state.amenities = [];
-      if (state.amenities.some(function (a) { return (a.notes || '').indexOf(stamp) !== -1; })) return; // already applied
+      if (queueSeen(state.amenities, 'booking:', au, function (a) {
+        return queueUnit(a.unit) === queueUnit(au.unit) && a.date === au.date && String(a.space || '').toLowerCase() === String(au.space || '').toLowerCase();
+      })) return; // already applied
       var flags = [];
       var match = state.amenities.find(function (a) {
         return unorm(a.unit) === unorm(au.unit) && a.date === au.date && String(a.space || '').toLowerCase() === String(au.space || '').toLowerCase();
@@ -2513,9 +2499,11 @@ async function mergeTodoInbox() {
     var logsTouched = 0;
     logbookEntries.forEach(function (le) {
       if (!le || !le.notes) return;
-      var stamp = 'triage:' + (le.srcThread || le.id || '');
+      var stamp = queueStamp('triage:', le);
       if (!state.logbook) state.logbook = [];
-      if (state.logbook.some(function (e) { return (e.notes || '').indexOf(stamp) !== -1; })) return; // already applied
+      if (queueSeen(state.logbook, 'triage:', le, function (e) {
+        return queueUnit(e.unit) === queueUnit(le.unit) && (e.location || '') === (le.location || '') && stripTriageStamp(e.notes || '').indexOf(String(le.notes).slice(0, 60)) === 0;
+      })) return; // already applied
       var noteLines = [String(le.notes), '[' + stamp + ']'];
     // The stamp above is a dedupe marker only (checked via indexOf against stored
     // notes) — it must stay in the stored string, but display code should never
@@ -2547,9 +2535,11 @@ async function mergeTodoInbox() {
     var keysTouched = 0;
     keyEntries.forEach(function (ke) {
       if (!ke || !ke.unit) return;
-      var stamp = 'triage:' + (ke.srcThread || ke.id || '');
+      var stamp = queueStamp('triage:', ke);
       if (!state.keys) state.keys = [];
-      if (state.keys.some(function (k) { return (k.notes || '').indexOf(stamp) !== -1; })) return; // already applied
+      if (queueSeen(state.keys, 'triage:', ke, function (k) {
+        return queueUnit(k.unit) === queueUnit(ke.unit) && String(k.fob || '') === String(ke.fob || '');
+      })) return; // already applied
       var noteLines = [String(ke.notes || ''), '[' + stamp + ']'].filter(Boolean);
       // type defaults to 'one-time' (the card-audit-backfill case this queue was built
       // for) but a caller can pass 'resident' for a permanent/replacement resident key —
@@ -2600,9 +2590,11 @@ async function mergeTodoInbox() {
     var parkingTouched = 0;
     parkingEntries.forEach(function (pe) {
       if (!pe || !pe.unit || !pe.resident) return;
-      var stamp = 'triage:' + (pe.srcThread || pe.id || '');
+      var stamp = queueStamp('triage:', pe);
       if (!state.parking) state.parking = [];
-      if (state.parking.some(function (p) { return (p.notes || '').indexOf(stamp) !== -1; })) return; // already applied
+      if (queueSeen(state.parking, 'triage:', pe, function (p) {
+        return queueUnit(p.unit) === queueUnit(pe.unit) && String(p.resident || '').toLowerCase() === String(pe.resident || '').toLowerCase();
+      })) return; // already applied
       var noteLines = [String(pe.notes || ''), '[' + stamp + ']'].filter(Boolean);
       var newP = {
         id: pe.id || uid(), category: pe.category || 'Resident', unit: String(pe.unit), resident: pe.resident,
@@ -2634,9 +2626,11 @@ async function mergeTodoInbox() {
     var movesCreated = 0;
     moveCreates.forEach(function (mc) {
       if (!mc || !mc.unit || !mc.resident || (mc.type !== 'in' && mc.type !== 'out') || !mc.date) return;
-      var stamp = 'created:' + (mc.srcThread || mc.id || '');
+      var stamp = queueStamp('created:', mc);
       if (!state.moves) state.moves = [];
-      if (state.moves.some(function (m) { return (m.notes || '').indexOf(stamp) !== -1; })) return; // already applied
+      if (queueSeen(state.moves, 'created:', mc, function (m) {
+        return queueUnit(m.unit) === queueUnit(mc.unit) && m.type === mc.type;
+      })) return; // already applied
       var customIn = state.customInTasks || DEFAULT_IN_TASKS;
       var customOut = state.customOutTasks || DEFAULT_OUT_TASKS;
       var tasks = (mc.type === 'in' ? customIn : customOut).map(function (t) { return { id: uid(), text: t.text, cat: t.cat, done: false, dueDate: null, hint: t.hint || null, paymentTask: t.paymentTask || false, automationId: getTaskAutomationId(t) || null }; });
@@ -2712,10 +2706,27 @@ async function mergeTodoInbox() {
               || (state.unitRecords || []).find(function (u) { return String(u.unit) === String(ed.targetId); });
       }
       if (!target) return; // record gone/never existed — drop the request rather than retry forever
+      var prevVals = [];
       Object.keys(ed.patch).forEach(function (k) {
-        if (k === 'id' || k === 'done' || k === 'createdAt' || k === 'addedBy') return;
-        target[k] = ed.patch[k];
+        if (k === 'id' || k === 'done' || k === 'createdAt' || k === 'addedBy' || k === 'editHistory') return;
+        var nv = ed.patch[k], ov = target[k];
+        // A patch to notes would wipe the hidden dedupe stamps ([triage:…], [booking:…]…)
+        // the queues rely on, so a later re-push could double-apply. Carry over any the
+        // new text doesn't already contain.
+        if (k === 'notes' && typeof ov === 'string' && typeof nv === 'string') {
+          var stamps = ov.match(/\[(?:triage|booking|letter|created):[^\]]*\]/g) || [];
+          stamps.forEach(function (st) { if (nv.indexOf(st) === -1) nv = nv.replace(/\s*$/, '') + '\n' + st; });
+        }
+        if (ov != null && ov !== '' && JSON.stringify(ov) !== JSON.stringify(nv)) prevVals.push({ field: k, prev: ov });
+        target[k] = nv;
       });
+      // Keep what a correction overwrote — the queue patches fields wholesale and the
+      // activity log only says "Field(s) corrected", so without this the old text is gone.
+      if (prevVals.length) {
+        if (!Array.isArray(target.editHistory)) target.editHistory = [];
+        target.editHistory.push({ at: Date.now(), by: ed.addedBy || 'Email Triage', changes: prevVals });
+        if (target.editHistory.length > 10) target.editHistory = target.editHistory.slice(-10);
+      }
       if ('lastUpdated' in target) target.lastUpdated = Date.now();
       logActivity(ed.queue, 'edit', 'Field(s) corrected via confirmed triage edit' + (target.unit ? ' — Unit ' + target.unit : ''), ed.addedBy || 'Email Triage');
       editsByQueue[ed.queue]++;
@@ -2778,7 +2789,8 @@ async function mergeTodoInbox() {
     // right before clearing (rather than blanking from the stale rowData snapshot)
     // so anything a concurrent inbox_push.py run appended while we were merging/
     // saving survives instead of being silently wiped by this PATCH.
-    var seenTodoIds = {}, seenMoveIds = {}, seenAmenIds = {}, seenLogIds = {}, seenKeyIds = {}, seenMoveCreateIds = {}, seenEditIds = {}, seenParkingIds = {}, seenCameraCheckIds = {};
+    var seenTodoIds = {}, seenMoveIds = {}, seenAmenIds = {}, seenLogIds = {}, seenKeyIds = {}, seenMoveCreateIds = {}, seenEditIds = {}, seenParkingIds = {}, seenCameraCheckIds = {}, seenCompletionIds = {};
+    completions.forEach(function (cp) { if (cp && cp.id) seenCompletionIds[cp.id] = true; });
     inbox.forEach(function (t) { if (t && t.id) seenTodoIds[t.id] = true; });
     moveUpdates.forEach(function (m) { if (m && m.id) seenMoveIds[m.id] = true; });
     amenityUpdates.forEach(function (a) { if (a && a.id) seenAmenIds[a.id] = true; });
@@ -2802,11 +2814,48 @@ async function mergeTodoInbox() {
     var remainEdits = (Array.isArray(freshRowData.edits) ? freshRowData.edits : []).filter(function (ed) { return !(ed && seenEditIds[ed.id]); });
     var remainParking = (Array.isArray(freshRowData.parkingEntries) ? freshRowData.parkingEntries : []).filter(function (pe) { return !(pe && seenParkingIds[pe.id]); });
     var remainCameraChecks = (Array.isArray(freshRowData.cameraCheckEntries) ? freshRowData.cameraCheckEntries : []).filter(function (cc) { return !(cc && seenCameraCheckIds[cc.id]); });
-    var cleared = Object.assign({}, freshRowData, { todos: remainTodos, moveUpdates: remainMoves, amenityUpdates: remainAmens, logbookEntries: remainLogs, keyEntries: remainKeys, moveCreates: remainMoveCreates, edits: remainEdits, parkingEntries: remainParking, cameraCheckEntries: remainCameraChecks });
+    // Completions were applied above but never cleared here, so they sat in the queue
+    // forever: the inbox never emptied, and a to-do reopened by hand got re-closed on
+    // the next 5-minute cycle.
+    var remainCompletions = (Array.isArray(freshRowData.completions) ? freshRowData.completions : []).filter(function (cp) { return !(cp && seenCompletionIds[cp.id]); });
+    var cleared = Object.assign({}, freshRowData, { todos: remainTodos, moveUpdates: remainMoves, amenityUpdates: remainAmens, logbookEntries: remainLogs, keyEntries: remainKeys, moveCreates: remainMoveCreates, edits: remainEdits, parkingEntries: remainParking, cameraCheckEntries: remainCameraChecks, completions: remainCompletions });
     await inboxPut(cleared);
   } catch (e) { console.warn('mergeTodoInbox failed:', e); }
 }
 setInterval(function () { mergeTodoInbox(); }, 300000);
+
+// ─── New-build detection ───
+// Front-desk tabs stay open for days, so after every deploy some machine is still
+// running yesterday's code. A HEAD request for this page is a few hundred bytes;
+// its ETag (or Last-Modified) changes whenever a new build is published. The first
+// answer is this tab's baseline; a different answer seen twice in a row means a
+// new build is live (twice, so one odd edge-server response can't trip it).
+async function checkForNewBuild() {
+  if (_staleBuild || location.protocol === 'file:') return;
+  try {
+    var res = await fetch(location.pathname, { method: 'HEAD', cache: 'no-store' });
+    if (!res.ok) return;
+    var sig = res.headers.get('etag') || res.headers.get('last-modified');
+    if (!sig) return;
+    if (_buildSig === null) { _buildSig = sig; return; }
+    if (sig === _buildSig) { _buildSigPending = null; return; }
+    if (_buildSigPending !== sig) { _buildSigPending = sig; return; }
+    _staleBuild = true;
+    showNewBuildNotice();
+  } catch (e) { /* offline or Access session expired — try again next cycle */ }
+}
+function showNewBuildNotice() {
+  if (g('new-build-notice')) return;
+  var n = document.createElement('div');
+  n.id = 'new-build-notice';
+  n.setAttribute('role', 'status');
+  n.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99998;background:var(--surface,#fff);color:var(--text,#111);border:2px solid var(--accent,#1A5C3E);padding:12px 16px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);display:flex;gap:12px;align-items:center;max-width:calc(100vw - 32px);font-size:13px;line-height:1.45';
+  n.innerHTML = '<span>&#10024; <strong>A newer version of the dashboard is live.</strong> Reload to get it &mdash; your saved work is kept.</span>'
+    + '<button onclick="location.reload()" style="' + _syncBtnCss + ';white-space:nowrap">Reload now</button>';
+  document.body.appendChild(n);
+}
+setInterval(checkForNewBuild, 600000);
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') checkForNewBuild(); });
 // ===== [APP STATE & GLOBALS] =================================================
 function setSyncStatus(cls, msg) {
   var dot = g('sync-dot'), lbl = g('sync-label');
@@ -3577,6 +3626,12 @@ function housekeepState() {
   var changed = false;
   // Activity log: 300 entries covers weeks of desk activity; beyond that it was dead weight in every sync.
   if ((state.activityLog || []).length > 300) { var _alBefore = state.activityLog.length; state.activityLog = trimActivityLog(state.activityLog); if (state.activityLog.length !== _alBefore) changed = true; }
+  // Staff visibility list still named sections deleted on 2026-08-14 (tours, guests,
+  // maintenance) plus 'vacant', which was never a section. Keep only real ones.
+  if (Array.isArray(state.staffHiddenSections)) {
+    var _realHidden = state.staffHiddenSections.filter(function (s) { return !!document.getElementById('section-' + s); });
+    if (_realHidden.length !== state.staffHiddenSections.length) { state.staffHiddenSections = _realHidden; changed = true; }
+  }
   // Passdowns age out of the synced row after 90 days.
   var cutoff = Date.now() - 90 * 86400000;
   function prunePd(lst) {
@@ -5416,7 +5471,7 @@ function toggleMoveLogged() {
 // Hide those from the table, show ⚠ lines as flags, and collapse anything past two lines.
 function moveNoteLines(notes) {
   return String(notes || '')
-    .replace(/\[(?:created|booking|triage):[^\]]*\]/g, '')
+    .replace(/\[(?:created|booking|triage|letter):[^\]]*\]/g, '')
     .split(/\n+/)
     .map(function (l) { return l.trim(); })
     .filter(function (l) { return l && !/^Added via confirmed triage request/i.test(l) && !/^RiseIO booking auto-imported/i.test(l); });
@@ -6404,9 +6459,13 @@ function lbTypeChange() {
   var irTypes = ['Medical emergency — 911 called','Slip / fall','Unhoused individual — SFPD called','Unauthorized access','Disturbance / altercation','Trespassing','Package theft suspected'];
   var managerTypes = secTypes.concat(medTypes).concat(seriousPropTypes).concat(['Management']);
   var concernTypes = ['Maintenance — Unit','Maintenance — Common Area','Leasing','Package','Management'];
-  var mgrWrap = g('lb-manager-wrap'); if (mgrWrap) mgrWrap.style.display = managerTypes.indexOf(v) !== -1 ? '' : 'none';
-  var ftgWrap = g('lb-footage-wrap'); if (ftgWrap) ftgWrap.style.display = footageTypes.indexOf(v) !== -1 ? '' : 'none';
-  var irWrap = g('lb-ir-wrap'); if (irWrap) irWrap.style.display = irTypes.indexOf(v) !== -1 ? '' : 'none';
+  // "Other" is a free-text type (and what triage-created entries open as), so the
+  // type alone can't say whether it's serious. Offer all three safety checkboxes
+  // rather than hide them — the 9/15 axe report couldn't be flagged for an IR.
+  var isOther = v === 'Other';
+  var mgrWrap = g('lb-manager-wrap'); if (mgrWrap) mgrWrap.style.display = (isOther || managerTypes.indexOf(v) !== -1) ? '' : 'none';
+  var ftgWrap = g('lb-footage-wrap'); if (ftgWrap) ftgWrap.style.display = (isOther || footageTypes.indexOf(v) !== -1) ? '' : 'none';
+  var irWrap = g('lb-ir-wrap'); if (irWrap) irWrap.style.display = (isOther || irTypes.indexOf(v) !== -1) ? '' : 'none';
   var fuHint = g('lb-followup-hint'); if (fuHint) fuHint.style.display = concernTypes.indexOf(v) !== -1 ? '' : 'none';
 }
 
@@ -6438,8 +6497,14 @@ function openEditLogbook(id) {
   editingLogbookId = id;
   var dateEl = g('lb-date'); if (dateEl) dateEl.value = e.createdAt ? localDateStr(new Date(e.createdAt)) : today();
   var timeEl = g('lb-time'); if (timeEl) timeEl.value = e.time || '';
-  var typeEl = g('lb-type'); if (typeEl) typeEl.value = e.type || 'Dry Cleaning';
-  var otherEl = g('lb-other'); if (otherEl) otherEl.value = '';
+  // Triage-created entries and "Other" entries carry a free-text type that isn't a
+  // dropdown option. Setting the select to it left it blank, so saving the edit
+  // failed with "Select a type" until a new type was picked — which overwrote the
+  // description. Show those as Other + their text instead.
+  var typeEl = g('lb-type'), otherEl = g('lb-other');
+  var isListed = typeEl && e.type && Array.prototype.some.call(typeEl.options, function (o) { return o.value === e.type; });
+  if (typeEl) typeEl.value = isListed ? e.type : (e.type ? 'Other' : '');
+  if (otherEl) otherEl.value = (!isListed && e.type && e.type !== 'Other') ? e.type : '';
   var mnEl = g('lb-manager-notified'); if (mnEl) mnEl.checked = !!e.managerNotified;
   var fpEl = g('lb-footage-preserved'); if (fpEl) fpEl.checked = !!e.footagePreserved;
   var irEl = g('lb-incident-report'); if (irEl) irEl.checked = !!e.incidentReport;
@@ -6986,7 +7051,12 @@ function renderSgtKeys() {
   // roster of a dozen units used to run 1400px+ tall for 2 small key-chips each. Bed-type group
   // headers span the full grid width (grid-column:1/-1), which breaks the row and lets cards
   // resume filling from column 1 — no per-group sub-containers needed.
-  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px">';
+  // Standing tour rules, set 2026-10-12 after an occupied unit was opened with a
+  // master key overnight. Shown above the roster so they're read at the moment of use.
+  var html = '<div style="font-size:12px;line-height:1.55;color:var(--text2);background:var(--surface2,rgba(0,0,0,.03));border-left:3px solid var(--amber);border-radius:6px;padding:8px 12px;margin-bottom:12px">'
+    + '<strong style="color:var(--text)">Tour rules:</strong> until <strong>3:00 PM</strong> only &middot; unit must be <strong>Vacant AND Immediate</strong> on the availability report &middot; '
+    + '<strong>SGT keys only</strong> &mdash; not in the set, no access &middot; <strong>never a master key</strong>; knock and announce.</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px">';
   var lastBed = null, firstGroup = true;
   sgtSortRoster(roster).forEach(function (u) {
     var bedLabel = String(u.bed || '').trim() || 'Other';
@@ -14706,7 +14776,7 @@ var GUIDE_DATA = [
 
 
   { id:'g-keys', icon:'🔑', title:'Key Tracker', keywords:'key fob card drawer one-time resident vendor issued returned overdue guest unit parking transponder sgt tour off grid',
-    html:'<h4>One-Time Cards</h4><p>The default view, laid out like the front desk&rsquo;s One-Time Key Tracker sheet. To issue a card, fill in the unit, name and the Visionline Reg # shown when you program it, then click <strong>Issue Card</strong> — date, time and your name are filled in for you. <strong>Out now</strong> lists every card still out; rows turn red after 2 hours and show the $75 fee status. Click <strong>Return</strong> when a card comes back — it records the time and who received it. <strong>CSV</strong> downloads the whole log as a spreadsheet with the same columns as the Excel sheet.</p><h4>Key Types</h4><ul><li><strong>Resident fob</strong> — permanent, tracked for records, not time-sensitive.</li><li><strong>One-time card</strong> — guests, vendors, contractors. Overdue after 2 hours.</li><li><strong>Vendor card</strong> — tracked separately with company and work area.</li><li><strong>Self-guided tour keys</strong> — owned by a unit rather than drawn from the pool.</li></ul><h4>One Card, One Place</h4><p>A card number already issued cannot be issued again — both the drawer and <strong>+ Log Key</strong> will refuse it and name the unit holding it. Return it first.</p><h4>Other Tabs</h4><p><strong>Currently Out</strong> lists everything outstanding: one row per resident, with a tag for each key they hold (unit key, mail key) and its own return button. <strong>Resident Keys</strong>, <strong>All</strong>, <strong>Parking</strong> and <strong>Credentials</strong> cover the standing records.</p><h4>Supplies Link</h4><p>Issuing and returning cards adjusts the card-pool counts shown in Supplies automatically. Those tiles are derived from here — do not hand-count them.</p>' },
+    html:'<h4>One-Time Cards</h4><p>The default view, laid out like the front desk&rsquo;s One-Time Key Tracker sheet. To issue a card, fill in the unit, name and the Visionline Reg # shown when you program it, then click <strong>Issue Card</strong> — date, time and your name are filled in for you. <strong>Out now</strong> lists every card still out; rows turn red after 2 hours and show the $75 fee status. Click <strong>Return</strong> when a card comes back — it records the time and who received it. <strong>CSV</strong> downloads the whole log as a spreadsheet with the same columns as the Excel sheet.</p><h4>Key Types</h4><ul><li><strong>Resident fob</strong> — permanent, tracked for records, not time-sensitive.</li><li><strong>One-time card</strong> — guests, vendors, contractors. Overdue after 2 hours.</li><li><strong>Vendor card</strong> — tracked separately with company and work area.</li><li><strong>Self-guided tour keys</strong> — owned by a unit rather than drawn from the pool.</li></ul><h4>Self-Guided Tour Rules</h4><ul><li>Self-guided tours run <strong>until 3:00 PM</strong> only.</li><li>The unit must be marked <strong>both Vacant and Immediate</strong> on the unit availability report. If in doubt, check EliseAI or ask leasing.</li><li>Use <strong>only the day&rsquo;s prepared SGT keys</strong>. A unit not in the set gets no access &mdash; check with leasing.</li><li><strong>Never use a master key for a tour.</strong> Knock and announce. If someone pressures you for access, say no, log it, and refer them to leasing.</li></ul><h4>One Card, One Place</h4><p>A card number already issued cannot be issued again — both the drawer and <strong>+ Log Key</strong> will refuse it and name the unit holding it. Return it first.</p><h4>Other Tabs</h4><p><strong>Currently Out</strong> lists everything outstanding: one row per resident, with a tag for each key they hold (unit key, mail key) and its own return button. <strong>Resident Keys</strong>, <strong>All</strong>, <strong>Parking</strong> and <strong>Credentials</strong> cover the standing records.</p><h4>Supplies Link</h4><p>Issuing and returning cards adjusts the card-pool counts shown in Supplies automatically. Those tiles are derived from here — do not hand-count them.</p>' },
 
   { id:'g-amenities', icon:'🎉', title:'Amenity Bookings', keywords:'amenity booking rooftop gym event space resident unit date time start end notes past upcoming shift passdown',
     html:'<h4>Adding a Booking</h4><p>Click <strong>+ Add Booking</strong>. Select the space, resident name, unit, booking date, start and end time, and any notes.</p><h4>Tabs</h4><ul><li><strong>Upcoming</strong> — bookings from today forward</li><li><strong>Past</strong> — bookings with a date already passed</li></ul><h4>Passdown Integration</h4><p>Today\'s bookings that fall within the selected shift automatically appear in the Daily Passdown auto-blocks. Admin users with the lookahead setting enabled also see upcoming bookings for the next 1–2 days.</p>' },
@@ -16079,7 +16149,10 @@ function checkCarriedItemsOnLogin() {
   recentKeys.forEach(function(k){ carriedItems.push({ label: '🗝 Key still out — Unit ' + k.unit + ' (' + k.name + (k.guest?' / '+k.guest:'') + ')' }); });
   // Open desk requests stay in full: they are live work whatever their age, and
   // there are few enough of them to act on.
-  openConcierge.forEach(function(c){ carriedItems.push({ label: '🎭 Concierge request — Unit ' + c.unit + ': ' + c.type }); });
+  openConcierge.forEach(function(c){
+    var where = c.unit ? 'Unit ' + c.unit : (c.location || 'No unit');
+    carriedItems.push({ label: '📋 Open logbook item — ' + where + ': ' + c.type });
+  });
   if (!carriedItems.length && !backlogCount) return;
   var firstName = currentUser.name.split(' ')[0];
   var html = '';
@@ -16096,7 +16169,7 @@ function checkCarriedItemsOnLogin() {
     carriedItems.forEach(function(item, i) {
       html += '<label style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;cursor:pointer">'
         + '<input type="checkbox" data-carried-idx="' + i + '" style="width:15px;height:15px;flex-shrink:0;accent-color:var(--accent)">'
-        + '<span style="font-size:12px;color:var(--text)">' + item.label + '</span></label>';
+        + '<span style="font-size:12px;color:var(--text)">' + esc(item.label) + '</span></label>';
     });
     html += '</div>';
   }
@@ -16558,6 +16631,7 @@ async function init() {
   // Camera Check replaced patrol rounds and the old checkpoint QR stickers are down.
   var pendingKeyScan = false, pendingCameraScan = false;
   try { var params = new URLSearchParams(window.location.search); pendingKeyScan = params.get('keyscan') === '1'; pendingCameraScan = params.get('camerascan') === '1'; } catch(e) {}
+  checkForNewBuild(); // records this tab's baseline build
   await pullCloud();
   await migratePinsToHashed();
   purgeDeadResidentProfiles();
