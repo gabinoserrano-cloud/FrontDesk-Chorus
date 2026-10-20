@@ -4564,10 +4564,34 @@ function renderDash() {
     html += fobNote;
   }
   html += '</div></div>';
-  html += '<div class="card"><div class="card-hdr"><span class="card-title">Shift To-Do</span><span class="card-count">' + pendTd.length + ' pending</span></div><div class="card-body" style="padding:8px 14px">';
-  if (!pendTd.length) html += '<div class="text-3 text-sm">All clear</div>';
-  else pendTd.slice(0, 5).forEach(function (t2) { html += '<div class="flex items-center gap-8" style="padding:3px 0;border-bottom:1px solid var(--border2)">' + (t2.priority === 'urgent' ? '<span style="color:var(--red);font-size:12px">!</span>' : '<span style="color:var(--text3)">&#183;</span>') + '<span class="text-sm" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + t2.text + '</span></div>'; });
-  html += '</div></div></div>';
+  // Moves-only trial (2026-10-19): with To-Do hidden, the generic card buried the
+  // pre-move / post-move-in / move-out reminders among unrelated to-dos. When To-Do is
+  // hidden for this user, the card shows only move reminders that are due or overdue,
+  // each linking to its move card. Unhiding To-Do brings the original card back.
+  if (secHiddenForMe('todos')) {
+    var t0d = today();
+    var moveRem = pendTd.filter(function (t2) { return t2.moveRef && t2.dueDate && t2.dueDate <= t0d; })
+      .sort(function (a, b) { return a.dueDate < b.dueDate ? -1 : a.dueDate > b.dueDate ? 1 : 0; });
+    html += '<div class="card"><div class="card-hdr"><span class="card-title">Move Reminders</span><span class="card-count">' + moveRem.length + ' due</span></div><div class="card-body" style="padding:8px 14px">';
+    if (!moveRem.length) html += '<div class="text-3 text-sm">No move calls or reminders due</div>';
+    else moveRem.forEach(function (t2) {
+      var late = Math.round((new Date(t0d + 'T12:00:00') - new Date(t2.dueDate + 'T12:00:00')) / 86400000);
+      var dueTxt = late <= 0 ? 'Today' : late + 'd overdue';
+      html += '<div class="flex items-center gap-8" style="padding:6px 0;border-bottom:1px solid var(--border2)">'
+        + '<div style="flex:1;min-width:0;cursor:pointer" title="Open move card" onclick="openMoveFromDash(\'' + esc(t2.moveRef) + '\')">'
+        + '<div class="text-sm" style="line-height:1.35">' + esc(t2.text) + '</div>'
+        + '<div style="font-size:11px;font-weight:600;color:' + (late > 0 ? 'var(--red)' : 'var(--text2)') + '">' + dueTxt + '</div>'
+        + '</div>'
+        + (isViewerUser() ? '' : '<button class="btn btn-secondary btn-xs" style="flex-shrink:0" title="Mark done" onclick="toggleTodo(\'' + esc(t2.id) + '\',true)">Done</button>')
+        + '</div>';
+    });
+    html += '</div></div></div>';
+  } else {
+    html += '<div class="card"><div class="card-hdr"><span class="card-title">Shift To-Do</span><span class="card-count">' + pendTd.length + ' pending</span></div><div class="card-body" style="padding:8px 14px">';
+    if (!pendTd.length) html += '<div class="text-3 text-sm">All clear</div>';
+    else pendTd.slice(0, 5).forEach(function (t2) { html += '<div class="flex items-center gap-8" style="padding:3px 0;border-bottom:1px solid var(--border2)">' + (t2.priority === 'urgent' ? '<span style="color:var(--red);font-size:12px">!</span>' : '<span style="color:var(--text3)">&#183;</span>') + '<span class="text-sm" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + t2.text + '</span></div>'; });
+    html += '</div></div></div>';
+  }
   // Turnover Ready widget
   if (turnoverReady.length) {
     html += '<div class="card" style="margin-top:14px"><div class="card-hdr"><span class="card-title">Ready for Turnover</span><span class="card-count">' + turnoverReady.length + ' unit' + (turnoverReady.length > 1 ? 's' : '') + '</span><button class="btn btn-xs btn-secondary" style="margin-left:auto" onclick="navToMoves(\'turnover\')">View all &rarr;</button></div><div class="card-body" style="padding:8px 14px">';
@@ -4687,6 +4711,24 @@ function navToMoves(filter) {
   if (!item) return;
   nav(item);
   setTimeout(function () { setMoveFilter(filter); }, 80);
+}
+// Same rule renderNavVisibility uses to drop a sidebar link, so Home can tell
+// whether this user can actually reach a section.
+function secHiddenForMe(sec) {
+  if ((state.hiddenSections || []).indexOf(sec) !== -1) return true;
+  if (currentUser && currentUser.role === 'staff' && (STAFF_HIDDEN.indexOf(sec) !== -1 || (state.staffHiddenSections || []).indexOf(sec) !== -1)) return true;
+  if (isViewerUser() && VIEWER_ALLOWED_SECS.indexOf(sec) === -1) return true;
+  return false;
+}
+// Jump from Home to one move card, opened and scrolled into view. The 'all'
+// filter is used so the card is in the table whatever its date.
+function openMoveFromDash(moveId) {
+  openMoveId = moveId;
+  navToMoves('all');
+  setTimeout(function () {
+    var e = g('cl-' + moveId) || g('mc-' + moveId);
+    if (e) e.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 200);
 }
 document.addEventListener('click', function (e) { if (!e.target.closest('.search-wrap')) { var r = g('dash-results'); if (r) r.style.display = 'none'; } });
 
