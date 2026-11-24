@@ -262,50 +262,6 @@
     margin-bottom: 40px;
   }
 
-  /* ── ELEVATOR SHORTCUTS TABLE ── */
-  .shortcuts-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 100px;
-    gap: 0;
-    border: 1px solid rgba(61,46,30,0.15);
-    border-radius: 2px;
-    overflow: hidden;
-    margin-bottom: 60px;
-  }
-
-  .shortcuts-grid .header {
-    background: var(--brown);
-    color: var(--cream);
-    font-size: 10px;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    padding: 14px 20px;
-    font-weight: 500;
-  }
-
-  .shortcuts-grid .cell {
-    padding: 16px 20px;
-    border-bottom: 1px solid rgba(61,46,30,0.1);
-    font-size: 14px;
-    line-height: 1.5;
-  }
-
-  .shortcuts-grid .cell.shortcut {
-    font-family: 'Jost', sans-serif;
-    font-weight: 500;
-    font-size: 12px;
-    letter-spacing: 0.12em;
-    color: var(--gold);
-    background: rgba(184,149,90,0.05);
-    border-right: 1px solid rgba(61,46,30,0.1);
-  }
-
-  .shortcuts-grid .cell.floor {
-    text-align: center;
-    color: var(--warm-gray);
-    font-size: 13px;
-  }
-
   /* ── TOUR STOPS ── */
   .stops-list {
     display: flex;
@@ -337,9 +293,23 @@
     font-family: 'Cormorant Garamond', serif;
     font-size: 48px;
     font-weight: 300;
-    color: rgba(184,149,90,0.35);
+    color: rgba(184,149,90,0.75);
     line-height: 1;
-    padding-top: 4px;
+    padding-top: 2px;
+    text-align: center;
+    font-variant-numeric: lining-nums;
+    font-feature-settings: "lnum" 1;
+  }
+
+  .stop-number-label {
+    display: block;
+    font-family: 'Jost', sans-serif;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 6px;
   }
 
   .stop-content {}
@@ -773,8 +743,7 @@
 
   /* ── MOBILE ── */
   @media (max-width: 600px) {
-    .shortcuts-grid { grid-template-columns: 1fr 1fr 80px; }
-    .shortcuts-grid .cell { padding: 12px 14px; font-size: 13px; }
+    .stop-number { font-size: 40px; }
     .stop {
       grid-template-columns: 48px 1fr;
       grid-template-rows: auto auto;
@@ -823,139 +792,108 @@
   <div class="scroll-hint">Explore</div>
 </section>
 
-<!-- ELEVATOR SHORTCUTS -->
-<section class="section">
-  <p class="section-label">Navigate the Building</p>
-  <h2 class="section-title">Elevator Shortcuts</h2>
-
-  <div class="shortcuts-grid">
-    <div class="header">Elevator Button</div>
-    <div class="header">Amenity Space(s)</div>
-    <div class="header" style="text-align:center">Floor</div>
-
-    <div class="cell shortcut">LOBBY</div>
-    <div class="cell">Lobby, 24/7 Front Desk &amp; Co-Working Lounge</div>
-    <div class="cell floor">1</div>
-
-    <div class="cell shortcut">SPEAKEASY &amp; SKYBOX</div>
-    <div class="cell">Skybox Lounge &amp; Speakeasy (Resident Entertainment Hub)</div>
-    <div class="cell floor">2</div>
-
-    <div class="cell shortcut">3</div>
-    <div class="cell">BBQ Grills &amp; Pizza Oven Terrace</div>
-    <div class="cell floor">3</div>
-
-    <div class="cell shortcut">DOG PARK</div>
-    <div class="cell">Pet Relief Area</div>
-    <div class="cell floor">9</div>
-
-    <div class="cell shortcut">FITNESS &amp; POOL</div>
-    <div class="cell">Indoor/Outdoor Training Studio, Outdoor Ninja Warrior Course, Rooftop Pool Deck</div>
-    <div class="cell floor">10</div>
-
-    <div class="cell shortcut">BELVEDERE ROOM</div>
-    <div class="cell">Belvedere Room Solarium &amp; Sky Terrace</div>
-    <div class="cell floor">28</div>
-
-    <div class="cell shortcut">B1</div>
-    <div class="cell">Pet Spa &amp; Grooming Station</div>
-    <div class="cell floor">B1</div>
-  </div>
-</section>
-
 <!-- TOUR STOPS -->
-<section class="section" style="padding-top:0">
+<section class="section">
   <p class="section-label">The Art of Wellness &amp; Community</p>
   <h2 class="section-title">Tour Stops</h2>
 
   <div class="stops-list">
     <div class="stop">
-      <div class="stop-number">1</div>
+      <div class="stop-number"><span class="stop-number-label">Floor</span>1</div>
       <div class="stop-content">
         <div class="stop-name">Lobby</div>
-        <span class="stop-floor">1st Floor · Open 24 Hours</span>
+        <span class="stop-floor">Open 24 Hours</span>
         <p class="stop-desc">Your sophisticated arrival point, with a <strong>front desk staffed 24/7</strong> and professional guest receiving around the clock.</p>
       </div>
       <img class="stop-img" src="https://www.rentchorus.com/assets/_2400xAUTO_crop_center-center_60_none/Chorus-P3-66.jpg" alt="Lobby" loading="lazy">
     </div>
 
     <div class="stop">
-      <div class="stop-number">2</div>
+      <div class="stop-number"><span class="stop-number-label">Floor</span>1</div>
       <div class="stop-content">
         <div class="stop-name">Tech Lounge Co-Working Space</div>
-        <span class="stop-floor">1st Floor · Open 24 Hours</span>
+        <span class="stop-floor">Open 24 Hours</span>
         <p class="stop-desc">Inspire productivity in an ambiance-rich co-working space with <strong>private conference rooms</strong> and full video-conferencing capabilities.</p>
       </div>
       <img class="stop-img" src="https://www.rentchorus.com/assets/_2160xAUTO_crop_center-center_60_none/Chorus-P3-31.jpg" alt="Co-Working Space" loading="lazy">
     </div>
 
     <div class="stop">
-      <div class="stop-number">3</div>
+      <div class="stop-number"><span class="stop-number-label">Floor</span>2</div>
       <div class="stop-content">
         <div class="stop-name">Speakeasy / Skybox Lounge</div>
-        <span class="stop-floor">2nd Floor · 5 AM – 11:45 PM</span>
+        <span class="stop-floor">5 AM – 11:45 PM</span>
         <p class="stop-desc">A hidden respite from the lobby featuring <strong>skee-ball, foosball, and arcade favorites</strong>.</p>
       </div>
       <img class="stop-img" src="https://www.rentchorus.com/assets/_2160xAUTO_crop_center-center_60_none/Chorus-P3-18.jpg" alt="Speakeasy Lounge" loading="lazy">
     </div>
 
     <div class="stop">
-      <div class="stop-number">4</div>
+      <div class="stop-number"><span class="stop-number-label">Floor</span>3</div>
       <div class="stop-content">
         <div class="stop-name">BBQ &amp; Pizza Oven Terrace</div>
-        <span class="stop-floor">3rd Floor · 8 AM – 10 PM</span>
+        <span class="stop-floor">8 AM – 10 PM</span>
         <p class="stop-desc">An outdoor terrace with <strong>BBQ grills and a pizza oven</strong> side by side, plus seating for cooking out with friends and neighbors.</p>
       </div>
     </div>
 
     <div class="stop">
-      <div class="stop-number">5</div>
+      <div class="stop-number"><span class="stop-number-label">Floor</span>9</div>
       <div class="stop-content">
         <div class="stop-name">Rooftop Dog Park</div>
-        <span class="stop-floor">9th Floor · Open 24 Hours</span>
+        <span class="stop-floor">Open 24 Hours</span>
         <p class="stop-desc">A dedicated, elevated <strong>pet relief area</strong> providing ultimate convenience and quick access for all residents with companions.</p>
       </div>
       <img class="stop-img" src="rooftop-dog-park.jpg" alt="Rooftop Dog Park" loading="lazy">
     </div>
 
     <div class="stop">
-      <div class="stop-number">6</div>
+      <div class="stop-number"><span class="stop-number-label">Floor</span>10</div>
       <div class="stop-content">
         <div class="stop-name">Indoor/Outdoor Training Studio</div>
-        <span class="stop-floor">10th Floor · Indoor Open 24 Hours</span>
+        <span class="stop-floor">Indoor Open 24 Hours</span>
         <p class="stop-desc">A complete indoor-outdoor wellness haven with cardio and strength machines. Enjoy <strong>complimentary fitness classes</strong> every week.</p>
       </div>
       <img class="stop-img" src="https://www.rentchorus.com/assets/_2400xAUTO_crop_center-center_60_none/Chorus-P3-37.jpg" alt="Training Studio" loading="lazy">
     </div>
 
     <div class="stop">
-      <div class="stop-number">7</div>
+      <div class="stop-number"><span class="stop-number-label">Floor</span>10</div>
       <div class="stop-content">
         <div class="stop-name">Outdoor Ninja Warrior Course</div>
-        <span class="stop-floor">10th Floor · 8 AM – 10 PM</span>
+        <span class="stop-floor">8 AM – 10 PM</span>
         <p class="stop-desc">Performance training outfitted with an <strong>8-foot warped wall and octagon frame</strong> — a distinctive amenity set unique to the city.</p>
       </div>
       <img class="stop-img" src="https://www.rentchorus.com/assets/_2160xAUTO_crop_center-center_60_none/Chorus-P3-43.jpg" alt="Outdoor Training" loading="lazy">
     </div>
 
     <div class="stop">
-      <div class="stop-number">8</div>
+      <div class="stop-number"><span class="stop-number-label">Floor</span>10</div>
       <div class="stop-content">
         <div class="stop-name">Rooftop Pool Deck</div>
-        <span class="stop-floor">10th Floor · 6 AM – 10 PM</span>
+        <span class="stop-floor">6 AM – 10 PM</span>
         <p class="stop-desc">Step into the full-length <strong>rooftop pool</strong> with exceptional panoramic views. Relax poolside with <strong>private cabanas</strong>, an expansive sundeck, and a soaking <strong>Jacuzzi®</strong>.</p>
       </div>
       <img class="stop-img" src="https://www.rentchorus.com/assets/_2400xAUTO_crop_center-center_60_none/cardio-fitness.jpg" alt="Rooftop Pool" loading="lazy">
     </div>
 
     <div class="stop">
-      <div class="stop-number">9</div>
+      <div class="stop-number"><span class="stop-number-label">Floor</span>28</div>
       <div class="stop-content">
         <div class="stop-name">Belvedere Room Solarium &amp; Sky Terrace</div>
-        <span class="stop-floor">28th Floor · 5 AM – 11:45 PM</span>
+        <span class="stop-floor">5 AM – 11:45 PM</span>
         <p class="stop-desc">The ultimate indoor-outdoor location to enjoy the San Francisco skyline. Features a <strong>floating fireplace</strong>, a <strong>tiled private dining kitchen</strong>, and the outdoor Sky Terrace.</p>
       </div>
       <img class="stop-img" src="https://www.rentchorus.com/assets/_2160xAUTO_crop_center-center_60_none/Chorus-P3-1.jpg" alt="Belvedere Room" loading="lazy">
+    </div>
+
+    <div class="stop">
+      <div class="stop-number"><span class="stop-number-label">Floor</span>B1</div>
+      <div class="stop-content">
+        <div class="stop-name">Pet Spa &amp; Grooming Station</div>
+        <span class="stop-floor">Open 24 Hours</span>
+        <p class="stop-desc">A separate, professional-grade <strong>pet spa and grooming station</strong> on the basement level, so your companion gets the same care you do.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -975,11 +913,6 @@
       <div class="service-icon">📦</div>
       <div class="service-title">Package Concierge</div>
       <p class="service-desc">Dedicated secure package handling, with <strong>in-home package delivery daily from 10 AM to 6 PM</strong>, so your orders arrive safely every time.</p>
-    </div>
-    <div class="service-card">
-      <div class="service-icon">🐾</div>
-      <div class="service-title">Pet Care &amp; Grooming</div>
-      <p class="service-desc">A separate, professional-grade pet spa and grooming station on the basement level, <strong>open 24 hours</strong>.</p>
     </div>
     <div class="service-card">
       <div class="service-icon">📡</div>
